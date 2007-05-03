@@ -43,7 +43,6 @@
   <ItemGroup>
     <Compile Include="AssemblyCache.cs" />
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="CallMap.cs" />
     <Compile Include="TypeKey.cs" />
     <Compile Include="FieldTester.cs" />
     <Compile Include="MethodTester.cs" />
