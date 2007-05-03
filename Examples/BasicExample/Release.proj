@@ -16,7 +16,7 @@
 		<Configuration>Release</Configuration>
 	</PropertyGroup>
 
-	<!-- paths for finding mojave bits -->
+	<!-- paths for finding bits -->
 	<PropertyGroup>
 		<BasePath>$(MSBuildProjectDirectory)</BasePath>
 
@@ -26,7 +26,7 @@
 
 	<!-- obfuscator bits -->
 	<PropertyGroup>
-		<ObfuscatorExe>..\..\Obfuscar\bin\Release\obfuscar.exe</ObfuscatorExe>
+		<ObfuscatorExe>..\..\Bin\obfuscar.exe</ObfuscatorExe>
 		<ObfuscatorProject>$(BasePath)\obfuscar.xml</ObfuscatorProject>
 		<ObfuscatorInput>$(BasePath)\Obfuscator_Input</ObfuscatorInput>
 		<ObfuscatorOutput>$(BasePath)\Obfuscator_Output</ObfuscatorOutput>
