@@ -1,0 +1,10 @@
+#summary Describes status of the project
+#labels Featured
+
+= Status =
+
+Currently, it works quite well, and there is a very basic example of use provided both in the release and with the source code, but there is no documentation, and the unit tests are flaky and few.
+
+== Plans ==
+
+There is little in the area of error handling...for example, if one supplies a bad filename on the command line, it just crashes with a stack trace.  This will be improved to make it more friendly.
