@@ -40,9 +40,7 @@ namespace Obfuscar
 
 		private readonly Variables vars = new Variables( );
 
-		CallMap callMap;
 		InheritMap inheritMap;
-
 		Settings settings;
 
 		// don't create.  call FromXml.
@@ -85,11 +83,6 @@ namespace Obfuscar
 			return project;
 		}
 
-		public CallMap CallMap
-		{
-			get { return callMap; }
-		}
-
 		public InheritMap InheritMap
 		{
 			get { return inheritMap; }
@@ -108,8 +101,9 @@ namespace Obfuscar
 
 		public void LoadAssemblies( )
 		{
-			// force complete load and parse
-			callMap = new CallMap( this );
+			// make everything fully load
+			foreach ( AssemblyInfo info in assemblyList )
+				info.Definition.MainModule.FullLoad( );
 
 			// build reference tree
 			foreach ( AssemblyInfo info in assemblyList )
