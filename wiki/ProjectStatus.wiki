@@ -3,8 +3,12 @@
 
 = Status =
 
-Currently, it works quite well, and there is a very basic example of use provided both in the release and with the source code, but there is no documentation, and the unit tests are flaky and few.
+Currently, it works quite well, and there is a very basic example of use provided both in the release and with the source code.
 
 == Plans ==
 
 There is little in the area of error handling...for example, if one supplies a bad filename on the command line, it just crashes with a stack trace.  This will be improved to make it more friendly.
+
+More complicated examples, including use of the `SkipXXX` elements would be nice.
+
+The unit tests are a little flaky, in that they don't actually test anything.  It'd be nice if they did...
