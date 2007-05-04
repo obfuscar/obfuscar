@@ -1,4 +1,4 @@
-#summary Describes Obfuscar configuration xml
+﻿#summary Describes Obfuscar configuration xml
 #labels Featured
 
 = Obfuscar Configuration =
@@ -9,7 +9,7 @@ The configuration file is used to specify what assemblies should be obfuscated, 
 
 == Variables, `InPath` and `OutPath` ==
 
-The following is a is an example of a minimal configuration.  It is provided in the release, and it can also be found in [http://obfuscar.googlecode.com/svn/trunk/Examples/BasicExample/obfuscar.xml source control]:
+The following is a is an example of a minimal configuration.  It is provided in the release as part of the BasicExample:
 {{{
 <?xml version='1.0'?>
 <Obfuscator>
