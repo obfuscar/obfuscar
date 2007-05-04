@@ -83,13 +83,13 @@ To prevent any events from being obfuscated, set the `RenameEvents` variable to 
 
 == Exclusion by Code ==
 
-There's also some functionality where you can mark types with an attribute to prevent them from being obfuscated...reference Obfuscar.exe and add the Obfuscate attribute to your types.  For example, to suppress obfuscation of X, its methods, fields, resources, etc.:
+There's also some functionality where you can mark types with an attribute to prevent them from being obfuscated...reference Obfuscar.exe and add the `Obfuscate` attribute to your types.  For example, to suppress obfuscation of `X`, its methods, fields, resources, etc.:
 {{{
   [Obfuscate( false )]
   class X { }
 }}}
 
-The Obfuscate attribute has a flag, !ShouldObfuscate, that defaults to true if not set.  The following are equivalent:
+The `Obfuscate` attribute has a flag, `ShouldObfuscate`, that defaults to true if not set.  The following are equivalent:
 {{{
   [Obfuscate]
   class X { }
@@ -101,11 +101,10 @@ The Obfuscate attribute has a flag, !ShouldObfuscate, that defaults to true if n
   class X { }
 }}}
 
-And if you only want specific classes obfuscated, you can set the !MarkedOnly variable to "true" (also an xsd boolean), and apply the Obfuscate attribute to the things you want obfuscated.  This is done in the !ObfuscarTests project (included w/ the source...it's intended to be a place for unit tests, but for now does little) to obfuscate a subset of the classes.  For example, if !MarkedOnly is set to true, to include obfuscation of `X`, it's methods, fields, resources, etc.:
+And if you only want specific classes obfuscated, you can set the `MarkedOnly` variable to "true" (also an xsd boolean), and apply the `Obfuscate` attribute to the things you want obfuscated.  This is done in the !ObfuscarTests project (included w/ the source...it's intended to be a place for unit tests, but for now does little) to obfuscate a subset of the classes.  For example, if `MarkedOnly` is set to true, to include obfuscation of `X`, its methods, fields, resources, etc.:
 {{{
   [Obfuscate]
   class X { }
 }}}
-
 
 
