@@ -39,8 +39,9 @@ After obfuscation, the code can be decompiled (via Reflector) to:
 
 It's a simple example, but it scales...For example, given a reasonably sized code base, one could easily run into a class named 'A' (in the namespace 'A') with 7 methods, 4 properties, and 5 fields named 'A', with several more methods, properties, and fields named 'a'.
 
+To try it out, see BasicExample.
+
 == Caveat ==
 
 It makes debugging / reverse engineering very difficult, but wouldn't stop someone who really wants to reverse engineer it.  It would at least slow them down, and would deter casual observers.
-
 
