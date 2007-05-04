@@ -1,0 +1,111 @@
+#summary Describes Obfuscar configuration xml
+#labels Featured
+
+= Obfuscar Configuration =
+
+Obfuscar accepts a single command line argument, the path to its configuration file.
+
+The configuration file is used to specify what assemblies should be obfuscated, where to find the dependencies for the assemblies, and where the obfuscated assemblies should be saved.
+
+== Variables, `InPath` and `OutPath` ==
+
+The following is a is an example of a minimal configuration.  It is provided in the release, and it can also be found in [http://obfuscar.googlecode.com/svn/trunk/Examples/BasicExample/obfuscar.xml source control]:
+{{{
+<?xml version='1.0'?>
+<Obfuscator>
+  <Var name="InPath" value=".\Obfuscator_Input" />
+  <Var name="OutPath" value=".\Obfuscator_Output" />
+
+  <Module file="$(InPath)\BasicExampleExe.exe" />
+  <Module file="$(InPath)\BasicExampleLibrary.dll" />
+</Obfuscator>
+}}}
+
+In the example configuration, two variables are defined, `InPath` and `OutPath`, using the `Var` element, and two assemblies are listed for obfuscation, an executable and a dll.
+
+Variables defined using the `Var` element will be expanded in strings following the definition...After defining `InPath` as follows:
+{{{
+  <Var name="InPath" value=".\Obfuscator_Input" />
+}}}
+
+It can be used in another location:
+{{{
+  <Module file="$(InPath)\BasicExampleExe.exe" />
+}}}
+
+In addition to being usable like macros, there are a few special variables that have additional effects.  The variable `InPath` is used when trying to find dependencies (the specified path is searched), and the variable `OutPath` is used as the output path for the obfuscated assemblies and the map.  If either `InPath` or `OutPath` is unspecified, they default to the current path (".").
+
+== Modules ==
+
+For each assembly to be obfuscated, there must be a `Module` element.  Assemblies referenced by an assembly specified by a `Module` element must be resolveable, either via Cecil's regular resolve process, or they must be present in the path specified by `InPath` (currently, Obfuscar will crash if it can't find them...it really needs to be made
+more polite about it).
+
+Though additional assemblies are loaded for examination, only the specified assemblies will be obfuscated.
+
+== Exclusion by Configuration ==
+
+It is possible to include additional elements within the `Module` elements to skip types (the `SkipTypes` element), methods (the `SkipMethod` element), and fields (`SkipField`, of course).
+
+The `SkipType` element specifies the name of the type to skip, including the full namespace.
+
+The `SkipMethod` element specifies the name of the type containing the method, a protection specifier, and a name or regex to match the method.  The protection specifier is currently ignored, but will eventually be used for additional filtering.
+
+The `SkipField` element specifies the name of the type containing the field, a protection specifier, and a name or regex to match the field.  The protection specifier is currently ignored, but will eventually be used for additional filtering.
+
+A more complete example:
+{{{
+  <Module file="$(InPath)\AssemblyX.exe">
+    <!-- skip field by name -->
+    <SkipField type="Full.Namespace.And.TypeName"
+      attrib="public" name="Fieldname" />
+
+    <!-- skip field by regex -->
+    <SkipField type="Full.Namespace.And.TypeName"
+      attrib="public" rx="Pub.*" />
+
+    <!-- skip type...will still obfuscate its methods -->
+    <SkipType name="Full.Namespace.And.TypeName2" />
+
+    <!-- skip type...will skip its methods next -->
+    <SkipType name="Full.Namespace.And.TypeName3" />
+    <!-- skip TypeName3's public methods -->
+    <SkipMethod type="Full.Namespace.And.TypeName3"
+      attrib="public" rx=".*" />
+    <!-- skip TypeName3's protected methods -->
+    <SkipMethod type="Full.Namespace.And.TypeName3"
+      attrib="family" rx=".*" />
+  </Module>
+}}}
+
+To prevent any properties from being obfuscated, set the `RenameProperties` variable to "false" (it's an xsd boolean).  To prevent specific properties from being renamed, skip the underlying methods, `get_XXX` and `set_XXX` (you can use a regex like "`(get|set)_XXX`").
+
+To prevent any events from being obfuscated, set the `RenameEvents` variable to "false" (it's also xsd boolean).  To prevent specific events from being renamed, skip the underlying methods, `add_XXX` and `remove_XXX` (you can use a regex like "`(add|remove)_XXX`").
+
+== Exclusion by Code ==
+
+There's also some functionality where you can mark types with an attribute to prevent them from being obfuscated...reference Obfuscar.exe and add the Obfuscate attribute to your types.  For example, to suppress obfuscation of X, its methods, fields, resources, etc.:
+{{{
+  [Obfuscate( false )]
+  class X { }
+}}}
+
+The Obfuscate attribute has a flag, !ShouldObfuscate, that defaults to true if not set.  The following are equivalent:
+{{{
+  [Obfuscate]
+  class X { }
+
+  [Obfuscate( true )]
+  class Y { }
+
+  [Obfuscate( ShouldObfuscate = true )]
+  class X { }
+}}}
+
+And if you only want specific classes obfuscated, you can set the !MarkedOnly variable to "true" (also an xsd boolean), and apply the Obfuscate attribute to the things you want obfuscated.  This is done in the !ObfuscarTests project (included w/ the source...it's intended to be a place for unit tests, but for now does little) to obfuscate a subset of the classes.  For example, if !MarkedOnly is set to true, to include obfuscation of `X`, it's methods, fields, resources, etc.:
+{{{
+  [Obfuscate]
+  class X { }
+}}}
+
+
+
