@@ -37,8 +37,7 @@ In addition to being usable like macros, there are a few special variables that 
 
 == Modules ==
 
-For each assembly to be obfuscated, there must be a `Module` element.  Assemblies referenced by an assembly specified by a `Module` element must be resolveable, either via Cecil's regular resolve process, or they must be present in the path specified by `InPath` (currently, Obfuscar will crash if it can't find them...it really needs to be made
-more polite about it).
+For each assembly to be obfuscated, there must be a `Module` element.  Assemblies referenced by an assembly specified by a `Module` element must be resolveable, either via Cecil's regular resolve process, or they must be present in the path specified by `InPath`.
 
 Though additional assemblies are loaded for examination, only the specified assemblies will be obfuscated.
 

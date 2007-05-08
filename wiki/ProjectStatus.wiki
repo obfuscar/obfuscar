@@ -1,4 +1,4 @@
-#summary Describes status of the project
+﻿#summary Describes status of the project
 #labels Featured
 
 = Status =
@@ -7,8 +7,4 @@ Currently, it works quite well, and there is a very basic example of use provide
 
 == Plans ==
 
-There is little in the area of error handling...for example, if one supplies a bad filename on the command line, it just crashes with a stack trace.  This will be improved to make it more friendly.
-
-More complicated examples, including use of the `SkipXXX` elements would be nice.
-
-The unit tests are a little flaky, in that they don't actually test anything.  It'd be nice if they did...
+More complicated examples, including use of the `SkipXXX` elements would be nice.  Currently, the `SkipXXX` elements are only documented on the [Configuration] page.
