@@ -34,10 +34,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DependencyTests.cs" />
+    <Compile Include="OutPathTests.cs" />
+    <Compile Include="PathFailureTests.cs" />
     <Compile Include="TestClasses2.cs" />
     <Compile Include="TestClasses.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="VirtualTests.cs" />
+    <Compile Include="TestUtils.cs" />
+    <Compile Include="VariablesTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Obfuscar.csproj">
