@@ -26,62 +26,12 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Obfuscar
+namespace TestClasses
 {
-	class Program
+	public class ClassB : ClassA
 	{
-		static void ShowHelp( )
+		protected override void Method( bool param )
 		{
-			Console.WriteLine( "Usage:  obfuscar [projectfile]" );
-		}
-
-		static int Main( string[] args )
-		{
-			if ( args.Length < 1 )
-			{
-				ShowHelp( );
-				return 1;
-			}
-
-			int start = Environment.TickCount;
-
-			try
-			{
-				Console.Write( "Loading project..." );
-				Obfuscator obfuscator = new Obfuscator( args[0] );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Renaming:  fields..." );
-				obfuscator.RenameFields( );
-
-				Console.Write( "parameters..." );
-				obfuscator.RenameParams( );
-
-				Console.Write( "methods..." );
-				obfuscator.RenameMethods( );
-
-				Console.Write( "types..." );
-				obfuscator.RenameTypes( );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Saving assemblies..." );
-				obfuscator.SaveAssemblies( );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Writing log file..." );
-				obfuscator.SaveMapping( );
-				Console.WriteLine( "Done." );
-
-				Console.WriteLine( "Completed, {0:f2} secs.", ( Environment.TickCount - start ) / 1000.0 );
-			}
-			catch ( ApplicationException e )
-			{
-				Console.WriteLine( );
-				Console.Error.WriteLine( "An error occurred during processing:" );
-				Console.Error.WriteLine( e.Message );
-			}
-
-			return 0;
 		}
 	}
 }

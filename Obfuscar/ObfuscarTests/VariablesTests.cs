@@ -26,62 +26,31 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Obfuscar
+using NUnit.Framework;
+
+namespace ObfuscarTests
 {
-	class Program
+	[TestFixture]
+	public class VariablesTests
 	{
-		static void ShowHelp( )
+		[Test]
+		public void CheckReplace( )
 		{
-			Console.WriteLine( "Usage:  obfuscar [projectfile]" );
+			Obfuscar.Variables variables = new Obfuscar.Variables( );
+			variables.Add( "Key1", "Value1" );
+
+			string result = variables.Replace( "This: $(Key1) got replaced." );
+			Assert.AreEqual( "This: Value1 got replaced.", result );
 		}
 
-		static int Main( string[] args )
+		[Test]
+		public void CheckBadReplace( )
 		{
-			if ( args.Length < 1 )
-			{
-				ShowHelp( );
-				return 1;
-			}
+			Obfuscar.Variables variables = new Obfuscar.Variables( );
+			variables.Add( "Key1", "Value1" );
 
-			int start = Environment.TickCount;
-
-			try
-			{
-				Console.Write( "Loading project..." );
-				Obfuscator obfuscator = new Obfuscator( args[0] );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Renaming:  fields..." );
-				obfuscator.RenameFields( );
-
-				Console.Write( "parameters..." );
-				obfuscator.RenameParams( );
-
-				Console.Write( "methods..." );
-				obfuscator.RenameMethods( );
-
-				Console.Write( "types..." );
-				obfuscator.RenameTypes( );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Saving assemblies..." );
-				obfuscator.SaveAssemblies( );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Writing log file..." );
-				obfuscator.SaveMapping( );
-				Console.WriteLine( "Done." );
-
-				Console.WriteLine( "Completed, {0:f2} secs.", ( Environment.TickCount - start ) / 1000.0 );
-			}
-			catch ( ApplicationException e )
-			{
-				Console.WriteLine( );
-				Console.Error.WriteLine( "An error occurred during processing:" );
-				Console.Error.WriteLine( e.Message );
-			}
-
-			return 0;
+			TestUtils.AssertThrows( delegate { variables.Replace( "$(Unreplaceable)" ); }, typeof( ApplicationException ),
+				"Unable", "replace", "Unreplaceable" );
 		}
 	}
 }

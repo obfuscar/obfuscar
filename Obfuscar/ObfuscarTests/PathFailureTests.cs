@@ -26,62 +26,53 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Obfuscar
+using NUnit.Framework;
+
+namespace ObfuscarTests
 {
-	class Program
+	[TestFixture]
+	public class PathFailureTests
 	{
-		static void ShowHelp( )
+		internal const string BadPath = "Q:\\Does\\Not\\Exist";
+
+		[Test]
+		public void CheckBadPathIsBad( )
 		{
-			Console.WriteLine( "Usage:  obfuscar [projectfile]" );
+			// if badPath exists, the other tests here are no good
+			Assert.IsFalse( System.IO.Directory.Exists( BadPath ), "Didn't expect BadPath to exist." );
 		}
 
-		static int Main( string[] args )
+		[Test]
+		public void CheckBadProjectPath( )
 		{
-			if ( args.Length < 1 )
-			{
-				ShowHelp( );
-				return 1;
-			}
+			TestUtils.AssertThrows( delegate { new Obfuscar.Obfuscator( BadPath ); }, typeof( ApplicationException ),
+				"Unable", "read", BadPath );
+		}
 
-			int start = Environment.TickCount;
+		[Test]
+		public void CheckBadModuleFile( )
+		{
+			string xml = String.Format(
+				@"<?xml version='1.0'?>" +
+				@"<Obfuscator>" +
+				@"<Module file='{0}\ObfuscarTests.dll' />" +
+				@"</Obfuscator>", BadPath );
 
-			try
-			{
-				Console.Write( "Loading project..." );
-				Obfuscator obfuscator = new Obfuscator( args[0] );
-				Console.WriteLine( "Done." );
+			TestUtils.AssertThrows( delegate { Obfuscar.Obfuscator.CreateFromXml( xml ); }, typeof( ApplicationException ),
+				"Unable", "find assembly", BadPath );
+		}
 
-				Console.Write( "Renaming:  fields..." );
-				obfuscator.RenameFields( );
+		[Test]
+		public void CheckBadInPath( )
+		{
+			string xml = String.Format( 
+				@"<?xml version='1.0'?>" +
+				@"<Obfuscator>" +
+				@"<Var name='InPath' value='{0}' />" +
+				@"</Obfuscator>", BadPath );
 
-				Console.Write( "parameters..." );
-				obfuscator.RenameParams( );
-
-				Console.Write( "methods..." );
-				obfuscator.RenameMethods( );
-
-				Console.Write( "types..." );
-				obfuscator.RenameTypes( );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Saving assemblies..." );
-				obfuscator.SaveAssemblies( );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Writing log file..." );
-				obfuscator.SaveMapping( );
-				Console.WriteLine( "Done." );
-
-				Console.WriteLine( "Completed, {0:f2} secs.", ( Environment.TickCount - start ) / 1000.0 );
-			}
-			catch ( ApplicationException e )
-			{
-				Console.WriteLine( );
-				Console.Error.WriteLine( "An error occurred during processing:" );
-				Console.Error.WriteLine( e.Message );
-			}
-
-			return 0;
+			TestUtils.AssertThrows( delegate { Obfuscar.Obfuscator.CreateFromXml( xml ); }, typeof( ApplicationException ),
+				"InPath", "must exist", BadPath );
 		}
 	}
 }

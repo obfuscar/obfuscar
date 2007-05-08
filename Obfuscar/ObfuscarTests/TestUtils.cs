@@ -26,62 +26,35 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Obfuscar
+using NUnit.Framework;
+
+namespace ObfuscarTests
 {
-	class Program
+	static class TestUtils
 	{
-		static void ShowHelp( )
-		{
-			Console.WriteLine( "Usage:  obfuscar [projectfile]" );
-		}
+		public delegate void MethodInvoker( );
 
-		static int Main( string[] args )
+		public static void AssertThrows( MethodInvoker del, Type exType, params string[] containedStrings )
 		{
-			if ( args.Length < 1 )
-			{
-				ShowHelp( );
-				return 1;
-			}
-
-			int start = Environment.TickCount;
+			bool threw = false;
 
 			try
 			{
-				Console.Write( "Loading project..." );
-				Obfuscator obfuscator = new Obfuscator( args[0] );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Renaming:  fields..." );
-				obfuscator.RenameFields( );
-
-				Console.Write( "parameters..." );
-				obfuscator.RenameParams( );
-
-				Console.Write( "methods..." );
-				obfuscator.RenameMethods( );
-
-				Console.Write( "types..." );
-				obfuscator.RenameTypes( );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Saving assemblies..." );
-				obfuscator.SaveAssemblies( );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Writing log file..." );
-				obfuscator.SaveMapping( );
-				Console.WriteLine( "Done." );
-
-				Console.WriteLine( "Completed, {0:f2} secs.", ( Environment.TickCount - start ) / 1000.0 );
+				del.DynamicInvoke( null );
 			}
-			catch ( ApplicationException e )
+			catch ( Exception ex )
 			{
-				Console.WriteLine( );
-				Console.Error.WriteLine( "An error occurred during processing:" );
-				Console.Error.WriteLine( e.Message );
+				threw = true;
+
+				Assert.IsTrue( exType.IsInstanceOfType( ex.InnerException ),
+					String.Format( "Exception was expected to be of type {0}.", exType.Name ) );
+				foreach ( string containedString in containedStrings )
+					StringAssert.Contains( containedString, ex.InnerException.Message,
+						String.Format( "Exception string was expected to contain \"{0}\"", containedString ) );
 			}
 
-			return 0;
+			if ( !threw )
+				Assert.Fail( "An exception was expected." );
 		}
 	}
 }

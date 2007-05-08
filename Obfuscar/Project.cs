@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Text.RegularExpressions;
+using System.IO;
 
 using Mono.Cecil;
 
@@ -81,6 +82,27 @@ namespace Obfuscar
 			}
 
 			return project;
+		}
+
+		/// <summary>
+		/// Looks through the settings, trys to make sure everything looks ok.
+		/// </summary>
+		public void CheckSettings( )
+		{
+			if ( !Directory.Exists( Settings.InPath ) )
+				throw new ApplicationException( "Path specified by InPath variable must exist:" + Settings.InPath );
+
+			if ( !Directory.Exists( Settings.OutPath ) )
+			{
+				try
+				{
+					Directory.CreateDirectory( Settings.OutPath );
+				}
+				catch ( IOException e )
+				{
+					throw new ApplicationException( "Could not create path specified by OutPath:  " + Settings.OutPath, e );
+				}
+			}
 		}
 
 		public InheritMap InheritMap
