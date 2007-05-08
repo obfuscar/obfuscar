@@ -23,65 +23,56 @@
 #endregion
 
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Obfuscar
+using NUnit.Framework;
+
+namespace ObfuscarTests
 {
-	class Program
+	[TestFixture]
+	public class OutPathTests
 	{
-		static void ShowHelp( )
+		private void CheckOutPath( string testPath )
 		{
-			Console.WriteLine( "Usage:  obfuscar [projectfile]" );
-		}
-
-		static int Main( string[] args )
-		{
-			if ( args.Length < 1 )
-			{
-				ShowHelp( );
-				return 1;
-			}
-
-			int start = Environment.TickCount;
+			Assert.IsFalse( Directory.Exists( testPath ), "Need a writeable temp path...wanted to create " + testPath );
 
 			try
 			{
-				Console.Write( "Loading project..." );
-				Obfuscator obfuscator = new Obfuscator( args[0] );
-				Console.WriteLine( "Done." );
+				string xml = String.Format(
+					@"<?xml version='1.0'?>" +
+					@"<Obfuscator>" +
+					@"<Var name='OutPath' value='{0}' />" +
+					@"</Obfuscator>", testPath );
 
-				Console.Write( "Renaming:  fields..." );
-				obfuscator.RenameFields( );
+				Obfuscar.Obfuscator.CreateFromXml( xml );
 
-				Console.Write( "parameters..." );
-				obfuscator.RenameParams( );
-
-				Console.Write( "methods..." );
-				obfuscator.RenameMethods( );
-
-				Console.Write( "types..." );
-				obfuscator.RenameTypes( );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Saving assemblies..." );
-				obfuscator.SaveAssemblies( );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Writing log file..." );
-				obfuscator.SaveMapping( );
-				Console.WriteLine( "Done." );
-
-				Console.WriteLine( "Completed, {0:f2} secs.", ( Environment.TickCount - start ) / 1000.0 );
+				Assert.IsTrue( Directory.Exists( testPath ), "Obfuscator should have created its missing OutPath." );
 			}
-			catch ( ApplicationException e )
+			finally
 			{
-				Console.WriteLine( );
-				Console.Error.WriteLine( "An error occurred during processing:" );
-				Console.Error.WriteLine( e.Message );
+				// clean up...
+				if ( Directory.Exists( testPath ) )
+					Directory.Delete( testPath );
 			}
+		}
 
-			return 0;
+		[Test]
+		public void CheckCanCreateOutPath( )
+		{
+			string testPath = System.IO.Path.Combine( System.IO.Path.GetTempPath( ), "ObfuscarTestOutPath" );
+
+			CheckOutPath( testPath );
+		}
+
+		[Test]
+		public void CheckInvalidOutPath( )
+		{
+			string testPath = System.IO.Path.Combine( PathFailureTests.BadPath, "ObfuscarTestOutPath" );
+
+			TestUtils.AssertThrows( delegate { CheckOutPath( testPath ); }, typeof( ApplicationException ),
+				"Could not create", "OutPath", testPath );
 		}
 	}
 }

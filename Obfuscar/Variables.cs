@@ -59,10 +59,18 @@ namespace Obfuscar
 
 			int lastMatch = 0;
 
+			string variable;
+			string replacement;
 			foreach ( System.Text.RegularExpressions.Match m in re.Matches( str ) )
 			{
+
 				formatted.Append( str.Substring( lastMatch, m.Index - lastMatch ) );
-				formatted.Append( vars[m.Groups[1].Value].ToString( ) );
+
+				variable = m.Groups[1].Value;
+				if ( vars.TryGetValue( variable, out replacement ) )
+					formatted.Append( replacement );
+				else
+					throw new ApplicationException( "Unable to replace variable:  " + variable );
 
 				lastMatch = m.Index + m.Length;
 			}

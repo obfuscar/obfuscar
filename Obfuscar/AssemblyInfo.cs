@@ -163,8 +163,15 @@ namespace Obfuscar
 		{
 			this.filename = filename;
 
-			definition = AssemblyFactory.GetAssembly( filename );
-			name = definition.Name.Name;
+			try
+			{
+				definition = AssemblyFactory.GetAssembly( filename );
+				name = definition.Name.Name;
+			}
+			catch ( System.IO.FileNotFoundException e )
+			{
+				throw new ApplicationException( "Unable to find assembly:  " + filename, e );
+			}
 		}
 
 		public string Filename

@@ -84,9 +84,15 @@ namespace Obfuscar
 					assmDef = SelfResolve( name );
 					if ( assmDef == null )
 					{
-						assmDef = resolver.Resolve( name );
-						if ( assmDef != null )
+						try
+						{
+							assmDef = resolver.Resolve( name );
 							cache[name.FullName] = assmDef;
+						}
+						catch ( FileNotFoundException )
+						{
+							throw new ApplicationException( "Unable to resolve dependency:  " + name.Name );
+						}
 					}
 
 					string fullName = type.Namespace + "." + type.Name;

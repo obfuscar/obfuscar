@@ -47,14 +47,17 @@ namespace Obfuscar
 		public Obfuscator( string projfile )
 		{
 			// open XmlTextReader over xml string stream
-			XmlReaderSettings settings = new XmlReaderSettings( );
-			settings.IgnoreProcessingInstructions = true;
-			settings.IgnoreWhitespace = true;
-			settings.XmlResolver = null;
-			settings.ProhibitDtd = false;
+			XmlReaderSettings settings = GetReaderSettings( );
 
-			using ( XmlReader reader = XmlTextReader.Create( System.IO.File.OpenRead( projfile ), settings ) )
-				LoadFromReader( reader );
+			try
+			{
+				using ( XmlReader reader = XmlTextReader.Create( System.IO.File.OpenRead( projfile ), settings ) )
+					LoadFromReader( reader );
+			}
+			catch ( System.IO.IOException e )
+			{
+				throw new ApplicationException( "Unable to read specified project file:  " + projfile, e );
+			}
 		}
 
 		/// <summary>
@@ -66,10 +69,32 @@ namespace Obfuscar
 			LoadFromReader( reader );
 		}
 
+		public static Obfuscator CreateFromXml( string xml )
+		{
+			// open XmlTextReader over xml string stream
+			XmlReaderSettings settings = GetReaderSettings( );
+
+			using ( XmlReader reader = XmlTextReader.Create( new System.IO.StringReader( xml ), settings ) )
+				return new Obfuscar.Obfuscator( reader );
+		}
+
+		static XmlReaderSettings GetReaderSettings( )
+		{
+			XmlReaderSettings settings = new XmlReaderSettings( );
+			settings.IgnoreProcessingInstructions = true;
+			settings.IgnoreWhitespace = true;
+			settings.XmlResolver = null;
+			settings.ProhibitDtd = false;
+			return settings;
+		}
+
 		void LoadFromReader( XmlReader reader )
 		{
 			project = Project.FromXml( reader );
-			
+
+			// make sure everything looks good
+			project.CheckSettings( );
+
 			Console.Write( "Loading assemblies..." );
 			project.LoadAssemblies( );
 		}
