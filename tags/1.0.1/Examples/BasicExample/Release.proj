@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project DefaultTargets="BuildAll" 
+	xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<!--
+		Release.proj:
+			Builds and obfuscates a release.
+
+		You can make msbuild build the release by running the following command:
+
+			msbuild Release.proj
+	-->
+
+	<!-- default to release build -->
+	<PropertyGroup Condition="!Exists('$(Configuration)')">
+		<Configuration>Release</Configuration>
+	</PropertyGroup>
+
+	<!-- paths for finding bits -->
+	<PropertyGroup>
+		<BasePath>$(MSBuildProjectDirectory)</BasePath>
+
+		<ExePath>$(BasePath)\BasicExampleExe\bin\$(Configuration)</ExePath>
+		<DllPath>$(BasePath)\BasicExampleLibrary\bin\$(Configuration)</DllPath>
+	</PropertyGroup>
+
+	<!-- obfuscator bits -->
+	<PropertyGroup>
+		<ObfuscatorExe>..\..\Bin\obfuscar.exe</ObfuscatorExe>
+		<ObfuscatorProject>$(BasePath)\obfuscar.xml</ObfuscatorProject>
+		<ObfuscatorInput>$(BasePath)\Obfuscator_Input</ObfuscatorInput>
+		<ObfuscatorOutput>$(BasePath)\Obfuscator_Output</ObfuscatorOutput>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- main exes -->
+		<ObfuscatedFile Include="$(ExePath)\BasicExampleExe.exe" />
+		<ObfuscatedFile Include="$(DllPath)\BasicExampleLibrary.dll" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<CompileSolution Include="$(BasePath)\BasicExample.sln" />
+	</ItemGroup>
+
+	<!-- clean, compile and package! -->
+	<Target Name="BuildAll" DependsOnTargets="Clean;Compile;Obfuscate" />
+
+	<!-- clean outputs and temp obfuscation files -->
+	<Target Name="Clean">
+		<MSBuild Projects="@(CompileProject);@(CompileSolution)"
+			Properties="Configuration=$(Configuration)"
+			Targets="Clean" />
+
+		<RemoveDir Directories="Final" />
+		<RemoveDir Directories="$(ObfuscatorInput)" />
+		<RemoveDir Directories="$(ObfuscatorOutput)" />
+	</Target>
+
+	<!-- compile -->
+	<Target Name="Compile">
+		<MSBuild Projects="@(CompileSolution)"
+			Properties="Configuration=$(Configuration);BuildType=$(BuildType)" />
+	</Target>
+
+	<!-- copies files that are to be obfuscated -->
+	<Target Name="CopyObfuscatedFiles"
+		DependsOnTargets="Compile">
+		<MakeDir Directories="$(ObfuscatorInput)" />
+
+		<!-- copy files that will be obfuscated to obfuscator input -->
+		<Copy SourceFiles="@(ObfuscatedFile)"
+			DestinationFolder="$(ObfuscatorInput)" />
+	</Target>
+
+	<!-- obfuscate -->
+	<Target Name="Obfuscate"
+		DependsOnTargets="CopyObfuscatedFiles">
+		<MakeDir Directories="$(ObfuscatorOutput)" />
+		<Exec Command='"$(ObfuscatorExe)" "$(ObfuscatorProject)"' />
+		<Copy SourceFiles="@(ObfuscatedFile->'$(ObfuscatorOutput)\%(filename)%(extension)')"
+			DestinationFolder="Final" />
+		<Copy SourceFiles="$(ObfuscatorOutput)\Mapping.txt"
+			DestinationFolder="Final" />
+	</Target>
+</Project>
