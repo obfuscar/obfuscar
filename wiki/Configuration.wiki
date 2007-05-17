@@ -43,7 +43,7 @@ Though additional assemblies are loaded for examination, only the specified asse
 
 == Exclusion by Configuration ==
 
-It is possible to include additional elements within the `Module` elements to skip types (the `SkipTypes` element), methods (the `SkipMethod` element), fields (`SkipField`), properties (`SkipProperty`), and events (`SkipEvents`, of course).
+It is possible to include additional elements within the `Module` elements to skip types (the `SkipTypes` element), methods (the `SkipMethod` element), fields (`SkipField`), properties (`SkipProperty`), and events (`SkipEvent`, of course).
 
 The `SkipType` element specifies the name of the type to skip, including the full namespace.
 
@@ -123,5 +123,4 @@ And if you only want specific classes obfuscated, you can set the `MarkedOnly` v
   [Obfuscate]
   class X { }
 }}}
-
 
