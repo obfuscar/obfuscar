@@ -25,69 +25,44 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
+
+using Mono.Cecil;
 
 namespace Obfuscar
 {
-	class Program
+	class PropertyTester : IPredicate<PropertyKey>
 	{
-		static void ShowHelp( )
+		private readonly string name;
+		private readonly Regex nameRx;
+		private readonly string type;
+		private readonly string attrib;
+
+		public PropertyTester( string name, string type, string attrib )
 		{
-			Console.WriteLine( "Usage:  obfuscar [projectfile]" );
+			this.name = name;
+			this.type = type;
+			this.attrib = attrib;
 		}
 
-		static int Main( string[] args )
+		public PropertyTester( Regex nameRx, string type, string attrib )
 		{
-			if ( args.Length < 1 )
+			this.nameRx = nameRx;
+			this.type = type;
+			this.attrib = attrib;
+		}
+
+		public bool Test( PropertyKey prop )
+		{
+			if ( type == prop.TypeKey.Fullname )
 			{
-				ShowHelp( );
-				return 1;
+				if ( name != null )
+					return name == prop.Name;
+				else
+					return nameRx.IsMatch( prop.Name );
 			}
 
-			int start = Environment.TickCount;
-
-			try
-			{
-				Console.Write( "Loading project..." );
-				Obfuscator obfuscator = new Obfuscator( args[0] );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Renaming:  fields..." );
-				obfuscator.RenameFields( );
-
-				Console.Write( "parameters..." );
-				obfuscator.RenameParams( );
-
-				Console.Write( "properties..." );
-				obfuscator.RenameProperties( );
-
-				Console.Write( "events..." );
-				obfuscator.RenameEvents( );
-
-				Console.Write( "methods..." );
-				obfuscator.RenameMethods( );
-
-				Console.Write( "types..." );
-				obfuscator.RenameTypes( );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Saving assemblies..." );
-				obfuscator.SaveAssemblies( );
-				Console.WriteLine( "Done." );
-
-				Console.Write( "Writing log file..." );
-				obfuscator.SaveMapping( );
-				Console.WriteLine( "Done." );
-
-				Console.WriteLine( "Completed, {0:f2} secs.", ( Environment.TickCount - start ) / 1000.0 );
-			}
-			catch ( ApplicationException e )
-			{
-				Console.WriteLine( );
-				Console.Error.WriteLine( "An error occurred during processing:" );
-				Console.Error.WriteLine( e.Message );
-			}
-
-			return 0;
+			return false;
 		}
 	}
 }

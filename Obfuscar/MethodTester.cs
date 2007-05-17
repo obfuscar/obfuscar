@@ -33,10 +33,16 @@ namespace Obfuscar
 {
 	class MethodTester : IPredicate<MethodKey>
 	{
+		private readonly MethodKey key;
 		private readonly string name;
 		private readonly Regex nameRx;
 		private readonly string type;
 		private readonly string attrib;
+
+		public MethodTester( MethodKey key )
+		{
+			this.key = key;
+		}
 
 		public MethodTester( string name, string type, string attrib )
 		{
@@ -54,6 +60,9 @@ namespace Obfuscar
 
 		public bool Test( MethodKey method )
 		{
+			if ( key != null )
+				return method == key;
+
 			if ( type == method.TypeKey.Fullname )
 			{
 				if ( name != null )

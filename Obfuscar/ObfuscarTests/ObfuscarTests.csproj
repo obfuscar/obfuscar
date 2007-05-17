@@ -28,6 +28,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="C5, Version=1.0.1.0, Culture=neutral, PublicKeyToken=06a1b38866503b69, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\ThirdParty\C5\C5.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.Cecil, Version=0.5.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\ThirdParty\Mono\Mono.Cecil.dll</HintPath>
@@ -39,6 +43,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AttributeTests.cs" />
+    <Compile Include="SkipEventTests.cs" />
+    <Compile Include="SkipPropertyTests.cs" />
     <Compile Include="DependencyTests.cs" />
     <Compile Include="OutPathTests.cs" />
     <Compile Include="PathFailureTests.cs" />

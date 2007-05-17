@@ -121,7 +121,10 @@ namespace Obfuscar
 		/// </summary>
 		public void SaveMapping( )
 		{
-			string logPath = System.IO.Path.Combine( project.Settings.OutPath, "Mapping.txt" );
+			string filename = project.Settings.XmlMapping?
+				"Mapping.xml" : "Mapping.txt";
+
+			string logPath = System.IO.Path.Combine( project.Settings.OutPath, filename );
 
 			using ( System.IO.TextWriter file = System.IO.File.CreateText( logPath ) )
 				SaveMapping( file );
@@ -132,7 +135,10 @@ namespace Obfuscar
 		/// </summary>
 		public void SaveMapping( System.IO.TextWriter writer )
 		{
-			map.DumpMap( writer );
+			IMapWriter mapWriter = project.Settings.XmlMapping ?
+				(IMapWriter) new XmlMapWriter( writer ) : (IMapWriter) new TextMapWriter( writer );
+
+			mapWriter.WriteMap( map );
 		}
 
 		/// <summary>
@@ -451,6 +457,130 @@ namespace Obfuscar
 			return nameGroup;
 		}
 
+		public void RenameProperties( )
+		{
+			// do nothing if it was requested not to rename
+			if ( !project.Settings.RenameProperties )
+				return;
+
+			foreach ( AssemblyInfo info in project )
+			{
+				AssemblyDefinition library = info.Definition;
+
+				foreach ( TypeDefinition type in library.MainModule.Types )
+				{
+					if ( type.FullName == "<Module>" )
+						continue;
+
+					TypeKey typeKey = new TypeKey( type );
+
+					if ( ShouldRename( type ) )
+					{
+						List<PropertyDefinition> propsToDrop = new List<PropertyDefinition>( );
+						foreach ( PropertyDefinition prop in type.Properties )
+						{
+							PropertyKey propKey = new PropertyKey( typeKey, prop );
+							ObfuscatedThing m = map.GetProperty( propKey );
+
+							// skip runtime special properties
+							if ( prop.IsRuntimeSpecialName )
+							{
+								m.Update( ObfuscationStatus.Skipped, "runtime special" );
+								continue;
+							}
+
+							// skip filtered props
+							if ( info.ShouldSkip( propKey ) )
+							{
+								m.Update( ObfuscationStatus.Skipped, "filtered" );
+
+								// make sure get/set get skipped too
+								if ( prop.GetMethod != null )
+									info.ForceSkip( new MethodKey( prop.GetMethod ) );
+								if ( prop.SetMethod != null )
+									info.ForceSkip( new MethodKey( prop.SetMethod ) );
+
+								continue;
+							}
+
+							// add to to collection for removal
+							propsToDrop.Add( prop );
+						}
+
+						foreach ( PropertyDefinition prop in propsToDrop )
+						{
+							PropertyKey propKey = new PropertyKey( typeKey, prop );
+							ObfuscatedThing m = map.GetProperty( propKey );
+
+							m.Update( ObfuscationStatus.Renamed, "dropped" );
+							type.Properties.Remove( prop );
+						}
+					}
+				}
+			}
+		}
+
+		public void RenameEvents( )
+		{
+			// do nothing if it was requested not to rename
+			if ( !project.Settings.RenameEvents )
+				return;
+
+			foreach ( AssemblyInfo info in project )
+			{
+				AssemblyDefinition library = info.Definition;
+
+				foreach ( TypeDefinition type in library.MainModule.Types )
+				{
+					if ( type.FullName == "<Module>" )
+						continue;
+
+					TypeKey typeKey = new TypeKey( type );
+
+					if ( ShouldRename( type ) )
+					{
+						List<EventDefinition> evtsToDrop = new List<EventDefinition>( );
+						foreach ( EventDefinition evt in type.Events )
+						{
+							EventKey evtKey = new EventKey( typeKey, evt );
+							ObfuscatedThing m = map.GetEvent( evtKey );
+
+							// skip runtime special events
+							if ( evt.IsRuntimeSpecialName )
+							{
+								m.Update( ObfuscationStatus.Skipped, "runtime special" );
+								continue;
+							}
+
+							// skip filtered events
+							if ( info.ShouldSkip( evtKey ) )
+							{
+								m.Update( ObfuscationStatus.Skipped, "filtered" );
+
+								// make sure add/remove get skipped too
+								info.ForceSkip( new MethodKey( evt.AddMethod ) );
+								info.ForceSkip( new MethodKey( evt.RemoveMethod ) );
+
+								continue;
+							}
+
+							// add to to collection for removal
+							evtsToDrop.Add( evt );
+						}
+
+						foreach ( EventDefinition evt in evtsToDrop )
+						{
+							EventKey evtKey = new EventKey( typeKey, evt );
+							ObfuscatedThing m = map.GetEvent( evtKey );
+
+							m.Update( ObfuscationStatus.Renamed, "dropped" );
+							type.Events.Remove( evt );
+						}
+					}
+				}
+			}
+		}
+
 		public void RenameMethods( )
 		{
 			Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames = 
@@ -579,12 +709,6 @@ namespace Obfuscar
 							else
 								RenameMethod( info, sigNames, methodKey, method );
 						}
-
-						// drop all properties and events
-						if ( project.Settings.RenameProperties )
-							type.Properties.Clear( );
-						if ( project.Settings.RenameEvents )
-							type.Events.Clear( );
 					}
 				}
 			}
