@@ -43,13 +43,17 @@ Though additional assemblies are loaded for examination, only the specified asse
 
 == Exclusion by Configuration ==
 
-It is possible to include additional elements within the `Module` elements to skip types (the `SkipTypes` element), methods (the `SkipMethod` element), and fields (`SkipField`, of course).
+It is possible to include additional elements within the `Module` elements to skip types (the `SkipTypes` element), methods (the `SkipMethod` element), fields (`SkipField`), properties (`SkipProperty`), and events (`SkipEvents`, of course).
 
 The `SkipType` element specifies the name of the type to skip, including the full namespace.
 
 The `SkipMethod` element specifies the name of the type containing the method, a protection specifier, and a name or regex to match the method.  The protection specifier is currently ignored, but will eventually be used for additional filtering.
 
 The `SkipField` element specifies the name of the type containing the field, a protection specifier, and a name or regex to match the field.  The protection specifier is currently ignored, but will eventually be used for additional filtering.
+
+The `SkipProperty` element specifies the name of the type containing the property, a protection specifier, and a name or regex to match the property.  The protection specifier is currently ignored, but will eventually be used for additional filtering.
+
+The `SkipEvent` element specifies the name of the type containing the event, a protection specifier, and a name or regex to match the event.  The protection specifier is currently ignored, but will eventually be used for additional filtering.
 
 A more complete example:
 {{{
@@ -73,12 +77,26 @@ A more complete example:
     <!-- skip TypeName3's protected methods -->
     <SkipMethod type="Full.Namespace.And.TypeName3"
       attrib="family" rx=".*" />
+
+    <!-- skip a property in TypeName4 by name -->
+    <SkipProperty type="Full.Namespace.And.TypeName4"
+      name="Property2" />
+    <!-- skip a property in TypeName4 by regex -->
+    <SkipProperty type="Full.Namespace.And.TypeName4"
+      attrib="public" rx="Something\d" />
+
+    <!-- skip an event in TypeName4 by name -->
+    <SkipProperty type="Full.Namespace.And.TypeName4"
+      name="Event2" />
+    <!-- skip an event in TypeName4 by regex -->
+    <SkipProperty type="Full.Namespace.And.TypeName4"
+      rx="Any.*" />
   </Module>
 }}}
 
-To prevent any properties from being obfuscated, set the `RenameProperties` variable to "false" (it's an xsd boolean).  To prevent specific properties from being renamed, skip the underlying methods, `get_XXX` and `set_XXX` (you can use a regex like "`(get|set)_XXX`").
+To prevent all properties from being obfuscated, set the `RenameProperties` variable to "false" (it's an xsd boolean).  To prevent specific properties from being renamed, use the `SkipProperty` element.  It will also skip the property's accessors, `get_XXX` and `set_XXX`.
 
-To prevent any events from being obfuscated, set the `RenameEvents` variable to "false" (it's also xsd boolean).  To prevent specific events from being renamed, skip the underlying methods, `add_XXX` and `remove_XXX` (you can use a regex like "`(add|remove)_XXX`").
+To prevent all events from being obfuscated, set the `RenameEvents` variable to "false" (it's also xsd boolean).  To prevent specific events from being renamed, use the `SkipEvent` element.  It will also skip the event's accessors, `add_XXX` and `remove_XXX`.
 
 == Exclusion by Code ==
 
