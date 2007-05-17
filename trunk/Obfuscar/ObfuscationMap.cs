@@ -71,12 +71,24 @@ namespace Obfuscar
 
 		public Dictionary<MethodKey, ObfuscatedThing> Methods = new Dictionary<MethodKey,ObfuscatedThing>( );
 		public Dictionary<FieldKey, ObfuscatedThing> Fields = new Dictionary<FieldKey, ObfuscatedThing>( );
+		public Dictionary<PropertyKey, ObfuscatedThing> Properties = new Dictionary<PropertyKey, ObfuscatedThing>( );
+		public Dictionary<EventKey, ObfuscatedThing> Events = new Dictionary<EventKey, ObfuscatedThing>( );
 	}
 
 	class ObfuscationMap
 	{
 		readonly Dictionary<TypeKey, ObfuscatedClass> classMap = new Dictionary<TypeKey, ObfuscatedClass>( );
 		readonly List<ObfuscatedThing> resources = new List<ObfuscatedThing>( );
+
+		public Dictionary<TypeKey, ObfuscatedClass> ClassMap
+		{
+			get { return classMap; }
+		}
+
+		public List<ObfuscatedThing> Resources
+		{
+			get { return resources; }
+		}
 
 		public ObfuscatedClass GetClass( TypeKey key )
 		{
@@ -119,6 +131,34 @@ namespace Obfuscar
 			return t;
 		}
 
+		public ObfuscatedThing GetProperty( PropertyKey key )
+		{
+			ObfuscatedClass c = GetClass( key.TypeKey );
+
+			ObfuscatedThing t;
+			if ( !c.Properties.TryGetValue( key, out t ) )
+			{
+				t = new ObfuscatedThing( key.ToString( ) );
+				c.Properties[key] = t;
+			}
+
+			return t;
+		}
+
+		public ObfuscatedThing GetEvent( EventKey key )
+		{
+			ObfuscatedClass c = GetClass( key.TypeKey );
+
+			ObfuscatedThing t;
+			if ( !c.Events.TryGetValue( key, out t ) )
+			{
+				t = new ObfuscatedThing( key.ToString( ) );
+				c.Events[key] = t;
+			}
+
+			return t;
+		}
+
 		public void UpdateType( TypeKey key, ObfuscationStatus status, string text )
 		{
 			ObfuscatedClass c = GetClass( key );
@@ -140,6 +180,20 @@ namespace Obfuscar
 			m.Update( status, text );
 		}
 
+		public void UpdateProperty( PropertyKey key, ObfuscationStatus status, string text )
+		{
+			ObfuscatedThing m = GetProperty( key );
+
+			m.Update( status, text );
+		}
+
+		public void UpdateEvent( EventKey key, ObfuscationStatus status, string text )
+		{
+			ObfuscatedThing m = GetEvent( key );
+
+			m.Update( status, text );
+		}
+
 		public void AddResource( string name, ObfuscationStatus status, string text )
 		{
 			ObfuscatedThing r = new ObfuscatedThing( name );
@@ -147,145 +201,6 @@ namespace Obfuscar
 			r.Update( status, text );
 
 			resources.Add( r );
-		}
-
-		public void DumpMap( TextWriter writer )
-		{
-			writer.WriteLine( "Renamed Types:" );
-
-			foreach ( ObfuscatedClass classInfo in classMap.Values )
-			{
-				// print the ones we didn't skip first
-				if ( classInfo.Status == ObfuscationStatus.Renamed )
-					DumpClass( writer, classInfo );
-			}
-
-			writer.WriteLine( );
-			writer.WriteLine( "Skipped Types:" );
-
-			foreach ( ObfuscatedClass classInfo in classMap.Values )
-			{
-				// now print the stuff we skipped
-				if ( classInfo.Status == ObfuscationStatus.Skipped )
-					DumpClass( writer, classInfo );
-			}
-
-			writer.WriteLine( );
-			writer.WriteLine( "Renamed Resources:" );
-			writer.WriteLine( );
-
-			foreach ( ObfuscatedThing info in resources )
-			{
-				if ( info.Status == ObfuscationStatus.Renamed )
-					writer.WriteLine( "{0} -> {1}", info.Name, info.StatusText );
-			}
-
-			writer.WriteLine( );
-			writer.WriteLine( "Skipped Resources:" );
-			writer.WriteLine( );
-
-			foreach ( ObfuscatedThing info in resources )
-			{
-				if ( info.Status == ObfuscationStatus.Skipped )
-					writer.WriteLine( "{0} ({1})", info.Name, info.StatusText );
-			}
-		}
-
-		private void DumpClass( TextWriter writer, ObfuscatedClass classInfo )
-		{
-			writer.WriteLine( );
-			if ( classInfo.Status == ObfuscationStatus.Renamed )
-				writer.WriteLine( "{0} -> {1}", classInfo.Name, classInfo.StatusText );
-			else
-			{
-				Debug.Assert( classInfo.Status == ObfuscationStatus.Skipped,
-					"Status is expected to be either Renamed or Skipped." );
-				writer.WriteLine( "{0} skipped:  {1}", classInfo.Name, classInfo.StatusText );
-			}
-			writer.WriteLine( "{" );
-
-			int numRenamed = 0;
-			foreach ( KeyValuePair<MethodKey, ObfuscatedThing> method in classInfo.Methods )
-			{
-				if ( method.Value.Status == ObfuscationStatus.Renamed )
-				{
-					DumpMethod( writer, method.Key, method.Value );
-					numRenamed++;
-				}
-			}
-
-			// add a blank line to separate renamed from skipped...it's pretty.
-			if ( numRenamed < classInfo.Methods.Count )
-				writer.WriteLine( );
-
-			foreach ( KeyValuePair<MethodKey, ObfuscatedThing> method in classInfo.Methods )
-			{
-				if ( method.Value.Status == ObfuscationStatus.Skipped )
-					DumpMethod( writer, method.Key, method.Value );
-			}
-
-			// add a blank line to separate methods from field...it's pretty.
-			if ( classInfo.Methods.Count > 0 && classInfo.Fields.Count > 0 )
-				writer.WriteLine( );
-
-			numRenamed = 0;
-			foreach ( KeyValuePair<FieldKey, ObfuscatedThing> field in classInfo.Fields )
-			{
-				if ( field.Value.Status == ObfuscationStatus.Renamed )
-				{
-					DumpField( writer, field.Key, field.Value );
-					numRenamed++;
-				}
-			}
-
-			// add a blank line to separate renamed from skipped...it's pretty.
-			if ( numRenamed < classInfo.Fields.Count )
-				writer.WriteLine( );
-
-			foreach ( KeyValuePair<FieldKey, ObfuscatedThing> field in classInfo.Fields )
-			{
-				if ( field.Value.Status == ObfuscationStatus.Skipped )
-					DumpField( writer, field.Key, field.Value );
-			}
-
-			writer.WriteLine( "}" );
-		}
-
-		private void DumpMethod( TextWriter writer, MethodKey key, ObfuscatedThing info )
-		{
-			writer.Write( "\t{0}(", info.Name );
-			for ( int i = 0; i < key.Count; i++ )
-			{
-				if ( i > 0 )
-					writer.Write( ", " );
-				else
-					writer.Write( " " );
-
-				writer.Write( key.ParamTypes[i] );
-			}
-
-			if ( info.Status == ObfuscationStatus.Renamed )
-				writer.WriteLine( " ) -> {0}", info.StatusText );
-			else
-			{
-				Debug.Assert( info.Status == ObfuscationStatus.Skipped,
-					"Status is expected to be either Renamed or Skipped." );
-
-				writer.WriteLine( " ) skipped:  {0}", info.StatusText );
-			}
-		}
-
-		private void DumpField( TextWriter writer, FieldKey key, ObfuscatedThing info )
-		{
-			if ( info.Status == ObfuscationStatus.Renamed )
-				writer.WriteLine( "\t{0} {1} -> {2}", key.Type, info.Name, info.StatusText );
-			else
-			{
-				Debug.Assert( info.Status == ObfuscationStatus.Skipped,
-					"Status is expected to be either Renamed or Skipped." );
-
-				writer.WriteLine( "\t{0} {1} skipped:  {2}", key.Type, info.Name, info.StatusText );
-			}
 		}
 	}
 }

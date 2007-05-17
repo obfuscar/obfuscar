@@ -71,6 +71,8 @@ namespace ObfuscarTests
 
 			obfuscator.RenameFields( );
 			obfuscator.RenameParams( );
+			obfuscator.RenameProperties( );
+			obfuscator.RenameEvents( );
 			obfuscator.RenameMethods( );
 			obfuscator.RenameTypes( );
 			obfuscator.SaveAssemblies( );

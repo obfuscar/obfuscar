@@ -25,59 +25,31 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Xml;
 
-namespace Obfuscar
+namespace TestClasses
 {
-	class Settings
+	public class ClassA
 	{
-		string inPath;
-		string outPath;
-		bool markedOnly;
-		bool renameProperties;
-		bool renameEvents;
-		bool xmlMapping;
+		private int property1 = 17;
+		private int property2 = 17;
+		private int propertyA = 17;
 
-		public Settings( Variables vars )
+		public int Property1
 		{
-			inPath = vars.GetValue( "InPath", "." );
-			outPath = vars.GetValue( "OutPath", "." );
-			markedOnly = XmlConvert.ToBoolean( vars.GetValue( "MarkedOnly", "false" ) );
-
-			renameProperties = XmlConvert.ToBoolean( vars.GetValue( "RenameProperties", "true" ) );
-			renameEvents = XmlConvert.ToBoolean( vars.GetValue( "RenameEvents", "true" ) );
-
-			xmlMapping = XmlConvert.ToBoolean( vars.GetValue( "XmlMapping", "false" ) );
+			get { return property1; }
+			set { property1 = value; }
 		}
 
-		public string InPath
+		public int Property2
 		{
-			get { return inPath; }
+			get { return property2; }
+			set { property2 = value; }
 		}
 
-		public string OutPath
+		public int PropertyA
 		{
-			get { return outPath; }
-		}
-
-		public bool MarkedOnly
-		{
-			get { return markedOnly; }
-		}
-
-		public bool RenameProperties
-		{
-			get { return renameProperties; }
-		}
-
-		public bool RenameEvents
-		{
-			get { return renameEvents; }
-		}
-
-		public bool XmlMapping
-		{
-			get { return xmlMapping; }
+			get { return propertyA; }
+			set { propertyA = value; }
 		}
 	}
 }

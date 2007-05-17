@@ -41,6 +41,8 @@ namespace Obfuscar
 		private readonly PredicateCollection<TypeKey> skipTypes = new PredicateCollection<TypeKey>( );
 		private readonly PredicateCollection<MethodKey> skipMethods = new PredicateCollection<MethodKey>( );
 		private readonly PredicateCollection<FieldKey> skipFields = new PredicateCollection<FieldKey>( );
+		private readonly PredicateCollection<PropertyKey> skipProperties = new PredicateCollection<PropertyKey>( );
+		private readonly PredicateCollection<EventKey> skipEvents = new PredicateCollection<EventKey>( );
 
 		private readonly List<AssemblyInfo> references = new List<AssemblyInfo>( );
 		private readonly List<AssemblyInfo> referencedBy = new List<AssemblyInfo>( );
@@ -118,6 +120,38 @@ namespace Obfuscar
 										val = Helper.GetAttribute( reader, "rx" );
 										if ( val.Length > 0 )
 											info.skipFields.Add( new FieldTester( new Regex( val ), type, attrib ) );
+									}
+								}
+								break;
+							case "SkipProperty":
+								{
+									val = Helper.GetAttribute( reader, "name", vars );
+									string type = Helper.GetAttribute( reader, "type", vars );
+									string attrib = Helper.GetAttribute( reader, "attrib", vars );
+
+									if ( val.Length > 0 )
+										info.skipProperties.Add( new PropertyTester( val, type, attrib ) );
+									else
+									{
+										val = Helper.GetAttribute( reader, "rx" );
+										if ( val.Length > 0 )
+											info.skipProperties.Add( new PropertyTester( new Regex( val ), type, attrib ) );
+									}
+								}
+								break;
+							case "SkipEvent":
+								{
+									val = Helper.GetAttribute( reader, "name", vars );
+									string type = Helper.GetAttribute( reader, "type", vars );
+									string attrib = Helper.GetAttribute( reader, "attrib", vars );
+
+									if ( val.Length > 0 )
+										info.skipEvents.Add( new EventTester( val, type, attrib ) );
+									else
+									{
+										val = Helper.GetAttribute( reader, "rx" );
+										if ( val.Length > 0 )
+											info.skipEvents.Add( new EventTester( new Regex( val ), type, attrib ) );
 									}
 								}
 								break;
@@ -229,6 +263,11 @@ namespace Obfuscar
 			get { return referencedBy; }
 		}
 
+		public void ForceSkip( MethodKey method )
+		{
+			skipMethods.Add( new MethodTester( method ) );
+		}
+
 		public bool ShouldSkip( TypeKey type )
 		{
 			return skipTypes.IsMatch( type );
@@ -242,6 +281,16 @@ namespace Obfuscar
 		public bool ShouldSkip( FieldKey field )
 		{
 			return skipFields.IsMatch( field );
+		}
+
+		public bool ShouldSkip( PropertyKey prop )
+		{
+			return skipProperties.IsMatch( prop );
+		}
+
+		public bool ShouldSkip( EventKey evt )
+		{
+			return skipEvents.IsMatch( evt );
 		}
 
 		/// <summary>
