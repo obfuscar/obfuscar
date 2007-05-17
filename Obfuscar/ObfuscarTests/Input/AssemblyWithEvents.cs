@@ -25,59 +25,25 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Xml;
 
-namespace Obfuscar
+namespace TestClasses
 {
-	class Settings
+	public class ClassA
 	{
-		string inPath;
-		string outPath;
-		bool markedOnly;
-		bool renameProperties;
-		bool renameEvents;
-		bool xmlMapping;
+		public delegate void Handler( );
 
-		public Settings( Variables vars )
+		public event Handler Event1;
+		public event Handler Event2;
+		public event Handler EventA;
+
+		public void FireEvents( )
 		{
-			inPath = vars.GetValue( "InPath", "." );
-			outPath = vars.GetValue( "OutPath", "." );
-			markedOnly = XmlConvert.ToBoolean( vars.GetValue( "MarkedOnly", "false" ) );
-
-			renameProperties = XmlConvert.ToBoolean( vars.GetValue( "RenameProperties", "true" ) );
-			renameEvents = XmlConvert.ToBoolean( vars.GetValue( "RenameEvents", "true" ) );
-
-			xmlMapping = XmlConvert.ToBoolean( vars.GetValue( "XmlMapping", "false" ) );
-		}
-
-		public string InPath
-		{
-			get { return inPath; }
-		}
-
-		public string OutPath
-		{
-			get { return outPath; }
-		}
-
-		public bool MarkedOnly
-		{
-			get { return markedOnly; }
-		}
-
-		public bool RenameProperties
-		{
-			get { return renameProperties; }
-		}
-
-		public bool RenameEvents
-		{
-			get { return renameEvents; }
-		}
-
-		public bool XmlMapping
-		{
-			get { return xmlMapping; }
+			if ( Event1 != null )
+				Event1( );
+			if ( Event2 != null )
+				Event2( );
+			if ( EventA != null )
+				EventA( );
 		}
 	}
 }
