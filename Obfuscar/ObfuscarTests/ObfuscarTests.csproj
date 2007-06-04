@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AttributeTests.cs" />
+    <Compile Include="SpecializedGenericsTests.cs" />
     <Compile Include="SkipEnumTests.cs" />
     <Compile Include="SkipEventTests.cs" />
     <Compile Include="SkipPropertyTests.cs" />
