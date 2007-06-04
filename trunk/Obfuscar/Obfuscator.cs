@@ -142,6 +142,14 @@ namespace Obfuscar
 		}
 
 		/// <summary>
+		/// Returns the obfuscation map for the project.
+		/// </summary>
+		public ObfuscationMap Mapping
+		{
+			get { return map; }
+		}
+
+		/// <summary>
 		/// Renames fields in the project.
 		/// </summary>
 		public void RenameFields( )
