@@ -94,8 +94,31 @@ namespace Obfuscar
 		public bool Equals( ParamSig other )
 		{
 			return other != null &&
-				hashCode == other.hashCode && 
-				ListHelper.ListsEqual( paramTypes, other.paramTypes );
+				ParamsEqual( paramTypes, other.paramTypes );
+		}
+
+		private static bool ParamsEqual( IList<string> a, IList<string> b )
+		{
+			if ( a == null )
+				return b == null;
+			else if ( b == null )
+				return false;
+			else if ( a.Count != b.Count )
+				return false;
+			else
+			{
+				// kludge...too simplistic...param types match anything
+
+				for ( int i = 0; i < a.Count; i++ )
+				{
+					if ( !a[i].StartsWith( "!" ) && !b[i].StartsWith( "!" ) &&
+						!a[i].Equals( b[i] ) )
+						return false;
+				}
+
+				// they aren't not equal
+				return true;
+			}
 		}
 
 		public override bool Equals( object obj )
