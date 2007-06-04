@@ -88,7 +88,6 @@ namespace Obfuscar
 		public bool Equals( NameParamSig other )
 		{
 			return other != null &&
-				hashCode == other.hashCode && 
 				name == other.name &&
 				Equals( (ParamSig) other );
 		}
