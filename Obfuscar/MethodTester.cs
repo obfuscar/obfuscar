@@ -63,10 +63,10 @@ namespace Obfuscar
 			if ( key != null )
 				return method == key;
 
-			if ( type == method.TypeKey.Fullname )
+			if ( Helper.CompareOptionalRegex(method.TypeKey.Fullname, type) )
 			{
 				if ( name != null )
-					return name == method.Name;
+					return Helper.CompareOptionalRegex(method.Name, name);
 				else
 					return nameRx.IsMatch( method.Name );
 			}

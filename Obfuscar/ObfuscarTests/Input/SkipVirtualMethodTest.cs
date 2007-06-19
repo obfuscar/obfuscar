@@ -26,22 +26,17 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using Mono.Cecil;
-
-namespace Obfuscar
+namespace SkipVirtualMethodTest
 {
-	class TypeTester : IPredicate<TypeKey>
+	public interface Interface1
 	{
-		private readonly string name;
+		string Method1();
+	}
 
-		public TypeTester( string name )
-		{
-			this.name = name;
-		}
-
-		public bool Test( TypeKey type )
-		{
-			return Helper.CompareOptionalRegex(type.Fullname, name);
-		}
+	public class Class1 : Interface1
+	{
+		public string Method1() { return "Method1 result"; }
+		public string Method2() { return "Method2 result"; }
 	}
 }
+
