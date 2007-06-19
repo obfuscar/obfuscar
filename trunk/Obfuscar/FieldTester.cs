@@ -54,10 +54,10 @@ namespace Obfuscar
 
 		public bool Test( FieldKey field )
 		{
-			if ( type == field.TypeKey.Fullname )
+			if ( Helper.CompareOptionalRegex(field.TypeKey.Fullname, type) )
 			{
 				if ( name != null )
-					return name == field.Name;
+					return Helper.CompareOptionalRegex(field.Name, name);
 				else
 					return nameRx.IsMatch( field.Name );
 			}

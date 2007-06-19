@@ -54,10 +54,10 @@ namespace Obfuscar
 
 		public bool Test( EventKey evt )
 		{
-			if ( type == evt.TypeKey.Fullname )
+			if ( Helper.CompareOptionalRegex(evt.TypeKey.Fullname, type) )
 			{
 				if ( name != null )
-					return name == evt.Name;
+					return Helper.CompareOptionalRegex(evt.Name, name);
 				else
 					return nameRx.IsMatch( evt.Name );
 			}
