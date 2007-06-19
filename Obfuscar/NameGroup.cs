@@ -60,6 +60,11 @@ namespace Obfuscar
 			names.Add( name );
 		}
 
+		public void Remove( string name )
+		{
+			names.Remove( name );
+		}
+
 		public static string GetNext( IEnumerable<NameGroup> groups )
 		{
 			int index = 0;

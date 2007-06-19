@@ -605,125 +605,131 @@ namespace Obfuscar
 
 					TypeKey typeKey = new TypeKey( type );
 
-					if ( ShouldRename( type ) )
+					Dictionary<ParamSig, NameGroup> sigNames = GetSigNames( baseSigNames, typeKey );
+
+					// first pass.  mark grouped virtual methods to be renamed, and mark some things
+					// to be skipped as neccessary
+					foreach ( MethodDefinition method in type.Methods )
 					{
-						Dictionary<ParamSig, NameGroup> sigNames = GetSigNames( baseSigNames, typeKey );
+						string skiprename = null;
+						if (!ShouldRename(type))
+							skiprename = "Obfuscar.ObfuscateAttribute found on type.";
 
-						// first pass.  mark grouped virtual methods to be renamed, and mark some things
-						// to be skipped as neccessary
-						foreach ( MethodDefinition method in type.Methods )
+						MethodKey methodKey = new MethodKey(typeKey, method);
+						ObfuscatedThing m = map.GetMethod( methodKey );
+
+						// skip runtime methods
+						if ( method.IsRuntime )
+							skiprename = "runtime method";
+
+						// skip filtered methods
+						if ( info.ShouldSkip( methodKey ) )
+							skiprename = "filtered";
+
+						// update status for skipped non-virtual methods immediately...status for
+						// skipped virtual methods gets updated in RenameVirtualMethod
+						if ( !method.IsVirtual )
 						{
-							MethodKey methodKey = new MethodKey( typeKey, method );
-							ObfuscatedThing m = map.GetMethod( methodKey );
-
-							// skip runtime methods
-							if ( method.IsRuntime )
-							{
-								m.Update( ObfuscationStatus.Skipped, "runtime method" );
-								continue;
-							}
-
-							// skip filtered methods
-							if ( info.ShouldSkip( methodKey ) )
-							{
-								m.Update( ObfuscationStatus.Skipped, "filtered" );
-								continue;
-							}
-
-							if ( !method.IsVirtual )
-								continue;
-
-							// if we already have a name planned for a method, leave it alone
-							if ( m.Status == ObfuscationStatus.WillRename )
-								continue;
-
-							if ( method.IsSpecialName )
-							{
-								switch ( method.SemanticsAttributes )
-								{
-									case MethodSemanticsAttributes.Getter:
-									case MethodSemanticsAttributes.Setter:
-										if ( project.Settings.RenameProperties )
-											RenameVirtualMethod( info, baseSigNames, sigNames, methodKey, method );
-										else
-											m.Update( ObfuscationStatus.Skipped, "skipping properties" );
-										break;
-									case MethodSemanticsAttributes.AddOn:
-									case MethodSemanticsAttributes.RemoveOn:
-										if ( project.Settings.RenameEvents )
-											RenameVirtualMethod( info, baseSigNames, sigNames, methodKey, method );
-										else
-											m.Update( ObfuscationStatus.Skipped, "skipping events" );
-										break;
-									default:
-										m.Update( ObfuscationStatus.Skipped, "virtual and special name" );
-										break;
-								}
-							}
-							else
-								RenameVirtualMethod( info, baseSigNames, sigNames, methodKey, method );
+							if (skiprename != null)
+								m.Update(ObfuscationStatus.Skipped, skiprename);
+							continue;
 						}
-
-						// update name groups, so new names don't step on inherited ones
-						foreach ( TypeKey baseType in project.InheritMap.GetBaseTypes( typeKey ) )
+ 
+						if ( method.IsSpecialName )
 						{
-							Dictionary<ParamSig, NameGroup> baseNames = GetSigNames( baseSigNames, baseType );
-							foreach ( KeyValuePair<ParamSig, NameGroup> pair in baseNames )
+							switch ( method.SemanticsAttributes )
 							{
-								NameGroup nameGroup = GetNameGroup( sigNames, pair.Key );
-								nameGroup.AddAll( pair.Value );
+								case MethodSemanticsAttributes.Getter:
+								case MethodSemanticsAttributes.Setter:
+									if (!project.Settings.RenameProperties)
+										skiprename = "skipping properties";
+									break;
+								case MethodSemanticsAttributes.AddOn:
+								case MethodSemanticsAttributes.RemoveOn:
+									if (!project.Settings.RenameEvents )
+										skiprename="skipping events";
+									break;
+								default:
+									skiprename = "virtual and special name";
+									break;
 							}
 						}
 
-						// second pass...marked virtuals and anything not skipped get renamed
-						foreach ( MethodDefinition method in type.Methods )
+						// if we need to skip the method or we don't yet have a name planned for a method, rename it
+						if ( ( skiprename != null && m.Status != ObfuscationStatus.Skipped ) ||
+							m.Status == ObfuscationStatus.Unknown )
+							RenameVirtualMethod( info, baseSigNames, sigNames, methodKey, method, skiprename );
+					}
+
+					// update name groups, so new names don't step on inherited ones
+					foreach ( TypeKey baseType in project.InheritMap.GetBaseTypes( typeKey ) )
+					{
+						Dictionary<ParamSig, NameGroup> baseNames = GetSigNames( baseSigNames, baseType );
+						foreach ( KeyValuePair<ParamSig, NameGroup> pair in baseNames )
 						{
-							MethodKey methodKey = new MethodKey( typeKey, method );
-							ObfuscatedThing m = map.GetMethod( methodKey );
-
-							// if we already decided to skip it, leave it alone
-							if ( m.Status == ObfuscationStatus.Skipped )
-								continue;
-
-							if ( method.IsSpecialName )
-							{
-								switch ( method.SemanticsAttributes )
-								{
-									case MethodSemanticsAttributes.Getter:
-									case MethodSemanticsAttributes.Setter:
-										if ( project.Settings.RenameProperties )
-										{
-											RenameMethod( info, sigNames, methodKey, method );
-											method.SemanticsAttributes = 0;
-										}
-										else
-											m.Update( ObfuscationStatus.Skipped, "skipping properties" );
-										break;
-									case MethodSemanticsAttributes.AddOn:
-									case MethodSemanticsAttributes.RemoveOn:
-										if ( project.Settings.RenameEvents )
-										{
-											RenameMethod( info, sigNames, methodKey, method );
-											method.SemanticsAttributes = 0;
-										}
-										else
-											m.Update( ObfuscationStatus.Skipped, "skipping events" );
-										break;
-									default:
-										m.Update( ObfuscationStatus.Skipped, "special name" );
-										break;
-								}
-							}
-							else
-								RenameMethod( info, sigNames, methodKey, method );
+							NameGroup nameGroup = GetNameGroup( sigNames, pair.Key );
+							nameGroup.AddAll( pair.Value );
 						}
+					}
+				}
+
+
+				foreach ( TypeDefinition type in library.MainModule.Types )
+				{
+					if ( type.FullName == "<Module>" )
+						continue;
+
+					TypeKey typeKey = new TypeKey( type );
+
+					Dictionary<ParamSig, NameGroup> sigNames = GetSigNames( baseSigNames, typeKey );
+					// second pass...marked virtuals and anything not skipped get renamed
+					foreach ( MethodDefinition method in type.Methods )
+					{
+						MethodKey methodKey = new MethodKey( typeKey, method );
+						ObfuscatedThing m = map.GetMethod( methodKey );
+
+						// if we already decided to skip it, leave it alone
+						if ( m.Status == ObfuscationStatus.Skipped )
+							continue;
+
+						if ( method.IsSpecialName )
+						{
+							switch ( method.SemanticsAttributes )
+							{
+								case MethodSemanticsAttributes.Getter:
+								case MethodSemanticsAttributes.Setter:
+									if ( project.Settings.RenameProperties )
+									{
+										RenameMethod( info, sigNames, methodKey, method );
+										method.SemanticsAttributes = 0;
+									}
+									else
+										m.Update( ObfuscationStatus.Skipped, "skipping properties" );
+									break;
+								case MethodSemanticsAttributes.AddOn:
+								case MethodSemanticsAttributes.RemoveOn:
+									if ( project.Settings.RenameEvents )
+									{
+										RenameMethod( info, sigNames, methodKey, method );
+										method.SemanticsAttributes = 0;
+									}
+									else
+										m.Update( ObfuscationStatus.Skipped, "skipping events" );
+									break;
+								default:
+									m.Update( ObfuscationStatus.Skipped, "special name" );
+									break;
+							}
+						}
+						else
+							RenameMethod( info, sigNames, methodKey, method );
 					}
 				}
 			}
 		}
 
 		void RenameVirtualMethod( AssemblyInfo info, Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-			Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method )
+			Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method, string skipRename )
 		{
 			// if method is in a group, look for group key
 			MethodGroup group = project.InheritMap.GetMethodGroup( methodKey );
@@ -741,6 +747,8 @@ namespace Obfuscar
 					NameGroup[] nameGroups = GetNameGroups( baseSigNames, group.Methods, sig );
 
 					if ( group.External )
+						skipRename = "external base class or interface";
+					if ( skipRename != null )
 					{
 						// for an external group, we can't rename.  just use the method 
 						// name as group name
@@ -756,21 +764,57 @@ namespace Obfuscar
 
 					// set up methods to be renamed
 					foreach ( MethodKey m in group.Methods )
-						map.UpdateMethod( m, ObfuscationStatus.WillRename, groupName );
+						if (skipRename == null)
+							map.UpdateMethod(m, ObfuscationStatus.WillRename, groupName);
+						else
+							map.UpdateMethod(m, ObfuscationStatus.Skipped, skipRename);
 
 					// make sure the classes' name groups are updated
 					for ( int i = 0; i < nameGroups.Length; i ++ )
 						nameGroups[i].Add( groupName );
 				}
+				else if ( skipRename != null )
+				{
+					// group is named, so we need to un-name it
+
+					Debug.Assert( !group.External,
+						"Group's external flag should have been handled when the group was created, " +
+						"and all methods in the group should already be marked skipped." );
+
+					// counts are grouping according to signature
+					ParamSig sig = new ParamSig( method );
+
+					// get name groups for classes in the group
+					NameGroup[] nameGroups = GetNameGroups( baseSigNames, group.Methods, sig );
+
+					// make sure to remove the old group name from the classes' name groups
+					for ( int i = 0; i < nameGroups.Length; i++ )
+						nameGroups[i].Remove( groupName );
+
+					// since this method has to be skipped, we need to use the method 
+					// name as new group name
+					groupName = method.Name;
+					group.Name = groupName;
+
+					// set up methods to be renamed
+					foreach ( MethodKey m in group.Methods )
+						map.UpdateMethod( m, ObfuscationStatus.Skipped, skipRename );
+
+					// make sure the classes' name groups are updated
+					for ( int i = 0; i < nameGroups.Length; i++ )
+						nameGroups[i].Add( groupName );
+				}
 				else
 				{
 					ObfuscatedThing m = map.GetMethod( methodKey );
-					Debug.Assert( 
-						( m.Status == ObfuscationStatus.WillRename || m.Status == ObfuscationStatus.Renamed ) &&
-						m.StatusText == groupName,
-						"If the group is already has a name...method should have one too." );
+					Debug.Assert( m.Status == ObfuscationStatus.Skipped || 
+						( ( m.Status == ObfuscationStatus.WillRename || m.Status == ObfuscationStatus.Renamed ) &&
+						m.StatusText == groupName ),
+						"If the method isn't skipped, and the group already has a name...method should have one too." );
 				}
 			}
+			else if (skipRename != null)
+				map.UpdateMethod(methodKey, ObfuscationStatus.Skipped, skipRename);
 		}
 
 		NameGroup[] GetNameGroups( Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,

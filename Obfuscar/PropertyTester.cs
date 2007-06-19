@@ -54,10 +54,10 @@ namespace Obfuscar
 
 		public bool Test( PropertyKey prop )
 		{
-			if ( type == prop.TypeKey.Fullname )
+			if ( Helper.CompareOptionalRegex(prop.TypeKey.Fullname, type) )
 			{
 				if ( name != null )
-					return name == prop.Name;
+					return Helper.CompareOptionalRegex(prop.Name, name);
 				else
 					return nameRx.IsMatch( prop.Name );
 			}

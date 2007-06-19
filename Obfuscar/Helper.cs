@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
+using System.Text.RegularExpressions;
 
 using Mono.Cecil;
 
@@ -72,6 +73,45 @@ namespace Obfuscar
 		public static string GetAttribute( XmlReader reader, string name, Variables vars )
 		{
 			return vars.Replace( GetAttribute( reader, name ) );
+		}
+
+		private static bool MatchWithWildCards( string test, int testIdx, string pattern, int patIdx )
+		{
+			while ( true )
+			{
+				if ( testIdx >= test.Length && patIdx >= pattern.Length )
+					return true;
+				if ( patIdx >= pattern.Length ) // text has still characters but there is no pattern left.
+					return false;
+				if ( pattern[patIdx] != '*' )
+				{
+					if ( testIdx >= test.Length || pattern[patIdx] != '?' && pattern[patIdx] != test[testIdx] )
+						return false;
+					testIdx++;
+				}
+				else
+				{
+					while ( !MatchWithWildCards( test, testIdx, pattern, patIdx + 1 ) )
+					{
+						if ( test.Length <= testIdx++ )
+							return false;
+					}
+				}
+				patIdx++;
+			}
+		}
+
+		public static bool MatchWithWildCards( string test, string pattern )
+		{
+			return MatchWithWildCards( test, 0, pattern, 0 );
+		}
+
+		public static bool CompareOptionalRegex(string test, string pattern)
+		{
+			if (pattern.StartsWith("^"))
+				return Regex.IsMatch(test, pattern);
+			else
+				return MatchWithWildCards(test, pattern);
 		}
 	}
 }
