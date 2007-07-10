@@ -35,14 +35,10 @@ namespace ObfuscarTests
 	[TestFixture]
 	public class DependencyTests
 	{
-		const string inputPath = "..\\..\\Input";
-
 		[SetUp]
 		public void BuildTestAssemblies( )
 		{
-			// clean out inputPath
-			foreach ( string file in Directory.GetFiles( inputPath, "*.dll" ) )
-				File.Delete( file );
+			TestHelper.CleanInput( );
 
 			Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider( );
 
@@ -51,15 +47,15 @@ namespace ObfuscarTests
 			cp.GenerateInMemory = false;
 			cp.TreatWarningsAsErrors = true; ;
 
-			string assemblyAPath = Path.Combine( inputPath, "AssemblyA.dll" );
+			string assemblyAPath = Path.Combine( TestHelper.InputPath, "AssemblyA.dll" );
 			cp.OutputAssembly = assemblyAPath;
-			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( inputPath, "AssemblyA.cs" ) );
+			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( TestHelper.InputPath, "AssemblyA.cs" ) );
 			if ( cr.Errors.Count > 0 )
 				Assert.Fail( "Unable to compile test assembly:  AssemblyA" );
 
 			cp.ReferencedAssemblies.Add( assemblyAPath );
-			cp.OutputAssembly = Path.Combine( inputPath, "AssemblyB.dll" );
-			cr = provider.CompileAssemblyFromFile( cp, Path.Combine( inputPath, "AssemblyB.cs" ) );
+			cp.OutputAssembly = Path.Combine( TestHelper.InputPath, "AssemblyB.dll" );
+			cr = provider.CompileAssemblyFromFile( cp, Path.Combine( TestHelper.InputPath, "AssemblyB.cs" ) );
 			if ( cr.Errors.Count > 0 )
 				Assert.Fail( "Unable to compile test assembly:  AssemblyB" );
 		}
@@ -72,7 +68,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Module file='$(InPath)\AssemblyB.dll' />" +
-				@"</Obfuscator>", inputPath );
+				@"</Obfuscator>", TestHelper.InputPath );
 
 			Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml( xml );
 		}
@@ -85,10 +81,10 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Module file='$(InPath)\AssemblyB.dll' />" +
-				@"</Obfuscator>", inputPath );
+				@"</Obfuscator>", TestHelper.InputPath );
 
 			// explicitly delete AssemblyA
-			File.Delete( Path.Combine( inputPath, "AssemblyA.dll" ) );
+			File.Delete( Path.Combine( TestHelper.InputPath, "AssemblyA.dll" ) );
 
 			TestUtils.AssertThrows( delegate { Obfuscar.Obfuscator.CreateFromXml( xml ); }, typeof( ApplicationException ),
 				"Unable", "resolve dependency", "AssemblyA" );
@@ -101,7 +97,7 @@ namespace ObfuscarTests
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Module file='{0}\AssemblyB.dll' />" +
-				@"</Obfuscator>", inputPath );
+				@"</Obfuscator>", TestHelper.InputPath );
 
 			// InPath defaults to '.', which doesn't contain AssemblyA
 

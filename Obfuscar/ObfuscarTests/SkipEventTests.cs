@@ -36,108 +36,72 @@ namespace ObfuscarTests
 	[TestFixture]
 	public class SkipEventTests
 	{
-		const string inputPath = "..\\..\\Input";
-		const string outputPath = "..\\..\\Output";
-
-		void BuildAndObfuscateAssemblies( string xml )
+		protected void CheckEvents( string name, int expectedTypes, string[] expected, string[] notExpected )
 		{
-			// clean out inputPath
-			foreach ( string file in Directory.GetFiles( inputPath, "*.dll" ) )
-				File.Delete( file );
-
-			Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider( );
-
-			CompilerParameters cp = new CompilerParameters( );
-			cp.GenerateExecutable = false;
-			cp.GenerateInMemory = false;
-			cp.TreatWarningsAsErrors = true; ;
-
-			string assemblyAPath = Path.Combine( inputPath, "AssemblyWithEvents.dll" );
-			cp.OutputAssembly = assemblyAPath;
-			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( inputPath, "AssemblyWithEvents.cs" ) );
-			if ( cr.Errors.Count > 0 )
-				Assert.Fail( "Unable to compile test assembly:  AssemblyWithEvents" );
-
-			Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml( xml );
-
-			obfuscator.RenameFields( );
-			obfuscator.RenameParams( );
-			obfuscator.RenameProperties( );
-			obfuscator.RenameEvents( );
-			obfuscator.RenameMethods( );
-			obfuscator.RenameTypes( );
-			obfuscator.SaveAssemblies( );
-		}
-
-		void CheckEvents( string name, string[] expected, string[] notExpected )
-		{
-			AssemblyDefinition assmDef = AssemblyFactory.GetAssembly(
-				Path.Combine( outputPath, name ) );
-
-			Assert.AreEqual( 3, assmDef.MainModule.Types.Count, "Should contain only one type, and <Module>." );
-
 			C5.HashSet<string> eventsToFind = new C5.HashSet<string>( );
 			eventsToFind.AddAll( expected );
 			C5.HashSet<string> eventsNotToFind = new C5.HashSet<string>( );
 			eventsNotToFind.AddAll( notExpected );
 
 			C5.HashSet<string> methodsToFind = new C5.HashSet<string>( );
-			foreach ( string evt in expected )
+			for ( int i = 0; i < expected.Length; i++ )
 			{
-				methodsToFind.Add( "add_" + evt );
-				methodsToFind.Add( "remove_" + evt );
+				methodsToFind.Add( "add_" + expected[i] );
+				methodsToFind.Add( "remove_" + expected[i] );
 			}
+
 			C5.HashSet<string> methodsNotToFind = new C5.HashSet<string>( );
-			foreach ( string evt in notExpected )
+			for ( int i = 0; i < notExpected.Length; i++ )
 			{
-				methodsNotToFind.Add( "add_" + evt );
-				methodsNotToFind.Add( "remove_" + evt );
+				methodsNotToFind.Add( "add_" + notExpected[i] );
+				methodsNotToFind.Add( "remove_" + notExpected[i] );
 			}
 
-			bool foundType = false;
 			bool foundDelType = false;
-			foreach ( TypeDefinition typeDef in assmDef.MainModule.Types )
-			{
-				if ( typeDef.Name == "<Module>" )
-					continue;
-				else if ( typeDef.BaseType.FullName == "System.MulticastDelegate" )
+
+			AssemblyHelper.CheckAssembly( name, expectedTypes,
+				delegate( TypeDefinition typeDef )
 				{
-					foundDelType = true;
-					continue;
-				}
-				else
-					foundType = true;
-
-				Assert.AreEqual( expected.Length, typeDef.Events.Count,
-					expected.Length == 1 ? "Type should have 1 event (others dropped by default)." :
-					String.Format( "Type should have {0} events (others dropped by default).", expected.Length ) );
-
-				// 2 methods / event + a method to fire them
-				Assert.AreEqual( ( expected.Length + notExpected.Length ) * 2 + 1, typeDef.Methods.Count,
-					"Some of the methods for the type are missing." );
-
-				foreach ( EventDefinition evt in typeDef.Events )
+					if ( typeDef.BaseType.FullName == "System.MulticastDelegate" )
+					{
+						foundDelType = true;
+						return false;
+					}
+					else
+						return true;
+				},
+				delegate( TypeDefinition typeDef )
 				{
-					Assert.IsFalse( eventsNotToFind.Contains( evt.Name ), String.Format(
-						"Did not expect to find event '{0}'.", evt.Name ) );
+					// make sure we have enough methods...
+					// 2 methods / event + a method to fire them
+					Assert.AreEqual( methodsToFind.Count + methodsNotToFind.Count + 1, typeDef.Methods.Count,
+						"Some of the methods for the type are missing." );
 
-					eventsToFind.Remove( evt.Name );
-				}
+					foreach ( MethodDefinition method in typeDef.Methods )
+					{
+						Assert.IsFalse( methodsNotToFind.Contains( method.Name ), String.Format(
+							"Did not expect to find method '{0}'.", method.Name ) );
 
-				foreach ( MethodDefinition method in typeDef.Methods )
-				{
-					Assert.IsFalse( methodsNotToFind.Contains( method.Name ), String.Format(
-						"Did not expect to find method '{0}'.", method.Name ) );
+						methodsToFind.Remove( method.Name );
+					}
 
-					methodsToFind.Remove( method.Name );
-				}
-			}
+					Assert.AreEqual( expected.Length, typeDef.Events.Count,
+						expected.Length == 1 ? "Type should have 1 event (others dropped by default)." :
+						String.Format( "Type should have {0} events (others dropped by default).", expected.Length ) );
 
-			Assert.IsFalse( eventsToFind.Count > 0, "Failed to find all expected events." );
-			Assert.IsFalse( methodsToFind.Count > 0, "Failed to find all expected methods." );
+					foreach ( EventDefinition evt in typeDef.Events )
+					{
+						Assert.IsFalse( eventsNotToFind.Contains( evt.Name ), String.Format(
+							"Did not expect to find event '{0}'.", evt.Name ) );
+
+						eventsToFind.Remove( evt.Name );
+					}
+
+					Assert.IsFalse( methodsToFind.Count > 0, "Failed to find all expected methods." );
+					Assert.IsFalse( eventsToFind.Count > 0, "Failed to find all expected events." );
+				} );
 
 			Assert.IsTrue( foundDelType, "Should have found the delegate type." );
-			Assert.IsTrue( foundType, "Should have found non-<Module> type." );
 		}
 
 		[Test]
@@ -149,9 +113,9 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Module file='$(InPath)\AssemblyWithEvents.dll' />" +
-				@"</Obfuscator>", inputPath, outputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
-			BuildAndObfuscateAssemblies( xml );
+			TestHelper.BuildAndObfuscate( "AssemblyWithEvents", String.Empty, xml );
 
 			string[] expected = new string[0];
 
@@ -161,7 +125,7 @@ namespace ObfuscarTests
 				"EventA"
 			};
 
-			CheckEvents( "AssemblyWithEvents.dll", expected, notExpected );
+			CheckEvents( "AssemblyWithEvents", 2, expected, notExpected );
 		}
 
 		[Test]
@@ -175,9 +139,9 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath)\AssemblyWithEvents.dll'>" +
 				@"<SkipEvent type='TestClasses.ClassA' name='Event2' />" +
 				@"</Module>" +
-				@"</Obfuscator>", inputPath, outputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
-			BuildAndObfuscateAssemblies( xml );
+			TestHelper.BuildAndObfuscate( "AssemblyWithEvents", String.Empty, xml );
 
 			string[] expected = new string[] {
 				"Event2"
@@ -188,7 +152,7 @@ namespace ObfuscarTests
 				"EventA"
 			};
 
-			CheckEvents( "AssemblyWithEvents.dll", expected, notExpected );
+			CheckEvents( "AssemblyWithEvents", 2, expected, notExpected );
 		}
 
 		[Test]
@@ -202,9 +166,9 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath)\AssemblyWithEvents.dll'>" +
 				@"<SkipEvent type='TestClasses.ClassA' rx='Event\d' />" +
 				@"</Module>" +
-				@"</Obfuscator>", inputPath, outputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
-			BuildAndObfuscateAssemblies( xml );
+			TestHelper.BuildAndObfuscate( "AssemblyWithEvents", String.Empty, xml );
 
 			string[] expected = new string[] {
 				"Event1",
@@ -215,7 +179,7 @@ namespace ObfuscarTests
 				"EventA"
 			};
 
-			CheckEvents( "AssemblyWithEvents.dll", expected, notExpected );
+			CheckEvents( "AssemblyWithEvents", 2, expected, notExpected );
 		}
 	}
 }

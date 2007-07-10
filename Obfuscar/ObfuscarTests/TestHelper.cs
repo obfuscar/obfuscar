@@ -29,21 +29,23 @@ using System.IO;
 using System.CodeDom.Compiler;
 
 using NUnit.Framework;
-using Mono.Cecil;
 
 namespace ObfuscarTests
 {
-	public class SkipMethodTestBase
+	static class TestHelper
 	{
-		protected const string inputPath = "..\\..\\Input";
-		protected const string outputPath = "..\\..\\Output";
+		public const string InputPath = "..\\..\\Input";
+		public const string OutputPath = "..\\..\\Output";
 
-		protected void BuildAndObfuscateAssemblies( string name, string suffix, string xml )
+		public static void CleanInput( )
 		{
 			// clean out inputPath
-			foreach ( string file in Directory.GetFiles( inputPath, "*.dll" ) )
+			foreach ( string file in Directory.GetFiles( InputPath, "*.dll" ) )
 				File.Delete( file );
+		}
 
+		public static void BuildAssembly( string name, string suffix )
+		{
 			Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider( );
 
 			CompilerParameters cp = new CompilerParameters( );
@@ -51,14 +53,17 @@ namespace ObfuscarTests
 			cp.GenerateInMemory = false;
 			cp.TreatWarningsAsErrors = true;
 
-			string dllName = String.IsNullOrEmpty( suffix )? name : name + suffix;
+			string dllName = String.IsNullOrEmpty( suffix ) ? name : name + suffix;
 
-			string assemblyPath = Path.Combine( inputPath, dllName + ".dll" );
+			string assemblyPath = Path.Combine( InputPath, dllName + ".dll" );
 			cp.OutputAssembly = assemblyPath;
-			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( inputPath, name + ".cs" ) );
+			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( InputPath, name + ".cs" ) );
 			if ( cr.Errors.HasErrors )
 				Assert.Fail( "Unable to compile test assembly:  " + dllName );
+		}
 
+		public static Obfuscar.Obfuscator Obfuscate( string xml )
+		{
 			Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml( xml );
 
 			obfuscator.RenameFields( );
@@ -68,50 +73,15 @@ namespace ObfuscarTests
 			obfuscator.RenameMethods( );
 			obfuscator.RenameTypes( );
 			obfuscator.SaveAssemblies( );
+
+			return obfuscator;
 		}
 
-		protected void CheckMethods( string name, int expectedTypes, string[] expected, string[] notExpected,
-			Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType )
+		public static Obfuscar.Obfuscator BuildAndObfuscate( string name, string suffix, string xml )
 		{
-			AssemblyDefinition assmDef = AssemblyFactory.GetAssembly(
-				Path.Combine( outputPath, name + ".dll" ) );
-
-			Assert.AreEqual( expectedTypes + 1, assmDef.MainModule.Types.Count,
-				String.Format( "Should contain only {0} types, and <Module>.", expectedTypes ) );
-
-			C5.HashSet<string> methodsToFind = new C5.HashSet<string>( );
-			methodsToFind.AddAll( expected );
-			C5.HashSet<string> methodsNotToFind = new C5.HashSet<string>( );
-			methodsNotToFind.AddAll( notExpected );
-
-			bool foundType = false;
-			foreach ( TypeDefinition typeDef in assmDef.MainModule.Types )
-			{
-				if ( typeDef.Name == "<Module>" )
-					continue;
-				else if ( isType( typeDef ) )
-				{
-					foundType = true;
-
-					// make sure we have enough methods...
-					Assert.AreEqual( expected.Length + notExpected.Length, typeDef.Methods.Count,
-						"Some of the methods for the type are missing." );
-
-					foreach ( MethodDefinition method in typeDef.Methods )
-					{
-						Assert.IsFalse( methodsNotToFind.Contains( method.Name ), String.Format(
-							"Did not expect to find method '{0}'.", method.Name ) );
-
-						methodsToFind.Remove( method.Name );
-					}
-
-					if ( checkType != null )
-						checkType( typeDef );
-				}
-			}
-
-			Assert.IsFalse( methodsToFind.Count > 0, "Failed to find all expected methods." );
-			Assert.IsTrue( foundType, "Should have found non-<Module> type." );
+			CleanInput( );
+			BuildAssembly( name, suffix );
+			return Obfuscate( xml );
 		}
 	}
 }

@@ -36,101 +36,45 @@ namespace ObfuscarTests
 	[TestFixture]
 	public class SkipPropertyTests
 	{
-		const string inputPath = "..\\..\\Input";
-		const string outputPath = "..\\..\\Output";
-
-		void BuildAndObfuscateAssemblies( string xml )
+		protected void CheckProperties( string name, int expectedTypes, string[] expected, string[] notExpected )
 		{
-			// clean out inputPath
-			foreach ( string file in Directory.GetFiles( inputPath, "*.dll" ) )
-				File.Delete( file );
-
-			Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider( );
-
-			CompilerParameters cp = new CompilerParameters( );
-			cp.GenerateExecutable = false;
-			cp.GenerateInMemory = false;
-			cp.TreatWarningsAsErrors = true; ;
-
-			string assemblyAPath = Path.Combine( inputPath, "AssemblyWithProperties.dll" );
-			cp.OutputAssembly = assemblyAPath;
-			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( inputPath, "AssemblyWithProperties.cs" ) );
-			if ( cr.Errors.Count > 0 )
-				Assert.Fail( "Unable to compile test assembly:  AssemblyWithProperties" );
-
-			Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml( xml );
-
-			obfuscator.RenameFields( );
-			obfuscator.RenameParams( );
-			obfuscator.RenameProperties( );
-			obfuscator.RenameEvents( );
-			obfuscator.RenameMethods( );
-			obfuscator.RenameTypes( );
-			obfuscator.SaveAssemblies( );
-		}
-
-		void CheckProperties( string name, string[] expected, string[] notExpected )
-		{
-			AssemblyDefinition assmDef = AssemblyFactory.GetAssembly(
-				Path.Combine( outputPath, name ) );
-
-			Assert.AreEqual( 2, assmDef.MainModule.Types.Count, "Should contain only one type, and <Module>." );
-
 			C5.HashSet<string> propsToFind = new C5.HashSet<string>( );
 			propsToFind.AddAll( expected );
 			C5.HashSet<string> propsNotToFind = new C5.HashSet<string>( );
 			propsNotToFind.AddAll( notExpected );
 
-			C5.HashSet<string> methodsToFind = new C5.HashSet<string>( );
-			foreach ( string prop in expected )
+			string[] expectedMethods = new string[expected.Length * 2];
+			for ( int i = 0; i < expected.Length; i ++ )
 			{
-				methodsToFind.Add( "get_" + prop );
-				methodsToFind.Add( "set_" + prop );
-			}
-			C5.HashSet<string> methodsNotToFind = new C5.HashSet<string>( );
-			foreach ( string prop in notExpected )
-			{
-				methodsNotToFind.Add( "get_" + prop );
-				methodsNotToFind.Add( "set_" + prop );
+				expectedMethods[i * 2 + 0] = "get_" + expected[i];
+				expectedMethods[i * 2 + 1] = "set_" + expected[i];
 			}
 
-			bool foundType = false;
-			foreach ( TypeDefinition typeDef in assmDef.MainModule.Types )
+			string[] notExpectedMethods = new string[notExpected.Length * 2];
+			for ( int i = 0; i < notExpected.Length; i ++ )
 			{
-				if ( typeDef.Name == "<Module>" )
-					continue;
-				else
-					foundType = true;
+				notExpectedMethods[i * 2 + 0] = "get_" + notExpected[i];
+				notExpectedMethods[i * 2 + 1] = "set_" + notExpected[i];
+			}
 
-				Assert.AreEqual( expected.Length, typeDef.Properties.Count,
-					expected.Length == 1 ? "Type should have 1 property (others dropped by default)." :
-					String.Format( "Type should have {0} properties (others dropped by default).", expected.Length ) );
-
-				// 2 methods / property
-				Assert.AreEqual( ( expected.Length + notExpected.Length ) * 2, typeDef.Methods.Count,
-					"Some of the methods for the type are missing." );
-
-				foreach ( PropertyDefinition prop in typeDef.Properties )
+			AssemblyHelper.CheckAssembly( name, expectedTypes, expectedMethods, notExpectedMethods,
+				delegate( TypeDefinition typeDef ) { return true; },
+				delegate( TypeDefinition typeDef )
 				{
-					Assert.IsFalse( propsNotToFind.Contains( prop.Name ), String.Format(
-						"Did not expect to find property '{0}'.", prop.Name ) );
+					Assert.AreEqual( expected.Length, typeDef.Properties.Count,
+						expected.Length == 1 ? "Type should have 1 property (others dropped by default)." :
+						String.Format( "Type should have {0} properties (others dropped by default).", expected.Length ) );
 
-					propsToFind.Remove( prop.Name );
-				}
+					foreach ( PropertyDefinition prop in typeDef.Properties )
+					{
+						Assert.IsFalse( propsNotToFind.Contains( prop.Name ), String.Format(
+							"Did not expect to find property '{0}'.", prop.Name ) );
 
-				foreach ( MethodDefinition method in typeDef.Methods )
-				{
-					Assert.IsFalse( methodsNotToFind.Contains( method.Name ), String.Format(
-						"Did not expect to find method '{0}'.", method.Name ) );
+						propsToFind.Remove( prop.Name );
+					}
 
-					methodsToFind.Remove( method.Name );
-				}
-			}
-
-			Assert.IsFalse( propsToFind.Count > 0, "Failed to find all expected properties." );
-			Assert.IsFalse( methodsToFind.Count > 0, "Failed to find all expected methods." );
-
-			Assert.IsTrue( foundType, "Should have found non-<Module> type." );
+					Assert.IsFalse( propsToFind.Count > 0, "Failed to find all expected properties." );
+				} );
 		}
 
 		[Test]
@@ -142,9 +86,9 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Module file='$(InPath)\AssemblyWithProperties.dll' />" +
-				@"</Obfuscator>", inputPath, outputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
-			BuildAndObfuscateAssemblies( xml );
+			TestHelper.BuildAndObfuscate( "AssemblyWithProperties", String.Empty, xml );
 
 			string[] expected = new string[0];
 
@@ -154,7 +98,7 @@ namespace ObfuscarTests
 				"PropertyA"
 			};
 
-			CheckProperties( "AssemblyWithProperties.dll", expected, notExpected );
+			CheckProperties( "AssemblyWithProperties", 1, expected, notExpected );
 		}
 
 		[Test]
@@ -168,9 +112,9 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath)\AssemblyWithProperties.dll'>" +
 				@"<SkipProperty type='TestClasses.ClassA' name='Property2' />" +
 				@"</Module>" +
-				@"</Obfuscator>", inputPath, outputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
-			BuildAndObfuscateAssemblies( xml );
+			TestHelper.BuildAndObfuscate( "AssemblyWithProperties", String.Empty, xml );
 
 			string[] expected = new string[] {
 				"Property2"
@@ -181,7 +125,7 @@ namespace ObfuscarTests
 				"PropertyA"
 			};
 
-			CheckProperties( "AssemblyWithProperties.dll", expected, notExpected );
+			CheckProperties( "AssemblyWithProperties", 1, expected, notExpected );
 		}
 
 		[Test]
@@ -195,9 +139,9 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath)\AssemblyWithProperties.dll'>" +
 				@"<SkipProperty type='TestClasses.ClassA' rx='Property\d' />" +
 				@"</Module>" +
-				@"</Obfuscator>", inputPath, outputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
-			BuildAndObfuscateAssemblies( xml );
+			TestHelper.BuildAndObfuscate( "AssemblyWithProperties", String.Empty, xml );
 
 			string[] expected = new string[] {
 				"Property1",
@@ -208,7 +152,7 @@ namespace ObfuscarTests
 				"PropertyA"
 			};
 
-			CheckProperties( "AssemblyWithProperties.dll", expected, notExpected );
+			CheckProperties( "AssemblyWithProperties", 1, expected, notExpected );
 		}
 	}
 }

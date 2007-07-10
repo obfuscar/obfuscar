@@ -36,60 +36,17 @@ namespace ObfuscarTests
 	[TestFixture]
 	public class SkipEnumTests
 	{
-		const string inputPath = "..\\..\\Input";
-		const string outputPath = "..\\..\\Output";
-
-		void BuildAndObfuscateAssemblies( string xml )
+		protected void CheckEnums( string name, int expectedTypes, string[] expected, string[] notExpected )
 		{
-			// clean out inputPath
-			foreach ( string file in Directory.GetFiles( inputPath, "*.dll" ) )
-				File.Delete( file );
-
-			Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider( );
-
-			CompilerParameters cp = new CompilerParameters( );
-			cp.GenerateExecutable = false;
-			cp.GenerateInMemory = false;
-			cp.TreatWarningsAsErrors = true; ;
-
-			string assemblyAPath = Path.Combine( inputPath, "AssemblyWithEnums.dll" );
-			cp.OutputAssembly = assemblyAPath;
-			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( inputPath, "AssemblyWithEnums.cs" ) );
-			if ( cr.Errors.Count > 0 )
-				Assert.Fail( "Unable to compile test assembly:  AssemblyWithEnums" );
-
-			Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml( xml );
-
-			obfuscator.RenameFields( );
-			obfuscator.RenameParams( );
-			obfuscator.RenameProperties( );
-			obfuscator.RenameEvents( );
-			obfuscator.RenameMethods( );
-			obfuscator.RenameTypes( );
-			obfuscator.SaveAssemblies( );
-		}
-
-		void CheckEnums( string name, string[] expected, string[] notExpected )
-		{
-			AssemblyDefinition assmDef = AssemblyFactory.GetAssembly(
-				Path.Combine( outputPath, name ) );
-
-			Assert.AreEqual( 2, assmDef.MainModule.Types.Count, "Should contain only one type, and <Module>." );
-
 			C5.HashSet<string> valsToFind = new C5.HashSet<string>( );
 			valsToFind.AddAll( expected );
 			C5.HashSet<string> valsNotToFind = new C5.HashSet<string>( );
 			valsNotToFind.AddAll( notExpected );
 
-			bool foundType = false;
-			foreach ( TypeDefinition typeDef in assmDef.MainModule.Types )
-			{
-				if ( typeDef.Name == "<Module>" )
-					continue;
-				else if ( typeDef.BaseType.FullName == "System.Enum" )
+			AssemblyHelper.CheckAssembly( name, expectedTypes,
+				delegate( TypeDefinition typeDef ) { return typeDef.BaseType.FullName == "System.Enum"; },
+				delegate( TypeDefinition typeDef )
 				{
-					foundType = true;
-
 					// num expected + num unexpected + field storage
 					int totalValues = expected.Length + notExpected.Length + 1;
 					Assert.AreEqual( totalValues, typeDef.Fields.Count,
@@ -102,12 +59,9 @@ namespace ObfuscarTests
 
 						valsToFind.Remove( field.Name );
 					}
-				}
-			}
 
-			Assert.IsFalse( valsToFind.Count > 0, "Failed to find all expected values." );
-
-			Assert.IsTrue( foundType, "Should have found enum type." );
+					Assert.IsFalse( valsToFind.Count > 0, "Failed to find all expected values." );
+				} );
 		}
 
 		[Test]
@@ -119,9 +73,9 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Module file='$(InPath)\AssemblyWithEnums.dll' />" +
-				@"</Obfuscator>", inputPath, outputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
-			BuildAndObfuscateAssemblies( xml );
+			TestHelper.BuildAndObfuscate( "AssemblyWithEnums", String.Empty, xml );
 
 			string[] expected = new string[0];
 
@@ -131,7 +85,7 @@ namespace ObfuscarTests
 				"ValueA"
 			};
 
-			CheckEnums( "AssemblyWithEnums.dll", expected, notExpected );
+			CheckEnums( "AssemblyWithEnums", 1, expected, notExpected );
 		}
 
 		[Test]
@@ -145,9 +99,9 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath)\AssemblyWithEnums.dll'>" +
 				@"<SkipField type='TestClasses.Enum1' name='Value2' />" +
 				@"</Module>" +
-				@"</Obfuscator>", inputPath, outputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
-			BuildAndObfuscateAssemblies( xml );
+			TestHelper.BuildAndObfuscate( "AssemblyWithEnums", String.Empty, xml );
 
 			string[] expected = new string[] {
 				"Value2"
@@ -158,7 +112,7 @@ namespace ObfuscarTests
 				"ValueA"
 			};
 
-			CheckEnums( "AssemblyWithEnums.dll", expected, notExpected );
+			CheckEnums( "AssemblyWithEnums", 1, expected, notExpected );
 		}
 
 		[Test]
@@ -172,9 +126,9 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath)\AssemblyWithEnums.dll'>" +
 				@"<SkipField type='TestClasses.Enum1' rx='Value\d' />" +
 				@"</Module>" +
-				@"</Obfuscator>", inputPath, outputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
-			BuildAndObfuscateAssemblies( xml );
+			TestHelper.BuildAndObfuscate( "AssemblyWithEnums", String.Empty, xml );
 
 			string[] expected = new string[] {
 				"Value1",
@@ -185,7 +139,7 @@ namespace ObfuscarTests
 				"ValueA"
 			};
 
-			CheckEnums( "AssemblyWithEnums.dll", expected, notExpected );
+			CheckEnums( "AssemblyWithEnums", 1, expected, notExpected );
 		}
 	}
 }
