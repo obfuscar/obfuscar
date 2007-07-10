@@ -42,8 +42,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyHelper.cs" />
     <Compile Include="AttributeTests.cs" />
-    <Compile Include="SkipMethodTestBase.cs" />
     <Compile Include="SkipVirtualMethodTest.cs" />
     <Compile Include="SpecializedGenericsTests.cs" />
     <Compile Include="SkipEnumTests.cs" />
@@ -52,6 +52,7 @@
     <Compile Include="DependencyTests.cs" />
     <Compile Include="OutPathTests.cs" />
     <Compile Include="PathFailureTests.cs" />
+    <Compile Include="TestHelper.cs" />
     <Compile Include="TestClasses2.cs" />
     <Compile Include="TestClasses.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

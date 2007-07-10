@@ -34,7 +34,7 @@ using Mono.Cecil;
 namespace ObfuscarTests
 {
 	[TestFixture]
-	public class SkipVirtualMethodTest : SkipMethodTestBase
+	public class SkipVirtualMethodTest
 	{
 		[Test]
 		public void CheckSkipsVirtualMethodFromInterface( )
@@ -47,9 +47,9 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath)\SkipVirtualMethodTest1.dll'>" +
 				@"<SkipMethod type='SkipVirtualMethodTest.Interface1' name='Method1' />" +
 				@"</Module>" +
-				@"</Obfuscator>", inputPath, outputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
-			BuildAndObfuscateAssemblies( "SkipVirtualMethodTest", "1", xml );
+			TestHelper.BuildAndObfuscate( "SkipVirtualMethodTest", "1", xml );
 
 			string[] expected = new string[] {
 				"Method1"
@@ -59,7 +59,7 @@ namespace ObfuscarTests
 				"Method2"
 			};
 
-			CheckMethods( "SkipVirtualMethodTest", 2, expected, notExpected,
+			AssemblyHelper.CheckAssembly( "SkipVirtualMethodTest", 2, expected, notExpected,
 				delegate( TypeDefinition typeDef ) { return !typeDef.IsInterface; }, 
 				CheckType );
 		}
@@ -75,9 +75,9 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath)\SkipVirtualMethodTest2.dll'>" +
 				@"<SkipMethod type='SkipVirtualMethodTest.Class1' name='Method1' />" +
 				@"</Module>" +
-				@"</Obfuscator>", inputPath, outputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
-			BuildAndObfuscateAssemblies( "SkipVirtualMethodTest", "2", xml );
+			TestHelper.BuildAndObfuscate( "SkipVirtualMethodTest", "2", xml );
 
 			string[] expected = new string[] {
 				"Method1"
@@ -87,7 +87,7 @@ namespace ObfuscarTests
 				"Method2"
 			};
 
-			CheckMethods( "SkipVirtualMethodTest", 2, expected, notExpected,
+			AssemblyHelper.CheckAssembly( "SkipVirtualMethodTest", 2, expected, notExpected,
 				delegate( TypeDefinition typeDef ) { return !typeDef.IsInterface; },
 				CheckType );
 		}

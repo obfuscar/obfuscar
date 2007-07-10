@@ -36,53 +36,25 @@ namespace ObfuscarTests
 	[TestFixture]
 	public class AttributeTests
 	{
-		const string inputPath = "..\\..\\Input";
-		const string outputPath = "..\\..\\Output";
-
 		[SetUp]
 		public void BuildAndObfuscateAssemblies( )
 		{
-			// clean out inputPath
-			foreach ( string file in Directory.GetFiles( inputPath, "*.dll" ) )
-				File.Delete( file );
-
-			Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider( );
-
-			CompilerParameters cp = new CompilerParameters( );
-			cp.GenerateExecutable = false;
-			cp.GenerateInMemory = false;
-			cp.TreatWarningsAsErrors = true; ;
-
-			string assemblyAPath = Path.Combine( inputPath, "AssemblyWithAttrs.dll" );
-			cp.OutputAssembly = assemblyAPath;
-			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( inputPath, "AssemblyWithAttrs.cs" ) );
-			if ( cr.Errors.Count > 0 )
-				Assert.Fail( "Unable to compile test assembly:  AssemblyWithAttrs" );
-
 			string xml = String.Format(
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Module file='$(InPath)\AssemblyWithAttrs.dll' />" +
-				@"</Obfuscator>", inputPath, outputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
-			Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml( xml );
-
-			obfuscator.RenameFields( );
-			obfuscator.RenameParams( );
-			obfuscator.RenameProperties( );
-			obfuscator.RenameEvents( );
-			obfuscator.RenameMethods( );
-			obfuscator.RenameTypes( );
-			obfuscator.SaveAssemblies( );
+			TestHelper.BuildAndObfuscate( "AssemblyWithAttrs", String.Empty, xml );
 		}
 
 		[Test]
 		public void CheckClassHasAttribute( )
 		{
-			AssemblyDefinition assmDef = AssemblyFactory.GetAssembly( 
-				Path.Combine( outputPath, "AssemblyWithAttrs.dll" ) );
+			AssemblyDefinition assmDef = AssemblyFactory.GetAssembly(
+				Path.Combine( TestHelper.OutputPath, "AssemblyWithAttrs.dll" ) );
 
 			Assert.AreEqual( 2, assmDef.MainModule.Types.Count, "Should contain only one type, and <Module>." );
 
@@ -112,7 +84,7 @@ namespace ObfuscarTests
 		public void CheckMethodHasAttribute( )
 		{
 			AssemblyDefinition assmDef = AssemblyFactory.GetAssembly(
-				Path.Combine( outputPath, "AssemblyWithAttrs.dll" ) );
+				Path.Combine( TestHelper.OutputPath, "AssemblyWithAttrs.dll" ) );
 
 			bool found = false;
 			foreach ( TypeDefinition typeDef in assmDef.MainModule.Types )
