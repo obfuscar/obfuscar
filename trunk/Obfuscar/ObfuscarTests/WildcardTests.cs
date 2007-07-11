@@ -132,5 +132,11 @@ namespace ObfuscarTests
 			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "na", "*a*" ) );
 			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "nan", "*a*" ) );
 		}
+
+		[Test]
+		public void TestBasicMixed( )
+		{
+			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "something", "som?t*g" ) );
+		}
 	}
 }
