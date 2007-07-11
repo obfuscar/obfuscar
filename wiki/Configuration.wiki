@@ -98,6 +98,14 @@ To prevent all properties from being obfuscated, set the `RenameProperties` vari
 
 To prevent all events from being obfuscated, set the `RenameEvents` variable to "false" (it's also xsd boolean).  To prevent specific events from being renamed, use the `SkipEvent` element.  It will also skip the event's accessors, `add_XXX` and `remove_XXX`.
 
+=== Name Matching ===
+
+The `SkipMethod`, `SkipProperty`, `SkipEvent`, and `SkipField` elements all accept an `rx` attribute that specifies a regular expression used to match the name of the thing to be skipped.  The `SkipType`, `SkipMethod`, `SkipProperty`, `SkipEvent`, and `SkipField` elements all accept a `name` attribute that specifies a string or regular expression used to match the name of the thing to be skipped.
+
+For elements where both the `name` and `rx` attributes can be specified, if both are specified, the `rx` attribute will be ignored.
+
+The `name` attribute can specify either a string or regular expression to match the name of the thing to be skipped.  If the value of the `name` attribute begins with a '`^`' character, the value (including the '`^`') will be treated as a regular expression (e.g., the name '`^so.*g`' will match the string `something`).  Otherwise, the value will be used as a wildcard string, where '`*`' matches zero or more characters, and '`?`' matches a single character (e.g., the wildcard string `som?t*g` will match the string `something`).
+
 == Exclusion by Code ==
 
 There's also some functionality where you can mark types with an attribute to prevent them from being obfuscated...reference Obfuscar.exe and add the `Obfuscate` attribute to your types.  For example, to suppress obfuscation of `X`, its methods, fields, resources, etc.:
