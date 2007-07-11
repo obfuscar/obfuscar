@@ -39,6 +39,14 @@ namespace Obfuscar
 		readonly string name;
 		readonly int hashCode;
 
+		public NameParamSig( string name, string[] paramTypes )
+			: base( paramTypes )
+		{
+			this.name = name;
+
+			hashCode = CalcHashCode( );
+		}
+
 		public NameParamSig( MethodReference method )
 			: base( method )
 		{
