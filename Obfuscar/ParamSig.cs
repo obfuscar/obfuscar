@@ -40,9 +40,14 @@ namespace Obfuscar
 		readonly int hashCode;
 
 		public ParamSig( ParamSig sig )
+			: this( (string[]) sig.paramTypes.Clone( ) )
 		{
-			paramTypes = (string[]) sig.paramTypes.Clone( );
-			
+		}
+
+		public ParamSig( string[] paramTypes )
+		{
+			this.paramTypes = paramTypes;
+
 			hashCode = CalcHashCode( );
 		}
 

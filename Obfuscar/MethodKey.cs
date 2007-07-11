@@ -44,6 +44,14 @@ namespace Obfuscar
 			hashCode = CalcHashCode( );
 		}
 
+		public MethodKey( TypeKey typeKey, string name, string[] paramTypes )
+			: base( name, paramTypes )
+		{
+			this.typeKey = typeKey;
+
+			hashCode = CalcHashCode( );
+		}
+
 		public MethodKey( TypeKey typeKey, MethodReference method )
 			: base( method )
 		{
