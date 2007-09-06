@@ -72,7 +72,12 @@ namespace Obfuscar
 			// pull out the file attribute, but don't process anything empty
 			string val = Helper.GetAttribute( reader, "file", vars );
 			if ( val.Length > 0 )
+			{
 				info.LoadAssembly( val );
+
+				if ( info.Definition.Name.PublicKeyToken != null )
+					throw new ApplicationException( "Obfuscating a signed assembly would result in an invalid assembly:  " + info.Name );
+			}
 			else
 				throw new InvalidOperationException( "Need valid file attribute." );
 
