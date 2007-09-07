@@ -63,6 +63,14 @@ namespace Obfuscar
 			this.project = project;
 		}
 
+		private static bool AssemblyIsSigned( AssemblyDefinition def )
+		{
+			if ( def.Name.PublicKeyToken != null )
+				return Array.Exists( def.MainModule.Image.CLIHeader.ImageHash, delegate( byte b ) { return b != 0; } );
+			else
+				return false;
+		}
+
 		public static AssemblyInfo FromXml( Project project, XmlReader reader, Variables vars )
 		{
 			Debug.Assert( reader.NodeType == XmlNodeType.Element && reader.Name == "Module" );
@@ -75,7 +83,7 @@ namespace Obfuscar
 			{
 				info.LoadAssembly( val );
 
-				if ( info.Definition.Name.PublicKeyToken != null )
+				if ( AssemblyIsSigned( info.Definition ) )
 					throw new ApplicationException( "Obfuscating a signed assembly would result in an invalid assembly:  " + info.Name );
 			}
 			else

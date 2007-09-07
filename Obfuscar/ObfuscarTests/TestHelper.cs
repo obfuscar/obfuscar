@@ -46,12 +46,20 @@ namespace ObfuscarTests
 
 		public static void BuildAssembly( string name, string suffix )
 		{
+			BuildAssembly( name, suffix, null );
+		}
+
+		public static void BuildAssembly( string name, string suffix, string options )
+		{
 			Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider( );
 
 			CompilerParameters cp = new CompilerParameters( );
 			cp.GenerateExecutable = false;
 			cp.GenerateInMemory = false;
 			cp.TreatWarningsAsErrors = true;
+
+			if ( !String.IsNullOrEmpty( options ) )
+				cp.CompilerOptions = options;
 
 			string dllName = String.IsNullOrEmpty( suffix ) ? name : name + suffix;
 

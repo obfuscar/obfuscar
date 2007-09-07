@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="AssemblyHelper.cs" />
     <Compile Include="AttributeTests.cs" />
+    <Compile Include="SigningTests.cs" />
     <Compile Include="SkipVirtualMethodTest.cs" />
     <Compile Include="SpecializedGenericsTests.cs" />
     <Compile Include="SkipEnumTests.cs" />
