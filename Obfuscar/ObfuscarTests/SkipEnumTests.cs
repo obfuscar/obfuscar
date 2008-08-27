@@ -116,7 +116,7 @@ namespace ObfuscarTests
 		}
 
 		[Test]
-		public void CheckSkipEventsByRx( )
+		public void CheckSkipEnumsByRx( )
 		{
 			string xml = String.Format(
 				@"<?xml version='1.0'?>" +
@@ -137,6 +137,33 @@ namespace ObfuscarTests
 
 			string[] notExpected = new string[] {
 				"ValueA"
+			};
+
+			CheckEnums( "AssemblyWithEnums", 1, expected, notExpected );
+		}
+
+		[Test]
+		public void CheckSkipEnums( )
+		{
+			string xml = String.Format(
+				@"<?xml version='1.0'?>" +
+				@"<Obfuscator>" +
+				@"<Var name='InPath' value='{0}' />" +
+				@"<Var name='OutPath' value='{1}' />" +
+				@"<Module file='$(InPath)\AssemblyWithEnums.dll'>" +
+				@"<SkipField type='TestClasses.Enum1' name='*' />" +
+				@"</Module>" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
+
+			TestHelper.BuildAndObfuscate( "AssemblyWithEnums", String.Empty, xml );
+
+			string[] expected = new string[] {
+				"Value1",
+				"Value2",
+				"ValueA"
+			};
+
+			string[] notExpected = new string[] {
 			};
 
 			CheckEnums( "AssemblyWithEnums", 1, expected, notExpected );
