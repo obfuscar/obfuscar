@@ -45,7 +45,9 @@ Though additional assemblies are loaded for examination, only the specified asse
 
 It is possible to include additional elements within the `Module` elements to skip types (the `SkipTypes` element), methods (the `SkipMethod` element), fields (`SkipField`), properties (`SkipProperty`), and events (`SkipEvent`, of course).
 
-The `SkipType` element specifies the name of the type to skip, including the full namespace.
+The `SkipNamespace` element specifies a namespace that should be skipped.  All types, methods, fields, etc., within the namespace will be skipped.
+
+The `SkipType` element specifies the name of the type to skip, including the full namespace.  It can also specify whether to skip the method, fields, properties, and/or events within the type.
 
 The `SkipMethod` element specifies the name of the type containing the method, a protection specifier, and a name or regex to match the method.  The protection specifier is currently ignored, but will eventually be used for additional filtering.
 
@@ -58,6 +60,12 @@ The `SkipEvent` element specifies the name of the type containing the event, a p
 A more complete example:
 {{{
   <Module file="$(InPath)\AssemblyX.exe">
+    <!-- skip a namespace -->
+    <SkipNamespace name="Company.PublicBits" />
+
+    <!-- to skip a namespace recursively, just put * on the end -->
+    <SkipNamespace name="Company.PublicBits*" />
+
     <!-- skip field by name -->
     <SkipField type="Full.Namespace.And.TypeName"
       attrib="public" name="Fieldname" />
@@ -78,18 +86,29 @@ A more complete example:
     <SkipMethod type="Full.Namespace.And.TypeName3"
       attrib="family" rx=".*" />
 
-    <!-- skip a property in TypeName4 by name -->
-    <SkipProperty type="Full.Namespace.And.TypeName4"
+    <!-- skip type and its methods -->
+    <SkipType name="Full.Namespace.And.TypeName4" skipMethods="true" />
+    <!-- skip type and its fields -->
+    <SkipType name="Full.Namespace.And.TypeName4" skipFields="true" />
+    <!-- skip type and its properties -->
+    <SkipType name="Full.Namespace.And.TypeName4" skipProperties="true" />
+    <!-- skip type and its events -->
+    <SkipType name="Full.Namespace.And.TypeName4" skipEvents="true" />
+    <!-- skip attributes can be combined (this will skip the methods and fields) -->
+    <SkipType name="Full.Namespace.And.TypeName4" skipMethods="true" skipFields="true" />
+
+    <!-- skip a property in TypeName5 by name -->
+    <SkipProperty type="Full.Namespace.And.TypeName5"
       name="Property2" />
-    <!-- skip a property in TypeName4 by regex -->
-    <SkipProperty type="Full.Namespace.And.TypeName4"
+    <!-- skip a property in TypeName5 by regex -->
+    <SkipProperty type="Full.Namespace.And.TypeName5"
       attrib="public" rx="Something\d" />
 
-    <!-- skip an event in TypeName4 by name -->
-    <SkipProperty type="Full.Namespace.And.TypeName4"
+    <!-- skip an event in TypeName5 by name -->
+    <SkipProperty type="Full.Namespace.And.TypeName5"
       name="Event2" />
-    <!-- skip an event in TypeName4 by regex -->
-    <SkipProperty type="Full.Namespace.And.TypeName4"
+    <!-- skip an event in TypeName5 by regex -->
+    <SkipProperty type="Full.Namespace.And.TypeName5"
       rx="Any.*" />
   </Module>
 }}}
