@@ -1,6 +1,6 @@
-#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+﻿#region Copyright (c) 2008 Scherry Lemos. <scherrylemos@ig.com.br>
 /// <copyright>
-/// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+/// Copyright (c) 2008 Scherry Lemos<scherrylemos@ig.com.br>
 /// 
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
@@ -30,40 +30,18 @@ using Mono.Cecil;
 
 namespace Obfuscar
 {
-	[Flags]
-	public enum TypeSkipFlags
-	{
-		SkipNone = 0x00,
-		SkipEvent = 0x01,
-		SkipProperty = 0x02,
-		SkipField = 0x04,
-		SkipMethod = 0x08,
-	}
-
-	class TypeTester : IPredicate<TypeKey>
+	class NamespaceTester : IPredicate<string>
 	{
 		private readonly string name;
-		private readonly TypeSkipFlags skipFlags;
 
-		public TypeSkipFlags SkipFlags
-		{
-			get { return this.skipFlags; }
-		}
-
-		public TypeTester( string name )
-			: this( name, TypeSkipFlags.SkipNone )
-		{
-		}
-
-		public TypeTester( string name, TypeSkipFlags skipFlags )
+		public NamespaceTester(string name)
 		{
 			this.name = name;
-			this.skipFlags = skipFlags;
 		}
 
-		public bool Test( TypeKey type )
+		public bool Test( string ns )
 		{
-			return Helper.CompareOptionalRegex(type.Fullname, name);
+			return Helper.CompareOptionalRegex(ns, name);
 		}
 	}
 }

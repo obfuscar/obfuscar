@@ -38,6 +38,7 @@ namespace Obfuscar
 	{
 		private readonly Project project;
 
+		private readonly PredicateCollection<string> skipNamespaces = new PredicateCollection<string>( );
 		private readonly PredicateCollection<TypeKey> skipTypes = new PredicateCollection<TypeKey>( );
 		private readonly PredicateCollection<MethodKey> skipMethods = new PredicateCollection<MethodKey>( );
 		private readonly PredicateCollection<FieldKey> skipFields = new PredicateCollection<FieldKey>( );
@@ -97,11 +98,40 @@ namespace Obfuscar
 					{
 						switch ( reader.Name )
 						{
+							case "SkipNamespace":
+								{
+									val = Helper.GetAttribute(reader, "name", vars);
+									if (val.Length > 0)
+										info.skipNamespaces.Add(new NamespaceTester(val));
+								}
+								break;
 							case "SkipType":
 								{
-									val = Helper.GetAttribute( reader, "name", vars );
-									if ( val.Length > 0 )
-										info.skipTypes.Add( new TypeTester( val ) );
+									val = Helper.GetAttribute(reader, "name", vars);
+									if (val.Length > 0)
+									{
+										string typeName = val;
+
+										TypeSkipFlags skipFlags = TypeSkipFlags.SkipNone;
+
+										val = Helper.GetAttribute(reader, "skipMethods", vars);
+										if ( val.Length > 0 && XmlConvert.ToBoolean( val ) )
+											skipFlags |= TypeSkipFlags.SkipMethod;
+
+										val = Helper.GetAttribute(reader, "skipFields", vars);
+										if ( val.Length > 0 && XmlConvert.ToBoolean( val ) )
+											skipFlags |= TypeSkipFlags.SkipField;
+
+										val = Helper.GetAttribute(reader, "skipProperties", vars);
+										if ( val.Length > 0 && XmlConvert.ToBoolean( val ) )
+											skipFlags |= TypeSkipFlags.SkipProperty;
+
+										val = Helper.GetAttribute(reader, "skipEvents", vars);
+										if ( val.Length > 0 && XmlConvert.ToBoolean( val ) )
+											skipFlags |= TypeSkipFlags.SkipEvent;
+
+										info.skipTypes.Add(new TypeTester(typeName, skipFlags));
+									}
 								}
 								break;
 							case "SkipMethod":
@@ -281,28 +311,62 @@ namespace Obfuscar
 			skipMethods.Add( new MethodTester( method ) );
 		}
 
+		public bool ShouldSkip( string ns )
+		{
+			return skipNamespaces.IsMatch( ns );
+		}
+
+		public bool ShouldSkip( TypeKey type, TypeSkipFlags flag )
+		{
+			if (ShouldSkip(type.Namespace))
+				return true;
+
+			foreach (TypeTester typeTester in skipTypes)
+			{
+				if ( ( typeTester.SkipFlags & flag ) > 0 && typeTester.Test( type ) )
+					return true;
+			}
+
+			return false;
+		}
+
 		public bool ShouldSkip( TypeKey type )
 		{
+			if (ShouldSkip(type.Namespace))
+				return true;
+
 			return skipTypes.IsMatch( type );
 		}
 
 		public bool ShouldSkip( MethodKey method )
 		{
+			if (ShouldSkip(method.TypeKey, TypeSkipFlags.SkipMethod))
+				return true;
+
 			return skipMethods.IsMatch( method );
 		}
 
 		public bool ShouldSkip( FieldKey field )
 		{
+			if (ShouldSkip(field.TypeKey, TypeSkipFlags.SkipField))
+				return true;
+
 			return skipFields.IsMatch( field );
 		}
 
 		public bool ShouldSkip( PropertyKey prop )
 		{
+			if (ShouldSkip(prop.TypeKey, TypeSkipFlags.SkipProperty))
+				return true;
+
 			return skipProperties.IsMatch( prop );
 		}
 
 		public bool ShouldSkip( EventKey evt )
 		{
+			if (ShouldSkip(evt.TypeKey, TypeSkipFlags.SkipEvent))
+				return true;
+
 			return skipEvents.IsMatch( evt );
 		}
 
