@@ -316,6 +316,12 @@ namespace Obfuscar
 				foreach ( Resource res in library.MainModule.Resources )
 					resources.Add( res );
 
+				// Save the original names of all types because parent (declaring) types of nested types may be already renamed.
+				// The names are used for the mappings file.
+				Dictionary<TypeDefinition, TypeKey> unrenamedTypeKeys = new Dictionary<TypeDefinition, TypeKey>( );
+				foreach ( TypeDefinition type in library.MainModule.Types )
+					unrenamedTypeKeys.Add( type, new TypeKey( type ) );
+
 				// loop through the types
 				int typeIndex = 0;
 				foreach ( TypeDefinition type in library.MainModule.Types )
@@ -324,14 +330,21 @@ namespace Obfuscar
 						continue;
 
 					TypeKey oldTypeKey = new TypeKey( type );
+					TypeKey unrenamedTypeKey = unrenamedTypeKeys[type];
 					string fullName = type.FullName;
 
 					if ( ShouldRename( type ) )
 					{
-						if ( !info.ShouldSkip( oldTypeKey ) )
+						if ( !info.ShouldSkip( unrenamedTypeKey ) )
 						{
-							TypeKey newTypeKey = new TypeKey( info.Name,
-								NameMaker.UniqueNamespace( typeIndex ), NameMaker.UniqueTypeName( typeIndex ) );
+							string name = NameMaker.UniqueTypeName( typeIndex );
+							string ns = NameMaker.UniqueNamespace(typeIndex);
+							if (type.GenericParameters.Count > 0)
+								name += '`' + type.GenericParameters.Count.ToString();
+							if (type.DeclaringType != null) // Nested types do not have namespaces
+								ns = "";
+
+							TypeKey newTypeKey = new TypeKey( info.Name, ns, name );
 							typeIndex++;
 
 							// go through the list of renamed types and try to rename resources
@@ -354,7 +367,7 @@ namespace Obfuscar
 									i++;
 							}
 
-							RenameType( info, type, oldTypeKey, newTypeKey );
+							RenameType( info, type, oldTypeKey, newTypeKey, unrenamedTypeKey );
 						}
 						else
 						{
@@ -402,7 +415,7 @@ namespace Obfuscar
 			}
 		}
 
-		void RenameType( AssemblyInfo info, TypeDefinition type, TypeKey oldTypeKey, TypeKey newTypeKey )
+		void RenameType( AssemblyInfo info, TypeDefinition type, TypeKey oldTypeKey, TypeKey newTypeKey, TypeKey unrenamedTypeKey )
 		{
 			// find references, rename them, then rename the type itself
 
@@ -432,7 +445,7 @@ namespace Obfuscar
 			type.Namespace = newTypeKey.Namespace;
 			type.Name = newTypeKey.Name;
 
-			map.UpdateType( oldTypeKey, ObfuscationStatus.Renamed, newTypeKey.ToString( ) );
+			map.UpdateType( unrenamedTypeKey, ObfuscationStatus.Renamed, type.ToString( ) );
 		}
 
 		Dictionary<ParamSig, NameGroup> GetSigNames( Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
@@ -510,9 +523,17 @@ namespace Obfuscar
 
 								continue;
 							}
-
-							// add to to collection for removal
-							propsToDrop.Add( prop );
+							// do not rename properties of attribute types which have a public setter method
+							else if ( type.BaseType != null && type.BaseType.Name.EndsWith("Attribute") && prop.SetMethod != null && (prop.SetMethod.Attributes & MethodAttributes.Public) != 0 )
+							{
+								m.Update( ObfuscationStatus.Skipped, "property of attribute type with public setter" );
+								// no problem when the getter or setter methods are renamed
+							}
+							else
+							{
+								// add to to collection for removal
+								propsToDrop.Add(prop);
+							}
 						}
 
 						foreach ( PropertyDefinition prop in propsToDrop )

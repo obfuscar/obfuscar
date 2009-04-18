@@ -59,7 +59,7 @@ namespace ObfuscarTests
 				"Method2"
 			};
 
-			AssemblyHelper.CheckAssembly( "SkipVirtualMethodTest", 2, expected, notExpected,
+			AssemblyHelper.CheckAssembly( "SkipVirtualMethodTest1", 2, expected, notExpected,
 				delegate( TypeDefinition typeDef ) { return !typeDef.IsInterface; }, 
 				CheckType );
 		}
@@ -87,7 +87,7 @@ namespace ObfuscarTests
 				"Method2"
 			};
 
-			AssemblyHelper.CheckAssembly( "SkipVirtualMethodTest", 2, expected, notExpected,
+			AssemblyHelper.CheckAssembly( "SkipVirtualMethodTest2", 2, expected, notExpected,
 				delegate( TypeDefinition typeDef ) { return !typeDef.IsInterface; },
 				CheckType );
 		}

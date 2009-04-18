@@ -39,14 +39,27 @@ namespace Obfuscar
 
 		readonly int hashCode;
 
-		public TypeKey( TypeDefinition type )
-			: this( Helper.GetScopeName( type ), type.Namespace, type.Name )
-		{
-		}
-
 		public TypeKey( TypeReference type )
-			: this( Helper.GetScopeName( type ), type.Namespace, type.Name )
 		{
+			this.scope = Helper.GetScopeName( type );
+
+			this.name = type.Name;
+			TypeReference declaringType = type;
+			// Build path to nested type
+			while ( declaringType.DeclaringType != null )
+			{
+				declaringType = declaringType.DeclaringType;
+				this.name = declaringType.Name + "/" + name;
+			}
+			this.ns = declaringType.Namespace;
+
+			this.fullname = !string.IsNullOrEmpty( this.ns ) ? this.ns + "." + name : name;
+
+			// Our name should be the same as the Cecil's name. This is important to the Match method.
+			if ( this.fullname != type.ToString( ) )
+				throw new InvalidOperationException( string.Format( "Type names do not match: \"{0}\" != \"{1}\"", this.fullname, type.ToString( ) ) );
+
+			this.hashCode = CalcHashCode( );
 		}
 
 		public TypeKey( string scope, string ns, string name )
@@ -91,9 +104,17 @@ namespace Obfuscar
 
 		public bool Matches( TypeReference type )
 		{
-			// note...not comparing fullname.  it causes problems when used with generics,
-			// since type.FullName includes the generic parameter names.
-			return scope == Helper.GetScopeName( type ) && ns == type.Namespace && name == type.Name;
+			// Remove generic type parameters and compare full names
+			string typefullname = type.ToString( );
+			if ( typefullname.EndsWith( ">" ) )
+			{
+				int pos = typefullname.LastIndexOf( '<' );
+				if ( pos < 0 )
+					throw new InvalidOperationException( string.Format( "Type \"{0}\" has malformed generic type parameter.", typefullname ) );
+				typefullname = typefullname.Substring( 0, pos );
+			}
+
+			return typefullname == fullname;
 		}
 
 		public bool Equals( TypeKey other )
