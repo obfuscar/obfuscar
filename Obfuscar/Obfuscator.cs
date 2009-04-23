@@ -40,6 +40,10 @@ namespace Obfuscar
 
 		ObfuscationMap map = new ObfuscationMap( );
 
+		// Unique names for type and members
+		int uniqueTypeNameIndex = 0;
+		int uniqueMemberNameIndex = 0;
+
 		/// <summary>
 		/// Creates an obfuscator initialized from a project file.
 		/// </summary>
@@ -189,7 +193,11 @@ namespace Obfuscar
 							}
 							else
 							{
-								string newName = nameGroup.GetNext( );
+								string newName;
+								if ( project.Settings.ReuseNames )
+									newName = nameGroup.GetNext( );
+								else
+									newName = NameMaker.UniqueName( uniqueMemberNameIndex++ );
 
 								RenameField( info, fieldKey, field, newName );
 
@@ -337,8 +345,20 @@ namespace Obfuscar
 					{
 						if ( !info.ShouldSkip( unrenamedTypeKey ) )
 						{
-							string name = NameMaker.UniqueTypeName( typeIndex );
-							string ns = NameMaker.UniqueNamespace(typeIndex);
+							string name;
+							string ns;
+							if ( project.Settings.ReuseNames )
+							{
+								name = NameMaker.UniqueTypeName( typeIndex );
+								ns = NameMaker.UniqueNamespace( typeIndex );
+							}
+							else
+							{
+								name = NameMaker.UniqueName( uniqueTypeNameIndex );
+								ns = NameMaker.UniqueNamespace( uniqueTypeNameIndex );
+								uniqueTypeNameIndex++;
+							}
+
 							if (type.GenericParameters.Count > 0)
 								name += '`' + type.GenericParameters.Count.ToString();
 							if (type.DeclaringType != null) // Nested types do not have namespaces
@@ -445,7 +465,7 @@ namespace Obfuscar
 			type.Namespace = newTypeKey.Namespace;
 			type.Name = newTypeKey.Name;
 
-			map.UpdateType( unrenamedTypeKey, ObfuscationStatus.Renamed, type.ToString( ) );
+			map.UpdateType( unrenamedTypeKey, ObfuscationStatus.Renamed, string.Format("[{0}]{1}", newTypeKey.Scope, type.ToString( )) );
 		}
 
 		Dictionary<ParamSig, NameGroup> GetSigNames( Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
@@ -497,6 +517,7 @@ namespace Obfuscar
 
 					if ( ShouldRename( type ) )
 					{
+						int index = 0;
 						List<PropertyDefinition> propsToDrop = new List<PropertyDefinition>( );
 						foreach ( PropertyDefinition prop in type.Properties )
 						{
@@ -523,11 +544,21 @@ namespace Obfuscar
 
 								continue;
 							}
-							// do not rename properties of attribute types which have a public setter method
+							// do not rename properties of custom attribute types which have a public setter method
 							else if ( type.BaseType != null && type.BaseType.Name.EndsWith("Attribute") && prop.SetMethod != null && (prop.SetMethod.Attributes & MethodAttributes.Public) != 0 )
 							{
-								m.Update( ObfuscationStatus.Skipped, "property of attribute type with public setter" );
-								// no problem when the getter or setter methods are renamed
+								m.Update( ObfuscationStatus.Skipped, "public setter of a custom attribute" );
+								// no problem when the getter or setter methods are renamed by RenameMethods()
+							}
+							// If a property has custom attributes we don't remove the property but rename it instead.
+							else if ( prop.CustomAttributes.Count > 0 )
+							{
+								string newName;
+								if ( project.Settings.ReuseNames )
+									newName = NameMaker.UniqueName( index++ );
+								else
+									newName = NameMaker.UniqueName( uniqueMemberNameIndex++ );
+								RenameProperty( info, propKey, prop, newName );
 							}
 							else
 							{
@@ -547,6 +578,36 @@ namespace Obfuscar
 					}
 				}
 			}
+		}
+
+		void RenameProperty( AssemblyInfo info, PropertyKey propertyKey, PropertyDefinition property, string newName )
+		{
+			// find references, rename them, then rename the property itself
+
+			foreach ( AssemblyInfo reference in info.ReferencedBy )
+			{
+				for ( int i = 0; i < reference.UnrenamedReferences.Count; )
+				{
+					PropertyReference member = reference.UnrenamedReferences[i] as PropertyReference;
+					if ( member != null )
+					{
+						if ( propertyKey.Matches( member ) )
+						{
+							member.Name = newName;
+							reference.UnrenamedReferences.RemoveAt( i );
+
+							// since we removed one, continue without the increment
+							continue;
+						}
+					}
+
+					i++;
+				}
+			}
+
+			property.Name = newName;
+
+			map.UpdateProperty( propertyKey, ObfuscationStatus.Renamed, newName );
 		}
 
 		public void RenameEvents( )
