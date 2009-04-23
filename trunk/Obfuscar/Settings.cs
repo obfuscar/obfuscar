@@ -36,6 +36,7 @@ namespace Obfuscar
 		bool markedOnly;
 		bool renameProperties;
 		bool renameEvents;
+		bool reuseNames;
 		bool xmlMapping;
 
 		public Settings( Variables vars )
@@ -46,6 +47,7 @@ namespace Obfuscar
 
 			renameProperties = XmlConvert.ToBoolean( vars.GetValue( "RenameProperties", "true" ) );
 			renameEvents = XmlConvert.ToBoolean( vars.GetValue( "RenameEvents", "true" ) );
+			reuseNames = XmlConvert.ToBoolean( vars.GetValue( "ReuseNames", "true" ) );
 
 			xmlMapping = XmlConvert.ToBoolean( vars.GetValue( "XmlMapping", "false" ) );
 		}
@@ -73,6 +75,11 @@ namespace Obfuscar
 		public bool RenameEvents
 		{
 			get { return renameEvents; }
+		}
+
+		public bool ReuseNames
+		{
+			get { return reuseNames; }
 		}
 
 		public bool XmlMapping
