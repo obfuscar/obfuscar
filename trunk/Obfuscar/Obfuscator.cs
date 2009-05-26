@@ -258,6 +258,9 @@ namespace Obfuscar
 
 					if ( ShouldRename( type ) )
 					{
+                        if (info.ShouldSkip(new TypeKey(type)))
+                            continue;
+
 						// rename the constructor parameters
 						foreach ( MethodDefinition method in type.Constructors )
 							RenameParams( method );
