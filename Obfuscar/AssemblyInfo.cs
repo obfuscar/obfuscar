@@ -66,7 +66,7 @@ namespace Obfuscar
 
 		private static bool AssemblyIsSigned( AssemblyDefinition def )
 		{
-			if ( def.Name.PublicKeyToken != null )
+			if (def.Name.PublicKeyToken != null && def.MainModule.Image.CLIHeader.ImageHash != null)
 				return Array.Exists( def.MainModule.Image.CLIHeader.ImageHash, delegate( byte b ) { return b != 0; } );
 			else
 				return false;
@@ -84,8 +84,8 @@ namespace Obfuscar
 			{
 				info.LoadAssembly( val );
 
-				if ( AssemblyIsSigned( info.Definition ) )
-					throw new ApplicationException( "Obfuscating a signed assembly would result in an invalid assembly:  " + info.Name );
+				if ( AssemblyIsSigned( info.Definition ) && project.KeyValue == null )
+					throw new ApplicationException( "Obfuscating a signed assembly would result in an invalid assembly:  " + info.Name +"; use the KeyValue property to set a key to use" );
 			}
 			else
 				throw new InvalidOperationException( "Need valid file attribute." );

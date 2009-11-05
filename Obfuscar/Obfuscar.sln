@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obfuscar", "Obfuscar.csproj", "{F28CDDFF-5A7A-413E-809E-15FFB8766E86}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObfuscarTests", "ObfuscarTests\ObfuscarTests.csproj", "{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}"
