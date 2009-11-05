@@ -328,6 +328,8 @@ namespace Obfuscar
 		/// </summary>
 		public void RenameTypes( )
 		{
+			Dictionary<string, string> typerenamemap = new Dictionary<string, string>(); // For patching the parameters of typeof(xx) attribute constructors
+
 			foreach ( AssemblyInfo info in project )
 			{
 				AssemblyDefinition library = info.Definition;
@@ -401,6 +403,8 @@ namespace Obfuscar
 							}
 
 							RenameType( info, type, oldTypeKey, newTypeKey, unrenamedTypeKey );
+
+							typerenamemap.Add(unrenamedTypeKey.Fullname.Replace('/', '+'), type.FullName.Replace('/', '+'));
 						}
 						else
 						{
@@ -446,6 +450,8 @@ namespace Obfuscar
 				foreach ( Resource res in resources )
 					map.AddResource( res.Name, ObfuscationStatus.Skipped, "no clear new name" );
 			}
+
+			PatchCustomAttributes(typerenamemap);
 		}
 
 		void RenameType( AssemblyInfo info, TypeDefinition type, TypeKey oldTypeKey, TypeKey newTypeKey, TypeKey unrenamedTypeKey )
@@ -479,6 +485,68 @@ namespace Obfuscar
 			type.Name = newTypeKey.Name;
 
 			map.UpdateType( unrenamedTypeKey, ObfuscationStatus.Renamed, string.Format("[{0}]{1}", newTypeKey.Scope, type.ToString( )) );
+		}
+
+		void PatchCustomAttributes(Dictionary<string, string> typeRenameMap)
+		{
+			foreach (AssemblyInfo info in project)
+			{
+				AssemblyDefinition library = info.Definition;
+
+				foreach (TypeDefinition type in library.MainModule.Types)
+				{
+					PatchCustomAttributeCollection(type.CustomAttributes, typeRenameMap);
+					foreach (MethodDefinition methoddefinition in type.Methods)
+						PatchCustomAttributeCollection(methoddefinition.CustomAttributes, typeRenameMap);
+					foreach (PropertyDefinition propertydefinition in type.Properties)
+						PatchCustomAttributeCollection(propertydefinition.CustomAttributes, typeRenameMap);
+					foreach (FieldDefinition fielddefinition in type.Fields)
+						PatchCustomAttributeCollection(fielddefinition.CustomAttributes, typeRenameMap);
+					foreach (EventDefinition eventdefinition in type.Events)
+						PatchCustomAttributeCollection(eventdefinition.CustomAttributes, typeRenameMap);
+				}
+			}
+		}
+
+		void PatchCustomAttributeCollection(CustomAttributeCollection customAttributes, IDictionary<string, string> typeRenameMap)
+		{
+			foreach (CustomAttribute customattribute in customAttributes)
+			{
+				for (int i = 0; i < customattribute.Constructor.Parameters.Count; i++)
+				{
+					ParameterDefinition parameterdefinition = customattribute.Constructor.Parameters[i];
+					if (parameterdefinition.ParameterType.FullName == "System.Type")
+						customattribute.ConstructorParameters[i] = GetObfuscatedTypeName((string)customattribute.ConstructorParameters[i], typeRenameMap);
+				}
+				foreach (System.Collections.DictionaryEntry property in new System.Collections.ArrayList(customattribute.Properties))
+				{
+					if (customattribute.GetPropertyType((string)property.Key).FullName == "System.Type")
+						customattribute.Properties[property.Key] = GetObfuscatedTypeName((string)customattribute.Properties[property.Key], typeRenameMap);
+				}
+				foreach (System.Collections.DictionaryEntry field in new System.Collections.ArrayList(customattribute.Fields))
+				{
+					if (customattribute.GetPropertyType((string)field.Key).FullName == "System.Type")
+						customattribute.Properties[field.Key] = GetObfuscatedTypeName((string)customattribute.Properties[field.Key], typeRenameMap);
+				}
+			}
+		}
+
+		string GetObfuscatedTypeName(string typeString, IDictionary<string, string> typeRenameMap)
+		{
+			string[] typeparts = typeString.Split(new char[] { ',' });
+			if (typeparts.Length > 0) // be paranoid
+			{
+				string typename = typeparts[0].Trim();
+				string obfuscatedtypename;
+				if (typeRenameMap.TryGetValue(typename, out obfuscatedtypename))
+				{
+					string newtypename = obfuscatedtypename;
+					for (int n = 1; n < typeparts.Length; n++)
+						newtypename += ',' + typeparts[n];
+					return newtypename;
+				}
+			}
+			return typeString;
 		}
 
 		Dictionary<ParamSig, NameGroup> GetSigNames( Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
