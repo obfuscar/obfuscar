@@ -31,6 +31,7 @@ using System.Diagnostics;
 
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Security;
 
 namespace Obfuscar
 {
@@ -117,6 +118,11 @@ namespace Obfuscar
 					System.IO.Path.GetFileName( info.Filename ) );
 
 				AssemblyFactory.SaveAssembly( info.Definition, outName );
+				if ( info.Definition.Name.HasPublicKey )
+				{
+					StrongName sn = new StrongName( project.KeyValue );
+					sn.Sign(outName);
+				}
 			}
 		}
 
@@ -258,8 +264,8 @@ namespace Obfuscar
 
 					if ( ShouldRename( type ) )
 					{
-                        if (info.ShouldSkip(new TypeKey(type)))
-                            continue;
+						if (info.ShouldSkip(new TypeKey(type)))
+							continue;
 
 						// rename the constructor parameters
 						foreach ( MethodDefinition method in type.Constructors )
