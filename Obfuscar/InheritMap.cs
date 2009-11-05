@@ -100,15 +100,15 @@ namespace Obfuscar
 
 							// see if either method is already in a group
 							if ( group != null )
-								AddToGroup( group, methods[j] );
+								group = AddToGroup( group, methods[j] );
 							else if ( methodGroups.TryGetValue( methods[j], out group ) )
-								AddToGroup( group, methods[i] );
+								group = AddToGroup (group, methods [i]);
 							else
 							{
 								group = new MethodGroup( );
 
-								AddToGroup( group, methods[i] );
-								AddToGroup( group, methods[j] );
+								group = AddToGroup (group, methods [i]);
+								group = AddToGroup (group, methods [j]);
 							}
 
 							// if the group isn't already external, see if it should be
@@ -203,13 +203,27 @@ namespace Obfuscar
 			return methods.ToArray( );
 		}
 
-		void AddToGroup( MethodGroup group, MethodKey methodKey )
+		MethodGroup AddToGroup( MethodGroup group, MethodKey methodKey )
 		{
 			// add the method to the group
 			group.Methods.Add( methodKey );
 
 			// point the method at the group
+			MethodGroup group2;
+			if(methodGroups.TryGetValue (methodKey, out group2) && group2 != group) {
+				// we have a problem; two unrelated groups come together; merge them
+				group2.Name = group2.Name ?? group.Name;
+				group2.External = group2.External | group.External;
+				foreach(MethodKey mk in group.Methods) {
+					methodGroups [mk] = group2;
+					group2.Methods.Add (mk);
+
+				}
+				return group2;
+			}
 			methodGroups[methodKey] = group;
+
+			return group;
 		}
 
 		public MethodGroup GetMethodGroup( MethodKey methodKey )
