@@ -183,13 +183,17 @@ namespace Obfuscar
 						nameGroups.Clear( );
 
 						// rename field, grouping according to signature
-
 						foreach ( FieldDefinition field in type.Fields )
 						{
 							string sig = field.FieldType.FullName;
 							FieldKey fieldKey = new FieldKey( typeKey, sig, field.Name );
 
 							NameGroup nameGroup = GetNameGroup( nameGroups, sig );
+
+							if(field.IsRuntimeSpecialName && field.Name == "value__") {
+								map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
+								nameGroup.Add (fieldKey.Name);
+							} else
 
 							// skip filtered fields
 							if ( info.ShouldSkip( fieldKey ) )
