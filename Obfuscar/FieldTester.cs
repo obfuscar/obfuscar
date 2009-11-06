@@ -54,7 +54,8 @@ namespace Obfuscar
 
 		public bool Test( FieldKey field )
 		{
-			if ( Helper.CompareOptionalRegex(field.TypeKey.Fullname, type) )
+			// It's not very clean to use CheckMethodVisibility() from MethodTester. But we don't want duplicate code either.
+			if ( Helper.CompareOptionalRegex(field.TypeKey.Fullname, type) && MethodTester.CheckMethodVisibility(attrib, (MethodAttributes)field.FieldAttributes) )
 			{
 				if ( name != null )
 					return Helper.CompareOptionalRegex(field.Name, name);

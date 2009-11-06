@@ -35,6 +35,7 @@ namespace Obfuscar
 	{
 		readonly TypeKey typeKey;
 		readonly int hashCode;
+		readonly MethodAttributes methodAttributes;
 
 		public MethodKey( MethodReference method )
 			: base( method )
@@ -44,18 +45,11 @@ namespace Obfuscar
 			hashCode = CalcHashCode( );
 		}
 
-		public MethodKey( TypeKey typeKey, string name, string[] paramTypes )
+		public MethodKey( TypeKey typeKey, string name, string[] paramTypes, MethodAttributes methodAttributes )
 			: base( name, paramTypes )
 		{
 			this.typeKey = typeKey;
-
-			hashCode = CalcHashCode( );
-		}
-
-		public MethodKey( TypeKey typeKey, MethodReference method )
-			: base( method )
-		{
-			this.typeKey = typeKey;
+			this.methodAttributes = methodAttributes;
 
 			hashCode = CalcHashCode( );
 		}
@@ -66,11 +60,18 @@ namespace Obfuscar
 			this.typeKey = typeKey;
 
 			hashCode = CalcHashCode( );
+
+			methodAttributes = method.Attributes;
 		}
 
 		private int CalcHashCode( )
 		{
 			return typeKey.GetHashCode( ) ^ base.GetHashCode( );
+		}
+
+		public MethodAttributes MethodAttributes
+		{
+			get { return methodAttributes; }
 		}
 
 		public TypeKey TypeKey
