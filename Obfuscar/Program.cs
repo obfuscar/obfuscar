@@ -68,6 +68,13 @@ namespace Obfuscar
 
 				Console.Write( "types..." );
 				obfuscator.RenameTypes( );
+
+				if (obfuscator.Project.Settings.HideStrings)
+				{
+					Console.WriteLine("hiding strings...");
+					obfuscator.HideStrings();
+				}
+
 				Console.WriteLine( "Done." );
 
 				Console.Write( "Saving assemblies..." );
@@ -85,6 +92,7 @@ namespace Obfuscar
 				Console.WriteLine( );
 				Console.Error.WriteLine( "An error occurred during processing:" );
 				Console.Error.WriteLine( e.Message );
+				return 1;
 			}
 
 			return 0;
