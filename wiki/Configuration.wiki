@@ -127,12 +127,20 @@ To prevent all events from being obfuscated, set the `RenameEvents` variable to 
 
 === Name Matching ===
 
-The `SkipMethod`, `SkipProperty`, `SkipEvent`, `SkipField`, and `SkipStringHiding` elements also accept an `rx` attribute that specifies a regular expression used to match the name of the thing to be skipped.
+The `SkipMethod`, `SkipProperty`, `SkipEvent`, `SkipField`, and `SkipStringHiding` elements accept an `rx` attribute that specifies a regular expression used to match the name of the thing to be skipped.
 The `SkipType`, `SkipMethod`, `SkipProperty`, `SkipEvent`, `SkipField`, and `SkipStringHiding` elements all accept a `name` attribute that specifies a string with optional wildcards or a regular expression used to match the name of the thing to be skipped.
 For elements where both the `name` and `rx` attributes are specified, the `rx` attribute is ignored.
 The `name` attribute can specify either a string or a regular expression to match the name of the thing to be skipped.  If the value of the `name` attribute begins with a '`^`' character, the value (including the '`^`') will be treated as a regular expression (e.g., the name '`^so.*g`' will match the string `something`).  Otherwise, the value will be used as a wildcard string, where '`*`' matches zero or more characters, and '`?`' matches a single character (e.g., the wildcard string `som?t*g` will match the string `something`).
 
 This behavior also applies to the value of the `type` attribute of the `SkipMethod`, `SkipProperty`, `SkipEvent`, `SkipField`, and `SkipStringHiding` elements.
+
+=== Accessibility Check ===
+The `SkipMethod`, `SkipProperty`, `SkipEvent`, `SkipField`, and `SkipStringHiding` elements also accept an `attrib` attribute.
+  * Not specified or `attrib=''`: All members are skipped from obfuscation.
+  * `attrib='public'`: Only public members are skipped.
+  * `attrib='protected'`: Only public and protected members are skipped.
+  * All other values for `attrib` generate an error by now.
+Members which are `internal` or `protected internal` are not skipped when `attrib` is `public` or `protected`.
 
 == Exclusion by Code ==
 
