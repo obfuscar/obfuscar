@@ -95,8 +95,13 @@ namespace Obfuscar
 						}
 					}
 
-					string fullName = type.Namespace + "." + type.Name;
-					typeDef = assmDef.MainModule.Types[fullName];
+					typeDef = assmDef.MainModule.Types[new TypeKey(type).Fullname];
+				}
+				else
+				{
+					GenericInstanceType gi = type as GenericInstanceType;
+					if (gi != null)
+						return GetTypeDefinition(gi.ElementType);
 				}
 			}
 
