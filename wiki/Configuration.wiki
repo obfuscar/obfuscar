@@ -142,6 +142,8 @@ The `SkipMethod`, `SkipProperty`, `SkipEvent`, `SkipField`, and `SkipStringHidin
   * All other values for `attrib` generate an error by now.
 Members which are `internal` or `protected internal` are not skipped when `attrib` is `public` or `protected`.
 
+Properties and events do not directly have an accessibility attribute, but their underlying methods (getter, setter, add, remove) have. For properties the attribute of the getter and for events the attribute of the add method is used.
+
 == Exclusion by Code ==
 
 There's also some functionality where you can mark types with an attribute to prevent them from being obfuscated...reference Obfuscar.exe and add the `Obfuscate` attribute to your types.  For example, to suppress obfuscation of `X`, its methods, fields, resources, etc.:
