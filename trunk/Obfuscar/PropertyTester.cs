@@ -54,7 +54,7 @@ namespace Obfuscar
 
 		public bool Test( PropertyKey prop )
 		{
-			if ( Helper.CompareOptionalRegex(prop.TypeKey.Fullname, type) )
+			if ( Helper.CompareOptionalRegex(prop.TypeKey.Fullname, type) && MethodTester.CheckMethodVisibility(attrib,prop.GetterMethodAttributes) )
 			{
 				if ( name != null )
 					return Helper.CompareOptionalRegex(prop.Name, name);
