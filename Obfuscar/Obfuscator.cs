@@ -93,6 +93,8 @@ namespace Obfuscar
 			return settings;
 		}
 
+		public Project Project { get { return project; } }
+
 		void LoadFromReader( XmlReader reader )
 		{
 			project = Project.FromXml( reader );
@@ -1066,6 +1068,194 @@ namespace Obfuscar
 			method.Name = newName;
 
 			map.UpdateMethod( methodKey, ObfuscationStatus.Renamed, newName );
+		}
+
+		public void HideStrings( )
+		{
+			foreach ( AssemblyInfo info in project )
+			{
+				AssemblyDefinition library = info.Definition;
+
+				Dictionary<string, MethodDefinition> methodByString = new Dictionary<string, MethodDefinition>( );
+
+				int nameIndex = 0;
+
+				// We get the most used type references
+				TypeReference systemObjectTypeReference = library.MainModule.Import( typeof( Object ) );
+				TypeReference systemVoidTypeReference = library.MainModule.Import( typeof( void ) );
+				TypeReference systemStringTypeReference = library.MainModule.Import( typeof( String ) );
+				TypeReference systemValueTypeTypeReference = library.MainModule.Import( typeof( ValueType ) );
+				TypeReference systemByteTypeReference = library.MainModule.Import( typeof( byte ) );
+				TypeReference systemIntTypeReference = library.MainModule.Import( typeof( int ) );
+
+				// New static class with a method for each unique string we substitute.
+				TypeDefinition newtype = new TypeDefinition( "<PrivateImplementationDetails>{" + Guid.NewGuid( ).ToString( ).ToUpper( ) + "}", null, TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, systemObjectTypeReference );
+
+				// Array of bytes receiving the obfuscated strings in UTF8 format.
+				List<byte> databytes = new List<byte>( );
+
+				// Add struct for constant byte array data
+				TypeDefinition structType = new TypeDefinition( "\0", "", TypeAttributes.ExplicitLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.NestedPrivate, systemValueTypeTypeReference );
+				structType.PackingSize = 1;
+				newtype.NestedTypes.Add( structType );
+
+				// Add field with constant string data
+				FieldDefinition dataConstantField = new FieldDefinition( "\0", structType, FieldAttributes.HasFieldRVA | FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly );
+				newtype.Fields.Add( dataConstantField );
+
+				// Add data field where constructor copies the data to
+				FieldDefinition dataField = new FieldDefinition( "\0\0", new ArrayType( systemByteTypeReference ), FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly );
+				newtype.Fields.Add( dataField );
+
+				// Add string array of deobfuscated strings
+				FieldDefinition stringArrayField = new FieldDefinition( "\0\0\0", new ArrayType( systemStringTypeReference ), FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly );
+				newtype.Fields.Add( stringArrayField );
+
+				// Add method to extract a string from the byte array. It is called by the indiviual string getter methods we add later to the class.
+				MethodDefinition stringGetterMethodDefinition = new MethodDefinition( "\0", MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig, systemStringTypeReference );
+				stringGetterMethodDefinition.Parameters.Add( new ParameterDefinition( systemIntTypeReference ) );
+				stringGetterMethodDefinition.Parameters.Add( new ParameterDefinition( systemIntTypeReference ) );
+				stringGetterMethodDefinition.Parameters.Add( new ParameterDefinition( systemIntTypeReference ) );
+				stringGetterMethodDefinition.Body.Variables.Add( new VariableDefinition( systemStringTypeReference ) );
+				CilWorker worker3 = stringGetterMethodDefinition.Body.CilWorker;
+
+				worker3.Emit( OpCodes.Call, library.MainModule.Import( typeof( System.Text.Encoding ).GetProperty( "UTF8" ).GetGetMethod( ) ) );
+				worker3.Emit( OpCodes.Ldsfld, dataField );
+				worker3.Emit( OpCodes.Ldarg_1 );
+				worker3.Emit( OpCodes.Ldarg_2 );
+				worker3.Emit( OpCodes.Callvirt, library.MainModule.Import( typeof( System.Text.Encoding ).GetMethod( "GetString", new Type[] { typeof( byte[] ), typeof( int ), typeof( int ) } ) ) );
+				worker3.Emit( OpCodes.Stloc_0 );
+
+				worker3.Emit( OpCodes.Ldsfld, stringArrayField );
+				worker3.Emit( OpCodes.Ldarg_0 );
+				worker3.Emit( OpCodes.Ldloc_0 );
+				worker3.Emit( OpCodes.Stelem_Ref );
+
+				worker3.Emit( OpCodes.Ldloc_0 );
+				worker3.Emit( OpCodes.Ret );
+				newtype.Methods.Add( stringGetterMethodDefinition );
+
+				int stringIndex = 0;
+
+				// Look for all string load operations and replace them with calls to indiviual methods in our new class
+				foreach ( TypeDefinition type in library.MainModule.Types )
+				{
+					if ( type.FullName == "<Module>" )
+						continue;
+
+					TypeKey typeKey = new TypeKey( type );
+					if ( ShouldRename( type ) )
+					{
+						foreach ( MethodDefinition method in type.Methods )
+						{
+							if (!info.ShouldSkipStringHiding(new MethodKey(method)) && method.Body != null )
+							{
+								for ( int i = 0; i < method.Body.Instructions.Count; i++ )
+								{
+									Instruction instruction = method.Body.Instructions[i];
+									if ( instruction.OpCode == OpCodes.Ldstr )
+									{
+										string str = (string) instruction.Operand;
+										MethodDefinition individualStringMethodDefinition = null;
+										if ( !methodByString.TryGetValue( str, out individualStringMethodDefinition ) )
+										{
+											string methodName = NameMaker.UniqueName( nameIndex++ );
+
+											// Add the string to the data array
+											byte[] stringBytes = Encoding.UTF8.GetBytes( str );
+											int start = databytes.Count;
+											databytes.AddRange( stringBytes );
+											int count = databytes.Count - start;
+
+											// Add a method for this string to our new class
+											individualStringMethodDefinition = new MethodDefinition( methodName, MethodAttributes.Static | MethodAttributes.Public | MethodAttributes.HideBySig, systemStringTypeReference );
+											individualStringMethodDefinition.Body = new MethodBody( individualStringMethodDefinition );
+											CilWorker worker4 = individualStringMethodDefinition.Body.CilWorker;
+
+											worker4.Emit( OpCodes.Ldsfld, stringArrayField );
+											worker4.Emit( OpCodes.Ldc_I4, stringIndex );
+											worker4.Emit( OpCodes.Ldelem_Ref );
+											worker4.Emit( OpCodes.Dup );
+											Instruction label20 = worker4.Emit( OpCodes.Brtrue_S, stringGetterMethodDefinition.Body.Instructions[0] );
+											worker4.Emit( OpCodes.Pop );
+											worker4.Emit( OpCodes.Ldc_I4, stringIndex );
+											worker4.Emit( OpCodes.Ldc_I4, start );
+											worker4.Emit( OpCodes.Ldc_I4, count );
+											worker4.Emit( OpCodes.Call, stringGetterMethodDefinition );
+
+											label20.Operand = worker4.Emit( OpCodes.Ret );
+
+											newtype.Methods.Add( individualStringMethodDefinition );
+											methodByString.Add( str, individualStringMethodDefinition );
+
+											stringIndex++;
+										}
+										CilWorker worker = method.Body.CilWorker;
+										Instruction newinstruction = worker.Create( OpCodes.Call, individualStringMethodDefinition );
+										worker.Replace( instruction, newinstruction );
+									}
+								}
+							}
+						}
+					}
+				}
+
+				// Now that we know the total size of the byte array, we can update the struct size and store it in the constant field
+				structType.ClassSize = (uint) databytes.Count;
+				for ( int i = 0; i < databytes.Count; i++ )
+					databytes[i] = (byte) (databytes[i] ^ (byte)i ^ 0xAA);
+				dataConstantField.InitialValue = databytes.ToArray( );
+
+				// Add static constructor which initializes the dataField from the constant data field
+				MethodDefinition ctorMethodDefinition = new MethodDefinition( ".cctor", MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, systemVoidTypeReference );
+				newtype.Methods.Add( ctorMethodDefinition );
+				ctorMethodDefinition.Body = new MethodBody( ctorMethodDefinition );
+				ctorMethodDefinition.Body.Variables.Add( new VariableDefinition( systemIntTypeReference ) );
+
+				CilWorker worker2 = ctorMethodDefinition.Body.CilWorker;
+				worker2.Emit( OpCodes.Ldc_I4, stringIndex );
+				worker2.Emit( OpCodes.Newarr, systemStringTypeReference );
+				worker2.Emit( OpCodes.Stsfld, stringArrayField );
+
+
+				worker2.Emit( OpCodes.Ldc_I4, databytes.Count );
+				worker2.Emit( OpCodes.Newarr, systemByteTypeReference );
+				worker2.Emit( OpCodes.Dup );
+				worker2.Emit( OpCodes.Ldtoken, dataConstantField );
+				worker2.Emit( OpCodes.Call, library.MainModule.Import( typeof( System.Runtime.CompilerServices.RuntimeHelpers ).GetMethod( "InitializeArray" ) ) );
+				worker2.Emit( OpCodes.Stsfld, dataField );
+
+				worker2.Emit( OpCodes.Ldc_I4_0 );
+				worker2.Emit( OpCodes.Stloc_0 );
+
+				Instruction backlabel1 = worker2.Emit( OpCodes.Br_S, ctorMethodDefinition.Body.Instructions[0] );
+				Instruction label2 = worker2.Emit( OpCodes.Ldsfld, dataField );
+				worker2.Emit( OpCodes.Ldloc_0 );
+				worker2.Emit( OpCodes.Ldsfld, dataField );
+				worker2.Emit( OpCodes.Ldloc_0 );
+				worker2.Emit( OpCodes.Ldelem_U1 );
+				worker2.Emit( OpCodes.Ldloc_0 );
+				worker2.Emit( OpCodes.Xor );
+				worker2.Emit( OpCodes.Ldc_I4, 0xAA );
+				worker2.Emit( OpCodes.Xor );
+				worker2.Emit( OpCodes.Conv_U1 );
+				worker2.Emit( OpCodes.Stelem_I1 );
+				worker2.Emit( OpCodes.Ldloc_0 );
+				worker2.Emit( OpCodes.Ldc_I4_1 );
+				worker2.Emit( OpCodes.Add );
+				worker2.Emit( OpCodes.Stloc_0 );
+				backlabel1.Operand = worker2.Emit( OpCodes.Ldloc_0 );
+				worker2.Emit( OpCodes.Ldsfld, dataField );
+				worker2.Emit( OpCodes.Ldlen );
+				worker2.Emit( OpCodes.Conv_I4 );
+				worker2.Emit( OpCodes.Clt );
+				worker2.Emit( OpCodes.Brtrue, label2 );
+				worker2.Emit( OpCodes.Ret );
+
+
+				library.MainModule.Types.Add( structType );
+				library.MainModule.Types.Add( newtype );
+			}
 		}
 	}
 }

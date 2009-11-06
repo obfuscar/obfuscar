@@ -38,6 +38,7 @@ namespace Obfuscar
 		bool renameEvents;
 		bool reuseNames;
 		bool xmlMapping;
+		bool hideStrings;
 
 		public Settings( Variables vars )
 		{
@@ -48,6 +49,7 @@ namespace Obfuscar
 			renameProperties = XmlConvert.ToBoolean( vars.GetValue( "RenameProperties", "true" ) );
 			renameEvents = XmlConvert.ToBoolean( vars.GetValue( "RenameEvents", "true" ) );
 			reuseNames = XmlConvert.ToBoolean( vars.GetValue( "ReuseNames", "true" ) );
+			hideStrings = XmlConvert.ToBoolean(vars.GetValue("HideStrings", "true"));
 
 			xmlMapping = XmlConvert.ToBoolean( vars.GetValue( "XmlMapping", "false" ) );
 		}
@@ -80,6 +82,11 @@ namespace Obfuscar
 		public bool ReuseNames
 		{
 			get { return reuseNames; }
+		}
+
+		public bool HideStrings
+		{
+			get { return hideStrings; }
 		}
 
 		public bool XmlMapping

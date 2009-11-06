@@ -38,6 +38,7 @@ namespace Obfuscar
 		SkipProperty = 0x02,
 		SkipField = 0x04,
 		SkipMethod = 0x08,
+		SkipStringHiding = 0x10,
 	}
 
 	class TypeTester : IPredicate<TypeKey>

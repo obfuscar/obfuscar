@@ -44,6 +44,7 @@ namespace Obfuscar
 		private readonly PredicateCollection<FieldKey> skipFields = new PredicateCollection<FieldKey>( );
 		private readonly PredicateCollection<PropertyKey> skipProperties = new PredicateCollection<PropertyKey>( );
 		private readonly PredicateCollection<EventKey> skipEvents = new PredicateCollection<EventKey>( );
+		private readonly PredicateCollection<MethodKey> skipStringHiding = new PredicateCollection<MethodKey>();
 
 		private readonly List<AssemblyInfo> references = new List<AssemblyInfo>( );
 		private readonly List<AssemblyInfo> referencedBy = new List<AssemblyInfo>( );
@@ -118,6 +119,10 @@ namespace Obfuscar
 										if ( val.Length > 0 && XmlConvert.ToBoolean( val ) )
 											skipFlags |= TypeSkipFlags.SkipMethod;
 
+										val = Helper.GetAttribute(reader, "skipStringHiding", vars);
+										if (val.Length > 0 && XmlConvert.ToBoolean(val))
+											skipFlags |= TypeSkipFlags.SkipStringHiding;
+
 										val = Helper.GetAttribute(reader, "skipFields", vars);
 										if ( val.Length > 0 && XmlConvert.ToBoolean( val ) )
 											skipFlags |= TypeSkipFlags.SkipField;
@@ -147,6 +152,22 @@ namespace Obfuscar
 										val = Helper.GetAttribute( reader, "rx" );
 										if ( val.Length > 0 )
 											info.skipMethods.Add( new MethodTester( new Regex( val ), type, attrib ) );
+									}
+								}
+								break;
+							case "SkipStringHiding":
+								{
+									val = Helper.GetAttribute(reader, "name", vars);
+									string type = Helper.GetAttribute(reader, "type", vars);
+									string attrib = Helper.GetAttribute(reader, "attrib", vars);
+
+									if (val.Length > 0)
+										info.skipStringHiding.Add(new MethodTester(val, type, attrib));
+									else
+									{
+										val = Helper.GetAttribute(reader, "rx");
+										if (val.Length > 0)
+											info.skipStringHiding.Add(new MethodTester(new Regex(val), type, attrib));
 									}
 								}
 								break;
@@ -344,6 +365,14 @@ namespace Obfuscar
 				return true;
 
 			return skipMethods.IsMatch( method );
+		}
+
+		public bool ShouldSkipStringHiding(MethodKey method)
+		{
+			if (ShouldSkip(method.TypeKey, TypeSkipFlags.SkipStringHiding))
+				return true;
+
+			return skipStringHiding.IsMatch(method);
 		}
 
 		public bool ShouldSkip( FieldKey field )

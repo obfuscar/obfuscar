@@ -92,7 +92,7 @@ namespace Obfuscar
 				else
 					throw new ApplicationException(string.Format("'{0}' is not valid for the 'attrib' value of skip elements. Only 'public' and 'protected' are supported by now.", attribute));
 			}
-			return false;
+			return true;
 		}
 	}
 }
