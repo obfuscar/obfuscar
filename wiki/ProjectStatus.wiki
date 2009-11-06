@@ -5,8 +5,4 @@
 
 Currently, it works quite well, and there is a very basic example of use provided both in the release and with the source code.
 
-The current release is [http://code.google.com/p/obfuscar/downloads/detail?name=Obfuscar_1.4.0.tar.gz Obfuscar 1.4.0].
-
-== Plans ==
-
-More complicated examples, including use of the `SkipXXX` elements would be nice.  Currently, the `SkipXXX` elements are only documented on the [Configuration] page.
+The current release is [http://code.google.com/p/obfuscar/downloads/detail?name=Obfuscar_1.5.0.tar.gz Obfuscar 1.5.0].
