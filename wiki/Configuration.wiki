@@ -43,7 +43,7 @@ Though additional assemblies are loaded for examination, only the specified asse
 
 == Exclusion by Configuration ==
 
-It is possible to include additional elements within the `Module` elements to skip types (the `SkipTypes` element), methods (the `SkipMethod` element), fields (`SkipField`), properties (`SkipProperty`), and events (`SkipEvent`, of course).
+It is possible to include additional elements within the `Module` elements to skip types (the `SkipTypes` element), methods (the `SkipMethod` element), fields (`SkipField`), properties (`SkipProperty`), and events (`SkipEvent`, of course). Methods can be excluded from string obfuscation by `SkipStringHiding`.
 
 The `SkipNamespace` element specifies a namespace that should be skipped.  All types, methods, fields, etc., within the namespace will be skipped.
 
@@ -56,6 +56,9 @@ The `SkipField` element specifies the name of the type containing the field, a p
 The `SkipProperty` element specifies the name of the type containing the property, a protection specifier, and a name or regex to match the property.  The protection specifier is currently ignored, but will eventually be used for additional filtering.
 
 The `SkipEvent` element specifies the name of the type containing the event, a protection specifier, and a name or regex to match the event.  The protection specifier is currently ignored, but will eventually be used for additional filtering.
+
+The `SkipStringHiding` element works like the `SkipMethod` element, but specifies within which methods not to obfuscate the string constants. To make it harder to analyze the code, Obfuscar normally replaces string loads by method calls to lookup functions, which incurs a small performance penalty.
+
 
 A more complete example:
 {{{
@@ -96,6 +99,8 @@ A more complete example:
     <SkipType name="Full.Namespace.And.TypeName4" skipEvents="true" />
     <!-- skip attributes can be combined (this will skip the methods and fields) -->
     <SkipType name="Full.Namespace.And.TypeName4" skipMethods="true" skipFields="true" />
+    <!-- skip the hiding of strings in this type's methods -->
+    <SkipType name="Full.Namespace.And.TypeName4" skipStringHiding="true" />
 
     <!-- skip a property in TypeName5 by name -->
     <SkipProperty type="Full.Namespace.And.TypeName5"
@@ -110,6 +115,9 @@ A more complete example:
     <!-- skip an event in TypeName5 by regex -->
     <SkipProperty type="Full.Namespace.And.TypeName5"
       rx="Any.*" />
+
+    <!-- avoid the hiding of strings in TypeName6 on all methods -->
+    <SkipStringHiding type="Full.Namespace.And.TypeName6" name="*" />
   </Module>
 }}}
 
@@ -119,13 +127,12 @@ To prevent all events from being obfuscated, set the `RenameEvents` variable to 
 
 === Name Matching ===
 
-The `SkipMethod`, `SkipProperty`, `SkipEvent`, and `SkipField` elements all accept an `rx` attribute that specifies a regular expression used to match the name of the thing to be skipped.  The `SkipType`, `SkipMethod`, `SkipProperty`, `SkipEvent`, and `SkipField` elements all accept a `name` attribute that specifies a string or regular expression used to match the name of the thing to be skipped.
+The `SkipMethod`, `SkipProperty`, `SkipEvent`, `SkipField`, and `SkipStringHiding` elements also accept an `rx` attribute that specifies a regular expression used to match the name of the thing to be skipped.
+The `SkipType`, `SkipMethod`, `SkipProperty`, `SkipEvent`, `SkipField`, and `SkipStringHiding` elements all accept a `name` attribute that specifies a string with optional wildcards or a regular expression used to match the name of the thing to be skipped.
+For elements where both the `name` and `rx` attributes are specified, the `rx` attribute is ignored.
+The `name` attribute can specify either a string or a regular expression to match the name of the thing to be skipped.  If the value of the `name` attribute begins with a '`^`' character, the value (including the '`^`') will be treated as a regular expression (e.g., the name '`^so.*g`' will match the string `something`).  Otherwise, the value will be used as a wildcard string, where '`*`' matches zero or more characters, and '`?`' matches a single character (e.g., the wildcard string `som?t*g` will match the string `something`).
 
-For elements where both the `name` and `rx` attributes can be specified, if both are specified, the `rx` attribute will be ignored.
-
-The `name` attribute can specify either a string or regular expression to match the name of the thing to be skipped.  If the value of the `name` attribute begins with a '`^`' character, the value (including the '`^`') will be treated as a regular expression (e.g., the name '`^so.*g`' will match the string `something`).  Otherwise, the value will be used as a wildcard string, where '`*`' matches zero or more characters, and '`?`' matches a single character (e.g., the wildcard string `som?t*g` will match the string `something`).
-
-This behavior also applies to the value of the `type` attribute of the `SkipMethod`, `SkipProperty`, `SkipEvent`, and `SkipField` elements.
+This behavior also applies to the value of the `type` attribute of the `SkipMethod`, `SkipProperty`, `SkipEvent`, `SkipField`, and `SkipStringHiding` elements.
 
 == Exclusion by Code ==
 
@@ -157,7 +164,7 @@ And if you only want specific classes obfuscated, you can set the `MarkedOnly` v
 
 By default all new type and member names generated by Obfuscar are only unique within their scopes. A type with name `A` may be part of namespace `A.A` and `A.B`. The same holds true for type members. Multiple types may have fields and properties with the same name.
 
-When using `System.Xml.Serialization.XmlSerializer` on obfuscated types, the names of generated Xml elements and attributes have to be specified with one of the `XmlXXXXXAttribute` attributes. This is because the original type and member names do not exist any more after obfuscation. For some reasons the XmlSerializer uses the obfuscated names internally even though they are overridden by attributes. Because of that tt fails on duplicate names. The same is true for the XML Serializer Generator-Tool (Sgen.exe).
+When using `System.Xml.Serialization.XmlSerializer` on obfuscated types, the names of generated Xml elements and attributes have to be specified with one of the `XmlXXXXXAttribute` attributes. This is because the original type and member names do not exist any more after obfuscation. For some reasons the XmlSerializer uses the obfuscated names internally even though they are overridden by attributes. Because of that it fails on duplicate names. The same is true for the XML Serializer Generator-Tool (Sgen.exe).
 
 You can work around this problem by setting the `ReuseNames` variable to `false`. In this case the obfuscator does not reuse names for types, fields and properties. The generated names are unique over all assemblies. This setting does not apply to methods.
 
