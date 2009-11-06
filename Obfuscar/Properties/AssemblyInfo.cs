@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration( "" )]
 [assembly: AssemblyCompany( "" )]
 [assembly: AssemblyProduct( "Obfuscar" )]
-[assembly: AssemblyCopyright( "Copyright © Ryan Williams 2007" )]
+[assembly: AssemblyCopyright( "Copyright © Ryan Williams 2007-2009" )]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]
 
@@ -55,5 +55,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion( "1.4.0" )]
-[assembly: AssemblyFileVersion( "1.4.0" )]
+[assembly: AssemblyVersion( "1.5.0" )]
+[assembly: AssemblyFileVersion( "1.5.0" )]
