@@ -56,7 +56,8 @@ namespace Obfuscar
 			this.fullname = !string.IsNullOrEmpty( this.ns ) ? this.ns + "." + name : name;
 
 			// Our name should be the same as the Cecil's name. This is important to the Match method.
-			if ( this.fullname != type.ToString( ) )
+			GenericInstanceType gi=type as GenericInstanceType;
+			if (this.fullname != type.ToString() && (gi == null || this.fullname != gi.ElementType.FullName))
 				throw new InvalidOperationException( string.Format( "Type names do not match: \"{0}\" != \"{1}\"", this.fullname, type.ToString( ) ) );
 
 			this.hashCode = CalcHashCode( );
