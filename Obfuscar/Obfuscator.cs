@@ -186,7 +186,7 @@ namespace Obfuscar
 						foreach ( FieldDefinition field in type.Fields )
 						{
 							string sig = field.FieldType.FullName;
-							FieldKey fieldKey = new FieldKey( typeKey, sig, field.Name );
+							FieldKey fieldKey = new FieldKey( typeKey, sig, field.Name, field.Attributes );
 
 							NameGroup nameGroup = GetNameGroup( nameGroups, sig );
 

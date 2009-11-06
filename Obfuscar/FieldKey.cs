@@ -36,17 +36,25 @@ namespace Obfuscar
 		readonly TypeKey typeKey;
 		readonly string type;
 		readonly string name;
+		readonly FieldAttributes fieldAttributes;
 
-		public FieldKey( FieldReference field )
-			: this( new TypeKey( field.DeclaringType ), field.FieldType.FullName, field.Name )
+		public FieldKey( FieldDefinition field )
+			: this( new TypeKey( field.DeclaringType ), field.FieldType.FullName, field.Name, field.Attributes )
 		{
+			fieldAttributes = field.Attributes;
 		}
 
-		public FieldKey( TypeKey typeKey, string type, string name )
+		public FieldKey(TypeKey typeKey, string type, string name, FieldAttributes fieldAttributes)
 		{
 			this.typeKey = typeKey;
 			this.type = type;
 			this.name = name;
+			this.fieldAttributes = fieldAttributes;
+		}
+
+		public FieldAttributes FieldAttributes
+		{
+			get { return fieldAttributes; }
 		}
 
 		public TypeKey TypeKey

@@ -54,7 +54,7 @@ namespace Obfuscar
 
 		public bool Test( EventKey evt )
 		{
-			if ( Helper.CompareOptionalRegex(evt.TypeKey.Fullname, type) )
+			if ( Helper.CompareOptionalRegex(evt.TypeKey.Fullname, type) && MethodTester.CheckMethodVisibility(attrib, evt.AddMethodAttributes))
 			{
 				if ( name != null )
 					return Helper.CompareOptionalRegex(evt.Name, name);
