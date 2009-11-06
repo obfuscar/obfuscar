@@ -173,3 +173,13 @@ Add the following line to the configuration file to enable unique names:
 {{{
   <Var name="ReuseNames" value="false" />
 }}}
+
+== Control Hiding of Strings ==
+By default Obfuscar hides all string constants by replacing the string load (LDSTR opcode) by calls to methods which return the string from a buffer. This buffer is allocated on startup (in a static constructor) by reading from a XOR-encoded UTF8 byte array containing all strings. This comes with a small performance cost.
+You can disable this feature completely by adding the following line to the configuration file:
+
+{{{
+  <Var name="HideStrings" value="false" />
+}}}
+
+If you only want to disable it on specific methods use the `SkipStringHiding` elements.
