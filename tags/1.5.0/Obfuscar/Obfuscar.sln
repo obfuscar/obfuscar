@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obfuscar", "Obfuscar.csproj", "{F28CDDFF-5A7A-413E-809E-15FFB8766E86}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObfuscarTests", "ObfuscarTests\ObfuscarTests.csproj", "{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F28CDDFF-5A7A-413E-809E-15FFB8766E86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F28CDDFF-5A7A-413E-809E-15FFB8766E86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F28CDDFF-5A7A-413E-809E-15FFB8766E86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F28CDDFF-5A7A-413E-809E-15FFB8766E86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

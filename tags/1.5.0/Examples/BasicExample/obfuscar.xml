@@ -1,0 +1,8 @@
+<?xml version='1.0'?>
+<Obfuscator>
+  <Var name="InPath" value=".\Obfuscator_Input" />
+  <Var name="OutPath" value=".\Obfuscator_Output" />
+
+  <Module file="$(InPath)\BasicExampleExe.exe" />
+  <Module file="$(InPath)\BasicExampleLibrary.dll" />
+</Obfuscator>
