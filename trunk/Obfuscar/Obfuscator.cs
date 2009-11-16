@@ -392,6 +392,22 @@ namespace Obfuscar
 
 								if ( resName.StartsWith( fullName + "." ) )
 								{
+									// If one of the type's methods return a ResourceManager and contains a string with the full type name,
+									// we replace the type string with the obfuscated one.
+									// This is for the Visual Studio generated resource designer code.
+									foreach (MethodDefinition method in type.Methods)
+									{
+										if (method.ReturnType.ReturnType.FullName == "System.Resources.ResourceManager")
+										{
+											for (int j = 0; j < method.Body.Instructions.Count; j++)
+											{
+												Instruction instruction = method.Body.Instructions[j];
+												if (instruction.OpCode == OpCodes.Ldstr && (string)instruction.Operand == fullName)
+													instruction.Operand = newTypeKey.Fullname;
+											}
+										}
+									}
+
 									string suffix = resName.Substring( fullName.Length );
 									string newName = newTypeKey.Fullname + suffix;
 
