@@ -92,10 +92,11 @@ namespace Obfuscar
 				else
 					throw new ApplicationException(string.Format("'{0}' is not valid for the 'attrib' value of skip elements. Only 'public' and 'protected' are supported by now.", attribute));
 				
-				return false; // attrib value given, but the member is not public/protected. We do not obfuscate the name.
+				// attrib value given, but the member is not public/protected. We signal that the Skip* rule should be ignored. The member is obfuscated in any case.
+				return false;
 			}
 			else
-				return true; // No attrib value given: we obfuscate always.
+				return true; // No attrib value given: The Skip* rule is processed normally.
 		}
 	}
 }
