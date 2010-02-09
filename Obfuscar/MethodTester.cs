@@ -86,7 +86,7 @@ namespace Obfuscar
 				}
 				else if (string.Equals(attribute, "protected", StringComparison.CurrentCultureIgnoreCase))
 				{
-					if (accessmask == MethodAttributes.Public || accessmask == MethodAttributes.Family)
+					if (accessmask == MethodAttributes.Public || accessmask == MethodAttributes.Family || accessmask == MethodAttributes.FamORAssem)
 						return true;
 				}
 				else
