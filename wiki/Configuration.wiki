@@ -193,3 +193,16 @@ You can disable this feature completely by adding the following line to the conf
 }}}
 
 If you only want to disable it on specific methods use the `SkipStringHiding` elements.
+
+== Signing of Strongly Named Assemblies ==
+Signed assemblies will not work after obfuscation and must be re-signed.
+
+Add the following line to the configuration file to specify the path to your key file. When given a `KeyFile` in the configuration, Obfuscar will sign a *previously* signed assembly with the given key. Relative paths are searched from the current directory and, if not found, from the directory containing the particular assembly.
+
+{{{
+  <Var name="KeyFile" value="key.skn" />
+}}}
+
+If no `KeyFile` is specified, Obfuscar normally throws an exception on signed assemblies. If an assembly is marked _delay signed_, the signing step will be skipped in case no key file is given.
+
+With the special key file name `auto`, Obfuscar uses the value of the AssemblyKeyFileAttribute instead (if existing).
