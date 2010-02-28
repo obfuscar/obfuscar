@@ -39,6 +39,7 @@ namespace Obfuscar
 		bool reuseNames;
 		bool xmlMapping;
 		bool hideStrings;
+		string keyFile;
 
 		public Settings( Variables vars )
 		{
@@ -52,6 +53,8 @@ namespace Obfuscar
 			hideStrings = XmlConvert.ToBoolean(vars.GetValue("HideStrings", "true"));
 
 			xmlMapping = XmlConvert.ToBoolean( vars.GetValue( "XmlMapping", "false" ) );
+
+			keyFile = vars.GetValue("KeyFile", null);
 		}
 
 		public string InPath
@@ -92,6 +95,11 @@ namespace Obfuscar
 		public bool XmlMapping
 		{
 			get { return xmlMapping; }
+		}
+
+		public string KeyFile
+		{
+			get { return keyFile; }
 		}
 	}
 }

@@ -32,6 +32,8 @@ using System.Diagnostics;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Security;
+using Mono.Security.Cryptography;
+using System.IO;
 
 namespace Obfuscar
 {
@@ -120,10 +122,50 @@ namespace Obfuscar
 					System.IO.Path.GetFileName( info.Filename ) );
 
 				AssemblyFactory.SaveAssembly( info.Definition, outName );
-				if ( info.Definition.Name.HasPublicKey )
+
+				// Re-sign assembly
+				if (info.Definition.Name.HasPublicKey)
 				{
-					StrongName sn = new StrongName( project.KeyValue );
-					sn.Sign(outName);
+					if (project.Settings.KeyFile != null)
+					{
+						StrongName sn;
+						string keyfilepath = project.Settings.KeyFile;
+
+						if (string.Compare(keyfilepath, "auto") == 0)
+						{
+							keyfilepath = null;
+							foreach (CustomAttribute ca in info.Definition.CustomAttributes)
+							{
+								if (ca.Constructor.DeclaringType.FullName == typeof(System.Reflection.AssemblyKeyFileAttribute).FullName)
+									keyfilepath = (string)ca.ConstructorParameters[0];
+							}
+							if (keyfilepath == null)
+								throw new ApplicationException(String.Format("KeyFile='auto', but assembly '{1}' contains no AssemblyKeyFileAttribute", keyfilepath, info.Filename));
+						}
+
+						if (!Path.IsPathRooted(keyfilepath))
+						{
+							foreach (string checkpath in new string[] { ".", Path.GetDirectoryName(info.Filename) })
+							{
+								string newpath = Path.Combine(checkpath, keyfilepath);
+								if (File.Exists(newpath))
+								{
+									keyfilepath = newpath;
+									break;
+								}
+							}
+						}
+
+						try
+						{
+							sn = new StrongName(CryptoConvert.FromCapiKeyBlob(File.ReadAllBytes(keyfilepath)));
+							sn.Sign(outName);
+						}
+						catch (Exception ex)
+						{
+							throw new ApplicationException(String.Format("Failed to sign '{1}' with key file \"{0}\"", keyfilepath, info.Filename), ex);
+						}
+					}
 				}
 			}
 		}
@@ -390,7 +432,7 @@ namespace Obfuscar
 								Resource res = resources[i];
 								string resName = res.Name;
 
-								if ( resName.StartsWith( fullName + "." ) )
+								if ( Path.GetFileNameWithoutExtension(resName) == fullName )
 								{
 									// If one of the type's methods return a ResourceManager and contains a string with the full type name,
 									// we replace the type string with the obfuscated one.
@@ -434,7 +476,7 @@ namespace Obfuscar
 								Resource res = resources[i];
 								string resName = res.Name;
 
-								if ( resName.StartsWith( fullName + "." ) )
+								if ( Path.GetFileNameWithoutExtension(resName) == fullName )
 								{
 									resources.RemoveAt( i );
 									map.AddResource( resName, ObfuscationStatus.Skipped, "filtered" );
@@ -454,7 +496,7 @@ namespace Obfuscar
 							Resource res = resources[i];
 							string resName = res.Name;
 
-							if ( resName.StartsWith( fullName + "." ) )
+							if ( Path.GetFileNameWithoutExtension(resName) == fullName )
 							{
 								resources.RemoveAt( i );
 								map.AddResource( resName, ObfuscationStatus.Skipped, "marked" );
