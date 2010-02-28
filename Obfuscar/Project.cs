@@ -52,26 +52,6 @@ namespace Obfuscar
 		{
 		}
 
-		public RSA KeyValue
-		{
-			get
-			{
-				if (keyvalue != null)
-					return keyvalue;
-				if (vars.GetValue("KeyFile", null) == null)
-					return null;
-				try
-				{
-					keyvalue = CryptoConvert.FromCapiKeyBlob(File.ReadAllBytes(vars.GetValue("KeyFile", null)));
-				}
-				catch (Exception ex)
-				{
-					throw new ApplicationException(String.Format("Failure loading key file \"{0}\"", vars.GetValue("KeyFile", null)), ex);
-				}
-				return keyvalue;
-			}
-		}
-
 		public static Project FromXml( XmlReader reader )
 		{
 			Project project = new Project( );
