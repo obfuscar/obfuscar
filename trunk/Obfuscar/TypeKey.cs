@@ -103,20 +103,17 @@ namespace Obfuscar
 			get { return fullname; }
 		}
 
-		public bool Matches( TypeReference type )
-		{
-			// Remove generic type parameters and compare full names
-			string typefullname = type.ToString( );
-			if ( typefullname.EndsWith( ">" ) )
-			{
-				int pos = typefullname.LastIndexOf( '<' );
-				if ( pos < 0 )
-					throw new InvalidOperationException( string.Format( "Type \"{0}\" has malformed generic type parameter.", typefullname ) );
-				typefullname = typefullname.Substring( 0, pos );
-			}
 
-			return typefullname == fullname;
-		}
+        public bool Matches(TypeReference type)
+        {
+            // Remove generic type parameters and compare full names
+            string typefullname = type.ToString();
+            if (type is GenericInstanceType)
+            {
+                typefullname = ((GenericInstanceType)type).ElementType.ToString();
+            }
+            return typefullname == fullname;
+        }
 
 		public bool Equals( TypeKey other )
 		{
