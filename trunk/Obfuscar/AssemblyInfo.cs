@@ -86,7 +86,7 @@ namespace Obfuscar
 				info.LoadAssembly( val );
 
 				if ( AssemblyIsSigned( info.Definition ) && project.Settings.KeyFile == null )
-					throw new ApplicationException( "Obfuscating a signed assembly would result in an invalid assembly:  " + info.Name +"; use the KeyValue property to set a key to use" );
+					throw new ApplicationException( "Obfuscating a signed assembly would result in an invalid assembly:  " + info.Name +"; use the KeyFile property to set a key to use" );
 			}
 			else
 				throw new InvalidOperationException( "Need valid file attribute." );
