@@ -45,25 +45,33 @@ namespace Obfuscar
 	{
 		private readonly string name;
 		private readonly TypeSkipFlags skipFlags;
+		private readonly string attrib;
 
 		public TypeSkipFlags SkipFlags
 		{
 			get { return this.skipFlags; }
 		}
 
-		public TypeTester( string name )
-			: this( name, TypeSkipFlags.SkipNone )
-		{
-		}
-
-		public TypeTester( string name, TypeSkipFlags skipFlags )
+		public TypeTester( string name, TypeSkipFlags skipFlags, string attrib)
 		{
 			this.name = name;
 			this.skipFlags = skipFlags;
+			this.attrib = attrib.ToLower();
 		}
 
 		public bool Test( TypeKey type )
 		{
+			if ( !string.IsNullOrEmpty(attrib) )
+			{
+				if (string.Equals(attrib, "public", StringComparison.InvariantCultureIgnoreCase))
+				{
+					if ( !MethodTester.IsTypePublic(type.TypeDefinition) )
+						return false;
+				}
+				else
+					throw new ApplicationException(string.Format("'{0}' is not valid for the 'attrib' value of the SkipType element. Only 'public' is supported by now.", attrib));
+			}
+
 			return Helper.CompareOptionalRegex(type.Fullname, name);
 		}
 	}

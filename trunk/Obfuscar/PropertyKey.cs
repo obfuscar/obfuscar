@@ -36,14 +36,14 @@ namespace Obfuscar
 		readonly TypeKey typeKey;
 		readonly string type;
 		readonly string name;
-		readonly MethodAttributes getterMethodAttributes;
+		readonly PropertyDefinition propertyDefinition;
 
 		public PropertyKey( TypeKey typeKey, PropertyDefinition prop )
 		{
 			this.typeKey = typeKey;
 			this.type = prop.PropertyType.FullName;
 			this.name = prop.Name;
-			this.getterMethodAttributes = prop.GetMethod != null ? prop.GetMethod.Attributes : 0;
+			this.propertyDefinition = prop;
 		}
 
 		public TypeKey TypeKey
@@ -63,7 +63,12 @@ namespace Obfuscar
 
 		public MethodAttributes GetterMethodAttributes
 		{
-			get { return getterMethodAttributes; }
+			get { return propertyDefinition.GetMethod != null ? propertyDefinition.GetMethod.Attributes : 0; }
+		}
+
+		public TypeDefinition DeclaringType
+		{
+			get { return (TypeDefinition)propertyDefinition.DeclaringType; }
 		}
 
 		public virtual bool Matches( MemberReference member )

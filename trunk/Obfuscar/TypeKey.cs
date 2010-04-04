@@ -36,11 +36,14 @@ namespace Obfuscar
 		readonly string ns;
 		readonly string name;
 		readonly string fullname;
+		readonly TypeReference typeReference;
 
 		readonly int hashCode;
 
+
 		public TypeKey( TypeReference type )
 		{
+			this.typeReference = type;
 			this.scope = Helper.GetScopeName( type );
 
 			this.name = type.Name;
@@ -81,6 +84,11 @@ namespace Obfuscar
 		private int CalcHashCode( )
 		{
 			return scope.GetHashCode( ) ^ ns.GetHashCode( ) ^ name.GetHashCode( ) ^ fullname.GetHashCode( );
+		}
+
+		public TypeDefinition TypeDefinition
+		{
+			get { return typeReference as TypeDefinition; }
 		}
 
 		public string Scope

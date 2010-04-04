@@ -37,24 +37,27 @@ namespace Obfuscar
 		private readonly Regex nameRx;
 		private readonly string type;
 		private readonly string attrib;
+		private readonly string typeAttrib;
 
-		public EventTester( string name, string type, string attrib )
+		public EventTester( string name, string type, string attrib, string typeAttrib )
 		{
 			this.name = name;
 			this.type = type;
 			this.attrib = attrib;
+			this.typeAttrib = typeAttrib;
 		}
 
-		public EventTester( Regex nameRx, string type, string attrib )
+		public EventTester(Regex nameRx, string type, string attrib, string typeAttrib)
 		{
 			this.nameRx = nameRx;
 			this.type = type;
 			this.attrib = attrib;
+			this.typeAttrib = typeAttrib;
 		}
 
 		public bool Test( EventKey evt )
 		{
-			if ( Helper.CompareOptionalRegex(evt.TypeKey.Fullname, type) && MethodTester.CheckMethodVisibility(attrib, evt.AddMethodAttributes))
+			if ( Helper.CompareOptionalRegex(evt.TypeKey.Fullname, type) && MethodTester.CheckMemberVisibility(attrib, typeAttrib, evt.AddMethodAttributes, evt.DeclaringType))
 			{
 				if ( name != null )
 					return Helper.CompareOptionalRegex(evt.Name, name);
