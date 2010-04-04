@@ -230,7 +230,7 @@ namespace Obfuscar
 						foreach ( FieldDefinition field in type.Fields )
 						{
 							string sig = field.FieldType.FullName;
-							FieldKey fieldKey = new FieldKey( typeKey, sig, field.Name, field.Attributes );
+							FieldKey fieldKey = new FieldKey( typeKey, sig, field.Name, field );
 
 							NameGroup nameGroup = GetNameGroup( nameGroups, sig );
 
@@ -312,16 +312,13 @@ namespace Obfuscar
 
 					if ( ShouldRename( type ) )
 					{
-						if (info.ShouldSkip(new TypeKey(type)))
-							continue;
-
 						// rename the constructor parameters
-						foreach ( MethodDefinition method in type.Constructors )
-							RenameParams( method );
+						foreach (MethodDefinition method in type.Constructors)
+							RenameParams(method, info);
 
 						// rename the method parameters
 						foreach ( MethodDefinition method in type.Methods )
-							RenameParams( method );
+							RenameParams( method, info );
 
 						// rename the class parameters
 						index = 0;
@@ -332,15 +329,26 @@ namespace Obfuscar
 			}
 		}
 
-		void RenameParams( MethodDefinition method )
+		void RenameParams( MethodDefinition method, AssemblyInfo info )
 		{
-			int index = 0;
-			foreach ( ParameterReference param in method.Parameters )
-				param.Name = NameMaker.UniqueName( index++ );
+			MethodKey methodkey = new MethodKey(method);
 
-			index = 0;
-			foreach ( GenericParameter param in method.GenericParameters )
-				param.Name = NameMaker.UniqueName( index++ );
+			if (!info.ShouldSkip(methodkey))
+			{
+				int index = 0;
+				foreach (ParameterDefinition param in method.Parameters)
+				{
+					if (param.CustomAttributes.Count == 0)
+						param.Name = null;
+				}
+
+				index = 0;
+				foreach (GenericParameter param in method.GenericParameters)
+				{
+					if (param.CustomAttributes.Count == 0)
+						param.Name = NameMaker.UniqueName(index++);
+				}
+			}
 		}
 
 		bool ShouldRename( TypeDefinition type )
