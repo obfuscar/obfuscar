@@ -38,24 +38,27 @@ namespace Obfuscar
 		private readonly Regex nameRx;
 		private readonly string type;
 		private readonly string attrib;
+		private readonly string typeAttrib;
 
 		public MethodTester( MethodKey key )
 		{
 			this.key = key;
 		}
 
-		public MethodTester( string name, string type, string attrib )
+		public MethodTester( string name, string type, string attrib, string typeAttrib )
 		{
 			this.name = name;
 			this.type = type;
 			this.attrib = attrib;
+			this.typeAttrib = typeAttrib;
 		}
 
-		public MethodTester( Regex nameRx, string type, string attrib )
+		public MethodTester(Regex nameRx, string type, string attrib, string typeAttrib)
 		{
 			this.nameRx = nameRx;
 			this.type = type;
 			this.attrib = attrib;
+			this.typeAttrib = typeAttrib;
 		}
 
 		public bool Test( MethodKey method )
@@ -63,7 +66,7 @@ namespace Obfuscar
 			if ( key != null )
 				return method == key;
 
-			if ( Helper.CompareOptionalRegex(method.TypeKey.Fullname, type) && CheckMethodVisibility(this.attrib, method.MethodAttributes))
+			if (Helper.CompareOptionalRegex(method.TypeKey.Fullname, type) && CheckMemberVisibility(this.attrib, typeAttrib, method.MethodAttributes, method.DeclaringType))
 			{
 				if ( name != null )
 					return Helper.CompareOptionalRegex(method.Name, name);
@@ -74,8 +77,19 @@ namespace Obfuscar
 			return false;
 		}
 
-		static public bool CheckMethodVisibility(string attribute, MethodAttributes methodAttributes)
+		static public bool CheckMemberVisibility(string attribute, string typeAttribute, MethodAttributes methodAttributes, TypeDefinition declaringType)
 		{
+			if (!string.IsNullOrEmpty(typeAttribute))
+			{
+				if (string.Equals(typeAttribute, "public", StringComparison.InvariantCultureIgnoreCase))
+				{
+					if (!IsTypePublic(declaringType))
+						return false;
+				}
+				else
+					throw new ApplicationException(string.Format("'{0}' is not valid for the 'typeattrib' value of skip elements. Only 'public' is supported by now.", typeAttribute));
+			}
+
 			if (!string.IsNullOrEmpty(attribute))
 			{
 				MethodAttributes accessmask = (methodAttributes & MethodAttributes.MemberAccessMask);
@@ -97,6 +111,18 @@ namespace Obfuscar
 			}
 			else
 				return true; // No attrib value given: The Skip* rule is processed normally.
+		}
+
+		static public bool IsTypePublic(TypeDefinition type)
+		{
+			if (type.DeclaringType != null) {
+				if (type.IsNestedFamily || type.IsNestedFamilyOrAssembly || type.IsNestedPublic)
+					return IsTypePublic((TypeDefinition)type.DeclaringType);
+				else
+					return false;
+			} else {
+				return type.IsPublic;
+			}
 		}
 	}
 }

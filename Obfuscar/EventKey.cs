@@ -36,24 +36,24 @@ namespace Obfuscar
 		readonly TypeKey typeKey;
 		readonly string type;
 		readonly string name;
-		readonly MethodAttributes addMethodAttributes;
+		readonly EventDefinition eventDefinition;
 
 		public EventKey( EventDefinition evt )
-			: this(new TypeKey(evt.DeclaringType), evt.EventType.FullName, evt.Name, evt.AddMethod != null ? evt.AddMethod.Attributes : 0)
+			: this(new TypeKey( (TypeDefinition)evt.DeclaringType ), evt)
 		{
 		}
 
 		public EventKey( TypeKey typeKey, EventDefinition evt )
-			: this(typeKey, evt.EventType.FullName, evt.Name, evt.AddMethod != null ? evt.AddMethod.Attributes : 0)
+			: this(typeKey, evt.EventType.FullName, evt.Name, evt)
 		{
 		}
 
-		public EventKey( TypeKey typeKey, string type, string name, MethodAttributes addMethodAttributes)
+		public EventKey( TypeKey typeKey, string type, string name, EventDefinition eventDefinition)
 		{
 			this.typeKey = typeKey;
 			this.type = type;
 			this.name = name;
-			this.addMethodAttributes = addMethodAttributes;
+			this.eventDefinition = eventDefinition;
 		}
 
 		public TypeKey TypeKey
@@ -73,7 +73,12 @@ namespace Obfuscar
 
 		public MethodAttributes AddMethodAttributes
 		{
-			get { return addMethodAttributes; }
+			get { return eventDefinition.AddMethod != null ? eventDefinition.AddMethod.Attributes : 0; }
+		}
+
+		public TypeDefinition DeclaringType
+		{
+			get { return (TypeDefinition)eventDefinition.DeclaringType; }
 		}
 
 		public virtual bool Matches( MemberReference member )

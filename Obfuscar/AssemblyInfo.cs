@@ -109,6 +109,7 @@ namespace Obfuscar
 							case "SkipType":
 								{
 									val = Helper.GetAttribute(reader, "name", vars);
+									string attrib = Helper.GetAttribute(reader, "attrib", vars);
 									if (val.Length > 0)
 									{
 										string typeName = val;
@@ -135,7 +136,7 @@ namespace Obfuscar
 										if ( val.Length > 0 && XmlConvert.ToBoolean( val ) )
 											skipFlags |= TypeSkipFlags.SkipEvent;
 
-										info.skipTypes.Add(new TypeTester(typeName, skipFlags));
+										info.skipTypes.Add(new TypeTester(typeName, skipFlags, attrib));
 									}
 								}
 								break;
@@ -144,14 +145,15 @@ namespace Obfuscar
 									val = Helper.GetAttribute( reader, "name", vars );
 									string type = Helper.GetAttribute( reader, "type", vars );
 									string attrib = Helper.GetAttribute( reader, "attrib", vars );
+									string typeattrib = Helper.GetAttribute( reader, "typeattrib", vars );
 
 									if ( val.Length > 0 )
-										info.skipMethods.Add( new MethodTester( val, type, attrib ) );
+										info.skipMethods.Add( new MethodTester( val, type, attrib, typeattrib ) );
 									else
 									{
 										val = Helper.GetAttribute( reader, "rx" );
 										if ( val.Length > 0 )
-											info.skipMethods.Add( new MethodTester( new Regex( val ), type, attrib ) );
+											info.skipMethods.Add( new MethodTester( new Regex( val ), type, attrib, typeattrib ) );
 									}
 								}
 								break;
@@ -160,14 +162,16 @@ namespace Obfuscar
 									val = Helper.GetAttribute(reader, "name", vars);
 									string type = Helper.GetAttribute(reader, "type", vars);
 									string attrib = Helper.GetAttribute(reader, "attrib", vars);
+									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
+
 
 									if (val.Length > 0)
-										info.skipStringHiding.Add(new MethodTester(val, type, attrib));
+										info.skipStringHiding.Add(new MethodTester(val, type, attrib, typeattrib));
 									else
 									{
 										val = Helper.GetAttribute(reader, "rx");
 										if (val.Length > 0)
-											info.skipStringHiding.Add(new MethodTester(new Regex(val), type, attrib));
+											info.skipStringHiding.Add(new MethodTester(new Regex(val), type, attrib, typeattrib));
 									}
 								}
 								break;
@@ -176,14 +180,15 @@ namespace Obfuscar
 									val = Helper.GetAttribute( reader, "name", vars );
 									string type = Helper.GetAttribute( reader, "type", vars );
 									string attrib = Helper.GetAttribute( reader, "attrib", vars );
+									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
 
 									if ( val.Length > 0 )
-										info.skipFields.Add( new FieldTester( val, type, attrib ) );
+										info.skipFields.Add( new FieldTester( val, type, attrib, typeattrib ) );
 									else
 									{
 										val = Helper.GetAttribute( reader, "rx" );
 										if ( val.Length > 0 )
-											info.skipFields.Add( new FieldTester( new Regex( val ), type, attrib ) );
+											info.skipFields.Add( new FieldTester( new Regex( val ), type, attrib, typeattrib ) );
 									}
 								}
 								break;
@@ -192,14 +197,15 @@ namespace Obfuscar
 									val = Helper.GetAttribute( reader, "name", vars );
 									string type = Helper.GetAttribute( reader, "type", vars );
 									string attrib = Helper.GetAttribute( reader, "attrib", vars );
+									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
 
 									if ( val.Length > 0 )
-										info.skipProperties.Add( new PropertyTester( val, type, attrib ) );
+										info.skipProperties.Add( new PropertyTester( val, type, attrib, typeattrib ) );
 									else
 									{
 										val = Helper.GetAttribute( reader, "rx" );
 										if ( val.Length > 0 )
-											info.skipProperties.Add( new PropertyTester( new Regex( val ), type, attrib ) );
+											info.skipProperties.Add( new PropertyTester( new Regex( val ), type, attrib, typeattrib ) );
 									}
 								}
 								break;
@@ -208,14 +214,15 @@ namespace Obfuscar
 									val = Helper.GetAttribute( reader, "name", vars );
 									string type = Helper.GetAttribute( reader, "type", vars );
 									string attrib = Helper.GetAttribute( reader, "attrib", vars );
+									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
 
 									if ( val.Length > 0 )
-										info.skipEvents.Add( new EventTester( val, type, attrib ) );
+										info.skipEvents.Add( new EventTester( val, type, attrib, typeattrib ) );
 									else
 									{
 										val = Helper.GetAttribute( reader, "rx" );
 										if ( val.Length > 0 )
-											info.skipEvents.Add( new EventTester( new Regex( val ), type, attrib ) );
+											info.skipEvents.Add( new EventTester( new Regex( val ), type, attrib, typeattrib ) );
 									}
 								}
 								break;
