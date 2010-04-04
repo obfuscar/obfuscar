@@ -321,9 +321,12 @@ namespace Obfuscar
 							RenameParams( method, info );
 
 						// rename the class parameters
-						index = 0;
-						foreach ( GenericParameter param in type.GenericParameters )
-							param.Name = NameMaker.UniqueName( index++ );
+						if (!info.ShouldSkip(new TypeKey(type)))
+						{
+							index = 0;
+							foreach ( GenericParameter param in type.GenericParameters )
+								param.Name = NameMaker.UniqueName( index++ );
+						}
 					}
 				}
 			}
