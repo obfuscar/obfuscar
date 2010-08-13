@@ -47,14 +47,16 @@ namespace Obfuscar
 		public string GetValue( string name, string def )
 		{
 			string value;
-			if ( vars.TryGetValue( name, out value ) )
-				return value;
-			else
-				return def;
+		    return this.Replace(vars.TryGetValue(name, out value) ? value : def);
 		}
 
 		public string Replace( string str )
 		{
+            if (string.IsNullOrEmpty(str))
+            {
+                return str;
+            }
+
 			System.Text.StringBuilder formatted = new System.Text.StringBuilder( );
 
 			int lastMatch = 0;
@@ -68,7 +70,7 @@ namespace Obfuscar
 
 				variable = m.Groups[1].Value;
 				if ( vars.TryGetValue( variable, out replacement ) )
-					formatted.Append( replacement );
+					formatted.Append( this.Replace(replacement) );
 				else
 					throw new ApplicationException( "Unable to replace variable:  " + variable );
 
