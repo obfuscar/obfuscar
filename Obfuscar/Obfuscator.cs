@@ -59,7 +59,7 @@ namespace Obfuscar
 			try
 			{
 				using ( XmlReader reader = XmlTextReader.Create( System.IO.File.OpenRead( projfile ), settings ) )
-					LoadFromReader( reader );
+					LoadFromReader( reader, System.IO.Path.GetDirectoryName(projfile) );
 			}
 			catch ( System.IO.IOException e )
 			{
@@ -73,7 +73,7 @@ namespace Obfuscar
 		/// <param name="projfile">Reader for project file.</param>
 		public Obfuscator( XmlReader reader )
 		{
-			LoadFromReader( reader );
+			LoadFromReader( reader, null );
 		}
 
 		public static Obfuscator CreateFromXml( string xml )
@@ -97,9 +97,9 @@ namespace Obfuscar
 
 		public Project Project { get { return project; } }
 
-		void LoadFromReader( XmlReader reader )
+		void LoadFromReader( XmlReader reader, string projectFileDirectory )
 		{
-			project = Project.FromXml( reader );
+			project = Project.FromXml( reader, projectFileDirectory );
 
 			// make sure everything looks good
 			project.CheckSettings( );
