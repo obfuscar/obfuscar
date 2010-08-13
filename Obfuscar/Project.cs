@@ -38,6 +38,8 @@ namespace Obfuscar
 {
 	class Project : IEnumerable<AssemblyInfo>
 	{
+		private const string SPECIALVAR_PROJECTFILEDIRECTORY = "ProjectFileDirectory";
+
 		private readonly List<AssemblyInfo> assemblyList = new List<AssemblyInfo>( );
 		private readonly Dictionary<string, AssemblyInfo> assemblyMap = new Dictionary<string, AssemblyInfo>( );
 
@@ -52,9 +54,11 @@ namespace Obfuscar
 		{
 		}
 
-		public static Project FromXml( XmlReader reader )
+		public static Project FromXml( XmlReader reader, string projectFileDirectory )
 		{
 			Project project = new Project( );
+
+			project.vars.Add(SPECIALVAR_PROJECTFILEDIRECTORY, string.IsNullOrEmpty(projectFileDirectory) ? "." : projectFileDirectory);
 
 			while ( reader.Read( ) )
 			{
