@@ -356,22 +356,17 @@ namespace Obfuscar
 
 		bool ShouldRename( TypeDefinition type )
 		{
-			const string ctor = "System.Void Obfuscar.ObfuscateAttribute::.ctor()";
+			var attributeTypeFullName = typeof(ObfuscateAttribute).FullName;
 
 			bool should = !project.Settings.MarkedOnly;
 
 			foreach ( CustomAttribute attr in type.CustomAttributes )
 			{
-				if ( attr.Constructor.ToString( ) == ctor )
+				if (attr.Constructor.DeclaringType.FullName.Equals(attributeTypeFullName))
 				{
-					// determine the result from the property, default to true if missing
-					object obj = attr.Properties["ShouldObfuscate"];
-					if ( obj != null )
-						should = (bool) obj;
-					else
-						should = true;
-
-					break;
+                    // determines the value of either the constructor parameter or the property, defaults to true
+				    return (attr.ConstructorParameters.Count == 0 || (bool)attr.ConstructorParameters[0])
+                        && (bool)(attr.Properties["ShouldObfuscate"] ?? true);
 				}
 			}
 
