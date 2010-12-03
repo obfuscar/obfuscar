@@ -38,7 +38,7 @@ namespace Obfuscar
 		readonly string name;
 		readonly PropertyDefinition propertyDefinition;
 
-		public PropertyKey( TypeKey typeKey, PropertyDefinition prop )
+		public PropertyKey(TypeKey typeKey, PropertyDefinition prop)
 		{
 			this.typeKey = typeKey;
 			this.type = prop.PropertyType.FullName;
@@ -71,55 +71,55 @@ namespace Obfuscar
 			get { return (TypeDefinition)propertyDefinition.DeclaringType; }
 		}
 
-		public virtual bool Matches( MemberReference member )
+		public virtual bool Matches(MemberReference member)
 		{
 			PropertyReference propRef = member as PropertyReference;
-			if ( propRef != null )
+			if (propRef != null)
 			{
-				if ( typeKey.Matches( propRef.DeclaringType ) )
+				if (typeKey.Matches(propRef.DeclaringType))
 					return type == propRef.PropertyType.FullName && name == propRef.Name;
 			}
 
 			return false;
 		}
 
-		public override bool Equals( object obj )
+		public override bool Equals(object obj)
 		{
 			PropertyKey key = obj as PropertyKey;
-			if ( key == null )
+			if (key == null)
 				return false;
 
 			return this == key;
 		}
 
-		public static bool operator ==( PropertyKey a, PropertyKey b )
+		public static bool operator ==(PropertyKey a, PropertyKey b)
 		{
-			if ( (object) a == null )
-				return (object) b == null;
-			else if ( (object) b == null )
+			if ((object)a == null)
+				return (object)b == null;
+			else if ((object)b == null)
 				return false;
 			else
 				return a.typeKey == b.typeKey && a.type == b.type && a.name == b.name;
 		}
 
-		public static bool operator !=( PropertyKey a, PropertyKey b )
+		public static bool operator !=(PropertyKey a, PropertyKey b)
 		{
-			if ( (object) a == null )
-				return (object) b != null;
-			else if ( (object) b == null )
+			if ((object)a == null)
+				return (object)b != null;
+			else if ((object)b == null)
 				return true;
 			else
 				return a.typeKey != b.typeKey || a.type != b.type || a.name != b.name;
 		}
 
-		public override int GetHashCode( )
+		public override int GetHashCode()
 		{
-			return typeKey.GetHashCode( ) ^ type.GetHashCode( ) ^ name.GetHashCode( );
+			return typeKey.GetHashCode() ^ type.GetHashCode() ^ name.GetHashCode();
 		}
 
-		public override string ToString( )
+		public override string ToString()
 		{
-			return String.Format( "[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name );
+			return String.Format("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
 		}
 	}
 }

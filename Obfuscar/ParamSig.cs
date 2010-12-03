@@ -39,45 +39,45 @@ namespace Obfuscar
 		readonly string[] paramTypes;
 		readonly int hashCode;
 
-		public ParamSig( ParamSig sig )
-			: this( (string[]) sig.paramTypes.Clone( ) )
+		public ParamSig(ParamSig sig)
+			: this((string[])sig.paramTypes.Clone())
 		{
 		}
 
-		public ParamSig( string[] paramTypes )
+		public ParamSig(string[] paramTypes)
 		{
 			this.paramTypes = paramTypes;
 
-			hashCode = CalcHashCode( );
+			hashCode = CalcHashCode();
 		}
 
-		public ParamSig( MethodReference method )
+		public ParamSig(MethodReference method)
 		{
 			paramTypes = new string[method.Parameters.Count];
 
 			int i = 0;
-			foreach ( ParameterDefinition param in method.Parameters )
-				paramTypes[i++] = Helper.GetParameterTypeName( param );
+			foreach (ParameterDefinition param in method.Parameters)
+				paramTypes[i++] = Helper.GetParameterTypeName(param);
 
-			hashCode = CalcHashCode( );
+			hashCode = CalcHashCode();
 		}
 
-		public ParamSig( MethodDefinition method )
+		public ParamSig(MethodDefinition method)
 		{
 			paramTypes = new string[method.Parameters.Count];
 
 			int i = 0;
-			foreach ( ParameterDefinition param in method.Parameters )
-				paramTypes[i++] = Helper.GetParameterTypeName( param );
+			foreach (ParameterDefinition param in method.Parameters)
+				paramTypes[i++] = Helper.GetParameterTypeName(param);
 
-			hashCode = CalcHashCode( );
+			hashCode = CalcHashCode();
 		}
 
-		private int CalcHashCode( )
+		private int CalcHashCode()
 		{
 			int hashCode = 0;
-			for ( int i = 0; i < paramTypes.Length; i++ )
-				hashCode ^= paramTypes[i].GetHashCode( );
+			for (int i = 0; i < paramTypes.Length; i++)
+				hashCode ^= paramTypes[i].GetHashCode();
 			return hashCode;
 		}
 
@@ -96,28 +96,28 @@ namespace Obfuscar
 			get { return paramTypes; }
 		}
 
-		public bool Equals( ParamSig other )
+		public bool Equals(ParamSig other)
 		{
 			return other != null &&
-				ParamsEqual( paramTypes, other.paramTypes );
+				ParamsEqual(paramTypes, other.paramTypes);
 		}
 
-		private static bool ParamsEqual( IList<string> a, IList<string> b )
+		private static bool ParamsEqual(IList<string> a, IList<string> b)
 		{
-			if ( a == null )
+			if (a == null)
 				return b == null;
-			else if ( b == null )
+			else if (b == null)
 				return false;
-			else if ( a.Count != b.Count )
+			else if (a.Count != b.Count)
 				return false;
 			else
 			{
 				// kludge...too simplistic...param types match anything
 
-				for ( int i = 0; i < a.Count; i++ )
+				for (int i = 0; i < a.Count; i++)
 				{
-					if ( !a[i].StartsWith( "!" ) && !b[i].StartsWith( "!" ) &&
-						!a[i].Equals( b[i] ) )
+					if (!a[i].StartsWith("!") && !b[i].StartsWith("!") &&
+						!a[i].Equals(b[i]))
 						return false;
 				}
 
@@ -126,53 +126,53 @@ namespace Obfuscar
 			}
 		}
 
-		public override bool Equals( object obj )
+		public override bool Equals(object obj)
 		{
-			return obj is ParamSig ? Equals( (ParamSig) obj ) : false;
+			return obj is ParamSig ? Equals((ParamSig)obj) : false;
 		}
 
-		public static bool operator ==( ParamSig a, ParamSig b )
+		public static bool operator ==(ParamSig a, ParamSig b)
 		{
-			if ( (object) a == null )
-				return (object) b == null;
-			else if ( (object) b == null )
+			if ((object)a == null)
+				return (object)b == null;
+			else if ((object)b == null)
 				return false;
 			else
-				return a.Equals( b );
+				return a.Equals(b);
 		}
 
-		public static bool operator !=( ParamSig a, ParamSig b )
+		public static bool operator !=(ParamSig a, ParamSig b)
 		{
-			if ( (object) a == null )
-				return (object) b != null;
-			else if ( (object) b == null )
+			if ((object)a == null)
+				return (object)b != null;
+			else if ((object)b == null)
 				return true;
 			else
-				return !a.Equals( b );
+				return !a.Equals(b);
 		}
 
-		public override int GetHashCode( )
+		public override int GetHashCode()
 		{
 			return hashCode;
 		}
 
-		public override string ToString( )
+		public override string ToString()
 		{
-			return String.Format( "[{0}]", paramTypes.Length );
+			return String.Format("[{0}]", paramTypes.Length);
 		}
 
-		public int CompareTo( ParamSig other )
+		public int CompareTo(ParamSig other)
 		{
-			if ( paramTypes.Length < other.paramTypes.Length )
+			if (paramTypes.Length < other.paramTypes.Length)
 				return -1;
-			else if ( paramTypes.Length > other.paramTypes.Length )
+			else if (paramTypes.Length > other.paramTypes.Length)
 				return 1;
 			else
 			{
-				for ( int i = 0; i < paramTypes.Length; i++ )
+				for (int i = 0; i < paramTypes.Length; i++)
 				{
-					int cmp = String.Compare( paramTypes[i], other.paramTypes[i] );
-					if ( cmp != 0 )
+					int cmp = String.Compare(paramTypes[i], other.paramTypes[i]);
+					if (cmp != 0)
 						return cmp;
 				}
 

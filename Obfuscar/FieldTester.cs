@@ -39,7 +39,7 @@ namespace Obfuscar
 		private readonly string attrib;
 		private readonly string typeAttrib;
 
-		public FieldTester( string name, string type, string attrib, string typeAttrib )
+		public FieldTester(string name, string type, string attrib, string typeAttrib)
 		{
 			this.name = name;
 			this.type = type;
@@ -55,15 +55,15 @@ namespace Obfuscar
 			this.typeAttrib = typeAttrib;
 		}
 
-		public bool Test( FieldKey field )
+		public bool Test(FieldKey field)
 		{
 			// It's not very clean to use CheckMethodVisibility() from MethodTester. But we don't want duplicate code either.
 			if (Helper.CompareOptionalRegex(field.TypeKey.Fullname, type) && MethodTester.CheckMemberVisibility(attrib, typeAttrib, (MethodAttributes)field.FieldAttributes, field.DeclaringType))
 			{
-				if ( name != null )
+				if (name != null)
 					return Helper.CompareOptionalRegex(field.Name, name);
 				else
-					return nameRx.IsMatch( field.Name );
+					return nameRx.IsMatch(field.Name);
 			}
 
 			return false;

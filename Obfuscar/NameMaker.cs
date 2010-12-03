@@ -33,46 +33,46 @@ namespace Obfuscar
 		const string uniqueChars = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
 		const int numUniqueChars = 52;
 
-		public static string UniqueName( int index )
+		public static string UniqueName(int index)
 		{
-			return UniqueName( index, null );
+			return UniqueName(index, null);
 		}
 
-		public static string UniqueName( int index, string sep )
+		public static string UniqueName(int index, string sep)
 		{
 			// optimization for simple case
-			if ( index < numUniqueChars )
-				return uniqueChars[index].ToString( );
+			if (index < numUniqueChars)
+				return uniqueChars[index].ToString();
 
-			Stack<char> stack = new Stack<char>( );
+			Stack<char> stack = new Stack<char>();
 
 			do
 			{
-				stack.Push( uniqueChars[index % numUniqueChars] );
+				stack.Push(uniqueChars[index % numUniqueChars]);
 				index /= numUniqueChars;
 			}
-			while ( index > 0 );
+			while (index > 0);
 
-			StringBuilder builder = new StringBuilder( );
-			builder.Append( stack.Pop( ) );
-			while ( stack.Count > 0 )
+			StringBuilder builder = new StringBuilder();
+			builder.Append(stack.Pop());
+			while (stack.Count > 0)
 			{
-				if ( sep != null )
-					builder.Append( sep );
-				builder.Append( stack.Pop( ) );
+				if (sep != null)
+					builder.Append(sep);
+				builder.Append(stack.Pop());
 			}
 
-			return builder.ToString( );
+			return builder.ToString();
 		}
 
-		public static string UniqueTypeName( int index )
+		public static string UniqueTypeName(int index)
 		{
-			return UniqueName( index % numUniqueChars, "." );
+			return UniqueName(index % numUniqueChars, ".");
 		}
 
-		public static string UniqueNamespace( int index )
+		public static string UniqueNamespace(int index)
 		{
-			return UniqueName( index / numUniqueChars, "." );
+			return UniqueName(index / numUniqueChars, ".");
 		}
 	}
 }

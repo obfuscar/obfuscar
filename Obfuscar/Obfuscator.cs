@@ -34,6 +34,7 @@ using Mono.Cecil.Cil;
 using Mono.Security;
 using Mono.Security.Cryptography;
 using System.IO;
+using Mono.Collections.Generic;
 
 namespace Obfuscar
 {
@@ -41,7 +42,7 @@ namespace Obfuscar
 	{
 		Project project;
 
-		ObfuscationMap map = new ObfuscationMap( );
+		ObfuscationMap map = new ObfuscationMap();
 
 		// Unique names for type and members
 		int uniqueTypeNameIndex = 0;
@@ -51,19 +52,19 @@ namespace Obfuscar
 		/// Creates an obfuscator initialized from a project file.
 		/// </summary>
 		/// <param name="projfile">Path to project file.</param>
-		public Obfuscator( string projfile )
+		public Obfuscator(string projfile)
 		{
 			// open XmlTextReader over xml string stream
-			XmlReaderSettings settings = GetReaderSettings( );
+			XmlReaderSettings settings = GetReaderSettings();
 
 			try
 			{
-				using ( XmlReader reader = XmlTextReader.Create( System.IO.File.OpenRead( projfile ), settings ) )
-					LoadFromReader( reader, System.IO.Path.GetDirectoryName(projfile) );
+				using (XmlReader reader = XmlTextReader.Create(System.IO.File.OpenRead(projfile), settings))
+					LoadFromReader(reader, System.IO.Path.GetDirectoryName(projfile));
 			}
-			catch ( System.IO.IOException e )
+			catch (System.IO.IOException e)
 			{
-				throw new ApplicationException( "Unable to read specified project file:  " + projfile, e );
+				throw new ApplicationException("Unable to read specified project file:  " + projfile, e);
 			}
 		}
 
@@ -71,23 +72,23 @@ namespace Obfuscar
 		/// Creates an obfuscator initialized from a project file.
 		/// </summary>
 		/// <param name="projfile">Reader for project file.</param>
-		public Obfuscator( XmlReader reader )
+		public Obfuscator(XmlReader reader)
 		{
-			LoadFromReader( reader, null );
+			LoadFromReader(reader, null);
 		}
 
-		public static Obfuscator CreateFromXml( string xml )
+		public static Obfuscator CreateFromXml(string xml)
 		{
 			// open XmlTextReader over xml string stream
-			XmlReaderSettings settings = GetReaderSettings( );
+			XmlReaderSettings settings = GetReaderSettings();
 
-			using ( XmlReader reader = XmlTextReader.Create( new System.IO.StringReader( xml ), settings ) )
-				return new Obfuscar.Obfuscator( reader );
+			using (XmlReader reader = XmlTextReader.Create(new System.IO.StringReader(xml), settings))
+				return new Obfuscar.Obfuscator(reader);
 		}
 
-		static XmlReaderSettings GetReaderSettings( )
+		static XmlReaderSettings GetReaderSettings()
 		{
-			XmlReaderSettings settings = new XmlReaderSettings( );
+			XmlReaderSettings settings = new XmlReaderSettings();
 			settings.IgnoreProcessingInstructions = true;
 			settings.IgnoreWhitespace = true;
 			settings.XmlResolver = null;
@@ -97,31 +98,31 @@ namespace Obfuscar
 
 		public Project Project { get { return project; } }
 
-		void LoadFromReader( XmlReader reader, string projectFileDirectory )
+		void LoadFromReader(XmlReader reader, string projectFileDirectory)
 		{
-			project = Project.FromXml( reader, projectFileDirectory );
+			project = Project.FromXml(reader, projectFileDirectory);
 
 			// make sure everything looks good
-			project.CheckSettings( );
+			project.CheckSettings();
 
-			Console.Write( "Loading assemblies..." );
-			project.LoadAssemblies( );
+			Console.Write("Loading assemblies...");
+			project.LoadAssemblies();
 		}
 
 		/// <summary>
 		/// Saves changes made to assemblies to the output path.
 		/// </summary>
-		public void SaveAssemblies( )
+		public void SaveAssemblies()
 		{
 			string outPath = project.Settings.OutPath;
 
 			// save the modified assemblies
-			foreach ( AssemblyInfo info in project )
+			foreach (AssemblyInfo info in project)
 			{
-				string outName = System.IO.Path.Combine( outPath,
-					System.IO.Path.GetFileName( info.Filename ) );
+				string outName = System.IO.Path.Combine(outPath,
+					System.IO.Path.GetFileName(info.Filename));
 
-				AssemblyFactory.SaveAssembly( info.Definition, outName );
+				info.Definition.Write(outName);
 
 				// Re-sign assembly
 				if (info.Definition.Name.HasPublicKey)
@@ -137,7 +138,7 @@ namespace Obfuscar
 							foreach (CustomAttribute ca in info.Definition.CustomAttributes)
 							{
 								if (ca.Constructor.DeclaringType.FullName == typeof(System.Reflection.AssemblyKeyFileAttribute).FullName)
-									keyfilepath = (string)ca.ConstructorParameters[0];
+									keyfilepath = (string)ca.ConstructorArguments[0].Value;
 							}
 							if (keyfilepath == null)
 								throw new ApplicationException(String.Format("KeyFile='auto', but assembly '{1}' contains no AssemblyKeyFileAttribute", keyfilepath, info.Filename));
@@ -173,26 +174,26 @@ namespace Obfuscar
 		/// <summary>
 		/// Saves the name mapping to the output path.
 		/// </summary>
-		public void SaveMapping( )
+		public void SaveMapping()
 		{
-			string filename = project.Settings.XmlMapping?
+			string filename = project.Settings.XmlMapping ?
 				"Mapping.xml" : "Mapping.txt";
 
-			string logPath = System.IO.Path.Combine( project.Settings.OutPath, filename );
+			string logPath = System.IO.Path.Combine(project.Settings.OutPath, filename);
 
-			using ( System.IO.TextWriter file = System.IO.File.CreateText( logPath ) )
-				SaveMapping( file );
+			using (System.IO.TextWriter file = System.IO.File.CreateText(logPath))
+				SaveMapping(file);
 		}
 
 		/// <summary>
 		/// Saves the name mapping to a text writer.
 		/// </summary>
-		public void SaveMapping( System.IO.TextWriter writer )
+		public void SaveMapping(System.IO.TextWriter writer)
 		{
 			IMapWriter mapWriter = project.Settings.XmlMapping ?
-				(IMapWriter) new XmlMapWriter( writer ) : (IMapWriter) new TextMapWriter( writer );
+				(IMapWriter)new XmlMapWriter(writer) : (IMapWriter)new TextMapWriter(writer);
 
-			mapWriter.WriteMap( map );
+			mapWriter.WriteMap(map);
 		}
 
 		/// <summary>
@@ -203,81 +204,95 @@ namespace Obfuscar
 			get { return map; }
 		}
 
+
+		/// <summary>
+		/// Calls the SemanticsAttributes-getter for all methods
+		/// </summary>
+		public void LoadMethodSemantics()
+		{
+			foreach (AssemblyInfo info in project)
+			{
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+					foreach (MethodDefinition method in type.Methods)
+						method.SemanticsAttributes.ToString();
+			}
+		}
+
 		/// <summary>
 		/// Renames fields in the project.
 		/// </summary>
-		public void RenameFields( )
+		public void RenameFields()
 		{
-			Dictionary<string, NameGroup> nameGroups = new Dictionary<string, NameGroup>( );
+			Dictionary<string, NameGroup> nameGroups = new Dictionary<string, NameGroup>();
 
-			foreach ( AssemblyInfo info in project )
+			foreach (AssemblyInfo info in project)
 			{
-				AssemblyDefinition library = info.Definition;
-
 				// loop through the types
-				foreach ( TypeDefinition type in library.MainModule.Types )
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions())
 				{
-					if ( type.FullName == "<Module>" )
+					if (type.FullName == "<Module>")
 						continue;
 
-					TypeKey typeKey = new TypeKey( type );
+					TypeKey typeKey = new TypeKey(type);
 
-					if ( ShouldRename( type ) )
+					if (ShouldRename(type))
 					{
-						nameGroups.Clear( );
+						nameGroups.Clear();
 
 						// rename field, grouping according to signature
-						foreach ( FieldDefinition field in type.Fields )
+						foreach (FieldDefinition field in type.Fields)
 						{
 							string sig = field.FieldType.FullName;
-							FieldKey fieldKey = new FieldKey( typeKey, sig, field.Name, field );
+							FieldKey fieldKey = new FieldKey(typeKey, sig, field.Name, field);
 
-							NameGroup nameGroup = GetNameGroup( nameGroups, sig );
+							NameGroup nameGroup = GetNameGroup(nameGroups, sig);
 
-							if(field.IsRuntimeSpecialName && field.Name == "value__") {
-								map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
-								nameGroup.Add (fieldKey.Name);
-							} else
-
-							// skip filtered fields
-							if ( info.ShouldSkip( fieldKey ) )
+							if (field.IsRuntimeSpecialName && field.Name == "value__")
 							{
-								map.UpdateField( fieldKey, ObfuscationStatus.Skipped, "filtered" );
-								nameGroup.Add( fieldKey.Name );
+								map.UpdateField(fieldKey, ObfuscationStatus.Skipped, "filtered");
+								nameGroup.Add(fieldKey.Name);
 							}
 							else
-							{
-								string newName;
-								if ( project.Settings.ReuseNames )
-									newName = nameGroup.GetNext( );
+
+								// skip filtered fields
+								if (info.ShouldSkip(fieldKey))
+								{
+									map.UpdateField(fieldKey, ObfuscationStatus.Skipped, "filtered");
+									nameGroup.Add(fieldKey.Name);
+								}
 								else
-									newName = NameMaker.UniqueName( uniqueMemberNameIndex++ );
+								{
+									string newName;
+									if (project.Settings.ReuseNames)
+										newName = nameGroup.GetNext();
+									else
+										newName = NameMaker.UniqueName(uniqueMemberNameIndex++);
 
-								RenameField( info, fieldKey, field, newName );
+									RenameField(info, fieldKey, field, newName);
 
-								nameGroup.Add( newName );
-							}
+									nameGroup.Add(newName);
+								}
 						}
 					}
 				}
 			}
 		}
 
-		void RenameField( AssemblyInfo info, FieldKey fieldKey, FieldDefinition field, string newName )
+		void RenameField(AssemblyInfo info, FieldKey fieldKey, FieldDefinition field, string newName)
 		{
 			// find references, rename them, then rename the field itself
 
-			foreach ( AssemblyInfo reference in info.ReferencedBy )
+			foreach (AssemblyInfo reference in info.ReferencedBy)
 			{
-				for ( int i = 0; i < reference.UnrenamedReferences.Count; )
+				for (int i = 0; i < reference.UnrenamedReferences.Count; )
 				{
 					FieldReference member = reference.UnrenamedReferences[i] as FieldReference;
-					if ( member != null )
+					if (member != null)
 					{
-						if ( fieldKey.Matches( member ) )
+						if (fieldKey.Matches(member))
 						{
 							member.Name = newName;
-							reference.UnrenamedReferences.RemoveAt( i );
+							reference.UnrenamedReferences.RemoveAt(i);
 
 							// since we removed one, continue without the increment
 							continue;
@@ -290,49 +305,43 @@ namespace Obfuscar
 
 			field.Name = newName;
 
-			map.UpdateField( fieldKey, ObfuscationStatus.Renamed, newName );
+			map.UpdateField(fieldKey, ObfuscationStatus.Renamed, newName);
 		}
 
 		/// <summary>
 		/// Renames constructor, method, and generic parameters.
 		/// </summary>
-		public void RenameParams( )
+		public void RenameParams()
 		{
 			int index;
 
-			foreach ( AssemblyInfo info in project )
+			foreach (AssemblyInfo info in project)
 			{
-				AssemblyDefinition library = info.Definition;
-
 				// loop through the types
-				foreach ( TypeDefinition type in library.MainModule.Types )
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions())
 				{
-					if ( type.FullName == "<Module>" )
+					if (type.FullName == "<Module>")
 						continue;
 
-					if ( ShouldRename( type ) )
+					if (ShouldRename(type))
 					{
-						// rename the constructor parameters
-						foreach (MethodDefinition method in type.Constructors)
-							RenameParams(method, info);
-
 						// rename the method parameters
-						foreach ( MethodDefinition method in type.Methods )
-							RenameParams( method, info );
+						foreach (MethodDefinition method in type.Methods)
+							RenameParams(method, info);
 
 						// rename the class parameters
 						if (!info.ShouldSkip(new TypeKey(type)))
 						{
 							index = 0;
-							foreach ( GenericParameter param in type.GenericParameters )
-								param.Name = NameMaker.UniqueName( index++ );
+							foreach (GenericParameter param in type.GenericParameters)
+								param.Name = NameMaker.UniqueName(index++);
 						}
 					}
 				}
 			}
 		}
 
-		void RenameParams( MethodDefinition method, AssemblyInfo info )
+		void RenameParams(MethodDefinition method, AssemblyInfo info)
 		{
 			MethodKey methodkey = new MethodKey(method);
 
@@ -354,19 +363,19 @@ namespace Obfuscar
 			}
 		}
 
-		bool ShouldRename( TypeDefinition type )
+		bool ShouldRename(TypeDefinition type)
 		{
 			var attributeTypeFullName = typeof(ObfuscateAttribute).FullName;
 
 			bool should = !project.Settings.MarkedOnly;
 
-			foreach ( CustomAttribute attr in type.CustomAttributes )
+			foreach (CustomAttribute attr in type.CustomAttributes)
 			{
 				if (attr.Constructor.DeclaringType.FullName.Equals(attributeTypeFullName))
 				{
-                    // determines the value of either the constructor parameter or the property, defaults to true
-				    return (attr.ConstructorParameters.Count == 0 || (bool)attr.ConstructorParameters[0])
-                        && (bool)(attr.Properties["ShouldObfuscate"] ?? true);
+					// determines the value of either the constructor parameter or the property, defaults to true
+					return (attr.ConstructorArguments.Count == 0 || (bool)attr.ConstructorArguments[0].Value)
+						&& (bool)(Helper.GetAttributePropertyByName(attr, "ShouldObfuscate") ?? true);
 				}
 			}
 
@@ -376,51 +385,50 @@ namespace Obfuscar
 		/// <summary>
 		/// Renames types and resources in the project.
 		/// </summary>
-		public void RenameTypes( )
+		public void RenameTypes()
 		{
 			Dictionary<string, string> typerenamemap = new Dictionary<string, string>(); // For patching the parameters of typeof(xx) attribute constructors
 
-			foreach ( AssemblyInfo info in project )
+			foreach (AssemblyInfo info in project)
 			{
 				AssemblyDefinition library = info.Definition;
-
 				// make a list of the resources that can be renamed
-				List<Resource> resources = new List<Resource>( library.MainModule.Resources.Count );
-				foreach ( Resource res in library.MainModule.Resources )
-					resources.Add( res );
+				List<Resource> resources = new List<Resource>(library.MainModule.Resources.Count);
+				foreach (Resource res in library.MainModule.Resources)
+					resources.Add(res);
 
 				// Save the original names of all types because parent (declaring) types of nested types may be already renamed.
 				// The names are used for the mappings file.
-				Dictionary<TypeDefinition, TypeKey> unrenamedTypeKeys = new Dictionary<TypeDefinition, TypeKey>( );
-				foreach ( TypeDefinition type in library.MainModule.Types )
-					unrenamedTypeKeys.Add( type, new TypeKey( type ) );
+				Dictionary<TypeDefinition, TypeKey> unrenamedTypeKeys = new Dictionary<TypeDefinition, TypeKey>();
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+					unrenamedTypeKeys.Add(type, new TypeKey(type));
 
 				// loop through the types
 				int typeIndex = 0;
-				foreach ( TypeDefinition type in library.MainModule.Types )
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions())
 				{
-					if ( type.FullName == "<Module>" )
+					if (type.FullName == "<Module>")
 						continue;
 
-					TypeKey oldTypeKey = new TypeKey( type );
+					TypeKey oldTypeKey = new TypeKey(type);
 					TypeKey unrenamedTypeKey = unrenamedTypeKeys[type];
 					string fullName = type.FullName;
 
-					if ( ShouldRename( type ) )
+					if (ShouldRename(type))
 					{
-						if ( !info.ShouldSkip( unrenamedTypeKey ) )
+						if (!info.ShouldSkip(unrenamedTypeKey))
 						{
 							string name;
 							string ns;
-							if ( project.Settings.ReuseNames )
+							if (project.Settings.ReuseNames)
 							{
-								name = NameMaker.UniqueTypeName( typeIndex );
-								ns = NameMaker.UniqueNamespace( typeIndex );
+								name = NameMaker.UniqueTypeName(typeIndex);
+								ns = NameMaker.UniqueNamespace(typeIndex);
 							}
 							else
 							{
-								name = NameMaker.UniqueName( uniqueTypeNameIndex );
-								ns = NameMaker.UniqueNamespace( uniqueTypeNameIndex );
+								name = NameMaker.UniqueName(uniqueTypeNameIndex);
+								ns = NameMaker.UniqueNamespace(uniqueTypeNameIndex);
 								uniqueTypeNameIndex++;
 							}
 
@@ -429,23 +437,23 @@ namespace Obfuscar
 							if (type.DeclaringType != null) // Nested types do not have namespaces
 								ns = "";
 
-							TypeKey newTypeKey = new TypeKey( info.Name, ns, name );
+							TypeKey newTypeKey = new TypeKey(info.Name, ns, name);
 							typeIndex++;
 
 							// go through the list of renamed types and try to rename resources
-							for ( int i = 0; i < resources.Count; )
+							for (int i = 0; i < resources.Count; )
 							{
 								Resource res = resources[i];
 								string resName = res.Name;
 
-								if ( Path.GetFileNameWithoutExtension(resName) == fullName )
+								if (Path.GetFileNameWithoutExtension(resName) == fullName)
 								{
 									// If one of the type's methods return a ResourceManager and contains a string with the full type name,
 									// we replace the type string with the obfuscated one.
 									// This is for the Visual Studio generated resource designer code.
 									foreach (MethodDefinition method in type.Methods)
 									{
-										if (method.ReturnType.ReturnType.FullName == "System.Resources.ResourceManager")
+										if (method.ReturnType.FullName == "System.Resources.ResourceManager")
 										{
 											for (int j = 0; j < method.Body.Instructions.Count; j++)
 											{
@@ -456,36 +464,36 @@ namespace Obfuscar
 										}
 									}
 
-									string suffix = resName.Substring( fullName.Length );
+									string suffix = resName.Substring(fullName.Length);
 									string newName = newTypeKey.Fullname + suffix;
 
 									res.Name = newName;
-									resources.RemoveAt( i );
+									resources.RemoveAt(i);
 
-									map.AddResource( resName, ObfuscationStatus.Renamed, newName );
+									map.AddResource(resName, ObfuscationStatus.Renamed, newName);
 								}
 								else
 									i++;
 							}
 
-							RenameType( info, type, oldTypeKey, newTypeKey, unrenamedTypeKey );
+							RenameType(info, type, oldTypeKey, newTypeKey, unrenamedTypeKey);
 
 							typerenamemap.Add(unrenamedTypeKey.Fullname.Replace('/', '+'), type.FullName.Replace('/', '+'));
 						}
 						else
 						{
-							map.UpdateType( oldTypeKey, ObfuscationStatus.Skipped, "filtered" );
+							map.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, "filtered");
 
 							// go through the list of resources, remove ones that would be renamed
-							for ( int i = 0; i < resources.Count; )
+							for (int i = 0; i < resources.Count; )
 							{
 								Resource res = resources[i];
 								string resName = res.Name;
 
-								if ( Path.GetFileNameWithoutExtension(resName) == fullName )
+								if (Path.GetFileNameWithoutExtension(resName) == fullName)
 								{
-									resources.RemoveAt( i );
-									map.AddResource( resName, ObfuscationStatus.Skipped, "filtered" );
+									resources.RemoveAt(i);
+									map.AddResource(resName, ObfuscationStatus.Skipped, "filtered");
 								}
 								else
 									i++;
@@ -494,18 +502,18 @@ namespace Obfuscar
 					}
 					else
 					{
-						map.UpdateType( oldTypeKey, ObfuscationStatus.Skipped, "marked" );
+						map.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, "marked");
 
 						// go through the list of resources, remove ones that would be renamed
-						for ( int i = 0; i < resources.Count; )
+						for (int i = 0; i < resources.Count; )
 						{
 							Resource res = resources[i];
 							string resName = res.Name;
 
-							if ( Path.GetFileNameWithoutExtension(resName) == fullName )
+							if (Path.GetFileNameWithoutExtension(resName) == fullName)
 							{
-								resources.RemoveAt( i );
-								map.AddResource( resName, ObfuscationStatus.Skipped, "marked" );
+								resources.RemoveAt(i);
+								map.AddResource(resName, ObfuscationStatus.Skipped, "marked");
 							}
 							else
 								i++;
@@ -513,31 +521,29 @@ namespace Obfuscar
 					}
 				}
 
-				foreach ( Resource res in resources )
-					map.AddResource( res.Name, ObfuscationStatus.Skipped, "no clear new name" );
+				foreach (Resource res in resources)
+					map.AddResource(res.Name, ObfuscationStatus.Skipped, "no clear new name");
 			}
-
-			PatchCustomAttributes(typerenamemap);
 		}
 
-		void RenameType( AssemblyInfo info, TypeDefinition type, TypeKey oldTypeKey, TypeKey newTypeKey, TypeKey unrenamedTypeKey )
+		void RenameType(AssemblyInfo info, TypeDefinition type, TypeKey oldTypeKey, TypeKey newTypeKey, TypeKey unrenamedTypeKey)
 		{
 			// find references, rename them, then rename the type itself
 
-			foreach ( AssemblyInfo reference in info.ReferencedBy )
+			foreach (AssemblyInfo reference in info.ReferencedBy)
 			{
-				for ( int i = 0; i < reference.UnrenamedTypeReferences.Count; )
+				for (int i = 0; i < reference.UnrenamedTypeReferences.Count; )
 				{
 					TypeReference refType = reference.UnrenamedTypeReferences[i];
 
 					// check whether the referencing module references this type...if so,
 					// rename the reference
-					if ( oldTypeKey.Matches( refType ) )
+					if (oldTypeKey.Matches(refType))
 					{
 						refType.Namespace = newTypeKey.Namespace;
 						refType.Name = newTypeKey.Name;
 
-						reference.UnrenamedTypeReferences.RemoveAt( i );
+						reference.UnrenamedTypeReferences.RemoveAt(i);
 
 						// since we removed one, continue without the increment
 						continue;
@@ -550,51 +556,7 @@ namespace Obfuscar
 			type.Namespace = newTypeKey.Namespace;
 			type.Name = newTypeKey.Name;
 
-			map.UpdateType( unrenamedTypeKey, ObfuscationStatus.Renamed, string.Format("[{0}]{1}", newTypeKey.Scope, type.ToString( )) );
-		}
-
-		void PatchCustomAttributes(Dictionary<string, string> typeRenameMap)
-		{
-			foreach (AssemblyInfo info in project)
-			{
-				AssemblyDefinition library = info.Definition;
-
-				foreach (TypeDefinition type in library.MainModule.Types)
-				{
-					PatchCustomAttributeCollection(type.CustomAttributes, typeRenameMap);
-					foreach (MethodDefinition methoddefinition in type.Methods)
-						PatchCustomAttributeCollection(methoddefinition.CustomAttributes, typeRenameMap);
-					foreach (PropertyDefinition propertydefinition in type.Properties)
-						PatchCustomAttributeCollection(propertydefinition.CustomAttributes, typeRenameMap);
-					foreach (FieldDefinition fielddefinition in type.Fields)
-						PatchCustomAttributeCollection(fielddefinition.CustomAttributes, typeRenameMap);
-					foreach (EventDefinition eventdefinition in type.Events)
-						PatchCustomAttributeCollection(eventdefinition.CustomAttributes, typeRenameMap);
-				}
-			}
-		}
-
-		void PatchCustomAttributeCollection(CustomAttributeCollection customAttributes, IDictionary<string, string> typeRenameMap)
-		{
-			foreach (CustomAttribute customattribute in customAttributes)
-			{
-				for (int i = 0; i < customattribute.Constructor.Parameters.Count; i++)
-				{
-					ParameterDefinition parameterdefinition = customattribute.Constructor.Parameters[i];
-					if (parameterdefinition.ParameterType.FullName == "System.Type")
-						customattribute.ConstructorParameters[i] = GetObfuscatedTypeName((string)customattribute.ConstructorParameters[i], typeRenameMap);
-				}
-				foreach (System.Collections.DictionaryEntry property in new System.Collections.ArrayList(customattribute.Properties))
-				{
-					if (customattribute.GetPropertyType((string)property.Key).FullName == "System.Type")
-						customattribute.Properties[property.Key] = GetObfuscatedTypeName((string)customattribute.Properties[property.Key], typeRenameMap);
-				}
-				foreach (System.Collections.DictionaryEntry field in new System.Collections.ArrayList(customattribute.Fields))
-				{
-					if (customattribute.GetPropertyType((string)field.Key).FullName == "System.Type")
-						customattribute.Properties[field.Key] = GetObfuscatedTypeName((string)customattribute.Properties[field.Key], typeRenameMap);
-				}
-			}
+			map.UpdateType(unrenamedTypeKey, ObfuscationStatus.Renamed, string.Format("[{0}]{1}", newTypeKey.Scope, type.ToString()));
 		}
 
 		string GetObfuscatedTypeName(string typeString, IDictionary<string, string> typeRenameMap)
@@ -615,97 +577,95 @@ namespace Obfuscar
 			return typeString;
 		}
 
-		Dictionary<ParamSig, NameGroup> GetSigNames( Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-			TypeKey typeKey )
+		Dictionary<ParamSig, NameGroup> GetSigNames(Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
+			TypeKey typeKey)
 		{
 			Dictionary<ParamSig, NameGroup> sigNames;
-			if ( !baseSigNames.TryGetValue( typeKey, out sigNames ) )
+			if (!baseSigNames.TryGetValue(typeKey, out sigNames))
 			{
-				sigNames = new Dictionary<ParamSig, NameGroup>( );
+				sigNames = new Dictionary<ParamSig, NameGroup>();
 				baseSigNames[typeKey] = sigNames;
 			}
 			return sigNames;
 		}
 
-		NameGroup GetNameGroup( Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-			TypeKey typeKey, ParamSig sig )
+		NameGroup GetNameGroup(Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
+			TypeKey typeKey, ParamSig sig)
 		{
-			return GetNameGroup( GetSigNames( baseSigNames, typeKey ), sig );
+			return GetNameGroup(GetSigNames(baseSigNames, typeKey), sig);
 		}
 
 
-		NameGroup GetNameGroup<KeyType>( Dictionary<KeyType, NameGroup> sigNames, KeyType sig )
+		NameGroup GetNameGroup<KeyType>(Dictionary<KeyType, NameGroup> sigNames, KeyType sig)
 		{
 			NameGroup nameGroup;
-			if ( !sigNames.TryGetValue( sig, out nameGroup ) )
+			if (!sigNames.TryGetValue(sig, out nameGroup))
 			{
-				nameGroup = new NameGroup( );
+				nameGroup = new NameGroup();
 				sigNames[sig] = nameGroup;
 			}
 			return nameGroup;
 		}
 
-		public void RenameProperties( )
+		public void RenameProperties()
 		{
 			// do nothing if it was requested not to rename
-			if ( !project.Settings.RenameProperties )
+			if (!project.Settings.RenameProperties)
 				return;
 
-			foreach ( AssemblyInfo info in project )
+			foreach (AssemblyInfo info in project)
 			{
-				AssemblyDefinition library = info.Definition;
-
-				foreach ( TypeDefinition type in library.MainModule.Types )
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions())
 				{
-					if ( type.FullName == "<Module>" )
+					if (type.FullName == "<Module>")
 						continue;
 
-					TypeKey typeKey = new TypeKey( type );
+					TypeKey typeKey = new TypeKey(type);
 
-					if ( ShouldRename( type ) )
+					if (ShouldRename(type))
 					{
 						int index = 0;
-						List<PropertyDefinition> propsToDrop = new List<PropertyDefinition>( );
-						foreach ( PropertyDefinition prop in type.Properties )
+						List<PropertyDefinition> propsToDrop = new List<PropertyDefinition>();
+						foreach (PropertyDefinition prop in type.Properties)
 						{
-							PropertyKey propKey = new PropertyKey( typeKey, prop );
-							ObfuscatedThing m = map.GetProperty( propKey );
+							PropertyKey propKey = new PropertyKey(typeKey, prop);
+							ObfuscatedThing m = map.GetProperty(propKey);
 
 							// skip runtime special properties
-							if ( prop.IsRuntimeSpecialName )
+							if (prop.IsRuntimeSpecialName)
 							{
-								m.Update( ObfuscationStatus.Skipped, "runtime special" );
+								m.Update(ObfuscationStatus.Skipped, "runtime special");
 								continue;
 							}
 
 							// skip filtered props
-							if ( info.ShouldSkip( propKey ) )
+							if (info.ShouldSkip(propKey))
 							{
-								m.Update( ObfuscationStatus.Skipped, "filtered" );
+								m.Update(ObfuscationStatus.Skipped, "filtered");
 
 								// make sure get/set get skipped too
-								if ( prop.GetMethod != null )
-									info.ForceSkip( new MethodKey( prop.GetMethod ) );
-								if ( prop.SetMethod != null )
-									info.ForceSkip( new MethodKey( prop.SetMethod ) );
+								if (prop.GetMethod != null)
+									info.ForceSkip(new MethodKey(prop.GetMethod));
+								if (prop.SetMethod != null)
+									info.ForceSkip(new MethodKey(prop.SetMethod));
 
 								continue;
 							}
 							// do not rename properties of custom attribute types which have a public setter method
-							else if ( type.BaseType != null && type.BaseType.Name.EndsWith("Attribute") && prop.SetMethod != null && (prop.SetMethod.Attributes & MethodAttributes.Public) != 0 )
+							else if (type.BaseType != null && type.BaseType.Name.EndsWith("Attribute") && prop.SetMethod != null && (prop.SetMethod.Attributes & MethodAttributes.Public) != 0)
 							{
-								m.Update( ObfuscationStatus.Skipped, "public setter of a custom attribute" );
+								m.Update(ObfuscationStatus.Skipped, "public setter of a custom attribute");
 								// no problem when the getter or setter methods are renamed by RenameMethods()
 							}
 							// If a property has custom attributes we don't remove the property but rename it instead.
-							else if ( prop.CustomAttributes.Count > 0 )
+							else if (prop.CustomAttributes.Count > 0)
 							{
 								string newName;
-								if ( project.Settings.ReuseNames )
-									newName = NameMaker.UniqueName( index++ );
+								if (project.Settings.ReuseNames)
+									newName = NameMaker.UniqueName(index++);
 								else
-									newName = NameMaker.UniqueName( uniqueMemberNameIndex++ );
-								RenameProperty( info, propKey, prop, newName );
+									newName = NameMaker.UniqueName(uniqueMemberNameIndex++);
+								RenameProperty(info, propKey, prop, newName);
 							}
 							else
 							{
@@ -714,34 +674,34 @@ namespace Obfuscar
 							}
 						}
 
-						foreach ( PropertyDefinition prop in propsToDrop )
+						foreach (PropertyDefinition prop in propsToDrop)
 						{
-							PropertyKey propKey = new PropertyKey( typeKey, prop );
-							ObfuscatedThing m = map.GetProperty( propKey );
+							PropertyKey propKey = new PropertyKey(typeKey, prop);
+							ObfuscatedThing m = map.GetProperty(propKey);
 
-							m.Update( ObfuscationStatus.Renamed, "dropped" );
-							type.Properties.Remove( prop );
+							m.Update(ObfuscationStatus.Renamed, "dropped");
+							type.Properties.Remove(prop);
 						}
 					}
 				}
 			}
 		}
 
-		void RenameProperty( AssemblyInfo info, PropertyKey propertyKey, PropertyDefinition property, string newName )
+		void RenameProperty(AssemblyInfo info, PropertyKey propertyKey, PropertyDefinition property, string newName)
 		{
 			// find references, rename them, then rename the property itself
 
-			foreach ( AssemblyInfo reference in info.ReferencedBy )
+			foreach (AssemblyInfo reference in info.ReferencedBy)
 			{
-				for ( int i = 0; i < reference.UnrenamedReferences.Count; )
+				for (int i = 0; i < reference.UnrenamedReferences.Count; )
 				{
 					PropertyReference member = reference.UnrenamedReferences[i] as PropertyReference;
-					if ( member != null )
+					if (member != null)
 					{
-						if ( propertyKey.Matches( member ) )
+						if (propertyKey.Matches(member))
 						{
 							member.Name = newName;
-							reference.UnrenamedReferences.RemoveAt( i );
+							reference.UnrenamedReferences.RemoveAt(i);
 
 							// since we removed one, continue without the increment
 							continue;
@@ -754,119 +714,115 @@ namespace Obfuscar
 
 			property.Name = newName;
 
-			map.UpdateProperty( propertyKey, ObfuscationStatus.Renamed, newName );
+			map.UpdateProperty(propertyKey, ObfuscationStatus.Renamed, newName);
 		}
 
-		public void RenameEvents( )
+		public void RenameEvents()
 		{
 			// do nothing if it was requested not to rename
-			if ( !project.Settings.RenameEvents )
+			if (!project.Settings.RenameEvents)
 				return;
 
-			foreach ( AssemblyInfo info in project )
+			foreach (AssemblyInfo info in project)
 			{
-				AssemblyDefinition library = info.Definition;
-
-				foreach ( TypeDefinition type in library.MainModule.Types )
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions())
 				{
-					if ( type.FullName == "<Module>" )
+					if (type.FullName == "<Module>")
 						continue;
 
-					TypeKey typeKey = new TypeKey( type );
+					TypeKey typeKey = new TypeKey(type);
 
-					if ( ShouldRename( type ) )
+					if (ShouldRename(type))
 					{
-						List<EventDefinition> evtsToDrop = new List<EventDefinition>( );
-						foreach ( EventDefinition evt in type.Events )
+						List<EventDefinition> evtsToDrop = new List<EventDefinition>();
+						foreach (EventDefinition evt in type.Events)
 						{
-							EventKey evtKey = new EventKey( typeKey, evt );
-							ObfuscatedThing m = map.GetEvent( evtKey );
+							EventKey evtKey = new EventKey(typeKey, evt);
+							ObfuscatedThing m = map.GetEvent(evtKey);
 
 							// skip runtime special events
-							if ( evt.IsRuntimeSpecialName )
+							if (evt.IsRuntimeSpecialName)
 							{
-								m.Update( ObfuscationStatus.Skipped, "runtime special" );
+								m.Update(ObfuscationStatus.Skipped, "runtime special");
 								continue;
 							}
 
 							// skip filtered events
-							if ( info.ShouldSkip( evtKey ) )
+							if (info.ShouldSkip(evtKey))
 							{
-								m.Update( ObfuscationStatus.Skipped, "filtered" );
+								m.Update(ObfuscationStatus.Skipped, "filtered");
 
 								// make sure add/remove get skipped too
-								info.ForceSkip( new MethodKey( evt.AddMethod ) );
-								info.ForceSkip( new MethodKey( evt.RemoveMethod ) );
+								info.ForceSkip(new MethodKey(evt.AddMethod));
+								info.ForceSkip(new MethodKey(evt.RemoveMethod));
 
 								continue;
 							}
 
 							// add to to collection for removal
-							evtsToDrop.Add( evt );
+							evtsToDrop.Add(evt);
 						}
 
-						foreach ( EventDefinition evt in evtsToDrop )
+						foreach (EventDefinition evt in evtsToDrop)
 						{
-							EventKey evtKey = new EventKey( typeKey, evt );
-							ObfuscatedThing m = map.GetEvent( evtKey );
+							EventKey evtKey = new EventKey(typeKey, evt);
+							ObfuscatedThing m = map.GetEvent(evtKey);
 
-							m.Update( ObfuscationStatus.Renamed, "dropped" );
-							type.Events.Remove( evt );
+							m.Update(ObfuscationStatus.Renamed, "dropped");
+							type.Events.Remove(evt);
 						}
 					}
 				}
 			}
 		}
 
-		public void RenameMethods( )
+		public void RenameMethods()
 		{
-			Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames = 
-				new Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>>( );
+			Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames =
+				new Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>>();
 
-			foreach ( AssemblyInfo info in project )
+			foreach (AssemblyInfo info in project)
 			{
-				AssemblyDefinition library = info.Definition;
-
-				foreach ( TypeDefinition type in library.MainModule.Types )
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions())
 				{
-					if ( type.FullName == "<Module>" )
+					if (type.FullName == "<Module>")
 						continue;
 
-					TypeKey typeKey = new TypeKey( type );
+					TypeKey typeKey = new TypeKey(type);
 
-					Dictionary<ParamSig, NameGroup> sigNames = GetSigNames( baseSigNames, typeKey );
+					Dictionary<ParamSig, NameGroup> sigNames = GetSigNames(baseSigNames, typeKey);
 
 					// first pass.  mark grouped virtual methods to be renamed, and mark some things
 					// to be skipped as neccessary
-					foreach ( MethodDefinition method in type.Methods )
+					foreach (MethodDefinition method in type.Methods)
 					{
 						string skiprename = null;
 						if (!ShouldRename(type))
 							skiprename = "Obfuscar.ObfuscateAttribute found on type.";
 
 						MethodKey methodKey = new MethodKey(typeKey, method);
-						ObfuscatedThing m = map.GetMethod( methodKey );
+						ObfuscatedThing m = map.GetMethod(methodKey);
 
 						// skip runtime methods
-						if ( method.IsRuntime )
+						if (method.IsRuntime)
 							skiprename = "runtime method";
 
 						// skip filtered methods
-						if ( info.ShouldSkip( methodKey ) )
+						if (info.ShouldSkip(methodKey))
 							skiprename = "filtered";
 
 						// update status for skipped non-virtual methods immediately...status for
 						// skipped virtual methods gets updated in RenameVirtualMethod
-						if ( !method.IsVirtual )
+						if (!method.IsVirtual)
 						{
 							if (skiprename != null)
 								m.Update(ObfuscationStatus.Skipped, skiprename);
 							continue;
 						}
- 
-						if ( method.IsSpecialName )
+
+						if (method.IsSpecialName)
 						{
-							switch ( method.SemanticsAttributes )
+							switch (method.SemanticsAttributes)
 							{
 								case MethodSemanticsAttributes.Getter:
 								case MethodSemanticsAttributes.Setter:
@@ -875,8 +831,8 @@ namespace Obfuscar
 									break;
 								case MethodSemanticsAttributes.AddOn:
 								case MethodSemanticsAttributes.RemoveOn:
-									if (!project.Settings.RenameEvents )
-										skiprename="skipping events";
+									if (!project.Settings.RenameEvents)
+										skiprename = "skipping events";
 									break;
 								default:
 									skiprename = "virtual and special name";
@@ -885,99 +841,99 @@ namespace Obfuscar
 						}
 
 						// if we need to skip the method or we don't yet have a name planned for a method, rename it
-						if ( ( skiprename != null && m.Status != ObfuscationStatus.Skipped ) ||
-							m.Status == ObfuscationStatus.Unknown )
-							RenameVirtualMethod( info, baseSigNames, sigNames, methodKey, method, skiprename );
+						if ((skiprename != null && m.Status != ObfuscationStatus.Skipped) ||
+							m.Status == ObfuscationStatus.Unknown)
+							RenameVirtualMethod(info, baseSigNames, sigNames, methodKey, method, skiprename);
 					}
 
 					// update name groups, so new names don't step on inherited ones
-					foreach ( TypeKey baseType in project.InheritMap.GetBaseTypes( typeKey ) )
+					foreach (TypeKey baseType in project.InheritMap.GetBaseTypes(typeKey))
 					{
-						Dictionary<ParamSig, NameGroup> baseNames = GetSigNames( baseSigNames, baseType );
-						foreach ( KeyValuePair<ParamSig, NameGroup> pair in baseNames )
+						Dictionary<ParamSig, NameGroup> baseNames = GetSigNames(baseSigNames, baseType);
+						foreach (KeyValuePair<ParamSig, NameGroup> pair in baseNames)
 						{
-							NameGroup nameGroup = GetNameGroup( sigNames, pair.Key );
-							nameGroup.AddAll( pair.Value );
+							NameGroup nameGroup = GetNameGroup(sigNames, pair.Key);
+							nameGroup.AddAll(pair.Value);
 						}
 					}
 				}
 
 
-				foreach ( TypeDefinition type in library.MainModule.Types )
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions())
 				{
-					if ( type.FullName == "<Module>" )
+					if (type.FullName == "<Module>")
 						continue;
 
-					TypeKey typeKey = new TypeKey( type );
+					TypeKey typeKey = new TypeKey(type);
 
-					Dictionary<ParamSig, NameGroup> sigNames = GetSigNames( baseSigNames, typeKey );
+					Dictionary<ParamSig, NameGroup> sigNames = GetSigNames(baseSigNames, typeKey);
 					// second pass...marked virtuals and anything not skipped get renamed
-					foreach ( MethodDefinition method in type.Methods )
+					foreach (MethodDefinition method in type.Methods)
 					{
-						MethodKey methodKey = new MethodKey( typeKey, method );
-						ObfuscatedThing m = map.GetMethod( methodKey );
+						MethodKey methodKey = new MethodKey(typeKey, method);
+						ObfuscatedThing m = map.GetMethod(methodKey);
 
 						// if we already decided to skip it, leave it alone
-						if ( m.Status == ObfuscationStatus.Skipped )
+						if (m.Status == ObfuscationStatus.Skipped)
 							continue;
 
-						if ( method.IsSpecialName )
+						if (method.IsSpecialName)
 						{
-							switch ( method.SemanticsAttributes )
+							switch (method.SemanticsAttributes)
 							{
 								case MethodSemanticsAttributes.Getter:
 								case MethodSemanticsAttributes.Setter:
-									if ( project.Settings.RenameProperties )
+									if (project.Settings.RenameProperties)
 									{
-										RenameMethod( info, sigNames, methodKey, method );
+										RenameMethod(info, sigNames, methodKey, method);
 										method.SemanticsAttributes = 0;
 									}
 									else
-										m.Update( ObfuscationStatus.Skipped, "skipping properties" );
+										m.Update(ObfuscationStatus.Skipped, "skipping properties");
 									break;
 								case MethodSemanticsAttributes.AddOn:
 								case MethodSemanticsAttributes.RemoveOn:
-									if ( project.Settings.RenameEvents )
+									if (project.Settings.RenameEvents)
 									{
-										RenameMethod( info, sigNames, methodKey, method );
+										RenameMethod(info, sigNames, methodKey, method);
 										method.SemanticsAttributes = 0;
 									}
 									else
-										m.Update( ObfuscationStatus.Skipped, "skipping events" );
+										m.Update(ObfuscationStatus.Skipped, "skipping events");
 									break;
 								default:
-									m.Update( ObfuscationStatus.Skipped, "special name" );
+									m.Update(ObfuscationStatus.Skipped, "special name");
 									break;
 							}
 						}
 						else
-							RenameMethod( info, sigNames, methodKey, method );
+							RenameMethod(info, sigNames, methodKey, method);
 					}
 				}
 			}
 		}
 
-		void RenameVirtualMethod( AssemblyInfo info, Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-			Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method, string skipRename )
+		void RenameVirtualMethod(AssemblyInfo info, Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
+			Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method, string skipRename)
 		{
 			// if method is in a group, look for group key
-			MethodGroup group = project.InheritMap.GetMethodGroup( methodKey );
-			if ( group != null )
+			MethodGroup group = project.InheritMap.GetMethodGroup(methodKey);
+			if (group != null)
 			{
 				string groupName = group.Name;
-				if ( groupName == null )
+				if (groupName == null)
 				{
 					// group is not yet named
 
 					// counts are grouping according to signature
-					ParamSig sig = new ParamSig( method );
+					ParamSig sig = new ParamSig(method);
 
 					// get name groups for classes in the group
-					NameGroup[] nameGroups = GetNameGroups( baseSigNames, group.Methods, sig );
+					NameGroup[] nameGroups = GetNameGroups(baseSigNames, group.Methods, sig);
 
-					if ( group.External )
+					if (group.External)
 						skipRename = "external base class or interface";
-					if ( skipRename != null )
+					if (skipRename != null)
 					{
 						// for an external group, we can't rename.  just use the method 
 						// name as group name
@@ -986,39 +942,39 @@ namespace Obfuscar
 					else
 					{
 						// for an internal group, get next unused name
-						groupName = NameGroup.GetNext( nameGroups );
+						groupName = NameGroup.GetNext(nameGroups);
 					}
 
 					group.Name = groupName;
 
 					// set up methods to be renamed
-					foreach ( MethodKey m in group.Methods )
+					foreach (MethodKey m in group.Methods)
 						if (skipRename == null)
 							map.UpdateMethod(m, ObfuscationStatus.WillRename, groupName);
 						else
 							map.UpdateMethod(m, ObfuscationStatus.Skipped, skipRename);
 
 					// make sure the classes' name groups are updated
-					for ( int i = 0; i < nameGroups.Length; i ++ )
-						nameGroups[i].Add( groupName );
+					for (int i = 0; i < nameGroups.Length; i++)
+						nameGroups[i].Add(groupName);
 				}
-				else if ( skipRename != null )
+				else if (skipRename != null)
 				{
 					// group is named, so we need to un-name it
 
-					Debug.Assert( !group.External,
+					Debug.Assert(!group.External,
 						"Group's external flag should have been handled when the group was created, " +
-						"and all methods in the group should already be marked skipped." );
+						"and all methods in the group should already be marked skipped.");
 
 					// counts are grouping according to signature
-					ParamSig sig = new ParamSig( method );
+					ParamSig sig = new ParamSig(method);
 
 					// get name groups for classes in the group
-					NameGroup[] nameGroups = GetNameGroups( baseSigNames, group.Methods, sig );
+					NameGroup[] nameGroups = GetNameGroups(baseSigNames, group.Methods, sig);
 
 					// make sure to remove the old group name from the classes' name groups
-					for ( int i = 0; i < nameGroups.Length; i++ )
-						nameGroups[i].Remove( groupName );
+					for (int i = 0; i < nameGroups.Length; i++)
+						nameGroups[i].Remove(groupName);
 
 					// since this method has to be skipped, we need to use the method 
 					// name as new group name
@@ -1026,41 +982,41 @@ namespace Obfuscar
 					group.Name = groupName;
 
 					// set up methods to be renamed
-					foreach ( MethodKey m in group.Methods )
-						map.UpdateMethod( m, ObfuscationStatus.Skipped, skipRename );
+					foreach (MethodKey m in group.Methods)
+						map.UpdateMethod(m, ObfuscationStatus.Skipped, skipRename);
 
 					// make sure the classes' name groups are updated
-					for ( int i = 0; i < nameGroups.Length; i++ )
-						nameGroups[i].Add( groupName );
+					for (int i = 0; i < nameGroups.Length; i++)
+						nameGroups[i].Add(groupName);
 				}
 				else
 				{
-					ObfuscatedThing m = map.GetMethod( methodKey );
-					Debug.Assert( m.Status == ObfuscationStatus.Skipped || 
-						( ( m.Status == ObfuscationStatus.WillRename || m.Status == ObfuscationStatus.Renamed ) &&
-						m.StatusText == groupName ),
-						"If the method isn't skipped, and the group already has a name...method should have one too." );
+					ObfuscatedThing m = map.GetMethod(methodKey);
+					Debug.Assert(m.Status == ObfuscationStatus.Skipped ||
+						((m.Status == ObfuscationStatus.WillRename || m.Status == ObfuscationStatus.Renamed) &&
+						m.StatusText == groupName),
+						"If the method isn't skipped, and the group already has a name...method should have one too.");
 				}
 			}
 			else if (skipRename != null)
 				map.UpdateMethod(methodKey, ObfuscationStatus.Skipped, skipRename);
 		}
 
-		NameGroup[] GetNameGroups( Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-			IEnumerable<MethodKey> methodKeys, ParamSig sig )
+		NameGroup[] GetNameGroups(Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
+			IEnumerable<MethodKey> methodKeys, ParamSig sig)
 		{
 			// build unique set of classes in group
-			C5.HashSet<TypeKey> typeKeys = new C5.HashSet<TypeKey>( );
-			foreach ( MethodKey methodKey in methodKeys )
-				typeKeys.Add( methodKey.TypeKey );
+			C5.HashSet<TypeKey> typeKeys = new C5.HashSet<TypeKey>();
+			foreach (MethodKey methodKey in methodKeys)
+				typeKeys.Add(methodKey.TypeKey);
 
 			// build list of namegroups
 			NameGroup[] nameGroups = new NameGroup[typeKeys.Count];
 
 			int i = 0;
-			foreach ( TypeKey typeKey in typeKeys )
+			foreach (TypeKey typeKey in typeKeys)
 			{
-				NameGroup nameGroup = GetNameGroup( baseSigNames, typeKey, sig );
+				NameGroup nameGroup = GetNameGroup(baseSigNames, typeKey, sig);
 
 				nameGroups[i++] = nameGroup;
 			}
@@ -1068,57 +1024,57 @@ namespace Obfuscar
 			return nameGroups;
 		}
 
-		string GetNewMethodName( Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method )
+		string GetNewMethodName(Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method)
 		{
-			ObfuscatedThing t = map.GetMethod( methodKey );
+			ObfuscatedThing t = map.GetMethod(methodKey);
 
 			// if it already has a name, return it
-			if ( t.Status == ObfuscationStatus.Renamed ||
-				t.Status == ObfuscationStatus.WillRename )
+			if (t.Status == ObfuscationStatus.Renamed ||
+				t.Status == ObfuscationStatus.WillRename)
 				return t.StatusText;
 
 			// don't mess with methods we decided to skip
-			if ( t.Status == ObfuscationStatus.Skipped )
+			if (t.Status == ObfuscationStatus.Skipped)
 				return null;
 
 			// counts are grouping according to signature
-			ParamSig sig = new ParamSig( method );
+			ParamSig sig = new ParamSig(method);
 
-			NameGroup nameGroup = GetNameGroup( sigNames, sig );
+			NameGroup nameGroup = GetNameGroup(sigNames, sig);
 
-			string newName = nameGroup.GetNext( );
+			string newName = nameGroup.GetNext();
 
 			// got a new name for the method
 			t.Status = ObfuscationStatus.WillRename;
 			t.StatusText = newName;
 
 			// make sure the name groups is updated
-			nameGroup.Add( newName );
+			nameGroup.Add(newName);
 
 			return newName;
 		}
 
-		void RenameMethod( AssemblyInfo info, Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method )
+		void RenameMethod(AssemblyInfo info, Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method)
 		{
-			string newName = GetNewMethodName( sigNames, methodKey, method );
+			string newName = GetNewMethodName(sigNames, methodKey, method);
 
-			RenameMethod( info, methodKey, method, newName );
+			RenameMethod(info, methodKey, method, newName);
 		}
 
-		void RenameMethod( AssemblyInfo info, MethodKey methodKey, MethodDefinition method, string newName )
+		void RenameMethod(AssemblyInfo info, MethodKey methodKey, MethodDefinition method, string newName)
 		{
 			// find references, rename them, then rename the method itself
-			foreach ( AssemblyInfo reference in info.ReferencedBy )
+			foreach (AssemblyInfo reference in info.ReferencedBy)
 			{
-				for ( int i = 0; i < reference.UnrenamedReferences.Count; )
+				for (int i = 0; i < reference.UnrenamedReferences.Count; )
 				{
 					MethodReference member = reference.UnrenamedReferences[i] as MethodReference;
-					if ( member != null )
+					if (member != null)
 					{
-						if ( methodKey.Matches( member ) )
+						if (methodKey.Matches(member))
 						{
 							member.Name = newName;
-							reference.UnrenamedReferences.RemoveAt( i );
+							reference.UnrenamedReferences.RemoveAt(i);
 
 							// since we removed one, continue without the increment
 							continue;
@@ -1131,132 +1087,136 @@ namespace Obfuscar
 
 			method.Name = newName;
 
-			map.UpdateMethod( methodKey, ObfuscationStatus.Renamed, newName );
+			map.UpdateMethod(methodKey, ObfuscationStatus.Renamed, newName);
 		}
 
-		public void HideStrings( )
+		public void HideStrings()
 		{
-			foreach ( AssemblyInfo info in project )
+			foreach (AssemblyInfo info in project)
 			{
 				AssemblyDefinition library = info.Definition;
 
-				Dictionary<string, MethodDefinition> methodByString = new Dictionary<string, MethodDefinition>( );
+				Dictionary<string, MethodDefinition> methodByString = new Dictionary<string, MethodDefinition>();
 
 				int nameIndex = 0;
 
 				// We get the most used type references
-				TypeReference systemObjectTypeReference = library.MainModule.Import( typeof( Object ) );
-				TypeReference systemVoidTypeReference = library.MainModule.Import( typeof( void ) );
-				TypeReference systemStringTypeReference = library.MainModule.Import( typeof( String ) );
-				TypeReference systemValueTypeTypeReference = library.MainModule.Import( typeof( ValueType ) );
-				TypeReference systemByteTypeReference = library.MainModule.Import( typeof( byte ) );
-				TypeReference systemIntTypeReference = library.MainModule.Import( typeof( int ) );
+				TypeReference systemObjectTypeReference = library.MainModule.Import(typeof(Object));
+				TypeReference systemVoidTypeReference = library.MainModule.Import(typeof(void));
+				TypeReference systemStringTypeReference = library.MainModule.Import(typeof(String));
+				TypeReference systemValueTypeTypeReference = library.MainModule.Import(typeof(ValueType));
+				TypeReference systemByteTypeReference = library.MainModule.Import(typeof(byte));
+				TypeReference systemIntTypeReference = library.MainModule.Import(typeof(int));
 
 				// New static class with a method for each unique string we substitute.
-				TypeDefinition newtype = new TypeDefinition( "<PrivateImplementationDetails>{" + Guid.NewGuid( ).ToString( ).ToUpper( ) + "}", null, TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, systemObjectTypeReference );
+				TypeDefinition newtype = new TypeDefinition("<PrivateImplementationDetails>{" + Guid.NewGuid().ToString().ToUpper() + "}", null, TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, systemObjectTypeReference);
 
 				// Array of bytes receiving the obfuscated strings in UTF8 format.
-				List<byte> databytes = new List<byte>( );
+				List<byte> databytes = new List<byte>();
 
 				// Add struct for constant byte array data
-				TypeDefinition structType = new TypeDefinition( "\0", "", TypeAttributes.ExplicitLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.NestedPrivate, systemValueTypeTypeReference );
+				TypeDefinition structType = new TypeDefinition("\0", "", TypeAttributes.ExplicitLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.NestedPrivate, systemValueTypeTypeReference);
 				structType.PackingSize = 1;
-				newtype.NestedTypes.Add( structType );
+				newtype.NestedTypes.Add(structType);
 
 				// Add field with constant string data
-				FieldDefinition dataConstantField = new FieldDefinition( "\0", structType, FieldAttributes.HasFieldRVA | FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly );
-				newtype.Fields.Add( dataConstantField );
+				FieldDefinition dataConstantField = new FieldDefinition("\0", FieldAttributes.HasFieldRVA | FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly, structType);
+				newtype.Fields.Add(dataConstantField);
 
 				// Add data field where constructor copies the data to
-				FieldDefinition dataField = new FieldDefinition( "\0\0", new ArrayType( systemByteTypeReference ), FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly );
-				newtype.Fields.Add( dataField );
+				FieldDefinition dataField = new FieldDefinition("\0\0", FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly, new ArrayType(systemByteTypeReference));
+				newtype.Fields.Add(dataField);
 
 				// Add string array of deobfuscated strings
-				FieldDefinition stringArrayField = new FieldDefinition( "\0\0\0", new ArrayType( systemStringTypeReference ), FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly );
-				newtype.Fields.Add( stringArrayField );
+				FieldDefinition stringArrayField = new FieldDefinition("\0\0\0", FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly, new ArrayType(systemStringTypeReference));
+				newtype.Fields.Add(stringArrayField);
 
 				// Add method to extract a string from the byte array. It is called by the indiviual string getter methods we add later to the class.
-				MethodDefinition stringGetterMethodDefinition = new MethodDefinition( "\0", MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig, systemStringTypeReference );
-				stringGetterMethodDefinition.Parameters.Add( new ParameterDefinition( systemIntTypeReference ) );
-				stringGetterMethodDefinition.Parameters.Add( new ParameterDefinition( systemIntTypeReference ) );
-				stringGetterMethodDefinition.Parameters.Add( new ParameterDefinition( systemIntTypeReference ) );
-				stringGetterMethodDefinition.Body.Variables.Add( new VariableDefinition( systemStringTypeReference ) );
-				CilWorker worker3 = stringGetterMethodDefinition.Body.CilWorker;
+				MethodDefinition stringGetterMethodDefinition = new MethodDefinition("\0", MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig, systemStringTypeReference);
+				stringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(systemIntTypeReference));
+				stringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(systemIntTypeReference));
+				stringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(systemIntTypeReference));
+				stringGetterMethodDefinition.Body.Variables.Add(new VariableDefinition(systemStringTypeReference));
+				ILProcessor worker3 = stringGetterMethodDefinition.Body.GetILProcessor();
 
-				worker3.Emit( OpCodes.Call, library.MainModule.Import( typeof( System.Text.Encoding ).GetProperty( "UTF8" ).GetGetMethod( ) ) );
-				worker3.Emit( OpCodes.Ldsfld, dataField );
-				worker3.Emit( OpCodes.Ldarg_1 );
-				worker3.Emit( OpCodes.Ldarg_2 );
-				worker3.Emit( OpCodes.Callvirt, library.MainModule.Import( typeof( System.Text.Encoding ).GetMethod( "GetString", new Type[] { typeof( byte[] ), typeof( int ), typeof( int ) } ) ) );
-				worker3.Emit( OpCodes.Stloc_0 );
+				worker3.Emit(OpCodes.Call, library.MainModule.Import(typeof(System.Text.Encoding).GetProperty("UTF8").GetGetMethod()));
+				worker3.Emit(OpCodes.Ldsfld, dataField);
+				worker3.Emit(OpCodes.Ldarg_1);
+				worker3.Emit(OpCodes.Ldarg_2);
+				worker3.Emit(OpCodes.Callvirt, library.MainModule.Import(typeof(System.Text.Encoding).GetMethod("GetString", new Type[] { typeof(byte[]), typeof(int), typeof(int) })));
+				worker3.Emit(OpCodes.Stloc_0);
 
-				worker3.Emit( OpCodes.Ldsfld, stringArrayField );
-				worker3.Emit( OpCodes.Ldarg_0 );
-				worker3.Emit( OpCodes.Ldloc_0 );
-				worker3.Emit( OpCodes.Stelem_Ref );
+				worker3.Emit(OpCodes.Ldsfld, stringArrayField);
+				worker3.Emit(OpCodes.Ldarg_0);
+				worker3.Emit(OpCodes.Ldloc_0);
+				worker3.Emit(OpCodes.Stelem_Ref);
 
-				worker3.Emit( OpCodes.Ldloc_0 );
-				worker3.Emit( OpCodes.Ret );
-				newtype.Methods.Add( stringGetterMethodDefinition );
+				worker3.Emit(OpCodes.Ldloc_0);
+				worker3.Emit(OpCodes.Ret);
+				newtype.Methods.Add(stringGetterMethodDefinition);
 
 				int stringIndex = 0;
 
 				// Look for all string load operations and replace them with calls to indiviual methods in our new class
-				foreach ( TypeDefinition type in library.MainModule.Types )
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions() /* info.Definition.MainModule.Types */)
 				{
-					if ( type.FullName == "<Module>" )
+					if (type.FullName == "<Module>")
 						continue;
 
-					TypeKey typeKey = new TypeKey( type );
-					if ( ShouldRename( type ) )
+					TypeKey typeKey = new TypeKey(type);
+					if (ShouldRename(type))
 					{
-						foreach ( MethodDefinition method in type.Methods )
+						foreach (MethodDefinition method in type.Methods)
 						{
-							if (!info.ShouldSkipStringHiding(new MethodKey(method)) && method.Body != null )
+							if (!info.ShouldSkipStringHiding(new MethodKey(method)) && method.Body != null)
 							{
-								for ( int i = 0; i < method.Body.Instructions.Count; i++ )
+								for (int i = 0; i < method.Body.Instructions.Count; i++)
 								{
 									Instruction instruction = method.Body.Instructions[i];
-									if ( instruction.OpCode == OpCodes.Ldstr )
+									if (instruction.OpCode == OpCodes.Ldstr)
 									{
-										string str = (string) instruction.Operand;
+										string str = (string)instruction.Operand;
 										MethodDefinition individualStringMethodDefinition = null;
-										if ( !methodByString.TryGetValue( str, out individualStringMethodDefinition ) )
+										if (!methodByString.TryGetValue(str, out individualStringMethodDefinition))
 										{
-											string methodName = NameMaker.UniqueName( nameIndex++ );
+											string methodName = NameMaker.UniqueName(nameIndex++);
 
 											// Add the string to the data array
-											byte[] stringBytes = Encoding.UTF8.GetBytes( str );
+											byte[] stringBytes = Encoding.UTF8.GetBytes(str);
 											int start = databytes.Count;
-											databytes.AddRange( stringBytes );
+											databytes.AddRange(stringBytes);
 											int count = databytes.Count - start;
 
 											// Add a method for this string to our new class
-											individualStringMethodDefinition = new MethodDefinition( methodName, MethodAttributes.Static | MethodAttributes.Public | MethodAttributes.HideBySig, systemStringTypeReference );
-											individualStringMethodDefinition.Body = new MethodBody( individualStringMethodDefinition );
-											CilWorker worker4 = individualStringMethodDefinition.Body.CilWorker;
+											individualStringMethodDefinition = new MethodDefinition(methodName, MethodAttributes.Static | MethodAttributes.Public | MethodAttributes.HideBySig, systemStringTypeReference);
+											individualStringMethodDefinition.Body = new MethodBody(individualStringMethodDefinition);
+											ILProcessor worker4 = individualStringMethodDefinition.Body.GetILProcessor();
 
-											worker4.Emit( OpCodes.Ldsfld, stringArrayField );
-											worker4.Emit( OpCodes.Ldc_I4, stringIndex );
-											worker4.Emit( OpCodes.Ldelem_Ref );
-											worker4.Emit( OpCodes.Dup );
-											Instruction label20 = worker4.Emit( OpCodes.Brtrue_S, stringGetterMethodDefinition.Body.Instructions[0] );
-											worker4.Emit( OpCodes.Pop );
-											worker4.Emit( OpCodes.Ldc_I4, stringIndex );
-											worker4.Emit( OpCodes.Ldc_I4, start );
-											worker4.Emit( OpCodes.Ldc_I4, count );
-											worker4.Emit( OpCodes.Call, stringGetterMethodDefinition );
+											worker4.Emit(OpCodes.Ldsfld, stringArrayField);
+											worker4.Emit(OpCodes.Ldc_I4, stringIndex);
+											worker4.Emit(OpCodes.Ldelem_Ref);
+											worker4.Emit(OpCodes.Dup);
+											Instruction label20 = worker4.Create(OpCodes.Brtrue_S, stringGetterMethodDefinition.Body.Instructions[0]);
+											worker4.Append(label20);
+											worker4.Emit(OpCodes.Pop);
+											worker4.Emit(OpCodes.Ldc_I4, stringIndex);
+											worker4.Emit(OpCodes.Ldc_I4, start);
+											worker4.Emit(OpCodes.Ldc_I4, count);
+											worker4.Emit(OpCodes.Call, stringGetterMethodDefinition);
 
-											label20.Operand = worker4.Emit( OpCodes.Ret );
 
-											newtype.Methods.Add( individualStringMethodDefinition );
-											methodByString.Add( str, individualStringMethodDefinition );
+											label20.Operand = worker4.Create(OpCodes.Ret);
+											worker4.Append((Instruction)label20.Operand);
+
+											newtype.Methods.Add(individualStringMethodDefinition);
+											methodByString.Add(str, individualStringMethodDefinition);
 
 											stringIndex++;
 										}
-										CilWorker worker = method.Body.CilWorker;
-										Instruction newinstruction = worker.Create( OpCodes.Call, individualStringMethodDefinition );
-										worker.Replace( instruction, newinstruction );
+										// Replace Ldstr with Call
+										ILProcessor worker = method.Body.GetILProcessor();
+										Instruction newinstruction = worker.Create(OpCodes.Call, individualStringMethodDefinition);
+										worker.Replace(instruction, newinstruction);
 									}
 								}
 							}
@@ -1265,60 +1225,62 @@ namespace Obfuscar
 				}
 
 				// Now that we know the total size of the byte array, we can update the struct size and store it in the constant field
-				structType.ClassSize = (uint) databytes.Count;
-				for ( int i = 0; i < databytes.Count; i++ )
-					databytes[i] = (byte) (databytes[i] ^ (byte)i ^ 0xAA);
-				dataConstantField.InitialValue = databytes.ToArray( );
+				structType.ClassSize = databytes.Count;
+				for (int i = 0; i < databytes.Count; i++)
+					databytes[i] = (byte)(databytes[i] ^ (byte)i ^ 0xAA);
+				dataConstantField.InitialValue = databytes.ToArray();
 
 				// Add static constructor which initializes the dataField from the constant data field
-				MethodDefinition ctorMethodDefinition = new MethodDefinition( ".cctor", MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, systemVoidTypeReference );
-				newtype.Methods.Add( ctorMethodDefinition );
-				ctorMethodDefinition.Body = new MethodBody( ctorMethodDefinition );
-				ctorMethodDefinition.Body.Variables.Add( new VariableDefinition( systemIntTypeReference ) );
+				MethodDefinition ctorMethodDefinition = new MethodDefinition(".cctor", MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, systemVoidTypeReference);
+				newtype.Methods.Add(ctorMethodDefinition);
+				ctorMethodDefinition.Body = new MethodBody(ctorMethodDefinition);
+				ctorMethodDefinition.Body.Variables.Add(new VariableDefinition(systemIntTypeReference));
 
-				CilWorker worker2 = ctorMethodDefinition.Body.CilWorker;
-				worker2.Emit( OpCodes.Ldc_I4, stringIndex );
-				worker2.Emit( OpCodes.Newarr, systemStringTypeReference );
-				worker2.Emit( OpCodes.Stsfld, stringArrayField );
-
-
-				worker2.Emit( OpCodes.Ldc_I4, databytes.Count );
-				worker2.Emit( OpCodes.Newarr, systemByteTypeReference );
-				worker2.Emit( OpCodes.Dup );
-				worker2.Emit( OpCodes.Ldtoken, dataConstantField );
-				worker2.Emit( OpCodes.Call, library.MainModule.Import( typeof( System.Runtime.CompilerServices.RuntimeHelpers ).GetMethod( "InitializeArray" ) ) );
-				worker2.Emit( OpCodes.Stsfld, dataField );
-
-				worker2.Emit( OpCodes.Ldc_I4_0 );
-				worker2.Emit( OpCodes.Stloc_0 );
-
-				Instruction backlabel1 = worker2.Emit( OpCodes.Br_S, ctorMethodDefinition.Body.Instructions[0] );
-				Instruction label2 = worker2.Emit( OpCodes.Ldsfld, dataField );
-				worker2.Emit( OpCodes.Ldloc_0 );
-				worker2.Emit( OpCodes.Ldsfld, dataField );
-				worker2.Emit( OpCodes.Ldloc_0 );
-				worker2.Emit( OpCodes.Ldelem_U1 );
-				worker2.Emit( OpCodes.Ldloc_0 );
-				worker2.Emit( OpCodes.Xor );
-				worker2.Emit( OpCodes.Ldc_I4, 0xAA );
-				worker2.Emit( OpCodes.Xor );
-				worker2.Emit( OpCodes.Conv_U1 );
-				worker2.Emit( OpCodes.Stelem_I1 );
-				worker2.Emit( OpCodes.Ldloc_0 );
-				worker2.Emit( OpCodes.Ldc_I4_1 );
-				worker2.Emit( OpCodes.Add );
-				worker2.Emit( OpCodes.Stloc_0 );
-				backlabel1.Operand = worker2.Emit( OpCodes.Ldloc_0 );
-				worker2.Emit( OpCodes.Ldsfld, dataField );
-				worker2.Emit( OpCodes.Ldlen );
-				worker2.Emit( OpCodes.Conv_I4 );
-				worker2.Emit( OpCodes.Clt );
-				worker2.Emit( OpCodes.Brtrue, label2 );
-				worker2.Emit( OpCodes.Ret );
+				ILProcessor worker2 = ctorMethodDefinition.Body.GetILProcessor();
+				worker2.Emit(OpCodes.Ldc_I4, stringIndex);
+				worker2.Emit(OpCodes.Newarr, systemStringTypeReference);
+				worker2.Emit(OpCodes.Stsfld, stringArrayField);
 
 
-				library.MainModule.Types.Add( structType );
-				library.MainModule.Types.Add( newtype );
+				worker2.Emit(OpCodes.Ldc_I4, databytes.Count);
+				worker2.Emit(OpCodes.Newarr, systemByteTypeReference);
+				worker2.Emit(OpCodes.Dup);
+				worker2.Emit(OpCodes.Ldtoken, dataConstantField);
+				worker2.Emit(OpCodes.Call, library.MainModule.Import(typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("InitializeArray")));
+				worker2.Emit(OpCodes.Stsfld, dataField);
+
+				worker2.Emit(OpCodes.Ldc_I4_0);
+				worker2.Emit(OpCodes.Stloc_0);
+
+				Instruction backlabel1 = worker2.Create(OpCodes.Br_S, ctorMethodDefinition.Body.Instructions[0]);
+				worker2.Append(backlabel1);
+				Instruction label2 = worker2.Create(OpCodes.Ldsfld, dataField);
+				worker2.Append(label2);
+				worker2.Emit(OpCodes.Ldloc_0);
+				worker2.Emit(OpCodes.Ldsfld, dataField);
+				worker2.Emit(OpCodes.Ldloc_0);
+				worker2.Emit(OpCodes.Ldelem_U1);
+				worker2.Emit(OpCodes.Ldloc_0);
+				worker2.Emit(OpCodes.Xor);
+				worker2.Emit(OpCodes.Ldc_I4, 0xAA);
+				worker2.Emit(OpCodes.Xor);
+				worker2.Emit(OpCodes.Conv_U1);
+				worker2.Emit(OpCodes.Stelem_I1);
+				worker2.Emit(OpCodes.Ldloc_0);
+				worker2.Emit(OpCodes.Ldc_I4_1);
+				worker2.Emit(OpCodes.Add);
+				worker2.Emit(OpCodes.Stloc_0);
+				backlabel1.Operand = worker2.Create(OpCodes.Ldloc_0);
+				worker2.Append((Instruction)backlabel1.Operand);
+				worker2.Emit(OpCodes.Ldsfld, dataField);
+				worker2.Emit(OpCodes.Ldlen);
+				worker2.Emit(OpCodes.Conv_I4);
+				worker2.Emit(OpCodes.Clt);
+				worker2.Emit(OpCodes.Brtrue, label2);
+				worker2.Emit(OpCodes.Ret);
+
+
+				library.MainModule.Types.Add(newtype);
 			}
 		}
 	}

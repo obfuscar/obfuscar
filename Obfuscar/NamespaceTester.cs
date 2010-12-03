@@ -39,7 +39,7 @@ namespace Obfuscar
 			this.name = name;
 		}
 
-		public bool Test( string ns )
+		public bool Test(string ns)
 		{
 			return Helper.CompareOptionalRegex(ns, name);
 		}

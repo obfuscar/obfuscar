@@ -30,16 +30,16 @@ namespace Obfuscar
 {
 	class Program
 	{
-		static void ShowHelp( )
+		static void ShowHelp()
 		{
-			Console.WriteLine( "Usage:  obfuscar [projectfile]" );
+			Console.WriteLine("Usage:  obfuscar [projectfile]");
 		}
 
-		static int Main( string[] args )
+		static int Main(string[] args)
 		{
-			if ( args.Length < 1 )
+			if (args.Length < 1)
 			{
-				ShowHelp( );
+				ShowHelp();
 				return 1;
 			}
 
@@ -47,27 +47,30 @@ namespace Obfuscar
 
 			try
 			{
-				Console.Write( "Loading project..." );
-				Obfuscator obfuscator = new Obfuscator( args[0] );
-				Console.WriteLine( "Done." );
+				Console.Write("Loading project...");
+				Obfuscator obfuscator = new Obfuscator(args[0]);
+				Console.WriteLine("Done.");
 
-				Console.Write( "Renaming:  fields..." );
-				obfuscator.RenameFields( );
+				// The SemanticAttributes of MethodDefinitions have to be loaded before any fields,properties or events are removed
+				obfuscator.LoadMethodSemantics();
 
-				Console.Write( "parameters..." );
-				obfuscator.RenameParams( );
+				Console.Write("Renaming:  fields...");
+				obfuscator.RenameFields();
 
-				Console.Write( "properties..." );
-				obfuscator.RenameProperties( );
+				Console.Write("parameters...");
+				obfuscator.RenameParams();
 
-				Console.Write( "events..." );
-				obfuscator.RenameEvents( );
+				Console.Write("properties...");
+				obfuscator.RenameProperties();
 
-				Console.Write( "methods..." );
-				obfuscator.RenameMethods( );
+				Console.Write("events...");
+				obfuscator.RenameEvents();
 
-				Console.Write( "types..." );
-				obfuscator.RenameTypes( );
+				Console.Write("methods...");
+				obfuscator.RenameMethods();
+
+				Console.Write("types...");
+				obfuscator.RenameTypes();
 
 				if (obfuscator.Project.Settings.HideStrings)
 				{
@@ -75,23 +78,23 @@ namespace Obfuscar
 					obfuscator.HideStrings();
 				}
 
-				Console.WriteLine( "Done." );
+				Console.WriteLine("Done.");
 
-				Console.Write( "Saving assemblies..." );
-				obfuscator.SaveAssemblies( );
-				Console.WriteLine( "Done." );
+				Console.Write("Saving assemblies...");
+				obfuscator.SaveAssemblies();
+				Console.WriteLine("Done.");
 
-				Console.Write( "Writing log file..." );
-				obfuscator.SaveMapping( );
-				Console.WriteLine( "Done." );
+				Console.Write("Writing log file...");
+				obfuscator.SaveMapping();
+				Console.WriteLine("Done.");
 
-				Console.WriteLine( "Completed, {0:f2} secs.", ( Environment.TickCount - start ) / 1000.0 );
+				Console.WriteLine("Completed, {0:f2} secs.", (Environment.TickCount - start) / 1000.0);
 			}
-			catch ( ApplicationException e )
+			catch (ApplicationException e)
 			{
-				Console.WriteLine( );
-				Console.Error.WriteLine( "An error occurred during processing:" );
-				Console.Error.WriteLine( e.Message );
+				Console.WriteLine();
+				Console.Error.WriteLine("An error occurred during processing:");
+				Console.Error.WriteLine(e.Message);
 				if (e.InnerException != null)
 					Console.Error.WriteLine(e.InnerException.Message);
 				return 1;

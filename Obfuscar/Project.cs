@@ -40,48 +40,48 @@ namespace Obfuscar
 	{
 		private const string SPECIALVAR_PROJECTFILEDIRECTORY = "ProjectFileDirectory";
 
-		private readonly List<AssemblyInfo> assemblyList = new List<AssemblyInfo>( );
-		private readonly Dictionary<string, AssemblyInfo> assemblyMap = new Dictionary<string, AssemblyInfo>( );
+		private readonly List<AssemblyInfo> assemblyList = new List<AssemblyInfo>();
+		private readonly Dictionary<string, AssemblyInfo> assemblyMap = new Dictionary<string, AssemblyInfo>();
 
-		private readonly Variables vars = new Variables( );
+		private readonly Variables vars = new Variables();
 
 		InheritMap inheritMap;
 		Settings settings;
 		private RSA keyvalue;
 
 		// don't create.  call FromXml.
-		private Project( )
+		private Project()
 		{
 		}
 
-		public static Project FromXml( XmlReader reader, string projectFileDirectory )
+		public static Project FromXml(XmlReader reader, string projectFileDirectory)
 		{
-			Project project = new Project( );
+			Project project = new Project();
 
 			project.vars.Add(SPECIALVAR_PROJECTFILEDIRECTORY, string.IsNullOrEmpty(projectFileDirectory) ? "." : projectFileDirectory);
 
-			while ( reader.Read( ) )
+			while (reader.Read())
 			{
-				if ( reader.NodeType == XmlNodeType.Element )
+				if (reader.NodeType == XmlNodeType.Element)
 				{
-					switch ( reader.Name )
+					switch (reader.Name)
 					{
 						case "Var":
-						{
-							string name = Helper.GetAttribute( reader, "name" );
-							if ( name.Length > 0 )
 							{
-								string value = Helper.GetAttribute( reader, "value" );
-								if ( value.Length > 0 )
-									project.vars.Add( name, value );
-								else
-									project.vars.Remove( name );
+								string name = Helper.GetAttribute(reader, "name");
+								if (name.Length > 0)
+								{
+									string value = Helper.GetAttribute(reader, "value");
+									if (value.Length > 0)
+										project.vars.Add(name, value);
+									else
+										project.vars.Remove(name);
+								}
+								break;
 							}
-							break;
-						}
 						case "Module":
-							AssemblyInfo info = AssemblyInfo.FromXml( project, reader, project.vars );
-							project.assemblyList.Add( info );
+							AssemblyInfo info = AssemblyInfo.FromXml(project, reader, project.vars);
+							project.assemblyList.Add(info);
 							project.assemblyMap[info.Name] = info;
 							break;
 					}
@@ -94,20 +94,20 @@ namespace Obfuscar
 		/// <summary>
 		/// Looks through the settings, trys to make sure everything looks ok.
 		/// </summary>
-		public void CheckSettings( )
+		public void CheckSettings()
 		{
-			if ( !Directory.Exists( Settings.InPath ) )
-				throw new ApplicationException( "Path specified by InPath variable must exist:" + Settings.InPath );
+			if (!Directory.Exists(Settings.InPath))
+				throw new ApplicationException("Path specified by InPath variable must exist:" + Settings.InPath);
 
-			if ( !Directory.Exists( Settings.OutPath ) )
+			if (!Directory.Exists(Settings.OutPath))
 			{
 				try
 				{
-					Directory.CreateDirectory( Settings.OutPath );
+					Directory.CreateDirectory(Settings.OutPath);
 				}
-				catch ( IOException e )
+				catch (IOException e)
 				{
-					throw new ApplicationException( "Could not create path specified by OutPath:  " + Settings.OutPath, e );
+					throw new ApplicationException("Could not create path specified by OutPath:  " + Settings.OutPath, e);
 				}
 			}
 		}
@@ -121,94 +121,90 @@ namespace Obfuscar
 		{
 			get
 			{
-				if ( settings == null )
-					settings = new Settings( vars );
+				if (settings == null)
+					settings = new Settings(vars);
 
 				return settings;
 			}
 		}
 
-		public void LoadAssemblies( )
+		public void LoadAssemblies()
 		{
-			// make everything fully load
-			foreach ( AssemblyInfo info in assemblyList )
-				info.Definition.MainModule.FullLoad( );
-
 			// build reference tree
-			foreach ( AssemblyInfo info in assemblyList )
+			foreach (AssemblyInfo info in assemblyList)
 			{
 				// add self reference...makes things easier later, when
 				// we need to go through the member references
-				info.ReferencedBy.Add( info );
+				info.ReferencedBy.Add(info);
 
 				// try to get each assembly referenced by this one.  if it's in
 				// the map (and therefore in the project), set up the mappings
-				foreach ( AssemblyNameReference nameRef in info.Definition.MainModule.AssemblyReferences )
+				foreach (AssemblyNameReference nameRef in info.Definition.MainModule.AssemblyReferences)
 				{
 					AssemblyInfo reference;
-					if ( assemblyMap.TryGetValue( nameRef.Name, out reference ) )
+					if (assemblyMap.TryGetValue(nameRef.Name, out reference))
 					{
-						info.References.Add( reference );
-						reference.ReferencedBy.Add( info );
+						info.References.Add(reference);
+						reference.ReferencedBy.Add(info);
 					}
 				}
 			}
 
 			// make each assembly's list of member refs
-			foreach ( AssemblyInfo info in assemblyList )
-				info.Init( );
+			foreach (AssemblyInfo info in assemblyList)
+				info.Init();
 
 			// build inheritance map
-			inheritMap = new InheritMap( this );
+			inheritMap = new InheritMap(this);
 		}
 
 		/// <summary>
 		/// Returns whether the project contains a given type.
 		/// </summary>
-		public bool Contains( TypeReference type )
+		public bool Contains(TypeReference type)
 		{
-			string name = Helper.GetScopeName( type );
+			string name = Helper.GetScopeName(type);
 
-			return assemblyMap.ContainsKey( name );
+			return assemblyMap.ContainsKey(name);
 		}
 
 		/// <summary>
 		/// Returns whether the project contains a given type.
 		/// </summary>
-		public bool Contains( TypeKey type )
+		public bool Contains(TypeKey type)
 		{
-			return assemblyMap.ContainsKey( type.Scope );
+			return assemblyMap.ContainsKey(type.Scope);
 		}
 
-		public TypeDefinition GetTypeDefinition( TypeReference type )
+		public TypeDefinition GetTypeDefinition(TypeReference type)
 		{
-			if ( type == null )
+			if (type == null)
 				return null;
 
 			TypeDefinition typeDef = type as TypeDefinition;
-			if ( typeDef == null )
+			if (typeDef == null)
 			{
-				string name = Helper.GetScopeName( type );
+				string name = Helper.GetScopeName(type);
 
 				AssemblyInfo info;
-				if ( assemblyMap.TryGetValue( name, out info ) )
+				if (assemblyMap.TryGetValue(name, out info))
 				{
 					string fullName = type.Namespace + "." + type.Name;
-					typeDef = info.Definition.MainModule.Types[fullName];
+					typeDef = info.Definition.MainModule.GetType(fullName);
 				}
 			}
 
 			return typeDef;
 		}
 
-		IEnumerator IEnumerable.GetEnumerator( )
+		IEnumerator IEnumerable.GetEnumerator()
 		{
-			return assemblyList.GetEnumerator( );
+			return assemblyList.GetEnumerator();
 		}
 
-		public IEnumerator<AssemblyInfo> GetEnumerator( )
+		public IEnumerator<AssemblyInfo> GetEnumerator()
 		{
-			return assemblyList.GetEnumerator( );
+			return assemblyList.GetEnumerator();
 		}
 	}
 }

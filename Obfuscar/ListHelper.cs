@@ -30,19 +30,19 @@ namespace Obfuscar
 {
 	static class ListHelper
 	{
-		public static bool ListsEqual<T>( IList<T> a, IList<T> b )
+		public static bool ListsEqual<T>(IList<T> a, IList<T> b)
 		{
-			if ( a == null )
+			if (a == null)
 				return b == null;
-			else if ( b == null )
+			else if (b == null)
 				return false;
-			else if ( a.Count != b.Count )
+			else if (a.Count != b.Count)
 				return false;
 			else
 			{
-				for ( int i = 0; i < a.Count; i++ )
+				for (int i = 0; i < a.Count; i++)
 				{
-					if ( !a[i].Equals( b[i] ) )
+					if (!a[i].Equals(b[i]))
 						return false;
 				}
 
