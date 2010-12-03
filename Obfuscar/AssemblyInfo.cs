@@ -245,14 +245,12 @@ namespace Obfuscar
 		internal void Init()
 		{
 			unrenamedReferences = new List<MemberReference>();
-			foreach (MemberReference member in getMemberReferences() /* definition.MainModule.GetMemberReferences()*/ )
+			foreach (MemberReference member in getMemberReferences())
 			{
 				MethodReference mr = member as MethodReference;
 				FieldReference fr = member as FieldReference;
 				if (project.Contains(member.DeclaringType))
-				{
 					unrenamedReferences.Add(member);
-				}
 			}
 
 			C5.HashSet<TypeReference> typerefs = new C5.HashSet<TypeReference>();
@@ -327,7 +325,7 @@ namespace Obfuscar
 							MemberReference memberref = inst.Operand as MemberReference;
 							if (memberref != null)
 							{
-								if (memberref is MethodReference && !(memberref is MethodDefinition || memberref is MethodSpecification)
+								if (memberref is MethodReference && !(memberref is MethodDefinition || memberref is MethodSpecification || memberref is CallSite)
 									|| memberref is FieldReference && !(memberref is FieldDefinition))
 								{
 									int c = memberreferences.Count;
