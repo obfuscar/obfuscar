@@ -38,17 +38,17 @@ namespace Obfuscar
 		readonly string name;
 		readonly EventDefinition eventDefinition;
 
-		public EventKey( EventDefinition evt )
-			: this(new TypeKey( (TypeDefinition)evt.DeclaringType ), evt)
+		public EventKey(EventDefinition evt)
+			: this(new TypeKey((TypeDefinition)evt.DeclaringType), evt)
 		{
 		}
 
-		public EventKey( TypeKey typeKey, EventDefinition evt )
+		public EventKey(TypeKey typeKey, EventDefinition evt)
 			: this(typeKey, evt.EventType.FullName, evt.Name, evt)
 		{
 		}
 
-		public EventKey( TypeKey typeKey, string type, string name, EventDefinition eventDefinition)
+		public EventKey(TypeKey typeKey, string type, string name, EventDefinition eventDefinition)
 		{
 			this.typeKey = typeKey;
 			this.type = type;
@@ -81,55 +81,55 @@ namespace Obfuscar
 			get { return (TypeDefinition)eventDefinition.DeclaringType; }
 		}
 
-		public virtual bool Matches( MemberReference member )
+		public virtual bool Matches(MemberReference member)
 		{
 			EventReference evtRef = member as EventReference;
-			if ( evtRef != null )
+			if (evtRef != null)
 			{
-				if ( typeKey.Matches( evtRef.DeclaringType ) )
+				if (typeKey.Matches(evtRef.DeclaringType))
 					return type == evtRef.EventType.FullName && name == evtRef.Name;
 			}
 
 			return false;
 		}
 
-		public override bool Equals( object obj )
+		public override bool Equals(object obj)
 		{
 			EventKey key = obj as EventKey;
-			if ( key == null )
+			if (key == null)
 				return false;
 
 			return this == key;
 		}
 
-		public static bool operator ==( EventKey a, EventKey b )
+		public static bool operator ==(EventKey a, EventKey b)
 		{
-			if ( (object) a == null )
-				return (object) b == null;
-			else if ( (object) b == null )
+			if ((object)a == null)
+				return (object)b == null;
+			else if ((object)b == null)
 				return false;
 			else
 				return a.typeKey == b.typeKey && a.type == b.type && a.name == b.name;
 		}
 
-		public static bool operator !=( EventKey a, EventKey b )
+		public static bool operator !=(EventKey a, EventKey b)
 		{
-			if ( (object) a == null )
-				return (object) b != null;
-			else if ( (object) b == null )
+			if ((object)a == null)
+				return (object)b != null;
+			else if ((object)b == null)
 				return true;
 			else
 				return a.typeKey != b.typeKey || a.type != b.type || a.name != b.name;
 		}
 
-		public override int GetHashCode( )
+		public override int GetHashCode()
 		{
-			return typeKey.GetHashCode( ) ^ type.GetHashCode( ) ^ name.GetHashCode( );
+			return typeKey.GetHashCode() ^ type.GetHashCode() ^ name.GetHashCode();
 		}
 
-		public override string ToString( )
+		public override string ToString()
 		{
-			return String.Format( "[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name );
+			return String.Format("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
 		}
 	}
 }

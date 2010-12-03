@@ -41,18 +41,18 @@ namespace Obfuscar
 		bool hideStrings;
 		string keyFile;
 
-		public Settings( Variables vars )
+		public Settings(Variables vars)
 		{
-			inPath = vars.GetValue( "InPath", "." );
-			outPath = vars.GetValue( "OutPath", "." );
-			markedOnly = XmlConvert.ToBoolean( vars.GetValue( "MarkedOnly", "false" ) );
+			inPath = vars.GetValue("InPath", ".");
+			outPath = vars.GetValue("OutPath", ".");
+			markedOnly = XmlConvert.ToBoolean(vars.GetValue("MarkedOnly", "false"));
 
-			renameProperties = XmlConvert.ToBoolean( vars.GetValue( "RenameProperties", "true" ) );
-			renameEvents = XmlConvert.ToBoolean( vars.GetValue( "RenameEvents", "true" ) );
-			reuseNames = XmlConvert.ToBoolean( vars.GetValue( "ReuseNames", "true" ) );
+			renameProperties = XmlConvert.ToBoolean(vars.GetValue("RenameProperties", "true"));
+			renameEvents = XmlConvert.ToBoolean(vars.GetValue("RenameEvents", "true"));
+			reuseNames = XmlConvert.ToBoolean(vars.GetValue("ReuseNames", "true"));
 			hideStrings = XmlConvert.ToBoolean(vars.GetValue("HideStrings", "true"));
 
-			xmlMapping = XmlConvert.ToBoolean( vars.GetValue( "XmlMapping", "false" ) );
+			xmlMapping = XmlConvert.ToBoolean(vars.GetValue("XmlMapping", "false"));
 
 			keyFile = vars.GetValue("KeyFile", null);
 		}

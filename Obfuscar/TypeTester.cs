@@ -52,20 +52,20 @@ namespace Obfuscar
 			get { return this.skipFlags; }
 		}
 
-		public TypeTester( string name, TypeSkipFlags skipFlags, string attrib)
+		public TypeTester(string name, TypeSkipFlags skipFlags, string attrib)
 		{
 			this.name = name;
 			this.skipFlags = skipFlags;
 			this.attrib = attrib.ToLower();
 		}
 
-		public bool Test( TypeKey type )
+		public bool Test(TypeKey type)
 		{
-			if ( !string.IsNullOrEmpty(attrib) )
+			if (!string.IsNullOrEmpty(attrib))
 			{
 				if (string.Equals(attrib, "public", StringComparison.InvariantCultureIgnoreCase))
 				{
-					if ( !MethodTester.IsTypePublic(type.TypeDefinition) )
+					if (!MethodTester.IsTypePublic(type.TypeDefinition))
 						return false;
 				}
 				else

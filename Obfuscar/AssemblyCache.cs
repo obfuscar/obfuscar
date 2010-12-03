@@ -36,29 +36,29 @@ namespace Obfuscar
 		private readonly Project project;
 
 		private readonly Dictionary<string, AssemblyDefinition> cache =
-			new Dictionary<string, AssemblyDefinition>( );
-		private readonly IAssemblyResolver resolver = new DefaultAssemblyResolver( );
+			new Dictionary<string, AssemblyDefinition>();
+		private readonly IAssemblyResolver resolver = new DefaultAssemblyResolver();
 
-		public AssemblyCache( Project project )
+		public AssemblyCache(Project project)
 		{
 			this.project = project;
 		}
 
-		private AssemblyDefinition SelfResolve( AssemblyNameReference name )
+		private AssemblyDefinition SelfResolve(AssemblyNameReference name)
 		{
 			AssemblyDefinition assmDef;
-			if ( !cache.TryGetValue( name.FullName, out assmDef ) )
+			if (!cache.TryGetValue(name.FullName, out assmDef))
 			{
 				assmDef = null;
 
 				string[] exts = new string[] { ".dll", ".exe" };
 
-				foreach ( string ext in exts )
+				foreach (string ext in exts)
 				{
-					string file = Path.Combine( project.Settings.InPath, name.Name + ext );
-					if ( File.Exists( file ) )
+					string file = Path.Combine(project.Settings.InPath, name.Name + ext);
+					if (File.Exists(file))
 					{
-						assmDef = AssemblyFactory.GetAssembly( file );
+						assmDef = AssemblyDefinition.ReadAssembly(file);
 						cache[name.FullName] = assmDef;
 						break;
 					}
@@ -68,34 +68,33 @@ namespace Obfuscar
 			return assmDef;
 		}
 
-		public TypeDefinition GetTypeDefinition( TypeReference type )
+		public TypeDefinition GetTypeDefinition(TypeReference type)
 		{
-			if ( type == null )
+			if (type == null)
 				return null;
 
 			TypeDefinition typeDef = type as TypeDefinition;
-			if ( typeDef == null )
+			if (typeDef == null)
 			{
 				AssemblyNameReference name = type.Scope as AssemblyNameReference;
-				if ( name != null )
+				if (name != null)
 				{
 					// try to self resolve, fall back to default resolver
 					AssemblyDefinition assmDef = null;
-					assmDef = SelfResolve( name );
-					if ( assmDef == null )
+					assmDef = SelfResolve(name);
+					if (assmDef == null)
 					{
 						try
 						{
-							assmDef = resolver.Resolve( name );
+							assmDef = resolver.Resolve(name);
 							cache[name.FullName] = assmDef;
 						}
-						catch ( FileNotFoundException )
+						catch (FileNotFoundException)
 						{
-							throw new ApplicationException( "Unable to resolve dependency:  " + name.Name );
+							throw new ApplicationException("Unable to resolve dependency:  " + name.Name);
 						}
 					}
-
-					typeDef = assmDef.MainModule.Types[new TypeKey(type).Fullname];
+					typeDef = assmDef.MainModule.GetType(new TypeKey(type).Fullname);
 				}
 				else
 				{

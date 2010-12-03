@@ -39,7 +39,7 @@ namespace Obfuscar
 		private readonly string attrib;
 		private readonly string typeAttrib;
 
-		public PropertyTester( string name, string type, string attrib, string typeAttrib )
+		public PropertyTester(string name, string type, string attrib, string typeAttrib)
 		{
 			this.name = name;
 			this.type = type;
@@ -47,7 +47,7 @@ namespace Obfuscar
 			this.typeAttrib = typeAttrib;
 		}
 
-		public PropertyTester( Regex nameRx, string type, string attrib, string typeAttrib )
+		public PropertyTester(Regex nameRx, string type, string attrib, string typeAttrib)
 		{
 			this.nameRx = nameRx;
 			this.type = type;
@@ -55,14 +55,14 @@ namespace Obfuscar
 			this.typeAttrib = typeAttrib;
 		}
 
-		public bool Test( PropertyKey prop )
+		public bool Test(PropertyKey prop)
 		{
-			if ( Helper.CompareOptionalRegex(prop.TypeKey.Fullname, type) && MethodTester.CheckMemberVisibility( attrib, typeAttrib, prop.GetterMethodAttributes, prop.DeclaringType ) )
+			if (Helper.CompareOptionalRegex(prop.TypeKey.Fullname, type) && MethodTester.CheckMemberVisibility(attrib, typeAttrib, prop.GetterMethodAttributes, prop.DeclaringType))
 			{
-				if ( name != null )
+				if (name != null)
 					return Helper.CompareOptionalRegex(prop.Name, name);
 				else
-					return nameRx.IsMatch( prop.Name );
+					return nameRx.IsMatch(prop.Name);
 			}
 
 			return false;

@@ -32,47 +32,47 @@ namespace Obfuscar
 {
 	static class TypeNameCache
 	{
-		static Dictionary<TypeReference, string> nameCache = new Dictionary<TypeReference, string>( );
+		static Dictionary<TypeReference, string> nameCache = new Dictionary<TypeReference, string>();
 
 		/// <summary>
 		/// Recursively builds a type name.
 		/// </summary>
 		/// <param name="builder">Builder the type name will be added to.</param>
 		/// <param name="type">Type whose name is to be built.</param>
-		static void BuildTypeName( StringBuilder builder, TypeReference type )
+		static void BuildTypeName(StringBuilder builder, TypeReference type)
 		{
 			GenericParameter genParam = type as GenericParameter;
-			if ( genParam != null )
+			if (genParam != null)
 			{
-				builder.AppendFormat( "!{0}", genParam.Position );
+				builder.AppendFormat("!{0}", genParam.Position);
 			}
 			else
 			{
 				GenericInstanceType genType = type as GenericInstanceType;
-				if ( genType != null )
+				if (genType != null)
 				{
-					builder.AppendFormat( "{0}.{1}<", genType.Namespace, genType.Name );
-					for ( int i = 0; i < genType.GenericArguments.Count; i++ )
+					builder.AppendFormat("{0}.{1}<", genType.Namespace, genType.Name);
+					for (int i = 0; i < genType.GenericArguments.Count; i++)
 					{
 						TypeReference argType = genType.GenericArguments[i];
 
-						if ( i > 0 )
-							builder.Append( ',' );
+						if (i > 0)
+							builder.Append(',');
 
-						BuildTypeName( builder, argType );
+						BuildTypeName(builder, argType);
 					}
-					builder.Append( ">" );
+					builder.Append(">");
 				}
 				else
 				{
 					ArrayType arrType = type as ArrayType;
-					if ( arrType != null )
+					if (arrType != null)
 					{
-						BuildTypeName( builder, arrType.ElementType );
-						builder.Append( "[]" );
+						BuildTypeName(builder, arrType.ElementType);
+						builder.Append("[]");
 					}
 					else
-						builder.Append( type.FullName );
+						builder.Append(type.FullName);
 				}
 			}
 		}
@@ -81,14 +81,14 @@ namespace Obfuscar
 		/// Builds a name for a type that can be used for comparing types.  Any generic parameters
 		/// are replaced with their placeholder names instead of actual names (e.g., changes T to !0).
 		/// </summary>
-		public static string GetTypeName( TypeReference type )
+		public static string GetTypeName(TypeReference type)
 		{
 			string name;
-			if ( !nameCache.TryGetValue( type, out name ) )
+			if (!nameCache.TryGetValue(type, out name))
 			{
-				StringBuilder builder = new StringBuilder( );
-				BuildTypeName( builder, type );
-				name = builder.ToString( );
+				StringBuilder builder = new StringBuilder();
+				BuildTypeName(builder, type);
+				name = builder.ToString();
 
 				nameCache[type] = name;
 			}
