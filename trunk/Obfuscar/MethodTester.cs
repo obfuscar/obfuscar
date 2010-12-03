@@ -40,12 +40,12 @@ namespace Obfuscar
 		private readonly string attrib;
 		private readonly string typeAttrib;
 
-		public MethodTester( MethodKey key )
+		public MethodTester(MethodKey key)
 		{
 			this.key = key;
 		}
 
-		public MethodTester( string name, string type, string attrib, string typeAttrib )
+		public MethodTester(string name, string type, string attrib, string typeAttrib)
 		{
 			this.name = name;
 			this.type = type;
@@ -61,17 +61,17 @@ namespace Obfuscar
 			this.typeAttrib = typeAttrib;
 		}
 
-		public bool Test( MethodKey method )
+		public bool Test(MethodKey method)
 		{
-			if ( key != null )
+			if (key != null)
 				return method == key;
 
 			if (Helper.CompareOptionalRegex(method.TypeKey.Fullname, type) && CheckMemberVisibility(this.attrib, typeAttrib, method.MethodAttributes, method.DeclaringType))
 			{
-				if ( name != null )
+				if (name != null)
 					return Helper.CompareOptionalRegex(method.Name, name);
 				else
-					return nameRx.IsMatch( method.Name );
+					return nameRx.IsMatch(method.Name);
 			}
 
 			return false;
@@ -105,7 +105,7 @@ namespace Obfuscar
 				}
 				else
 					throw new ApplicationException(string.Format("'{0}' is not valid for the 'attrib' value of skip elements. Only 'public' and 'protected' are supported by now.", attribute));
-				
+
 				// attrib value given, but the member is not public/protected. We signal that the Skip* rule should be ignored. The member is obfuscated in any case.
 				return false;
 			}
@@ -115,12 +115,15 @@ namespace Obfuscar
 
 		static public bool IsTypePublic(TypeDefinition type)
 		{
-			if (type.DeclaringType != null) {
+			if (type.DeclaringType != null)
+			{
 				if (type.IsNestedFamily || type.IsNestedFamilyOrAssembly || type.IsNestedPublic)
 					return IsTypePublic((TypeDefinition)type.DeclaringType);
 				else
 					return false;
-			} else {
+			}
+			else
+			{
 				return type.IsPublic;
 			}
 		}

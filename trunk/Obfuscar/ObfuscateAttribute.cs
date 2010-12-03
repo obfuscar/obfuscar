@@ -31,8 +31,8 @@ namespace Obfuscar
 	/// <summary>
 	/// Attribute used to mark whether a type should be obfuscated.
 	/// </summary>
-	[AttributeUsage( AttributeTargets.Class | AttributeTargets.Struct | 
-		AttributeTargets.Interface | AttributeTargets.Enum )]
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct |
+		AttributeTargets.Interface | AttributeTargets.Enum)]
 	public class ObfuscateAttribute : Attribute
 	{
 		private bool shouldObfuscate;
@@ -40,15 +40,15 @@ namespace Obfuscar
 		/// <summary>
 		/// Marks a type to be obfuscated.
 		/// </summary>
-		public ObfuscateAttribute( )
-			: this( true )
+		public ObfuscateAttribute()
+			: this(true)
 		{
 		}
 
 		/// <summary>
 		/// Marks whether a type should be obfuscated.
 		/// </summary>
-		public ObfuscateAttribute( bool shouldObfuscate )
+		public ObfuscateAttribute(bool shouldObfuscate)
 		{
 			this.shouldObfuscate = shouldObfuscate;
 		}

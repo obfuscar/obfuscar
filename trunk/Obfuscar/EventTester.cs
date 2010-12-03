@@ -39,7 +39,7 @@ namespace Obfuscar
 		private readonly string attrib;
 		private readonly string typeAttrib;
 
-		public EventTester( string name, string type, string attrib, string typeAttrib )
+		public EventTester(string name, string type, string attrib, string typeAttrib)
 		{
 			this.name = name;
 			this.type = type;
@@ -55,14 +55,14 @@ namespace Obfuscar
 			this.typeAttrib = typeAttrib;
 		}
 
-		public bool Test( EventKey evt )
+		public bool Test(EventKey evt)
 		{
-			if ( Helper.CompareOptionalRegex(evt.TypeKey.Fullname, type) && MethodTester.CheckMemberVisibility(attrib, typeAttrib, evt.AddMethodAttributes, evt.DeclaringType))
+			if (Helper.CompareOptionalRegex(evt.TypeKey.Fullname, type) && MethodTester.CheckMemberVisibility(attrib, typeAttrib, evt.AddMethodAttributes, evt.DeclaringType))
 			{
-				if ( name != null )
+				if (name != null)
 					return Helper.CompareOptionalRegex(evt.Name, name);
 				else
-					return nameRx.IsMatch( evt.Name );
+					return nameRx.IsMatch(evt.Name);
 			}
 
 			return false;

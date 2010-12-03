@@ -38,16 +38,16 @@ namespace Obfuscar
 	{
 		private readonly Project project;
 
-		private readonly PredicateCollection<string> skipNamespaces = new PredicateCollection<string>( );
-		private readonly PredicateCollection<TypeKey> skipTypes = new PredicateCollection<TypeKey>( );
-		private readonly PredicateCollection<MethodKey> skipMethods = new PredicateCollection<MethodKey>( );
-		private readonly PredicateCollection<FieldKey> skipFields = new PredicateCollection<FieldKey>( );
-		private readonly PredicateCollection<PropertyKey> skipProperties = new PredicateCollection<PropertyKey>( );
-		private readonly PredicateCollection<EventKey> skipEvents = new PredicateCollection<EventKey>( );
+		private readonly PredicateCollection<string> skipNamespaces = new PredicateCollection<string>();
+		private readonly PredicateCollection<TypeKey> skipTypes = new PredicateCollection<TypeKey>();
+		private readonly PredicateCollection<MethodKey> skipMethods = new PredicateCollection<MethodKey>();
+		private readonly PredicateCollection<FieldKey> skipFields = new PredicateCollection<FieldKey>();
+		private readonly PredicateCollection<PropertyKey> skipProperties = new PredicateCollection<PropertyKey>();
+		private readonly PredicateCollection<EventKey> skipEvents = new PredicateCollection<EventKey>();
 		private readonly PredicateCollection<MethodKey> skipStringHiding = new PredicateCollection<MethodKey>();
 
-		private readonly List<AssemblyInfo> references = new List<AssemblyInfo>( );
-		private readonly List<AssemblyInfo> referencedBy = new List<AssemblyInfo>( );
+		private readonly List<AssemblyInfo> references = new List<AssemblyInfo>();
+		private readonly List<AssemblyInfo> referencedBy = new List<AssemblyInfo>();
 
 		private List<TypeReference> unrenamedTypeReferences;
 		private List<MemberReference> unrenamedReferences;
@@ -60,44 +60,44 @@ namespace Obfuscar
 		bool initialized = false;
 
 		// to create, use FromXml
-		private AssemblyInfo( Project project )
+		private AssemblyInfo(Project project)
 		{
 			this.project = project;
 		}
 
-		private static bool AssemblyIsSigned( AssemblyDefinition def )
+		private static bool AssemblyIsSigned(AssemblyDefinition def)
 		{
-			if (def.Name.PublicKeyToken != null && def.MainModule.Image.CLIHeader.ImageHash != null)
-				return Array.Exists( def.MainModule.Image.CLIHeader.ImageHash, delegate( byte b ) { return b != 0; } );
+			if (def.Name.PublicKeyToken != null && def.Name.Hash != null)
+				return Array.Exists(def.Name.Hash, delegate(byte b) { return b != 0; });
 			else
 				return false;
 		}
 
-		public static AssemblyInfo FromXml( Project project, XmlReader reader, Variables vars )
+		public static AssemblyInfo FromXml(Project project, XmlReader reader, Variables vars)
 		{
-			Debug.Assert( reader.NodeType == XmlNodeType.Element && reader.Name == "Module" );
+			Debug.Assert(reader.NodeType == XmlNodeType.Element && reader.Name == "Module");
 
-			AssemblyInfo info = new AssemblyInfo( project );
+			AssemblyInfo info = new AssemblyInfo(project);
 
 			// pull out the file attribute, but don't process anything empty
-			string val = Helper.GetAttribute( reader, "file", vars );
-			if ( val.Length > 0 )
+			string val = Helper.GetAttribute(reader, "file", vars);
+			if (val.Length > 0)
 			{
-				info.LoadAssembly( val );
+				info.LoadAssembly(val);
 
-				if ( AssemblyIsSigned( info.Definition ) && project.Settings.KeyFile == null )
-					throw new ApplicationException( "Obfuscating a signed assembly would result in an invalid assembly:  " + info.Name +"; use the KeyFile property to set a key to use" );
+				if (AssemblyIsSigned(info.Definition) && project.Settings.KeyFile == null)
+					throw new ApplicationException("Obfuscating a signed assembly would result in an invalid assembly:  " + info.Name + "; use the KeyFile property to set a key to use");
 			}
 			else
-				throw new InvalidOperationException( "Need valid file attribute." );
+				throw new InvalidOperationException("Need valid file attribute.");
 
-			if ( !reader.IsEmptyElement )
+			if (!reader.IsEmptyElement)
 			{
-				while ( reader.Read( ) )
+				while (reader.Read())
 				{
-					if ( reader.NodeType == XmlNodeType.Element )
+					if (reader.NodeType == XmlNodeType.Element)
 					{
-						switch ( reader.Name )
+						switch (reader.Name)
 						{
 							case "SkipNamespace":
 								{
@@ -117,7 +117,7 @@ namespace Obfuscar
 										TypeSkipFlags skipFlags = TypeSkipFlags.SkipNone;
 
 										val = Helper.GetAttribute(reader, "skipMethods", vars);
-										if ( val.Length > 0 && XmlConvert.ToBoolean( val ) )
+										if (val.Length > 0 && XmlConvert.ToBoolean(val))
 											skipFlags |= TypeSkipFlags.SkipMethod;
 
 										val = Helper.GetAttribute(reader, "skipStringHiding", vars);
@@ -125,15 +125,15 @@ namespace Obfuscar
 											skipFlags |= TypeSkipFlags.SkipStringHiding;
 
 										val = Helper.GetAttribute(reader, "skipFields", vars);
-										if ( val.Length > 0 && XmlConvert.ToBoolean( val ) )
+										if (val.Length > 0 && XmlConvert.ToBoolean(val))
 											skipFlags |= TypeSkipFlags.SkipField;
 
 										val = Helper.GetAttribute(reader, "skipProperties", vars);
-										if ( val.Length > 0 && XmlConvert.ToBoolean( val ) )
+										if (val.Length > 0 && XmlConvert.ToBoolean(val))
 											skipFlags |= TypeSkipFlags.SkipProperty;
 
 										val = Helper.GetAttribute(reader, "skipEvents", vars);
-										if ( val.Length > 0 && XmlConvert.ToBoolean( val ) )
+										if (val.Length > 0 && XmlConvert.ToBoolean(val))
 											skipFlags |= TypeSkipFlags.SkipEvent;
 
 										info.skipTypes.Add(new TypeTester(typeName, skipFlags, attrib));
@@ -142,18 +142,18 @@ namespace Obfuscar
 								break;
 							case "SkipMethod":
 								{
-									val = Helper.GetAttribute( reader, "name", vars );
-									string type = Helper.GetAttribute( reader, "type", vars );
-									string attrib = Helper.GetAttribute( reader, "attrib", vars );
-									string typeattrib = Helper.GetAttribute( reader, "typeattrib", vars );
+									val = Helper.GetAttribute(reader, "name", vars);
+									string type = Helper.GetAttribute(reader, "type", vars);
+									string attrib = Helper.GetAttribute(reader, "attrib", vars);
+									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
 
-									if ( val.Length > 0 )
-										info.skipMethods.Add( new MethodTester( val, type, attrib, typeattrib ) );
+									if (val.Length > 0)
+										info.skipMethods.Add(new MethodTester(val, type, attrib, typeattrib));
 									else
 									{
-										val = Helper.GetAttribute( reader, "rx" );
-										if ( val.Length > 0 )
-											info.skipMethods.Add( new MethodTester( new Regex( val ), type, attrib, typeattrib ) );
+										val = Helper.GetAttribute(reader, "rx");
+										if (val.Length > 0)
+											info.skipMethods.Add(new MethodTester(new Regex(val), type, attrib, typeattrib));
 									}
 								}
 								break;
@@ -177,58 +177,58 @@ namespace Obfuscar
 								break;
 							case "SkipField":
 								{
-									val = Helper.GetAttribute( reader, "name", vars );
-									string type = Helper.GetAttribute( reader, "type", vars );
-									string attrib = Helper.GetAttribute( reader, "attrib", vars );
+									val = Helper.GetAttribute(reader, "name", vars);
+									string type = Helper.GetAttribute(reader, "type", vars);
+									string attrib = Helper.GetAttribute(reader, "attrib", vars);
 									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
 
-									if ( val.Length > 0 )
-										info.skipFields.Add( new FieldTester( val, type, attrib, typeattrib ) );
+									if (val.Length > 0)
+										info.skipFields.Add(new FieldTester(val, type, attrib, typeattrib));
 									else
 									{
-										val = Helper.GetAttribute( reader, "rx" );
-										if ( val.Length > 0 )
-											info.skipFields.Add( new FieldTester( new Regex( val ), type, attrib, typeattrib ) );
+										val = Helper.GetAttribute(reader, "rx");
+										if (val.Length > 0)
+											info.skipFields.Add(new FieldTester(new Regex(val), type, attrib, typeattrib));
 									}
 								}
 								break;
 							case "SkipProperty":
 								{
-									val = Helper.GetAttribute( reader, "name", vars );
-									string type = Helper.GetAttribute( reader, "type", vars );
-									string attrib = Helper.GetAttribute( reader, "attrib", vars );
+									val = Helper.GetAttribute(reader, "name", vars);
+									string type = Helper.GetAttribute(reader, "type", vars);
+									string attrib = Helper.GetAttribute(reader, "attrib", vars);
 									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
 
-									if ( val.Length > 0 )
-										info.skipProperties.Add( new PropertyTester( val, type, attrib, typeattrib ) );
+									if (val.Length > 0)
+										info.skipProperties.Add(new PropertyTester(val, type, attrib, typeattrib));
 									else
 									{
-										val = Helper.GetAttribute( reader, "rx" );
-										if ( val.Length > 0 )
-											info.skipProperties.Add( new PropertyTester( new Regex( val ), type, attrib, typeattrib ) );
+										val = Helper.GetAttribute(reader, "rx");
+										if (val.Length > 0)
+											info.skipProperties.Add(new PropertyTester(new Regex(val), type, attrib, typeattrib));
 									}
 								}
 								break;
 							case "SkipEvent":
 								{
-									val = Helper.GetAttribute( reader, "name", vars );
-									string type = Helper.GetAttribute( reader, "type", vars );
-									string attrib = Helper.GetAttribute( reader, "attrib", vars );
+									val = Helper.GetAttribute(reader, "name", vars);
+									string type = Helper.GetAttribute(reader, "type", vars);
+									string attrib = Helper.GetAttribute(reader, "attrib", vars);
 									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
 
-									if ( val.Length > 0 )
-										info.skipEvents.Add( new EventTester( val, type, attrib, typeattrib ) );
+									if (val.Length > 0)
+										info.skipEvents.Add(new EventTester(val, type, attrib, typeattrib));
 									else
 									{
-										val = Helper.GetAttribute( reader, "rx" );
-										if ( val.Length > 0 )
-											info.skipEvents.Add( new EventTester( new Regex( val ), type, attrib, typeattrib ) );
+										val = Helper.GetAttribute(reader, "rx");
+										if (val.Length > 0)
+											info.skipEvents.Add(new EventTester(new Regex(val), type, attrib, typeattrib));
 									}
 								}
 								break;
 						}
 					}
-					else if ( reader.NodeType == XmlNodeType.EndElement && reader.Name == "Module" )
+					else if (reader.NodeType == XmlNodeType.EndElement && reader.Name == "Module")
 					{
 						// hit end of module element...stop reading
 						break;
@@ -242,40 +242,141 @@ namespace Obfuscar
 		/// <summary>
 		/// Called by project to finish initializing the assembly.
 		/// </summary>
-		internal void Init( )
+		internal void Init()
 		{
-			unrenamedReferences = new List<MemberReference>( );
-			foreach ( MemberReference member in definition.MainModule.MemberReferences )
+			unrenamedReferences = new List<MemberReference>();
+			foreach (MemberReference member in getMemberReferences() /* definition.MainModule.GetMemberReferences()*/ )
 			{
-				if ( project.Contains( member.DeclaringType ) )
-					unrenamedReferences.Add( member );
+				MethodReference mr = member as MethodReference;
+				FieldReference fr = member as FieldReference;
+				if (project.Contains(member.DeclaringType))
+				{
+					unrenamedReferences.Add(member);
+				}
 			}
 
-			unrenamedTypeReferences = new List<TypeReference>( );
-			foreach ( TypeReference type in definition.MainModule.TypeReferences )
+			C5.HashSet<TypeReference> typerefs = new C5.HashSet<TypeReference>();
+			foreach (TypeReference type in definition.MainModule.GetTypeReferences())
 			{
-				if ( type.FullName == "<Module>" )
+				if (type.FullName == "<Module>")
 					continue;
 
-				if ( project.Contains( type ) )
-					unrenamedTypeReferences.Add( type );
+				if (project.Contains(type))
+					typerefs.Add(type);
 			}
+
+			// Type references in CustomAttributes
+			List<CustomAttribute> customattributes = new List<CustomAttribute>();
+			customattributes.AddRange(this.Definition.CustomAttributes);
+			foreach (TypeDefinition type in GetAllTypeDefinitions())
+			{
+
+				customattributes.AddRange(type.CustomAttributes);
+				foreach (MethodDefinition methoddef in type.Methods)
+					customattributes.AddRange(methoddef.CustomAttributes);
+				foreach (FieldDefinition fielddef in type.Fields)
+					customattributes.AddRange(fielddef.CustomAttributes);
+				foreach (EventDefinition eventdef in type.Events)
+					customattributes.AddRange(eventdef.CustomAttributes);
+				foreach (PropertyDefinition propertydef in type.Properties)
+					customattributes.AddRange(propertydef.CustomAttributes);
+
+				foreach (CustomAttribute customattribute in customattributes)
+				{
+					// Check Constructor and named parameter for argument of type "System.Type". i.e. typeof()
+					List<CustomAttributeArgument> customattributearguments = new List<CustomAttributeArgument>();
+					customattributearguments.AddRange(customattribute.ConstructorArguments);
+					foreach (CustomAttributeNamedArgument namedargument in customattribute.Properties)
+						customattributearguments.Add(namedargument.Argument);
+
+					foreach (CustomAttributeArgument ca in customattributearguments)
+					{
+						if (ca.Type.FullName == "System.Type")
+							typerefs.Add((TypeReference)ca.Value);
+					}
+				}
+				customattributes.Clear();
+			}
+
+			unrenamedTypeReferences = new List<TypeReference>(typerefs);
 
 			initialized = true;
 		}
 
-		private void LoadAssembly( string filename )
+		public IEnumerable<TypeDefinition> GetAllTypeDefinitions()
+		{
+			foreach (TypeDefinition typedef in definition.MainModule.Types)
+			{
+				yield return typedef;
+				foreach (TypeDefinition nestedtypedef in typedef.NestedTypes)
+					yield return nestedtypedef;
+			}
+		}
+
+		IEnumerable<MemberReference> getMemberReferences()
+		{
+			C5.HashSet<MemberReference> memberreferences = new C5.HashSet<MemberReference>();
+			foreach (TypeDefinition type in this.GetAllTypeDefinitions())
+			{
+				foreach (MethodDefinition method in type.Methods)
+				{
+					if (method.Body != null)
+					{
+						foreach (Instruction inst in method.Body.Instructions)
+						{
+							MemberReference memberref = inst.Operand as MemberReference;
+							if (memberref != null)
+							{
+								if (memberref is MethodReference && !(memberref is MethodDefinition || memberref is MethodSpecification)
+									|| memberref is FieldReference && !(memberref is FieldDefinition))
+								{
+									int c = memberreferences.Count;
+									memberreferences.Add(memberref);
+								}
+							}
+						}
+					}
+				}
+			}
+			return memberreferences;
+		}
+
+		IEnumerable<TypeReference> getTypeReferences()
+		{
+			List<TypeReference> typereferences = new List<TypeReference>();
+			foreach (TypeDefinition type in this.GetAllTypeDefinitions())
+			{
+				foreach (MethodDefinition method in type.Methods)
+				{
+					if (method.Body != null)
+					{
+						foreach (Instruction inst in method.Body.Instructions)
+						{
+							TypeReference typeref = inst.Operand as TypeReference;
+							if (typeref != null)
+							{
+								if (!(typeref is TypeDefinition) && !(typeref is TypeSpecification))
+									typereferences.Add(typeref);
+							}
+						}
+					}
+				}
+			}
+			return typereferences;
+		}
+
+		private void LoadAssembly(string filename)
 		{
 			this.filename = filename;
 
 			try
 			{
-				definition = AssemblyFactory.GetAssembly( filename );
+				definition = AssemblyDefinition.ReadAssembly(filename);
 				name = definition.Name.Name;
 			}
-			catch ( System.IO.FileNotFoundException e )
+			catch (System.IO.FileNotFoundException e)
 			{
-				throw new ApplicationException( "Unable to find assembly:  " + filename, e );
+				throw new ApplicationException("Unable to find assembly:  " + filename, e);
 			}
 		}
 
@@ -283,7 +384,7 @@ namespace Obfuscar
 		{
 			get
 			{
-				CheckLoaded( );
+				CheckLoaded();
 				return filename;
 			}
 		}
@@ -292,7 +393,7 @@ namespace Obfuscar
 		{
 			get
 			{
-				CheckLoaded( );
+				CheckLoaded();
 				return definition;
 			}
 		}
@@ -301,7 +402,7 @@ namespace Obfuscar
 		{
 			get
 			{
-				CheckLoaded( );
+				CheckLoaded();
 				return name;
 			}
 		}
@@ -310,7 +411,7 @@ namespace Obfuscar
 		{
 			get
 			{
-				CheckInitialized( );
+				CheckInitialized();
 				return unrenamedReferences;
 			}
 		}
@@ -319,7 +420,7 @@ namespace Obfuscar
 		{
 			get
 			{
-				CheckInitialized( );
+				CheckInitialized();
 				return unrenamedTypeReferences;
 			}
 		}
@@ -334,44 +435,44 @@ namespace Obfuscar
 			get { return referencedBy; }
 		}
 
-		public void ForceSkip( MethodKey method )
+		public void ForceSkip(MethodKey method)
 		{
-			skipMethods.Add( new MethodTester( method ) );
+			skipMethods.Add(new MethodTester(method));
 		}
 
-		public bool ShouldSkip( string ns )
+		public bool ShouldSkip(string ns)
 		{
-			return skipNamespaces.IsMatch( ns );
+			return skipNamespaces.IsMatch(ns);
 		}
 
-		public bool ShouldSkip( TypeKey type, TypeSkipFlags flag )
+		public bool ShouldSkip(TypeKey type, TypeSkipFlags flag)
 		{
 			if (ShouldSkip(type.Namespace))
 				return true;
 
 			foreach (TypeTester typeTester in skipTypes)
 			{
-				if ( ( typeTester.SkipFlags & flag ) > 0 && typeTester.Test( type ) )
+				if ((typeTester.SkipFlags & flag) > 0 && typeTester.Test(type))
 					return true;
 			}
 
 			return false;
 		}
 
-		public bool ShouldSkip( TypeKey type )
+		public bool ShouldSkip(TypeKey type)
 		{
 			if (ShouldSkip(type.Namespace))
 				return true;
 
-			return skipTypes.IsMatch( type );
+			return skipTypes.IsMatch(type);
 		}
 
-		public bool ShouldSkip( MethodKey method )
+		public bool ShouldSkip(MethodKey method)
 		{
 			if (ShouldSkip(method.TypeKey, TypeSkipFlags.SkipMethod))
 				return true;
 
-			return skipMethods.IsMatch( method );
+			return skipMethods.IsMatch(method);
 		}
 
 		public bool ShouldSkipStringHiding(MethodKey method)
@@ -382,49 +483,49 @@ namespace Obfuscar
 			return skipStringHiding.IsMatch(method);
 		}
 
-		public bool ShouldSkip( FieldKey field )
+		public bool ShouldSkip(FieldKey field)
 		{
 			if (ShouldSkip(field.TypeKey, TypeSkipFlags.SkipField))
 				return true;
 
-			return skipFields.IsMatch( field );
+			return skipFields.IsMatch(field);
 		}
 
-		public bool ShouldSkip( PropertyKey prop )
+		public bool ShouldSkip(PropertyKey prop)
 		{
 			if (ShouldSkip(prop.TypeKey, TypeSkipFlags.SkipProperty))
 				return true;
 
-			return skipProperties.IsMatch( prop );
+			return skipProperties.IsMatch(prop);
 		}
 
-		public bool ShouldSkip( EventKey evt )
+		public bool ShouldSkip(EventKey evt)
 		{
 			if (ShouldSkip(evt.TypeKey, TypeSkipFlags.SkipEvent))
 				return true;
 
-			return skipEvents.IsMatch( evt );
+			return skipEvents.IsMatch(evt);
 		}
 
 		/// <summary>
 		/// Makes sure that the assembly definition has been loaded (by <see cref="LoadAssembly"/>).
 		/// </summary>
-		private void CheckLoaded( )
+		private void CheckLoaded()
 		{
-			if ( definition == null )
-				throw new InvalidOperationException( "Expected that AssemblyInfo.LoadAssembly would be called before use." );
+			if (definition == null)
+				throw new InvalidOperationException("Expected that AssemblyInfo.LoadAssembly would be called before use.");
 		}
 
 		/// <summary>
 		/// Makes sure that the assembly has been initialized (by <see cref="Init"/>).
 		/// </summary>
-		private void CheckInitialized( )
+		private void CheckInitialized()
 		{
-			if ( !initialized )
-				throw new InvalidOperationException( "Expected that AssemblyInfo.Init would be called before use." );
+			if (!initialized)
+				throw new InvalidOperationException("Expected that AssemblyInfo.Init would be called before use.");
 		}
 
-		public override string ToString( )
+		public override string ToString()
 		{
 			return Name;
 		}

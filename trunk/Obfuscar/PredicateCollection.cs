@@ -31,16 +31,16 @@ namespace Obfuscar
 {
 	interface IPredicate<T>
 	{
-		bool Test( T item );
+		bool Test(T item);
 	}
 
 	class PredicateCollection<T> : List<IPredicate<T>>
 	{
-		public bool IsMatch( T thing )
+		public bool IsMatch(T thing)
 		{
-			foreach ( IPredicate<T> test in this )
+			foreach (IPredicate<T> test in this)
 			{
-				if ( test.Test( thing ) )
+				if (test.Test(thing))
 					return true;
 			}
 
