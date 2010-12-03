@@ -34,7 +34,6 @@ using Mono.Cecil.Cil;
 using Mono.Security;
 using Mono.Security.Cryptography;
 using System.IO;
-using Mono.Collections.Generic;
 
 namespace Obfuscar
 {
