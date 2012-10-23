@@ -37,8 +37,25 @@ using System.IO;
 
 namespace Obfuscar
 {
-	class Obfuscator
+	public class Obfuscator
 	{
+		public bool hideStrings {
+			get {
+				return project.Settings.HideStrings;
+			}
+		}
+
+		public event Action<string> Log;
+
+		void LogOutput (string output)
+		{
+			if (Log != null) {
+				Log (output);
+			} else {
+				Console.Write (output);
+			}
+		}
+
 		Project project;
 
 		ObfuscationMap map = new ObfuscationMap();
@@ -76,6 +93,45 @@ namespace Obfuscar
 			LoadFromReader(reader, null);
 		}
 
+		public void RunRules() {
+			// The SemanticAttributes of MethodDefinitions have to be loaded before any fields,properties or events are removed
+			this.LoadMethodSemantics();
+			
+			LogOutput("Renaming:  fields...");
+			this.RenameFields();
+			
+			LogOutput("parameters...");
+			this.RenameParams();
+			
+			LogOutput("properties...");
+			this.RenameProperties();
+			
+			LogOutput("events...");
+			this.RenameEvents();
+			
+			LogOutput("methods...");
+			this.RenameMethods();
+			
+			LogOutput("types...");
+			this.RenameTypes();
+			
+			if (this.hideStrings)
+			{
+				LogOutput("hiding strings...\n");
+				this.HideStrings();
+			}
+			
+			LogOutput("Done.\n");
+			
+			LogOutput("Saving assemblies...");
+			this.SaveAssemblies();
+			LogOutput("Done.\n");
+			
+			LogOutput("Writing log file...");
+			this.SaveMapping();
+			LogOutput("Done.\n");
+		}
+
 		public static Obfuscator CreateFromXml(string xml)
 		{
 			// open XmlTextReader over xml string stream
@@ -95,7 +151,7 @@ namespace Obfuscar
 			return settings;
 		}
 
-		public Project Project { get { return project; } }
+		internal Project Project { get { return project; } }
 
 		void LoadFromReader(XmlReader reader, string projectFileDirectory)
 		{
@@ -104,7 +160,7 @@ namespace Obfuscar
 			// make sure everything looks good
 			project.CheckSettings();
 
-			Console.Write("Loading assemblies...");
+			LogOutput("Loading assemblies...");
 			project.LoadAssemblies();
 		}
 
@@ -198,7 +254,7 @@ namespace Obfuscar
 		/// <summary>
 		/// Returns the obfuscation map for the project.
 		/// </summary>
-		public ObfuscationMap Mapping
+		internal ObfuscationMap Mapping
 		{
 			get { return map; }
 		}
@@ -234,7 +290,7 @@ namespace Obfuscar
 
 					TypeKey typeKey = new TypeKey(type);
 
-					if (ShouldRename(type))
+					if (ShouldRename(type, true))
 					{
 						nameGroups.Clear();
 
@@ -254,7 +310,7 @@ namespace Obfuscar
 							else
 
 								// skip filtered fields
-								if (info.ShouldSkip(fieldKey))
+								if (info.ShouldSkip(fieldKey, Project.InheritMap))
 								{
 									map.UpdateField(fieldKey, ObfuscationStatus.Skipped, "filtered");
 									nameGroup.Add(fieldKey.Name);
@@ -322,14 +378,14 @@ namespace Obfuscar
 					if (type.FullName == "<Module>")
 						continue;
 
-					if (ShouldRename(type))
+					if (ShouldRename(type, true))
 					{
 						// rename the method parameters
 						foreach (MethodDefinition method in type.Methods)
 							RenameParams(method, info);
 
 						// rename the class parameters
-						if (!info.ShouldSkip(new TypeKey(type)))
+						if (!info.ShouldSkip(new TypeKey(type), Project.InheritMap))
 						{
 							index = 0;
 							foreach (GenericParameter param in type.GenericParameters)
@@ -344,7 +400,7 @@ namespace Obfuscar
 		{
 			MethodKey methodkey = new MethodKey(method);
 
-			if (!info.ShouldSkip(methodkey))
+			if (!info.ShouldSkip(methodkey, Project.InheritMap))
 			{
 				int index = 0;
 				foreach (ParameterDefinition param in method.Parameters)
@@ -362,23 +418,32 @@ namespace Obfuscar
 			}
 		}
 
-		bool ShouldRename(TypeDefinition type)
+		bool ShouldRename(TypeDefinition type, bool member=false)
 		{
-			var attributeTypeFullName = typeof(ObfuscateAttribute).FullName;
-
-			bool should = !project.Settings.MarkedOnly;
+			var obfuscarObfuscate = typeof(ObfuscateAttribute).FullName;
+			var reflectionObfuscate = typeof(System.Reflection.ObfuscationAttribute).FullName;
 
 			foreach (CustomAttribute attr in type.CustomAttributes)
 			{
-				if (attr.Constructor.DeclaringType.FullName.Equals(attributeTypeFullName))
+				var attrFullName = attr.Constructor.DeclaringType.FullName;
+
+				if (attrFullName == obfuscarObfuscate)
 				{
-					// determines the value of either the constructor parameter or the property, defaults to true
-					return (attr.ConstructorArguments.Count == 0 || (bool)attr.ConstructorArguments[0].Value)
-						&& (bool)(Helper.GetAttributePropertyByName(attr, "ShouldObfuscate") ?? true);
+					return (bool)(Helper.GetAttributePropertyByName(attr, "ShouldObfuscate") ?? true);
+				}
+				else if (attrFullName == reflectionObfuscate) {
+					var applyToMembers = (bool) (Helper.GetAttributePropertyByName(attr, "ApplyToMembers") ?? true);
+					var rename = !(bool) (Helper.GetAttributePropertyByName(attr, "Exclude") ?? false);
+					
+					if (member && !applyToMembers) {
+						return !rename;
+					}
+
+					return rename;
 				}
 			}
 
-			return should;
+			return !project.Settings.MarkedOnly;
 		}
 
 		/// <summary>
@@ -415,7 +480,7 @@ namespace Obfuscar
 
 					if (ShouldRename(type))
 					{
-						if (!info.ShouldSkip(unrenamedTypeKey))
+						if (!info.ShouldSkip(unrenamedTypeKey, Project.InheritMap))
 						{
 							string name;
 							string ns;
@@ -621,7 +686,7 @@ namespace Obfuscar
 
 					TypeKey typeKey = new TypeKey(type);
 
-					if (ShouldRename(type))
+					if (ShouldRename(type, true))
 					{
 						int index = 0;
 						List<PropertyDefinition> propsToDrop = new List<PropertyDefinition>();
@@ -638,7 +703,7 @@ namespace Obfuscar
 							}
 
 							// skip filtered props
-							if (info.ShouldSkip(propKey))
+							if (info.ShouldSkip(propKey, Project.InheritMap))
 							{
 								m.Update(ObfuscationStatus.Skipped, "filtered");
 
@@ -731,7 +796,7 @@ namespace Obfuscar
 
 					TypeKey typeKey = new TypeKey(type);
 
-					if (ShouldRename(type))
+					if (ShouldRename(type, true))
 					{
 						List<EventDefinition> evtsToDrop = new List<EventDefinition>();
 						foreach (EventDefinition evt in type.Events)
@@ -747,7 +812,7 @@ namespace Obfuscar
 							}
 
 							// skip filtered events
-							if (info.ShouldSkip(evtKey))
+							if (info.ShouldSkip(evtKey, Project.InheritMap))
 							{
 								m.Update(ObfuscationStatus.Skipped, "filtered");
 
@@ -796,8 +861,8 @@ namespace Obfuscar
 					foreach (MethodDefinition method in type.Methods)
 					{
 						string skiprename = null;
-						if (!ShouldRename(type))
-							skiprename = "Obfuscar.ObfuscateAttribute found on type.";
+						if (!ShouldRename(type, true))
+							skiprename = "ObfuscateAttribute found on type.";
 
 						MethodKey methodKey = new MethodKey(typeKey, method);
 						ObfuscatedThing m = map.GetMethod(methodKey);
@@ -807,7 +872,7 @@ namespace Obfuscar
 							skiprename = "runtime method";
 
 						// skip filtered methods
-						if (info.ShouldSkip(methodKey))
+						if (info.ShouldSkip(methodKey, Project.InheritMap))
 							skiprename = "filtered";
 
 						// update status for skipped non-virtual methods immediately...status for
@@ -1005,7 +1070,7 @@ namespace Obfuscar
 			IEnumerable<MethodKey> methodKeys, ParamSig sig)
 		{
 			// build unique set of classes in group
-			C5.HashSet<TypeKey> typeKeys = new C5.HashSet<TypeKey>();
+			HashSet<TypeKey> typeKeys = new HashSet<TypeKey>();
 			foreach (MethodKey methodKey in methodKeys)
 				typeKeys.Add(methodKey.TypeKey);
 
@@ -1163,11 +1228,11 @@ namespace Obfuscar
 						continue;
 
 					TypeKey typeKey = new TypeKey(type);
-					if (ShouldRename(type))
+					if (ShouldRename(type, true))
 					{
 						foreach (MethodDefinition method in type.Methods)
 						{
-							if (!info.ShouldSkipStringHiding(new MethodKey(method)) && method.Body != null)
+							if (!info.ShouldSkipStringHiding(new MethodKey(method), Project.InheritMap) && method.Body != null)
 							{
 								for (int i = 0; i < method.Body.Instructions.Count; i++)
 								{

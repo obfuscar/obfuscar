@@ -55,9 +55,10 @@ namespace Obfuscar
 			this.typeAttrib = typeAttrib;
 		}
 
-		public bool Test(PropertyKey prop)
+		public bool Test(PropertyKey prop, InheritMap map)
 		{
-			if (Helper.CompareOptionalRegex(prop.TypeKey.Fullname, type) && MethodTester.CheckMemberVisibility(attrib, typeAttrib, prop.GetterMethodAttributes, prop.DeclaringType))
+			if (Helper.CompareOptionalRegex(prop.TypeKey.Fullname, type) 
+			    && MethodTester.CheckMemberVisibility(attrib, typeAttrib, prop.GetterMethodAttributes, prop.DeclaringType))
 			{
 				if (name != null)
 					return Helper.CompareOptionalRegex(prop.Name, name);

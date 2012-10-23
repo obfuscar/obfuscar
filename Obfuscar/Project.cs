@@ -112,12 +112,12 @@ namespace Obfuscar
 			}
 		}
 
-		public InheritMap InheritMap
+		internal InheritMap InheritMap
 		{
 			get { return inheritMap; }
 		}
 
-		public Settings Settings
+		internal Settings Settings
 		{
 			get
 			{
@@ -171,7 +171,7 @@ namespace Obfuscar
 		/// <summary>
 		/// Returns whether the project contains a given type.
 		/// </summary>
-		public bool Contains(TypeKey type)
+		internal bool Contains(TypeKey type)
 		{
 			return assemblyMap.ContainsKey(type.Scope);
 		}

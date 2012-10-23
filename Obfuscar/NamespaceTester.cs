@@ -25,6 +25,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 using Mono.Cecil;
 
@@ -33,15 +34,31 @@ namespace Obfuscar
 	class NamespaceTester : IPredicate<string>
 	{
 		private readonly string name;
+		private readonly Regex nameRx;
 
 		public NamespaceTester(string name)
 		{
 			this.name = name;
 		}
 
-		public bool Test(string ns)
+		public NamespaceTester(Regex nameRx)
 		{
-			return Helper.CompareOptionalRegex(ns, name);
+			this.nameRx = nameRx;
+		}
+
+		public bool Test(string ns, InheritMap map)
+		{
+			// regex matches
+			if (nameRx != null && !nameRx.IsMatch(ns)) {
+				return false;
+			}
+			
+			// name matches
+			if (!string.IsNullOrEmpty(name) && !Helper.CompareOptionalRegex (ns, name)) {
+				return false;
+			}
+
+			return true;
 		}
 	}
 }

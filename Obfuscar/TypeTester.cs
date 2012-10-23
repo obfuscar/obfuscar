@@ -25,6 +25,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 using Mono.Cecil;
 
@@ -44,8 +45,13 @@ namespace Obfuscar
 	class TypeTester : IPredicate<TypeKey>
 	{
 		private readonly string name;
+		private readonly Regex nameRx;
 		private readonly TypeSkipFlags skipFlags;
 		private readonly string attrib;
+
+		private readonly string inherits;
+		private readonly bool? isStatic;
+		private readonly bool? isSerializable;
 
 		public TypeSkipFlags SkipFlags
 		{
@@ -59,20 +65,71 @@ namespace Obfuscar
 			this.attrib = attrib.ToLower();
 		}
 
-		public bool Test(TypeKey type)
+		public TypeTester(string name, TypeSkipFlags skipFlags, string attrib, string inherits, bool? isStatic, bool? isSeriablizable) 
+			: this(name,skipFlags, attrib)
 		{
-			if (!string.IsNullOrEmpty(attrib))
-			{
-				if (string.Equals(attrib, "public", StringComparison.InvariantCultureIgnoreCase))
-				{
-					if (!MethodTester.IsTypePublic(type.TypeDefinition))
+			this.inherits = inherits;
+			this.isStatic = isStatic;
+			this.isSerializable = isSeriablizable;
+		}
+
+		public TypeTester(Regex nameRx, TypeSkipFlags skipFlags, string attrib)
+		{
+			this.nameRx = nameRx;
+			this.skipFlags = skipFlags;
+			this.attrib = attrib.ToLower();
+		}
+		
+		public TypeTester(Regex nameRx, TypeSkipFlags skipFlags, string attrib, string inherits, bool? isStatic, bool? isSeriablizable) 
+			: this(nameRx,skipFlags, attrib)
+		{
+			this.inherits = inherits;
+			this.isStatic = isStatic;
+			this.isSerializable = isSeriablizable;
+		}
+
+
+		public bool Test (TypeKey type, InheritMap map)
+		{
+			if (!string.IsNullOrEmpty (attrib)) {
+				if (string.Equals (attrib, "public", StringComparison.InvariantCultureIgnoreCase)) {
+					if (!MethodTester.IsTypePublic (type.TypeDefinition)) {
 						return false;
+					}
+				} else {
+					throw new ApplicationException (string.Format ("'{0}' is not valid for the 'attrib' value of the SkipType element. Only 'public' is supported by now.", attrib));
 				}
-				else
-					throw new ApplicationException(string.Format("'{0}' is not valid for the 'attrib' value of the SkipType element. Only 'public' is supported by now.", attrib));
 			}
 
-			return Helper.CompareOptionalRegex(type.Fullname, name);
+			// type's regex matches
+			if (nameRx != null && !nameRx.IsMatch(type.Fullname)) {
+				return false;
+			}
+			
+			// type's name matches
+			if (!string.IsNullOrEmpty(name) && !Helper.CompareOptionalRegex (type.Fullname, name)) {
+				return false;
+			}
+
+			if (isSerializable.HasValue) {
+				if (isSerializable != type.TypeDefinition.IsSerializable) {
+					return false;
+				}
+			}
+
+			if (isStatic.HasValue) {
+				if (isStatic != (type.TypeDefinition.IsSealed && type.TypeDefinition.IsAbstract)) {
+					return false;
+				}
+			}
+
+			if (!string.IsNullOrEmpty (inherits)) {
+				if (!map.Inherits(type.TypeDefinition, inherits)) {
+					return false;
+				}
+			}
+
+			return true;
 		}
 	}
 }

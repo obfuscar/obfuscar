@@ -55,7 +55,7 @@ namespace Obfuscar
 			this.typeAttrib = typeAttrib;
 		}
 
-		public bool Test(EventKey evt)
+		public bool Test(EventKey evt, InheritMap map)
 		{
 			if (Helper.CompareOptionalRegex(evt.TypeKey.Fullname, type) && MethodTester.CheckMemberVisibility(attrib, typeAttrib, evt.AddMethodAttributes, evt.DeclaringType))
 			{
