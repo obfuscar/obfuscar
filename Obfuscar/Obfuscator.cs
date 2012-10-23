@@ -1227,7 +1227,8 @@ namespace Obfuscar
 					if (type.FullName == "<Module>")
 						continue;
 
-					TypeKey typeKey = new TypeKey(type);
+					// FIXME: Figure out why this exists if it is never used.
+					// TypeKey typeKey = new TypeKey(type);
 					if (ShouldRename(type, true))
 					{
 						foreach (MethodDefinition method in type.Methods)

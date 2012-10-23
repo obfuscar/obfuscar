@@ -225,8 +225,9 @@ namespace Obfuscar
 			unrenamedReferences = new List<MemberReference>();
 			foreach (MemberReference member in getMemberReferences())
 			{
-				MethodReference mr = member as MethodReference;
-				FieldReference fr = member as FieldReference;
+				// FIXME: Figure out why these exist if they are never used.
+				// MethodReference mr = member as MethodReference;
+				// FieldReference fr = member as FieldReference;
 				if (project.Contains(member.DeclaringType))
 					unrenamedReferences.Add(member);
 			}
@@ -306,7 +307,8 @@ namespace Obfuscar
 								if (memberref is MethodReference && !(memberref is MethodDefinition || memberref is MethodSpecification || memberref is CallSite)
 									|| memberref is FieldReference && !(memberref is FieldDefinition))
 								{
-									int c = memberreferences.Count;
+									// FIXME: Figure out why this exists if it is never used.
+									// int c = memberreferences.Count;
 									memberreferences.Add(memberref);
 								}
 							}

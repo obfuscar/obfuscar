@@ -47,7 +47,8 @@ namespace Obfuscar
 
 		InheritMap inheritMap;
 		Settings settings;
-		private RSA keyvalue;
+		// FIXME: Figure out why this exists if it is never used.
+		// private RSA keyvalue;
 
 		// don't create.  call FromXml.
 		private Project()
