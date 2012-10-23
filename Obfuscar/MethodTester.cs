@@ -39,6 +39,8 @@ namespace Obfuscar
 		private readonly string type;
 		private readonly string attrib;
 		private readonly string typeAttrib;
+		private readonly string inherits;
+		private readonly bool? isStatic;
 
 		public MethodTester(MethodKey key)
 		{
@@ -52,7 +54,7 @@ namespace Obfuscar
 			this.attrib = attrib;
 			this.typeAttrib = typeAttrib;
 		}
-
+		
 		public MethodTester(Regex nameRx, string type, string attrib, string typeAttrib)
 		{
 			this.nameRx = nameRx;
@@ -61,23 +63,65 @@ namespace Obfuscar
 			this.typeAttrib = typeAttrib;
 		}
 
-		public bool Test(MethodKey method)
+		public MethodTester(string name, string type, string attrib, string typeAttrib, string inherits, bool? isStatic) 
+			: this(name, type, attrib, typeAttrib)
+		{
+			this.inherits = inherits;
+			this.isStatic = isStatic;
+		}
+
+		public MethodTester(Regex nameRx, string type, string attrib, string typeAttrib, string inherits, bool? isStatic)
+			: this(nameRx, type, attrib, typeAttrib)
+		{
+			this.inherits = inherits;
+			this.isStatic = isStatic;
+		}
+
+		public bool Test (MethodKey method, InheritMap map)
 		{
 			if (key != null)
 				return method == key;
 
-			if (Helper.CompareOptionalRegex(method.TypeKey.Fullname, type) && CheckMemberVisibility(this.attrib, typeAttrib, method.MethodAttributes, method.DeclaringType))
-			{
-				if (name != null)
-					return Helper.CompareOptionalRegex(method.Name, name);
-				else
-					return nameRx.IsMatch(method.Name);
+			// method name matches type regex?
+			if (!String.IsNullOrEmpty(type) && !Helper.CompareOptionalRegex (method.TypeKey.Fullname, type)) {
+				return false;
 			}
 
-			return false;
+			// method visibility matches
+			if (CheckMemberVisibility (this.attrib, typeAttrib, method.MethodAttributes, method.DeclaringType)) {
+				return false;
+			}
+
+			// method's name matches
+			if (nameRx != null && !nameRx.IsMatch(method.Name)) {
+				return false;
+			}
+
+			// method's name matches
+			if (!string.IsNullOrEmpty(name) && !Helper.CompareOptionalRegex (method.Name, name)) {
+				return false;
+			}
+
+			// check is method's static flag matches.
+			if (isStatic.HasValue) {
+				bool methodIsStatic = (method.MethodAttributes & MethodAttributes.Static) == MethodAttributes.Static;
+
+				if (isStatic != methodIsStatic) {
+					return false;
+				}
+			}
+
+			// finally does method's type inherit?
+			if (!string.IsNullOrEmpty (inherits)) {
+				if (!map.Inherits(method.DeclaringType, inherits)) {
+					return false;
+				}
+			}
+
+			return true;
 		}
 
-		static public bool CheckMemberVisibility(string attribute, string typeAttribute, MethodAttributes methodAttributes, TypeDefinition declaringType)
+		static public bool CheckMemberVisibility (string attribute, string typeAttribute, MethodAttributes methodAttributes, TypeDefinition declaringType)
 		{
 			if (!string.IsNullOrEmpty(typeAttribute))
 			{
@@ -95,22 +139,23 @@ namespace Obfuscar
 				MethodAttributes accessmask = (methodAttributes & MethodAttributes.MemberAccessMask);
 				if (string.Equals(attribute, "public", StringComparison.CurrentCultureIgnoreCase))
 				{
-					if (accessmask == MethodAttributes.Public)
+					if (accessmask != MethodAttributes.Public)
 						return true;
 				}
 				else if (string.Equals(attribute, "protected", StringComparison.CurrentCultureIgnoreCase))
 				{
-					if (accessmask == MethodAttributes.Public || accessmask == MethodAttributes.Family || accessmask == MethodAttributes.FamORAssem)
+					if (!(accessmask == MethodAttributes.Public || accessmask == MethodAttributes.Family || accessmask == MethodAttributes.FamORAssem))
 						return true;
 				}
 				else
 					throw new ApplicationException(string.Format("'{0}' is not valid for the 'attrib' value of skip elements. Only 'public' and 'protected' are supported by now.", attribute));
-
+				
 				// attrib value given, but the member is not public/protected. We signal that the Skip* rule should be ignored. The member is obfuscated in any case.
 				return false;
-			}
-			else
-				return true; // No attrib value given: The Skip* rule is processed normally.
+			}		
+
+			// No attrib value given: The Skip* rule is processed normally.
+			return false;
 		}
 
 		static public bool IsTypePublic(TypeDefinition type)

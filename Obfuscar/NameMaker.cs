@@ -30,8 +30,31 @@ namespace Obfuscar
 {
 	static class NameMaker
 	{
-		const string uniqueChars = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
-		const int numUniqueChars = 52;
+		readonly static char[] uniqueChars;
+		readonly static int numUniqueChars;
+
+		static NameMaker()
+		{
+			// Fill the char array used for renaming with characters
+			// from Hangul (Korean) unicode character set.
+
+			var chars = new List<char>(128);
+
+			var rnd = new System.Random();
+
+			var startPoint = rnd.Next(0xAC00, 0xD5D0);
+
+			for (int i=startPoint; i<startPoint + 128; i++) {
+				chars.Add((char) i);
+			}
+
+			chars.Sort((x,y)=>{
+				return rnd.Next(-1,1);
+			});
+
+			uniqueChars = chars.ToArray();
+			numUniqueChars = uniqueChars.Length;
+		}
 
 		public static string UniqueName(int index)
 		{

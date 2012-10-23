@@ -25,6 +25,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Obfuscar;
 
 namespace Obfuscar
 {
@@ -51,43 +52,8 @@ namespace Obfuscar
 				Obfuscator obfuscator = new Obfuscator(args[0]);
 				Console.WriteLine("Done.");
 
-				// The SemanticAttributes of MethodDefinitions have to be loaded before any fields,properties or events are removed
-				obfuscator.LoadMethodSemantics();
-
-				Console.Write("Renaming:  fields...");
-				obfuscator.RenameFields();
-
-				Console.Write("parameters...");
-				obfuscator.RenameParams();
-
-				Console.Write("properties...");
-				obfuscator.RenameProperties();
-
-				Console.Write("events...");
-				obfuscator.RenameEvents();
-
-				Console.Write("methods...");
-				obfuscator.RenameMethods();
-
-				Console.Write("types...");
-				obfuscator.RenameTypes();
-
-				if (obfuscator.Project.Settings.HideStrings)
-				{
-					Console.WriteLine("hiding strings...");
-					obfuscator.HideStrings();
-				}
-
-				Console.WriteLine("Done.");
-
-				Console.Write("Saving assemblies...");
-				obfuscator.SaveAssemblies();
-				Console.WriteLine("Done.");
-
-				Console.Write("Writing log file...");
-				obfuscator.SaveMapping();
-				Console.WriteLine("Done.");
-
+				obfuscator.RunRules();
+				
 				Console.WriteLine("Completed, {0:f2} secs.", (Environment.TickCount - start) / 1000.0);
 			}
 			catch (ApplicationException e)

@@ -97,133 +97,111 @@ namespace Obfuscar
 				{
 					if (reader.NodeType == XmlNodeType.Element)
 					{
+						string name = Helper.GetAttribute(reader, "name", vars);
+					
+						string rxStr = Helper.GetAttribute(reader, "rx");
+						Regex rx = null;
+						if (!string.IsNullOrEmpty(rxStr)) {
+							rx = new Regex(rxStr);
+						}
+
+						string isStaticStr = Helper.GetAttribute(reader, "static", vars);
+						bool? isStatic = null;
+						if (!string.IsNullOrEmpty(isStaticStr)) {
+							isStatic = XmlConvert.ToBoolean(isStaticStr);
+						}
+
+						string isSerializableStr = Helper.GetAttribute(reader, "serializable", vars);
+						bool? isSerializable = null;
+						if (!string.IsNullOrEmpty(isSerializableStr)) {
+							isSerializable = XmlConvert.ToBoolean(isSerializableStr);
+						}
+
+						string attrib = Helper.GetAttribute(reader, "attrib", vars);
+						string inherits = Helper.GetAttribute(reader, "typeinherits", vars);
+						string type = Helper.GetAttribute(reader, "type", vars);
+						string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
+
 						switch (reader.Name)
 						{
 							case "SkipNamespace":
-								{
-									val = Helper.GetAttribute(reader, "name", vars);
-									if (val.Length > 0)
-										info.skipNamespaces.Add(new NamespaceTester(val));
+								if (rx != null) {
+									info.skipNamespaces.Add(new NamespaceTester(rx));	
+								}
+								else {
+									info.skipNamespaces.Add(new NamespaceTester(name));
 								}
 								break;
 							case "SkipType":
-								{
-									val = Helper.GetAttribute(reader, "name", vars);
-									string attrib = Helper.GetAttribute(reader, "attrib", vars);
-									if (val.Length > 0)
-									{
-										string typeName = val;
+								TypeSkipFlags skipFlags = TypeSkipFlags.SkipNone;
 
-										TypeSkipFlags skipFlags = TypeSkipFlags.SkipNone;
+								val = Helper.GetAttribute(reader, "skipMethods", vars);
+								if (val.Length > 0 && XmlConvert.ToBoolean(val))
+									skipFlags |= TypeSkipFlags.SkipMethod;
 
-										val = Helper.GetAttribute(reader, "skipMethods", vars);
-										if (val.Length > 0 && XmlConvert.ToBoolean(val))
-											skipFlags |= TypeSkipFlags.SkipMethod;
+								val = Helper.GetAttribute(reader, "skipStringHiding", vars);
+								if (val.Length > 0 && XmlConvert.ToBoolean(val))
+									skipFlags |= TypeSkipFlags.SkipStringHiding;
 
-										val = Helper.GetAttribute(reader, "skipStringHiding", vars);
-										if (val.Length > 0 && XmlConvert.ToBoolean(val))
-											skipFlags |= TypeSkipFlags.SkipStringHiding;
+								val = Helper.GetAttribute(reader, "skipFields", vars);
+								if (val.Length > 0 && XmlConvert.ToBoolean(val))
+									skipFlags |= TypeSkipFlags.SkipField;
 
-										val = Helper.GetAttribute(reader, "skipFields", vars);
-										if (val.Length > 0 && XmlConvert.ToBoolean(val))
-											skipFlags |= TypeSkipFlags.SkipField;
+								val = Helper.GetAttribute(reader, "skipProperties", vars);
+								if (val.Length > 0 && XmlConvert.ToBoolean(val))
+									skipFlags |= TypeSkipFlags.SkipProperty;
 
-										val = Helper.GetAttribute(reader, "skipProperties", vars);
-										if (val.Length > 0 && XmlConvert.ToBoolean(val))
-											skipFlags |= TypeSkipFlags.SkipProperty;
-
-										val = Helper.GetAttribute(reader, "skipEvents", vars);
-										if (val.Length > 0 && XmlConvert.ToBoolean(val))
-											skipFlags |= TypeSkipFlags.SkipEvent;
-
-										info.skipTypes.Add(new TypeTester(typeName, skipFlags, attrib));
-									}
+								val = Helper.GetAttribute(reader, "skipEvents", vars);
+								if (val.Length > 0 && XmlConvert.ToBoolean(val))
+									skipFlags |= TypeSkipFlags.SkipEvent;
+								
+								if (rx != null) {
+									info.skipTypes.Add(new TypeTester(rx, skipFlags, attrib, inherits, isStatic, isSerializable));
+								}
+								else {
+									info.skipTypes.Add(new TypeTester(name, skipFlags, attrib, inherits, isStatic, isSerializable));
 								}
 								break;
 							case "SkipMethod":
-								{
-									val = Helper.GetAttribute(reader, "name", vars);
-									string type = Helper.GetAttribute(reader, "type", vars);
-									string attrib = Helper.GetAttribute(reader, "attrib", vars);
-									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
-
-									if (val.Length > 0)
-										info.skipMethods.Add(new MethodTester(val, type, attrib, typeattrib));
-									else
-									{
-										val = Helper.GetAttribute(reader, "rx");
-										if (val.Length > 0)
-											info.skipMethods.Add(new MethodTester(new Regex(val), type, attrib, typeattrib));
-									}
+								if (rx != null) {
+									info.skipMethods.Add(new MethodTester(rx, type, attrib, typeattrib, inherits, isStatic));
+								}
+								else {
+									info.skipMethods.Add(new MethodTester(name, type, attrib, typeattrib, inherits, isStatic));
 								}
 								break;
 							case "SkipStringHiding":
-								{
-									val = Helper.GetAttribute(reader, "name", vars);
-									string type = Helper.GetAttribute(reader, "type", vars);
-									string attrib = Helper.GetAttribute(reader, "attrib", vars);
-									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
-
-
-									if (val.Length > 0)
-										info.skipStringHiding.Add(new MethodTester(val, type, attrib, typeattrib));
-									else
-									{
-										val = Helper.GetAttribute(reader, "rx");
-										if (val.Length > 0)
-											info.skipStringHiding.Add(new MethodTester(new Regex(val), type, attrib, typeattrib));
-									}
+								if (rx != null) {
+									info.skipStringHiding.Add(new MethodTester(rx, type, attrib, typeattrib));
+								}
+								else {
+									info.skipStringHiding.Add(new MethodTester(name, type, attrib, typeattrib));
 								}
 								break;
 							case "SkipField":
-								{
-									val = Helper.GetAttribute(reader, "name", vars);
-									string type = Helper.GetAttribute(reader, "type", vars);
-									string attrib = Helper.GetAttribute(reader, "attrib", vars);
-									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
+								string decorator = Helper.GetAttribute(reader, "decorator", vars);
 
-									if (val.Length > 0)
-										info.skipFields.Add(new FieldTester(val, type, attrib, typeattrib));
-									else
-									{
-										val = Helper.GetAttribute(reader, "rx");
-										if (val.Length > 0)
-											info.skipFields.Add(new FieldTester(new Regex(val), type, attrib, typeattrib));
-									}
+								if (rx != null) {
+									info.skipFields.Add(new FieldTester(rx, type, attrib, typeattrib, inherits, decorator, isStatic, isSerializable));
+								}
+								else {
+									info.skipFields.Add(new FieldTester(name, type, attrib, typeattrib, inherits, decorator, isStatic, isSerializable));
 								}
 								break;
 							case "SkipProperty":
-								{
-									val = Helper.GetAttribute(reader, "name", vars);
-									string type = Helper.GetAttribute(reader, "type", vars);
-									string attrib = Helper.GetAttribute(reader, "attrib", vars);
-									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
-
-									if (val.Length > 0)
-										info.skipProperties.Add(new PropertyTester(val, type, attrib, typeattrib));
-									else
-									{
-										val = Helper.GetAttribute(reader, "rx");
-										if (val.Length > 0)
-											info.skipProperties.Add(new PropertyTester(new Regex(val), type, attrib, typeattrib));
-									}
+								if (rx != null) {
+									info.skipProperties.Add(new PropertyTester(rx, type, attrib, typeattrib));
+								}
+								else {
+									info.skipProperties.Add(new PropertyTester(name, type, attrib, typeattrib));
 								}
 								break;
 							case "SkipEvent":
-								{
-									val = Helper.GetAttribute(reader, "name", vars);
-									string type = Helper.GetAttribute(reader, "type", vars);
-									string attrib = Helper.GetAttribute(reader, "attrib", vars);
-									string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
-
-									if (val.Length > 0)
-										info.skipEvents.Add(new EventTester(val, type, attrib, typeattrib));
-									else
-									{
-										val = Helper.GetAttribute(reader, "rx");
-										if (val.Length > 0)
-											info.skipEvents.Add(new EventTester(new Regex(val), type, attrib, typeattrib));
-									}
+								if (rx != null) {
+									info.skipEvents.Add(new EventTester(rx, type, attrib, typeattrib));
+								}
+								else {
+									info.skipEvents.Add(new EventTester(name, type, attrib, typeattrib));
 								}
 								break;
 						}
@@ -253,7 +231,7 @@ namespace Obfuscar
 					unrenamedReferences.Add(member);
 			}
 
-			C5.HashSet<TypeReference> typerefs = new C5.HashSet<TypeReference>();
+			HashSet<TypeReference> typerefs = new HashSet<TypeReference>();
 			foreach (TypeReference type in definition.MainModule.GetTypeReferences())
 			{
 				if (type.FullName == "<Module>")
@@ -313,7 +291,7 @@ namespace Obfuscar
 
 		IEnumerable<MemberReference> getMemberReferences()
 		{
-			C5.HashSet<MemberReference> memberreferences = new C5.HashSet<MemberReference>();
+			HashSet<MemberReference> memberreferences = new HashSet<MemberReference>();
 			foreach (TypeDefinition type in this.GetAllTypeDefinitions())
 			{
 				foreach (MethodDefinition method in type.Methods)
@@ -438,71 +416,71 @@ namespace Obfuscar
 			skipMethods.Add(new MethodTester(method));
 		}
 
-		public bool ShouldSkip(string ns)
+		public bool ShouldSkip(string ns, InheritMap map)
 		{
-			return skipNamespaces.IsMatch(ns);
+			return skipNamespaces.IsMatch(ns, map);
 		}
 
-		public bool ShouldSkip(TypeKey type, TypeSkipFlags flag)
+		public bool ShouldSkip(TypeKey type, TypeSkipFlags flag, InheritMap map)
 		{
-			if (ShouldSkip(type.Namespace))
+			if (ShouldSkip(type.Namespace, map))
 				return true;
 
 			foreach (TypeTester typeTester in skipTypes)
 			{
-				if ((typeTester.SkipFlags & flag) > 0 && typeTester.Test(type))
+				if ((typeTester.SkipFlags & flag) > 0 && typeTester.Test(type, map))
 					return true;
 			}
 
 			return false;
 		}
 
-		public bool ShouldSkip(TypeKey type)
+		public bool ShouldSkip(TypeKey type, InheritMap map)
 		{
-			if (ShouldSkip(type.Namespace))
+			if (ShouldSkip(type.Namespace, map))
 				return true;
 
-			return skipTypes.IsMatch(type);
+			return skipTypes.IsMatch(type, map);
 		}
 
-		public bool ShouldSkip(MethodKey method)
+		public bool ShouldSkip(MethodKey method, InheritMap map)
 		{
-			if (ShouldSkip(method.TypeKey, TypeSkipFlags.SkipMethod))
+			if (ShouldSkip(method.TypeKey, TypeSkipFlags.SkipMethod, map))
 				return true;
 
-			return skipMethods.IsMatch(method);
+			return skipMethods.IsMatch(method, map);
 		}
 
-		public bool ShouldSkipStringHiding(MethodKey method)
+		public bool ShouldSkipStringHiding(MethodKey method, InheritMap map)
 		{
-			if (ShouldSkip(method.TypeKey, TypeSkipFlags.SkipStringHiding))
+			if (ShouldSkip(method.TypeKey, TypeSkipFlags.SkipStringHiding, map))
 				return true;
 
-			return skipStringHiding.IsMatch(method);
+			return skipStringHiding.IsMatch(method, map);
 		}
 
-		public bool ShouldSkip(FieldKey field)
+		public bool ShouldSkip(FieldKey field, InheritMap map)
 		{
-			if (ShouldSkip(field.TypeKey, TypeSkipFlags.SkipField))
+			if (ShouldSkip(field.TypeKey, TypeSkipFlags.SkipField, map))
 				return true;
 
-			return skipFields.IsMatch(field);
+			return skipFields.IsMatch(field, map);
 		}
 
-		public bool ShouldSkip(PropertyKey prop)
+		public bool ShouldSkip(PropertyKey prop, InheritMap map)
 		{
-			if (ShouldSkip(prop.TypeKey, TypeSkipFlags.SkipProperty))
+			if (ShouldSkip(prop.TypeKey, TypeSkipFlags.SkipProperty, map))
 				return true;
 
-			return skipProperties.IsMatch(prop);
+			return skipProperties.IsMatch(prop, map);
 		}
 
-		public bool ShouldSkip(EventKey evt)
+		public bool ShouldSkip(EventKey evt, InheritMap map)
 		{
-			if (ShouldSkip(evt.TypeKey, TypeSkipFlags.SkipEvent))
+			if (ShouldSkip(evt.TypeKey, TypeSkipFlags.SkipEvent, map))
 				return true;
 
-			return skipEvents.IsMatch(evt);
+			return skipEvents.IsMatch(evt, map);
 		}
 
 		/// <summary>

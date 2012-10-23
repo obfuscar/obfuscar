@@ -34,12 +34,12 @@ namespace Obfuscar
 {
 	class MethodGroup
 	{
-		private readonly C5.HashSet<MethodKey> methods = new C5.HashSet<MethodKey>();
+		private readonly HashSet<MethodKey> methods = new HashSet<MethodKey>();
 
 		private string name = null;
 		private bool external = false;
 
-		public C5.HashSet<MethodKey> Methods
+		public HashSet<MethodKey> Methods
 		{
 			get { return methods; }
 		}
@@ -66,12 +66,24 @@ namespace Obfuscar
 
 		private readonly Dictionary<TypeKey, TypeKey[]> baseTypes = new Dictionary<TypeKey, TypeKey[]>();
 
+		AssemblyCache m_cache;
+
+		private AssemblyCache Cache {
+			get {
+				if (m_cache == null) {
+					m_cache = new AssemblyCache(project);
+				}
+
+				return m_cache;
+			}
+		}
+
 		public InheritMap(Project project)
 		{
 			this.project = project;
 
 			// cache for assemblies not in the project
-			AssemblyCache cache = new AssemblyCache(project);
+			AssemblyCache cache = Cache;
 
 			foreach (AssemblyInfo info in project)
 			{
@@ -133,7 +145,7 @@ namespace Obfuscar
 			return methods[i].Equals((NameParamSig)methods[j]);
 		}
 
-		void GetBaseTypes(C5.HashSet<TypeKey> baseTypes, TypeDefinition type)
+		void GetBaseTypes(HashSet<TypeKey> baseTypes, TypeDefinition type)
 		{
 			// check the interfaces
 			foreach (TypeReference ifaceRef in type.Interfaces)
@@ -157,12 +169,12 @@ namespace Obfuscar
 
 		TypeKey[] GetBaseTypes(TypeDefinition type)
 		{
-			C5.HashSet<TypeKey> baseTypes = new C5.HashSet<TypeKey>();
+			HashSet<TypeKey> baseTypes = new HashSet<TypeKey>();
 			GetBaseTypes(baseTypes, type);
-			return baseTypes.ToArray();
+			return new List<TypeKey>(baseTypes).ToArray();
 		}
 
-		void GetVirtualMethods(AssemblyCache cache, C5.TreeSet<MethodKey> methods, TypeDefinition type)
+		void GetVirtualMethods(AssemblyCache cache, HashSet<MethodKey> methods, TypeDefinition type)
 		{
 			// check the interfaces
 			foreach (TypeReference ifaceRef in type.Interfaces)
@@ -198,9 +210,9 @@ namespace Obfuscar
 
 		MethodKey[] GetVirtualMethods(AssemblyCache cache, TypeDefinition type)
 		{
-			C5.TreeSet<MethodKey> methods = new C5.TreeSet<MethodKey>();
+			HashSet<MethodKey> methods = new HashSet<MethodKey>();
 			GetVirtualMethods(cache, methods, type);
-			return methods.ToArray();
+			return new List<MethodKey>(methods).ToArray();
 		}
 
 		MethodGroup AddToGroup(MethodGroup group, MethodKey methodKey)
@@ -235,6 +247,22 @@ namespace Obfuscar
 				return group;
 			else
 				return null;
+		}
+
+		public bool Inherits (TypeDefinition type, string interfaceFullName)
+		{
+			if (type.FullName == interfaceFullName) {
+				return true;
+			}
+
+
+			if (type.BaseType != null) {
+				var typeDef = Cache.GetTypeDefinition(type.BaseType);
+
+				return Inherits(typeDef, interfaceFullName);
+			}
+
+			return false;
 		}
 
 		public TypeKey[] GetBaseTypes(TypeKey typeKey)
