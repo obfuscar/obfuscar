@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -33,72 +32,80 @@ namespace Obfuscar
 	{
 		string inPath;
 		string outPath;
+		string logFilePath;
 		bool markedOnly;
 		bool renameProperties;
 		bool renameEvents;
 		bool reuseNames;
+		bool useUnicodeNames;
 		bool xmlMapping;
 		bool hideStrings;
+		bool renegerateDebugInfo;
 		string keyFile;
 
-		public Settings(Variables vars)
+		public Settings (Variables vars)
 		{
-			inPath = vars.GetValue("InPath", ".");
-			outPath = vars.GetValue("OutPath", ".");
-			markedOnly = XmlConvert.ToBoolean(vars.GetValue("MarkedOnly", "false"));
+			inPath = vars.GetValue ("InPath", ".");
+			outPath = vars.GetValue ("OutPath", ".");
+			logFilePath = vars.GetValue ("LogFile", "");
+			markedOnly = XmlConvert.ToBoolean (vars.GetValue ("MarkedOnly", "false"));
 
-			renameProperties = XmlConvert.ToBoolean(vars.GetValue("RenameProperties", "true"));
-			renameEvents = XmlConvert.ToBoolean(vars.GetValue("RenameEvents", "true"));
-			reuseNames = XmlConvert.ToBoolean(vars.GetValue("ReuseNames", "true"));
-			hideStrings = XmlConvert.ToBoolean(vars.GetValue("HideStrings", "true"));
+			renameProperties = XmlConvert.ToBoolean (vars.GetValue ("RenameProperties", "true"));
+			renameEvents = XmlConvert.ToBoolean (vars.GetValue ("RenameEvents", "true"));
+			reuseNames = XmlConvert.ToBoolean (vars.GetValue ("ReuseNames", "true"));
+			useUnicodeNames = XmlConvert.ToBoolean (vars.GetValue ("UseUnicodeNames", "false"));
+			hideStrings = XmlConvert.ToBoolean (vars.GetValue ("HideStrings", "true"));
 
-			xmlMapping = XmlConvert.ToBoolean(vars.GetValue("XmlMapping", "false"));
-
-			keyFile = vars.GetValue("KeyFile", null);
+			xmlMapping = XmlConvert.ToBoolean (vars.GetValue ("XmlMapping", "false"));
+			renegerateDebugInfo = XmlConvert.ToBoolean (vars.GetValue ("RegenerateDebugInfo", "false"));
+			keyFile = vars.GetValue ("KeyFile", null);
 		}
 
-		public string InPath
-		{
+		public bool RegenerateDebugInfo {
+			get { return renegerateDebugInfo; }
+		}
+
+		public string InPath {
 			get { return inPath; }
 		}
 
-		public string OutPath
-		{
+		public string OutPath {
 			get { return outPath; }
 		}
 
-		public bool MarkedOnly
-		{
+		public bool MarkedOnly {
 			get { return markedOnly; }
 		}
 
-		public bool RenameProperties
-		{
+		public string LogFilePath {
+			get { return logFilePath; }
+		}
+
+		public bool RenameProperties {
 			get { return renameProperties; }
 		}
 
-		public bool RenameEvents
-		{
+		public bool RenameEvents {
 			get { return renameEvents; }
 		}
 
-		public bool ReuseNames
-		{
+		public bool ReuseNames {
 			get { return reuseNames; }
 		}
 
-		public bool HideStrings
-		{
+		public bool HideStrings {
 			get { return hideStrings; }
 		}
 
-		public bool XmlMapping
-		{
+		public bool XmlMapping {
 			get { return xmlMapping; }
 		}
 
-		public string KeyFile
-		{
+		public bool UseUnicodeNames {
+			get { return useUnicodeNames; }
+		}
+
+		public string KeyFile {
 			get { return keyFile; }
 		}
 	}

@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -30,7 +29,7 @@ namespace Obfuscar
 {
 	static class ListHelper
 	{
-		public static bool ListsEqual<T>(IList<T> a, IList<T> b)
+		public static bool ListsEqual<T> (IList<T> a, IList<T> b)
 		{
 			if (a == null)
 				return b == null;
@@ -38,11 +37,9 @@ namespace Obfuscar
 				return false;
 			else if (a.Count != b.Count)
 				return false;
-			else
-			{
-				for (int i = 0; i < a.Count; i++)
-				{
-					if (!a[i].Equals(b[i]))
+			else {
+				for (int i = 0; i < a.Count; i++) {
+					if (!a [i].Equals (b [i]))
 						return false;
 				}
 

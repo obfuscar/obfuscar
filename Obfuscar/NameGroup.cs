@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -31,56 +30,52 @@ namespace Obfuscar
 {
 	class NameGroup : IEnumerable<string>
 	{
-		HashSet<string> names = new HashSet<string>();
+		HashSet<string> names = new HashSet<string> ();
 
-		public string GetNext()
+		public string GetNext ()
 		{
 			int index = 0;
 			string name;
-			for (; ; )
-			{
-				name = NameMaker.UniqueName(index++);
-				if (!names.Contains(name))
+			for (; ;) {
+				name = NameMaker.UniqueName (index++);
+				if (!names.Contains (name))
 					return name;
 			}
 		}
 
-		public bool Contains(string name)
+		public bool Contains (string name)
 		{
-			return names.Contains(name);
+			return names.Contains (name);
 		}
 
 		public void AddAll (IEnumerable<string> range)
 		{
 			foreach (var item in range) {
-				names.Add(item);
+				names.Add (item);
 			}
 		}
 
-		public void Add(string name)
+		public void Add (string name)
 		{
-			names.Add(name);
+			names.Add (name);
 		}
 
-		public void Remove(string name)
+		public void Remove (string name)
 		{
-			names.Remove(name);
+			names.Remove (name);
 		}
 
-		public static string GetNext(IEnumerable<NameGroup> groups)
+		public static string GetNext (IEnumerable<NameGroup> groups)
 		{
 			int index = 0;
 
 			string name;
-			for (; ; )
-			{
-				name = NameMaker.UniqueName(index++);
+			for (; ;) {
+				name = NameMaker.UniqueName (index++);
 
 				bool contained = false;
-				foreach (NameGroup group in groups)
-				{
-					if (group.Contains(name))
-					{
+				foreach (NameGroup group in groups) {
+					if (group.Contains (name)) {
 						contained = true;
 						break;
 					}
@@ -94,14 +89,26 @@ namespace Obfuscar
 		/// <summary>
 		/// See <see cref="IEnumerable.GetEnumerator"/>.
 		/// </summary>
-		IEnumerator IEnumerable.GetEnumerator()
+		IEnumerator IEnumerable.GetEnumerator ()
 		{
-			return names.GetEnumerator();
+			return names.GetEnumerator ();
 		}
 
-		public IEnumerator<string> GetEnumerator()
+		public IEnumerator<string> GetEnumerator ()
 		{
-			return names.GetEnumerator();
+			return names.GetEnumerator ();
+		}
+
+		public override string ToString ()
+		{
+			StringBuilder sb = new StringBuilder ();
+			foreach (String s in names) {
+				if (sb.Length != 0)
+					sb.Append (",");
+				sb.Append (s);
+			}
+			return sb.ToString ();
+
 		}
 	}
 }

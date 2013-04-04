@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.IO;
 using System.Diagnostics;
@@ -42,17 +41,16 @@ namespace Obfuscar
 	{
 		private readonly string name;
 
-		public ObfuscatedThing(string name)
+		public ObfuscatedThing (string name)
 		{
 			this.name = name;
 		}
 
-		public string Name
-		{
+		public string Name {
 			get { return name; }
 		}
 
-		public void Update(ObfuscationStatus status, string statusText)
+		public void Update (ObfuscationStatus status, string statusText)
 		{
 			this.Status = status;
 			this.StatusText = statusText;
@@ -60,147 +58,145 @@ namespace Obfuscar
 
 		public ObfuscationStatus Status = ObfuscationStatus.Unknown;
 		public string StatusText;
+
+		public override string ToString ()
+		{
+			return name + " " + Status + " " + (StatusText ?? "");
+		}
 	}
 
 	class ObfuscatedClass : ObfuscatedThing
 	{
-		public ObfuscatedClass(string name)
+		public ObfuscatedClass (string name)
 			: base(name)
 		{
 		}
 
-		public Dictionary<MethodKey, ObfuscatedThing> Methods = new Dictionary<MethodKey, ObfuscatedThing>();
-		public Dictionary<FieldKey, ObfuscatedThing> Fields = new Dictionary<FieldKey, ObfuscatedThing>();
-		public Dictionary<PropertyKey, ObfuscatedThing> Properties = new Dictionary<PropertyKey, ObfuscatedThing>();
-		public Dictionary<EventKey, ObfuscatedThing> Events = new Dictionary<EventKey, ObfuscatedThing>();
+		public Dictionary<MethodKey, ObfuscatedThing> Methods = new Dictionary<MethodKey, ObfuscatedThing> ();
+		public Dictionary<FieldKey, ObfuscatedThing> Fields = new Dictionary<FieldKey, ObfuscatedThing> ();
+		public Dictionary<PropertyKey, ObfuscatedThing> Properties = new Dictionary<PropertyKey, ObfuscatedThing> ();
+		public Dictionary<EventKey, ObfuscatedThing> Events = new Dictionary<EventKey, ObfuscatedThing> ();
 	}
 
 	class ObfuscationMap
 	{
-		readonly Dictionary<TypeKey, ObfuscatedClass> classMap = new Dictionary<TypeKey, ObfuscatedClass>();
-		readonly List<ObfuscatedThing> resources = new List<ObfuscatedThing>();
+		readonly Dictionary<TypeKey, ObfuscatedClass> classMap = new Dictionary<TypeKey, ObfuscatedClass> ();
+		readonly List<ObfuscatedThing> resources = new List<ObfuscatedThing> ();
 
-		public Dictionary<TypeKey, ObfuscatedClass> ClassMap
-		{
+		public Dictionary<TypeKey, ObfuscatedClass> ClassMap {
 			get { return classMap; }
 		}
 
-		public List<ObfuscatedThing> Resources
-		{
+		public List<ObfuscatedThing> Resources {
 			get { return resources; }
 		}
 
-		public ObfuscatedClass GetClass(TypeKey key)
+		public ObfuscatedClass GetClass (TypeKey key)
 		{
 			ObfuscatedClass c;
 
-			if (!classMap.TryGetValue(key, out c))
-			{
-				c = new ObfuscatedClass(key.ToString());
-				classMap[key] = c;
+			if (!classMap.TryGetValue (key, out c)) {
+				c = new ObfuscatedClass (key.ToString ());
+				classMap [key] = c;
 			}
 
 			return c;
 		}
 
-		public ObfuscatedThing GetField(FieldKey key)
+		public ObfuscatedThing GetField (FieldKey key)
 		{
-			ObfuscatedClass c = GetClass(key.TypeKey);
+			ObfuscatedClass c = GetClass (key.TypeKey);
 
 			ObfuscatedThing t;
-			if (!c.Fields.TryGetValue(key, out t))
-			{
-				t = new ObfuscatedThing(key.ToString());
-				c.Fields[key] = t;
+			if (!c.Fields.TryGetValue (key, out t)) {
+				t = new ObfuscatedThing (key.ToString ());
+				c.Fields [key] = t;
 			}
 
 			return t;
 		}
 
-		public ObfuscatedThing GetMethod(MethodKey key)
+		public ObfuscatedThing GetMethod (MethodKey key)
 		{
-			ObfuscatedClass c = GetClass(key.TypeKey);
+			ObfuscatedClass c = GetClass (key.TypeKey);
 
 			ObfuscatedThing t;
-			if (!c.Methods.TryGetValue(key, out t))
-			{
-				t = new ObfuscatedThing(key.ToString());
-				c.Methods[key] = t;
+			if (!c.Methods.TryGetValue (key, out t)) {
+				t = new ObfuscatedThing (key.ToString ());
+				c.Methods [key] = t;
 			}
 
 			return t;
 		}
 
-		public ObfuscatedThing GetProperty(PropertyKey key)
+		public ObfuscatedThing GetProperty (PropertyKey key)
 		{
-			ObfuscatedClass c = GetClass(key.TypeKey);
+			ObfuscatedClass c = GetClass (key.TypeKey);
 
 			ObfuscatedThing t;
-			if (!c.Properties.TryGetValue(key, out t))
-			{
-				t = new ObfuscatedThing(key.ToString());
-				c.Properties[key] = t;
+			if (!c.Properties.TryGetValue (key, out t)) {
+				t = new ObfuscatedThing (key.ToString ());
+				c.Properties [key] = t;
 			}
 
 			return t;
 		}
 
-		public ObfuscatedThing GetEvent(EventKey key)
+		public ObfuscatedThing GetEvent (EventKey key)
 		{
-			ObfuscatedClass c = GetClass(key.TypeKey);
+			ObfuscatedClass c = GetClass (key.TypeKey);
 
 			ObfuscatedThing t;
-			if (!c.Events.TryGetValue(key, out t))
-			{
-				t = new ObfuscatedThing(key.ToString());
-				c.Events[key] = t;
+			if (!c.Events.TryGetValue (key, out t)) {
+				t = new ObfuscatedThing (key.ToString ());
+				c.Events [key] = t;
 			}
 
 			return t;
 		}
 
-		public void UpdateType(TypeKey key, ObfuscationStatus status, string text)
+		public void UpdateType (TypeKey key, ObfuscationStatus status, string text)
 		{
-			ObfuscatedClass c = GetClass(key);
+			ObfuscatedClass c = GetClass (key);
 
-			c.Update(status, text);
+			c.Update (status, text);
 		}
 
-		public void UpdateField(FieldKey key, ObfuscationStatus status, string text)
+		public void UpdateField (FieldKey key, ObfuscationStatus status, string text)
 		{
-			ObfuscatedThing f = GetField(key);
+			ObfuscatedThing f = GetField (key);
 
-			f.Update(status, text);
+			f.Update (status, text);
 		}
 
-		public void UpdateMethod(MethodKey key, ObfuscationStatus status, string text)
+		public void UpdateMethod (MethodKey key, ObfuscationStatus status, string text)
 		{
-			ObfuscatedThing m = GetMethod(key);
+			ObfuscatedThing m = GetMethod (key);
 
-			m.Update(status, text);
+			m.Update (status, text);
 		}
 
-		public void UpdateProperty(PropertyKey key, ObfuscationStatus status, string text)
+		public void UpdateProperty (PropertyKey key, ObfuscationStatus status, string text)
 		{
-			ObfuscatedThing m = GetProperty(key);
+			ObfuscatedThing m = GetProperty (key);
 
-			m.Update(status, text);
+			m.Update (status, text);
 		}
 
-		public void UpdateEvent(EventKey key, ObfuscationStatus status, string text)
+		public void UpdateEvent (EventKey key, ObfuscationStatus status, string text)
 		{
-			ObfuscatedThing m = GetEvent(key);
+			ObfuscatedThing m = GetEvent (key);
 
-			m.Update(status, text);
+			m.Update (status, text);
 		}
 
-		public void AddResource(string name, ObfuscationStatus status, string text)
+		public void AddResource (string name, ObfuscationStatus status, string text)
 		{
-			ObfuscatedThing r = new ObfuscatedThing(name);
+			ObfuscatedThing r = new ObfuscatedThing (name);
 
-			r.Update(status, text);
+			r.Update (status, text);
 
-			resources.Add(r);
+			resources.Add (r);
 		}
 	}
 }

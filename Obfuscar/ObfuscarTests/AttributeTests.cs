@@ -53,7 +53,7 @@ namespace ObfuscarTests
 		[Test]
 		public void CheckClassHasAttribute( )
 		{
-			AssemblyDefinition assmDef = AssemblyFactory.GetAssembly(
+            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
 				Path.Combine( TestHelper.OutputPath, "AssemblyWithAttrs.dll" ) );
 
 			Assert.AreEqual( 2, assmDef.MainModule.Types.Count, "Should contain only one type, and <Module>." );

@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -39,50 +38,46 @@ namespace Obfuscar
 		readonly string name;
 		readonly int hashCode;
 
-		public NameParamSig(string name, string[] paramTypes)
+		public NameParamSig (string name, string[] paramTypes)
 			: base(paramTypes)
 		{
 			this.name = name;
 
-			hashCode = CalcHashCode();
+			hashCode = CalcHashCode ();
 		}
 
-		public NameParamSig(MethodReference method)
+		public NameParamSig (MethodReference method)
 			: base(method)
 		{
 			name = method.Name;
 
-			hashCode = CalcHashCode();
+			hashCode = CalcHashCode ();
 		}
 
-		public NameParamSig(MethodDefinition method)
+		public NameParamSig (MethodDefinition method)
 			: base(method)
 		{
 			name = method.Name;
 
-			hashCode = CalcHashCode();
+			hashCode = CalcHashCode ();
 		}
 
-		private int CalcHashCode()
+		private int CalcHashCode ()
 		{
-			return name.GetHashCode() ^ base.GetHashCode();
+			return name.GetHashCode () ^ base.GetHashCode ();
 		}
 
-		public string Name
-		{
+		public string Name {
 			get { return name; }
 		}
 
-		public virtual bool Matches(MemberReference member)
+		public virtual bool Matches (MemberReference member)
 		{
 			MethodReference methodRef = member as MethodReference;
-			if (methodRef != null)
-			{
-				if (methodRef.Name == Name && methodRef.Parameters.Count == ParamTypes.Length)
-				{
-					for (int i = 0; i < ParamTypes.Length; i++)
-					{
-						if (Helper.GetParameterTypeName(methodRef.Parameters[i]) != ParamTypes[i])
+			if (methodRef != null) {
+				if (methodRef.Name == Name && methodRef.Parameters.Count == ParamTypes.Length) {
+					for (int i = 0; i < ParamTypes.Length; i++) {
+						if (Helper.GetParameterTypeName (methodRef.Parameters [i]) != ParamTypes [i])
 							return false;
 					}
 
@@ -93,53 +88,53 @@ namespace Obfuscar
 			return false;
 		}
 
-		public bool Equals(NameParamSig other)
+		public bool Equals (NameParamSig other)
 		{
 			return other != null &&
 				name == other.name &&
-				Equals((ParamSig)other);
+				Equals ((ParamSig)other);
 		}
 
-		public override bool Equals(object obj)
+		public override bool Equals (object obj)
 		{
-			return obj is NameParamSig ? Equals((NameParamSig)obj) : false;
+			return obj is NameParamSig ? Equals ((NameParamSig)obj) : false;
 		}
 
-		public static bool operator ==(NameParamSig a, NameParamSig b)
+		public static bool operator == (NameParamSig a, NameParamSig b)
 		{
 			if ((object)a == null)
 				return (object)b == null;
 			else if ((object)b == null)
 				return false;
 			else
-				return a.Equals(b);
+				return a.Equals (b);
 		}
 
-		public static bool operator !=(NameParamSig a, NameParamSig b)
+		public static bool operator != (NameParamSig a, NameParamSig b)
 		{
 			if ((object)a == null)
 				return (object)b != null;
 			else if ((object)b == null)
 				return true;
 			else
-				return !a.Equals(b);
+				return !a.Equals (b);
 		}
 
-		public override int GetHashCode()
+		public override int GetHashCode ()
 		{
 			return hashCode;
 		}
 
-		public override string ToString()
+		public override string ToString ()
 		{
-			return String.Format("{0}[{1}]", name, ParamTypes.Length);
+			return String.Format ("{0}[{1}]", name, ParamTypes.Length);
 		}
 
-		public int CompareTo(NameParamSig other)
+		public int CompareTo (NameParamSig other)
 		{
-			int cmp = String.Compare(name, other.Name);
+			int cmp = String.Compare (name, other.Name);
 			if (cmp == 0)
-				cmp = CompareTo((ParamSig)other);
+				cmp = CompareTo ((ParamSig)other);
 			return cmp;
 		}
 	}

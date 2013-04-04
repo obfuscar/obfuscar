@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -38,7 +37,7 @@ namespace Obfuscar
 		readonly string name;
 		readonly PropertyDefinition propertyDefinition;
 
-		public PropertyKey(TypeKey typeKey, PropertyDefinition prop)
+		public PropertyKey (TypeKey typeKey, PropertyDefinition prop)
 		{
 			this.typeKey = typeKey;
 			this.type = prop.PropertyType.FullName;
@@ -46,44 +45,38 @@ namespace Obfuscar
 			this.propertyDefinition = prop;
 		}
 
-		public TypeKey TypeKey
-		{
+		public TypeKey TypeKey {
 			get { return typeKey; }
 		}
 
-		public string Type
-		{
+		public string Type {
 			get { return type; }
 		}
 
-		public string Name
-		{
+		public string Name {
 			get { return name; }
 		}
 
-		public MethodAttributes GetterMethodAttributes
-		{
+		public MethodAttributes GetterMethodAttributes {
 			get { return propertyDefinition.GetMethod != null ? propertyDefinition.GetMethod.Attributes : 0; }
 		}
 
-		public TypeDefinition DeclaringType
-		{
+		public TypeDefinition DeclaringType {
 			get { return (TypeDefinition)propertyDefinition.DeclaringType; }
 		}
 
-		public virtual bool Matches(MemberReference member)
+		public virtual bool Matches (MemberReference member)
 		{
 			PropertyReference propRef = member as PropertyReference;
-			if (propRef != null)
-			{
-				if (typeKey.Matches(propRef.DeclaringType))
+			if (propRef != null) {
+				if (typeKey.Matches (propRef.DeclaringType))
 					return type == propRef.PropertyType.FullName && name == propRef.Name;
 			}
 
 			return false;
 		}
 
-		public override bool Equals(object obj)
+		public override bool Equals (object obj)
 		{
 			PropertyKey key = obj as PropertyKey;
 			if (key == null)
@@ -92,7 +85,7 @@ namespace Obfuscar
 			return this == key;
 		}
 
-		public static bool operator ==(PropertyKey a, PropertyKey b)
+		public static bool operator == (PropertyKey a, PropertyKey b)
 		{
 			if ((object)a == null)
 				return (object)b == null;
@@ -102,7 +95,7 @@ namespace Obfuscar
 				return a.typeKey == b.typeKey && a.type == b.type && a.name == b.name;
 		}
 
-		public static bool operator !=(PropertyKey a, PropertyKey b)
+		public static bool operator != (PropertyKey a, PropertyKey b)
 		{
 			if ((object)a == null)
 				return (object)b != null;
@@ -112,14 +105,14 @@ namespace Obfuscar
 				return a.typeKey != b.typeKey || a.type != b.type || a.name != b.name;
 		}
 
-		public override int GetHashCode()
+		public override int GetHashCode ()
 		{
-			return typeKey.GetHashCode() ^ type.GetHashCode() ^ name.GetHashCode();
+			return typeKey.GetHashCode () ^ type.GetHashCode () ^ name.GetHashCode ();
 		}
 
-		public override string ToString()
+		public override string ToString ()
 		{
-			return String.Format("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
+			return String.Format ("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
 		}
 	}
 }

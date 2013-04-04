@@ -68,16 +68,16 @@ namespace ObfuscarTests
 
 			string assmName = "AssemblyWithSpecializedGenerics.dll";
 
-			AssemblyDefinition inAssmDef = AssemblyFactory.GetAssembly(
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
 				Path.Combine( TestHelper.InputPath, assmName ) );
-			
-			AssemblyDefinition outAssmDef = AssemblyFactory.GetAssembly(
+
+            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
 				Path.Combine( TestHelper.OutputPath, assmName ) );
 
-			TypeDefinition classAType = inAssmDef.MainModule.Types["TestClasses.ClassA`1"];
+			TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.ClassA`1");
 			MethodDefinition classAmethod2 = FindByName( classAType, "Method2" );
 
-			TypeDefinition classBType = inAssmDef.MainModule.Types["TestClasses.ClassB"];
+			TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.ClassB");
 			MethodDefinition classBmethod2 = FindByName( classBType, "Method2" );
 
 			Obfuscar.ObfuscatedThing classAEntry = map.GetMethod( new Obfuscar.MethodKey( classAmethod2 ) );

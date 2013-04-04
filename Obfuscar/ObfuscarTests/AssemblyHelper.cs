@@ -37,7 +37,7 @@ namespace ObfuscarTests
 		public static void CheckAssembly( string name, int expectedTypes, 
 			Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType )
 		{
-			AssemblyDefinition assmDef = AssemblyFactory.GetAssembly(
+            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
 				Path.Combine( TestHelper.OutputPath, name + ".dll" ) );
 
 			Assert.AreEqual( expectedTypes + 1, assmDef.MainModule.Types.Count,

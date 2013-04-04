@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -37,95 +36,85 @@ namespace Obfuscar
 		readonly string name;
 		readonly string fullname;
 		readonly TypeReference typeReference;
-
 		readonly int hashCode;
 
-
-		public TypeKey(TypeReference type)
+		public TypeKey (TypeReference type)
 		{
 			this.typeReference = type;
-			this.scope = Helper.GetScopeName(type);
+			this.scope = Helper.GetScopeName (type);
 
 			this.name = type.Name;
 			TypeReference declaringType = type;
 			// Build path to nested type
-			while (declaringType.DeclaringType != null)
-			{
+			while (declaringType.DeclaringType != null) {
 				declaringType = declaringType.DeclaringType;
 				this.name = declaringType.Name + "/" + name;
 			}
 			this.ns = declaringType.Namespace;
 
-			this.fullname = !string.IsNullOrEmpty(this.ns) ? this.ns + "." + name : name;
+			this.fullname = !string.IsNullOrEmpty (this.ns) ? this.ns + "." + name : name;
 
 			// Our name should be the same as the Cecil's name. This is important to the Match method.
 			GenericInstanceType gi = type as GenericInstanceType;
 			type.DeclaringType = type.DeclaringType; // Hack: Update fullname of nested type
-			if (this.fullname != type.ToString() && (gi == null || this.fullname != gi.ElementType.FullName))
-				throw new InvalidOperationException(string.Format("Type names do not match: \"{0}\" != \"{1}\"", this.fullname, type.ToString()));
+			if (this.fullname != type.ToString () && (gi == null || this.fullname != gi.ElementType.FullName))
+				throw new InvalidOperationException (string.Format ("Type names do not match: \"{0}\" != \"{1}\"", this.fullname, type.ToString ()));
 
-			this.hashCode = CalcHashCode();
+			this.hashCode = CalcHashCode ();
 		}
 
-		public TypeKey(string scope, string ns, string name)
+		public TypeKey (string scope, string ns, string name)
 			: this(scope, ns, name, ns + "." + name)
 		{
 		}
 
-		public TypeKey(string scope, string ns, string name, string fullname)
+		public TypeKey (string scope, string ns, string name, string fullname)
 		{
 			this.scope = scope;
 			this.ns = ns;
 			this.name = name;
 			this.fullname = fullname;
 
-			this.hashCode = CalcHashCode();
+			this.hashCode = CalcHashCode ();
 		}
 
-		private int CalcHashCode()
+		private int CalcHashCode ()
 		{
-			return scope.GetHashCode() ^ ns.GetHashCode() ^ name.GetHashCode() ^ fullname.GetHashCode();
+			return scope.GetHashCode () ^ ns.GetHashCode () ^ name.GetHashCode () ^ fullname.GetHashCode ();
 		}
 
-		public TypeDefinition TypeDefinition
-		{
+		public TypeDefinition TypeDefinition {
 			get { return typeReference as TypeDefinition; }
 		}
 
-		public string Scope
-		{
+		public string Scope {
 			get { return scope; }
 		}
 
-		public string Namespace
-		{
+		public string Namespace {
 			get { return ns; }
 		}
 
-		public string Name
-		{
+		public string Name {
 			get { return name; }
 		}
 
-		public string Fullname
-		{
+		public string Fullname {
 			get { return fullname; }
 		}
 
-
-		public bool Matches(TypeReference type)
+		public bool Matches (TypeReference type)
 		{
 			// Remove generic type parameters and compare full names
 			type.DeclaringType = type.DeclaringType; // Hack: Update full name
-			string typefullname = type.ToString();
-			if (type is GenericInstanceType)
-			{
-				typefullname = ((GenericInstanceType)type).ElementType.ToString();
+			string typefullname = type.ToString ();
+			if (type is GenericInstanceType) {
+				typefullname = ((GenericInstanceType)type).ElementType.ToString ();
 			}
 			return typefullname == fullname;
 		}
 
-		public bool Equals(TypeKey other)
+		public bool Equals (TypeKey other)
 		{
 			return other != null &&
 				hashCode == other.hashCode &&
@@ -135,47 +124,47 @@ namespace Obfuscar
 				fullname == other.fullname;
 		}
 
-		public override bool Equals(object obj)
+		public override bool Equals (object obj)
 		{
-			return obj is TypeKey ? Equals((TypeKey)obj) : false;
+			return obj is TypeKey ? Equals ((TypeKey)obj) : false;
 		}
 
-		public static bool operator ==(TypeKey a, TypeKey b)
+		public static bool operator == (TypeKey a, TypeKey b)
 		{
 			if ((object)a == null)
 				return (object)b == null;
 			else if ((object)b == null)
 				return false;
 			else
-				return a.Equals(b);
+				return a.Equals (b);
 		}
 
-		public static bool operator !=(TypeKey a, TypeKey b)
+		public static bool operator != (TypeKey a, TypeKey b)
 		{
 			if ((object)a == null)
 				return (object)b != null;
 			else if ((object)b == null)
 				return true;
 			else
-				return !a.Equals(b);
+				return !a.Equals (b);
 		}
 
-		public override int GetHashCode()
+		public override int GetHashCode ()
 		{
 			return hashCode;
 		}
 
-		public override string ToString()
+		public override string ToString ()
 		{
-			return String.Format("[{0}]{1}", scope, fullname);
+			return String.Format ("[{0}]{1}", scope, fullname);
 		}
 
-		public int CompareTo(TypeKey other)
+		public int CompareTo (TypeKey other)
 		{
 			// no need to check ns and name...should be in fullname
-			int cmp = String.Compare(scope, other.scope);
+			int cmp = String.Compare (scope, other.scope);
 			if (cmp == 0)
-				cmp = String.Compare(fullname, other.fullname);
+				cmp = String.Compare (fullname, other.fullname);
 			return cmp;
 		}
 	}
