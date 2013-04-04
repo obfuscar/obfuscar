@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -36,25 +35,25 @@ namespace Obfuscar
 		private readonly string name;
 		private readonly Regex nameRx;
 
-		public NamespaceTester(string name)
+		public NamespaceTester (string name)
 		{
 			this.name = name;
 		}
 
-		public NamespaceTester(Regex nameRx)
+		public NamespaceTester (Regex nameRx)
 		{
 			this.nameRx = nameRx;
 		}
 
-		public bool Test(string ns, InheritMap map)
+		public bool Test (string ns, InheritMap map)
 		{
 			// regex matches
-			if (nameRx != null && !nameRx.IsMatch(ns)) {
+			if (nameRx != null && !nameRx.IsMatch (ns)) {
 				return false;
 			}
 			
 			// name matches
-			if (!string.IsNullOrEmpty(name) && !Helper.CompareOptionalRegex (ns, name)) {
+			if (!string.IsNullOrEmpty (name) && !Helper.CompareOptionalRegex (ns, name)) {
 				return false;
 			}
 

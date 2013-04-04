@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -30,72 +29,101 @@ namespace Obfuscar
 {
 	static class NameMaker
 	{
-		readonly static char[] uniqueChars;
-		readonly static int numUniqueChars;
+		static string uniqueChars;
+		static int numUniqueChars;
+		const string defaultChars = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
+		const string unicodeChars = "\u00A0\u1680" +
+			"\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u2010\u2011\u2012\u2013\u2014\u2015" +
+			"\u2022\u2024\u2025\u2027\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u202F" +
+			"\u2032\u2035\u2033\u2036\u203E" +
+			"\u2047\u2048\u2049\u204A\u204B\u204C\u204D\u204E\u204F\u2050\u2051\u2052\u2053\u2054\u2055\u2056\u2057\u2058\u2059" +
+			"\u205A\u205B\u205C\u205D\u205E\u205F\u2060" +
+			"\u2061\u2062\u2063\u2064\u206A\u206B\u206C\u206D\u206E\u206F" +
+			"\u3000";
 
-		static NameMaker()
+		static NameMaker ()
 		{
+			string lUnicode = unicodeChars;
+			for (int i = 0; i < lUnicode.Length; i++) {
+				for (int j = i + 1; j < lUnicode.Length; j++) {
+					System.Diagnostics.Debug.Assert (lUnicode [i] != lUnicode [j], "Duplicate Char");
+				}
+			}
+			UseUnicodeChars = false;
 			// Fill the char array used for renaming with characters
 			// from Hangul (Korean) unicode character set.
 
-			var chars = new List<char>(128);
+			//var chars = new List<char>(128);
 
-			var rnd = new System.Random();
+			//var rnd = new System.Random();
 
-			var startPoint = rnd.Next(0xAC00, 0xD5D0);
+			//var startPoint = rnd.Next(0xAC00, 0xD5D0);
 
-			for (int i=startPoint; i<startPoint + 128; i++) {
-				chars.Add((char) i);
+			//for (int i=startPoint; i<startPoint + 128; i++) {
+			//chars.Add((char) i);
+			//}
+
+			//chars.Sort((x,y)=>{
+			//return rnd.Next(-1,1);
+			//});
+
+			//uniqueChars = chars.ToArray();
+			//numUniqueChars = uniqueChars.Length;
+		}
+
+		public static bool UseUnicodeChars {
+			get {
+				return uniqueChars != defaultChars;
 			}
-
-			chars.Sort((x,y)=>{
-				return rnd.Next(-1,1);
-			});
-
-			uniqueChars = chars.ToArray();
-			numUniqueChars = uniqueChars.Length;
+			set {
+				if (value) {
+					uniqueChars = unicodeChars;
+				} else {
+					uniqueChars = defaultChars;
+				}
+				numUniqueChars = defaultChars.Length;
+			}
 		}
 
-		public static string UniqueName(int index)
+		public static string UniqueName (int index)
 		{
-			return UniqueName(index, null);
+			return UniqueName (index, null);
 		}
 
-		public static string UniqueName(int index, string sep)
+		public static string UniqueName (int index, string sep)
 		{
 			// optimization for simple case
 			if (index < numUniqueChars)
-				return uniqueChars[index].ToString();
+				return uniqueChars [index].ToString ();
 
-			Stack<char> stack = new Stack<char>();
+			Stack<char> stack = new Stack<char> ();
 
-			do
-			{
-				stack.Push(uniqueChars[index % numUniqueChars]);
+			do {
+				stack.Push (uniqueChars [index % numUniqueChars]);
+				if (index < numUniqueChars)
+					break;
 				index /= numUniqueChars;
-			}
-			while (index > 0);
+			} while (true);
 
-			StringBuilder builder = new StringBuilder();
-			builder.Append(stack.Pop());
-			while (stack.Count > 0)
-			{
+			StringBuilder builder = new StringBuilder ();
+			builder.Append (stack.Pop ());
+			while (stack.Count > 0) {
 				if (sep != null)
-					builder.Append(sep);
-				builder.Append(stack.Pop());
+					builder.Append (sep);
+				builder.Append (stack.Pop ());
 			}
 
-			return builder.ToString();
+			return builder.ToString ();
 		}
 
-		public static string UniqueTypeName(int index)
+		public static string UniqueTypeName (int index)
 		{
-			return UniqueName(index % numUniqueChars, ".");
+			return UniqueName (index % numUniqueChars, ".");
 		}
 
-		public static string UniqueNamespace(int index)
+		public static string UniqueNamespace (int index)
 		{
-			return UniqueName(index / numUniqueChars, ".");
+			return UniqueName (index / numUniqueChars, ".");
 		}
 	}
 }

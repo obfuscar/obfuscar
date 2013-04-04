@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -31,16 +30,15 @@ namespace Obfuscar
 {
 	interface IPredicate<T>
 	{
-		bool Test(T item, InheritMap map=null);
+		bool Test (T item, InheritMap map=null);
 	}
 
 	class PredicateCollection<T> : List<IPredicate<T>>
 	{
-		public bool IsMatch(T thing, InheritMap map=null)
+		public bool IsMatch (T thing, InheritMap map=null)
 		{
-			foreach (IPredicate<T> test in this)
-			{
-				if (test.Test(thing, map))
+			foreach (IPredicate<T> test in this) {
+				if (test.Test (thing, map))
 					return true;
 			}
 

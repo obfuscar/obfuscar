@@ -21,9 +21,9 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -48,46 +48,49 @@ namespace Obfuscar
 		private readonly Regex nameRx;
 		private readonly TypeSkipFlags skipFlags;
 		private readonly string attrib;
-
 		private readonly string inherits;
 		private readonly bool? isStatic;
+		[SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
 		private readonly bool? isSerializable;
 
-		public TypeSkipFlags SkipFlags
-		{
+		public TypeSkipFlags SkipFlags {
 			get { return this.skipFlags; }
 		}
 
-		public TypeTester(string name, TypeSkipFlags skipFlags, string attrib)
+		public TypeTester (string name)
+            : this(name, TypeSkipFlags.SkipNone, null)
+		{
+		}
+
+		public TypeTester (string name, TypeSkipFlags skipFlags, string attrib)
 		{
 			this.name = name;
 			this.skipFlags = skipFlags;
-			this.attrib = attrib.ToLower();
+			this.attrib = attrib.ToLower ();
 		}
 
-		public TypeTester(string name, TypeSkipFlags skipFlags, string attrib, string inherits, bool? isStatic, bool? isSeriablizable) 
-			: this(name,skipFlags, attrib)
+		public TypeTester (string name, TypeSkipFlags skipFlags, string attrib, string inherits, bool? isStatic, bool? isSeriablizable) 
+            : this(name,skipFlags, attrib)
 		{
 			this.inherits = inherits;
 			this.isStatic = isStatic;
 			this.isSerializable = isSeriablizable;
 		}
 
-		public TypeTester(Regex nameRx, TypeSkipFlags skipFlags, string attrib)
+		public TypeTester (Regex nameRx, TypeSkipFlags skipFlags, string attrib)
 		{
 			this.nameRx = nameRx;
 			this.skipFlags = skipFlags;
-			this.attrib = attrib.ToLower();
+			this.attrib = attrib.ToLower ();
 		}
-		
-		public TypeTester(Regex nameRx, TypeSkipFlags skipFlags, string attrib, string inherits, bool? isStatic, bool? isSeriablizable) 
-			: this(nameRx,skipFlags, attrib)
+        
+		public TypeTester (Regex nameRx, TypeSkipFlags skipFlags, string attrib, string inherits, bool? isStatic, bool? isSeriablizable) 
+            : this(nameRx,skipFlags, attrib)
 		{
 			this.inherits = inherits;
 			this.isStatic = isStatic;
 			this.isSerializable = isSeriablizable;
 		}
-
 
 		public bool Test (TypeKey type, InheritMap map)
 		{
@@ -102,12 +105,12 @@ namespace Obfuscar
 			}
 
 			// type's regex matches
-			if (nameRx != null && !nameRx.IsMatch(type.Fullname)) {
+			if (nameRx != null && !nameRx.IsMatch (type.Fullname)) {
 				return false;
 			}
-			
+            
 			// type's name matches
-			if (!string.IsNullOrEmpty(name) && !Helper.CompareOptionalRegex (type.Fullname, name)) {
+			if (!string.IsNullOrEmpty (name) && !Helper.CompareOptionalRegex (type.Fullname, name)) {
 				return false;
 			}
 
@@ -124,7 +127,7 @@ namespace Obfuscar
 			}
 
 			if (!string.IsNullOrEmpty (inherits)) {
-				if (!map.Inherits(type.TypeDefinition, inherits)) {
+				if (!map.Inherits (type.TypeDefinition, inherits)) {
 					return false;
 				}
 			}

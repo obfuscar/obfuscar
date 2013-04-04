@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -30,56 +29,54 @@ namespace Obfuscar
 {
 	class Variables
 	{
-		readonly Dictionary<string, string> vars = new Dictionary<string, string>();
+		readonly Dictionary<string, string> vars = new Dictionary<string, string> ();
 		readonly System.Text.RegularExpressions.Regex re =
-			new System.Text.RegularExpressions.Regex(@"\$\(([^)]+)\)");
+			new System.Text.RegularExpressions.Regex (@"\$\(([^)]+)\)");
 
-		public void Add(string name, string value)
+		public void Add (string name, string value)
 		{
-			vars[name] = value;
+			vars [name] = value;
 		}
 
-		public void Remove(string name)
+		public void Remove (string name)
 		{
-			vars.Remove(name);
+			vars.Remove (name);
 		}
 
-		public string GetValue(string name, string def)
+		public string GetValue (string name, string def)
 		{
 			string value;
-			return this.Replace(vars.TryGetValue(name, out value) ? value : def);
+			return this.Replace (vars.TryGetValue (name, out value) ? value : def);
 		}
 
-		public string Replace(string str)
+		public string Replace (string str)
 		{
-			if (string.IsNullOrEmpty(str))
-			{
+			if (string.IsNullOrEmpty (str)) {
 				return str;
 			}
 
-			System.Text.StringBuilder formatted = new System.Text.StringBuilder();
+			System.Text.StringBuilder formatted = new System.Text.StringBuilder ();
 
 			int lastMatch = 0;
 
 			string variable;
 			string replacement;
-			foreach (System.Text.RegularExpressions.Match m in re.Matches(str))
-			{
+			foreach (System.Text.RegularExpressions.Match m in re.Matches(str)) {
 
-				formatted.Append(str.Substring(lastMatch, m.Index - lastMatch));
+				formatted.Append (str.Substring (lastMatch, m.Index - lastMatch));
 
-				variable = m.Groups[1].Value;
-				if (vars.TryGetValue(variable, out replacement))
-					formatted.Append(this.Replace(replacement));
+				variable = m.Groups [1].Value;
+				if (vars.TryGetValue (variable, out replacement))
+					formatted.Append (this.Replace (replacement));
 				else
-					throw new ApplicationException("Unable to replace variable:  " + variable);
+					throw new ApplicationException ("Unable to replace variable:  " + variable);
 
 				lastMatch = m.Index + m.Length;
 			}
 
-			formatted.Append(str.Substring(lastMatch));
+			formatted.Append (str.Substring (lastMatch));
 
-			return formatted.ToString();
+			return formatted.ToString ();
 		}
 	}
 }

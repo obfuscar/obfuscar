@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -37,97 +36,95 @@ namespace Obfuscar
 		readonly int hashCode;
 		readonly MethodDefinition methodDefinition;
 
-		public MethodKey(MethodDefinition method) : this(new TypeKey((TypeDefinition)method.DeclaringType), method) { }
+		public MethodKey (MethodDefinition method) : this(new TypeKey((TypeDefinition)method.DeclaringType), method)
+		{
+		}
 
-		public MethodKey(TypeKey typeKey, MethodDefinition method)
+		public MethodKey (TypeKey typeKey, MethodDefinition method)
 			: base(method)
 		{
 			this.typeKey = typeKey;
 			this.methodDefinition = method;
 
-			hashCode = CalcHashCode();
+			hashCode = CalcHashCode ();
 		}
 
-		private int CalcHashCode()
+		private int CalcHashCode ()
 		{
-			return typeKey.GetHashCode() ^ base.GetHashCode();
+			return typeKey.GetHashCode () ^ base.GetHashCode ();
 		}
 
-		public MethodAttributes MethodAttributes
-		{
+		public MethodAttributes MethodAttributes {
 			get { return methodDefinition.Attributes; }
 		}
 
-		public TypeDefinition DeclaringType
-		{
+		public TypeDefinition DeclaringType {
 			get { return (TypeDefinition)methodDefinition.DeclaringType; }
 		}
 
-		public TypeKey TypeKey
-		{
+		public TypeKey TypeKey {
 			get { return typeKey; }
 		}
 
-		public override bool Matches(MemberReference member)
+		public override bool Matches (MemberReference member)
 		{
 			MethodReference methodRef = member as MethodReference;
-			if (methodRef != null)
-			{
-				if (typeKey.Matches(methodRef.DeclaringType))
-					return base.Matches(member);
+			if (methodRef != null) {
+				if (typeKey.Matches (methodRef.DeclaringType))
+					return base.Matches (member);
 			}
 
 			return false;
 		}
 
-		public bool Equals(MethodKey other)
+		public bool Equals (MethodKey other)
 		{
 			return other != null &&
 				hashCode == other.hashCode &&
 				(typeKey == null ? other.typeKey == null : typeKey == other.typeKey) &&
-				Equals((NameParamSig)other);
+				Equals ((NameParamSig)other);
 		}
 
-		public override bool Equals(object obj)
+		public override bool Equals (object obj)
 		{
-			return obj is MethodKey ? Equals((MethodKey)obj) : false;
+			return obj is MethodKey ? Equals ((MethodKey)obj) : false;
 		}
 
-		public static bool operator ==(MethodKey a, MethodKey b)
+		public static bool operator == (MethodKey a, MethodKey b)
 		{
 			if ((object)a == null)
 				return (object)b == null;
 			else if ((object)b == null)
 				return false;
 			else
-				return a.Equals(b);
+				return a.Equals (b);
 		}
 
-		public static bool operator !=(MethodKey a, MethodKey b)
+		public static bool operator != (MethodKey a, MethodKey b)
 		{
 			if ((object)a == null)
 				return (object)b != null;
 			else if ((object)b == null)
 				return true;
 			else
-				return !a.Equals(b);
+				return !a.Equals (b);
 		}
 
-		public override int GetHashCode()
+		public override int GetHashCode ()
 		{
 			return hashCode;
 		}
 
-		public override string ToString()
+		public override string ToString ()
 		{
-			return String.Format("{0}::{1}", typeKey, base.ToString());
+			return String.Format ("{0}::{1}", typeKey, base.ToString ());
 		}
 
-		public int CompareTo(MethodKey other)
+		public int CompareTo (MethodKey other)
 		{
-			int cmp = CompareTo((NameParamSig)other);
+			int cmp = CompareTo ((NameParamSig)other);
 			if (cmp == 0)
-				cmp = typeKey.CompareTo(other.typeKey);
+				cmp = typeKey.CompareTo (other.typeKey);
 			return cmp;
 		}
 	}

@@ -21,10 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Text.RegularExpressions;
 
 using Mono.Cecil;
@@ -43,7 +39,7 @@ namespace Obfuscar
 		private readonly bool? isSerializable;
 		private readonly string decorator;
 
-		public FieldTester(string name, string type, string attrib, string typeAttrib, string inherits, string decorator, bool? isStatic, bool? isSerializable)
+		public FieldTester (string name, string type, string attrib, string typeAttrib, string inherits, string decorator, bool? isStatic, bool? isSerializable)
 		{
 			this.name = name;
 			this.type = type;
@@ -55,7 +51,7 @@ namespace Obfuscar
 			this.decorator = decorator;
 		}
 
-		public FieldTester(Regex nameRx, string type, string attrib, string typeAttrib, string inherits, string decorator, bool? isStatic, bool? isSerializable)
+		public FieldTester (Regex nameRx, string type, string attrib, string typeAttrib, string inherits, string decorator, bool? isStatic, bool? isSerializable)
 		{
 			this.nameRx = nameRx;
 			this.type = type;
@@ -99,16 +95,15 @@ namespace Obfuscar
 			}
 
 			// It's not very clean to use CheckMethodVisibility() from MethodTester. But we don't want duplicate code either.
-			if (MethodTester.CheckMemberVisibility(attrib, typeAttrib, (MethodAttributes)field.FieldAttributes, field.DeclaringType))
-			{
+			if (MethodTester.CheckMemberVisibility (attrib, typeAttrib, (MethodAttributes)field.FieldAttributes, field.DeclaringType)) {
 				return false;
 			}
 
-			if (nameRx != null && !nameRx.IsMatch(field.Name)) {
+			if (nameRx != null && !nameRx.IsMatch (field.Name)) {
 				return false;
 			}
 
-			if (!string.IsNullOrEmpty(name) && !Helper.CompareOptionalRegex(field.Name, name)) {
+			if (!string.IsNullOrEmpty (name) && !Helper.CompareOptionalRegex (field.Name, name)) {
 				return false;
 			}
 
@@ -135,7 +130,7 @@ namespace Obfuscar
 
 			// finally does method's type inherit?
 			if (!string.IsNullOrEmpty (inherits)) {
-				if (!map.Inherits(field.DeclaringType, inherits)) {
+				if (!map.Inherits (field.DeclaringType, inherits)) {
 					return false;
 				}
 			}

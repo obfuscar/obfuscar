@@ -21,48 +21,43 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Obfuscar;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Obfuscar
 {
-	class Program
+	[SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
+	internal static class Program
 	{
-		static void ShowHelp()
+		private static void ShowHelp ()
 		{
-			Console.WriteLine("Usage:  obfuscar [projectfile]");
+			Console.WriteLine ("Usage:  obfuscar [projectfile]");
 		}
 
-		static int Main(string[] args)
+		[SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
+		private static int Main (string[] args)
 		{
-			if (args.Length < 1)
-			{
-				ShowHelp();
+			if (args.Length < 1) {
+				ShowHelp ();
 				return 1;
 			}
 
 			int start = Environment.TickCount;
 
-			try
-			{
-				Console.Write("Loading project...");
-				Obfuscator obfuscator = new Obfuscator(args[0]);
-				Console.WriteLine("Done.");
+			try {
+				Console.Write ("Loading project...");
+				Obfuscator obfuscator = new Obfuscator (args [0]);
+				Console.WriteLine ("Done.");
 
-				obfuscator.RunRules();
-				
-				Console.WriteLine("Completed, {0:f2} secs.", (Environment.TickCount - start) / 1000.0);
-			}
-			catch (ApplicationException e)
-			{
-				Console.WriteLine();
-				Console.Error.WriteLine("An error occurred during processing:");
-				Console.Error.WriteLine(e.Message);
+				obfuscator.RunRules ();
+                
+				Console.WriteLine ("Completed, {0:f2} secs.", (Environment.TickCount - start) / 1000.0);
+			} catch (ApplicationException e) {
+				Console.WriteLine ();
+				Console.Error.WriteLine ("An error occurred during processing:");
+				Console.Error.WriteLine (e.Message);
 				if (e.InnerException != null)
-					Console.Error.WriteLine(e.InnerException.Message);
+					Console.Error.WriteLine (e.InnerException.Message);
 				return 1;
 			}
 
