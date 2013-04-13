@@ -37,6 +37,7 @@ namespace Obfuscar
 		private readonly Dictionary<string, AssemblyDefinition> cache =
             new Dictionary<string, AssemblyDefinition> ();
 		private readonly IAssemblyResolver resolver = new V4AssemblyResolver ();
+        private List<string> extraFolders = new List<string>(); 
 
 		public List<string> ExtraFolders { get { return extraFolders; } set { extraFolders = value; } }
 
