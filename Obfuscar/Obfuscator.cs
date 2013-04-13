@@ -294,7 +294,10 @@ namespace Obfuscar
 						if (field.IsRuntimeSpecialName && field.Name == "value__") {
 							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
 							nameGroup.Add (fieldKey.Name);
-						} else {
+						} else if (field.IsPublic) {
+							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "public field");
+							nameGroup.Add (fieldKey.Name);
+					    } else {
 							// skip filtered fields
 							if (info.ShouldSkip (fieldKey, Project.InheritMap)) {
 								map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
@@ -447,7 +450,7 @@ namespace Obfuscar
 					string fullName = type.FullName;
 
 					if (ShouldRename (type)) {
-						if (!info.ShouldSkip (unrenamedTypeKey, Project.InheritMap)) {
+						if (!info.ShouldSkip (unrenamedTypeKey, Project.InheritMap) && !type.IsPublic) {
 							string name;
 							string ns;
 							if (project.Settings.ReuseNames) {
@@ -649,6 +652,11 @@ namespace Obfuscar
 							continue;
 						}
 
+						if (prop.GetMethod.IsPublic || prop.SetMethod.IsPublic) {
+							m.Update (ObfuscationStatus.Skipped, "public property");
+							continue;
+						}
+
 						// skip filtered props
 						if (info.ShouldSkip (propKey, Project.InheritMap)) {
 							m.Update (ObfuscationStatus.Skipped, "filtered");
@@ -746,6 +754,11 @@ namespace Obfuscar
 							continue;
 						}
 
+						if (evt.AddMethod.IsPublic || evt.RemoveMethod.IsPublic) {
+							m.Update (ObfuscationStatus.Skipped, "public event");
+							continue;
+						}
+
 						// skip filtered events
 						if (info.ShouldSkip (evtKey, Project.InheritMap)) {
 							m.Update (ObfuscationStatus.Skipped, "filtered");
@@ -799,6 +812,10 @@ namespace Obfuscar
 						// skip runtime methods
 						if (method.IsRuntime) {
 							skiprename = "runtime method";
+						}
+
+						if (method.IsPublic) {
+							skiprename = "public method";
 						}
 
 						// skip filtered methods
