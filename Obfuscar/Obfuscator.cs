@@ -92,36 +92,36 @@ namespace Obfuscar
 		{
 			// The SemanticAttributes of MethodDefinitions have to be loaded before any fields,properties or events are removed
 			this.LoadMethodSemantics ();
-            
+			
 			LogOutput ("Renaming:  fields...");
 			this.RenameFields ();
-            
+			
 			LogOutput ("parameters...");
 			this.RenameParams ();
-            
+			
 			LogOutput ("properties...");
 			this.RenameProperties ();
-            
+			
 			LogOutput ("events...");
 			this.RenameEvents ();
-            
+			
 			LogOutput ("methods...");
 			this.RenameMethods ();
-            
+			
 			LogOutput ("types...");
 			this.RenameTypes ();
-            
+			
 			if (this.hideStrings) {
 				LogOutput ("hiding strings...\n");
 				this.HideStrings ();
 			}
-            
+			
 			LogOutput ("Done.\n");
-            
+			
 			LogOutput ("Saving assemblies...");
 			this.SaveAssemblies ();
 			LogOutput ("Done.\n");
-            
+			
 			LogOutput ("Writing log file...");
 			this.SaveMapping ();
 			LogOutput ("Done.\n");
@@ -140,12 +140,12 @@ namespace Obfuscar
 		private static XmlReaderSettings GetReaderSettings ()
 		{
 			var settings = new XmlReaderSettings
-                {
-                    IgnoreProcessingInstructions = true,
-                    IgnoreWhitespace = true,
-                    XmlResolver = null,
-                    ProhibitDtd = false
-                };
+				{
+					IgnoreProcessingInstructions = true,
+					IgnoreWhitespace = true,
+					XmlResolver = null,
+					ProhibitDtd = false
+				};
 			return settings;
 		}
 
@@ -223,7 +223,7 @@ namespace Obfuscar
 		public void SaveMapping ()
 		{
 			string filename = project.Settings.XmlMapping ?
-                "Mapping.xml" : "Mapping.txt";
+				"Mapping.xml" : "Mapping.txt";
 
 			string logPath = Path.Combine (project.Settings.OutPath, filename);
 
@@ -238,7 +238,7 @@ namespace Obfuscar
 		public void SaveMapping (TextWriter writer)
 		{
 			IMapWriter mapWriter = project.Settings.XmlMapping ?
-                new XmlMapWriter (writer) : (IMapWriter)new TextMapWriter (writer);
+				new XmlMapWriter (writer) : (IMapWriter)new TextMapWriter (writer);
 
 			mapWriter.WriteMap (map);
 		}
@@ -401,7 +401,7 @@ namespace Obfuscar
 				if (attrFullName == reflectionObfuscate) {
 					var applyToMembers = (bool)(Helper.GetAttributePropertyByName (attr, "ApplyToMembers") ?? true);
 					var rename = !(bool)(Helper.GetAttributePropertyByName (attr, "Exclude") ?? false);
-                    
+					
 					if (member && !applyToMembers) {
 						return !rename;
 					}
@@ -606,7 +606,7 @@ namespace Obfuscar
 		{
 			return GetNameGroup (GetSigNames (baseSigNames, typeKey), sig);
 		}
-        
+		
 		private NameGroup GetNameGroup<KeyType> (Dictionary<KeyType, NameGroup> sigNames, KeyType sig)
 		{
 			NameGroup nameGroup;
@@ -664,7 +664,7 @@ namespace Obfuscar
 
 							continue;
 						}
-                            
+							
 						if (type.BaseType != null && type.BaseType.Name.EndsWith ("Attribute") && prop.SetMethod != null && (prop.SetMethod.Attributes & MethodAttributes.Public) != 0) {
 							// do not rename properties of custom attribute types which have a public setter method
 							m.Update (ObfuscationStatus.Skipped, "public setter of a custom attribute");
@@ -838,6 +838,10 @@ namespace Obfuscar
 							}
 						}
 
+						if (method.DeclaringType.BaseType != null && method.DeclaringType.BaseType.Scope != type.Scope) {
+							skiprename = "override of another assembly's method";
+						}
+
 						// if we need to skip the method or we don't yet have a name planned for a method, rename it
 						if ((skiprename != null && m.Status != ObfuscationStatus.Skipped) ||
 							m.Status == ObfuscationStatus.Unknown) {
@@ -905,7 +909,7 @@ namespace Obfuscar
 		}
 
 		private void RenameVirtualMethod (AssemblyInfo info, Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-            Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method, string skipRename)
+			Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method, string skipRename)
 		{
 			// if method is in a group, look for group key
 			MethodGroup group = project.InheritMap.GetMethodGroup (methodKey);
@@ -954,7 +958,7 @@ namespace Obfuscar
 				// group is named, so we need to un-name it
 
 				Debug.Assert (!@group.External,
-                             "Group's external flag should have been handled when the group was created, " +
+							 "Group's external flag should have been handled when the group was created, " +
 					"and all methods in the group should already be marked skipped.");
 
 				// counts are grouping according to signature
@@ -984,12 +988,12 @@ namespace Obfuscar
 				Debug.Assert (m.Status == ObfuscationStatus.Skipped ||
 					((m.Status == ObfuscationStatus.WillRename || m.Status == ObfuscationStatus.Renamed) &&
 					m.StatusText == groupName),
-                             "If the method isn't skipped, and the group already has a name...method should have one too.");
+							 "If the method isn't skipped, and the group already has a name...method should have one too.");
 			}
 		}
 
 		NameGroup[] GetNameGroups (Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-            IEnumerable<MethodKey> methodKeys, ParamSig sig)
+			IEnumerable<MethodKey> methodKeys, ParamSig sig)
 		{
 			// build unique set of classes in group
 			HashSet<TypeKey> typeKeys = new HashSet<TypeKey> ();
