@@ -33,7 +33,7 @@ namespace SkipVirtualMethodTest
 		string Method1();
 	}
 
-	public class Class1 : Interface1
+	internal class Class1 : Interface1
 	{
 		public string Method1() { return "Method1 result"; }
 		public string Method2() { return "Method2 result"; }

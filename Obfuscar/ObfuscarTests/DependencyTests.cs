@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -36,73 +35,78 @@ namespace ObfuscarTests
 	public class DependencyTests
 	{
 		[SetUp]
-		public void BuildTestAssemblies( )
+		public void BuildTestAssemblies ()
 		{
-			TestHelper.CleanInput( );
+			TestHelper.CleanInput ();
 
-			Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider( );
+			Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider ();
 
-			CompilerParameters cp = new CompilerParameters( );
+			CompilerParameters cp = new CompilerParameters ();
 			cp.GenerateExecutable = false;
 			cp.GenerateInMemory = false;
-			cp.TreatWarningsAsErrors = true; ;
+			cp.TreatWarningsAsErrors = true;
+			;
 
-			string assemblyAPath = Path.Combine( TestHelper.InputPath, "AssemblyA.dll" );
+			string assemblyAPath = Path.Combine (TestHelper.InputPath, "AssemblyA.dll");
 			cp.OutputAssembly = assemblyAPath;
-			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( TestHelper.InputPath, "AssemblyA.cs" ) );
-			if ( cr.Errors.Count > 0 )
-				Assert.Fail( "Unable to compile test assembly:  AssemblyA" );
+			CompilerResults cr = provider.CompileAssemblyFromFile (cp, Path.Combine (TestHelper.InputPath, "AssemblyA.cs"));
+			if (cr.Errors.Count > 0)
+				Assert.Fail ("Unable to compile test assembly:  AssemblyA");
 
-			cp.ReferencedAssemblies.Add( assemblyAPath );
-			cp.OutputAssembly = Path.Combine( TestHelper.InputPath, "AssemblyB.dll" );
-			cr = provider.CompileAssemblyFromFile( cp, Path.Combine( TestHelper.InputPath, "AssemblyB.cs" ) );
-			if ( cr.Errors.Count > 0 )
-				Assert.Fail( "Unable to compile test assembly:  AssemblyB" );
+			cp.ReferencedAssemblies.Add (assemblyAPath);
+			cp.OutputAssembly = Path.Combine (TestHelper.InputPath, "AssemblyB.dll");
+			cr = provider.CompileAssemblyFromFile (cp, Path.Combine (TestHelper.InputPath, "AssemblyB.cs"));
+			if (cr.Errors.Count > 0)
+				Assert.Fail ("Unable to compile test assembly:  AssemblyB");
 		}
 
 		[Test]
-		public void CheckGoodDependency( )
+		public void CheckGoodDependency ()
 		{
-			string xml = String.Format(
+			string xml = String.Format (
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Module file='$(InPath)\AssemblyB.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath );
+				@"</Obfuscator>", TestHelper.InputPath);
 
-			Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml( xml );
+			Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml (xml);
 		}
 
 		[Test]
-		public void CheckDeletedDependency( )
+		public void CheckDeletedDependency ()
 		{
-			string xml = String.Format(
+			string xml = String.Format (
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Module file='$(InPath)\AssemblyB.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath );
+				@"</Obfuscator>", TestHelper.InputPath);
 
 			// explicitly delete AssemblyA
-			File.Delete( Path.Combine( TestHelper.InputPath, "AssemblyA.dll" ) );
+			File.Delete (Path.Combine (TestHelper.InputPath, "AssemblyA.dll"));
 
-			TestUtils.AssertThrows( delegate { Obfuscar.Obfuscator.CreateFromXml( xml ); }, typeof( ApplicationException ),
-				"Unable", "resolve dependency", "AssemblyA" );
+			TestUtils.AssertThrows (delegate {
+				Obfuscar.Obfuscator.CreateFromXml (xml);
+			}, typeof(ApplicationException),
+				"Unable", "resolve dependency", "AssemblyA");
 		}
 
 		[Test]
-		public void CheckMissingDependency( )
+		public void CheckMissingDependency ()
 		{
-			string xml = String.Format(
+			string xml = String.Format (
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
-				@"<Module file='{0}\AssemblyB.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath );
+				@"<Module file='{0}\AssemblyD.dll' />" +
+				@"</Obfuscator>", TestHelper.InputPath);
 
 			// InPath defaults to '.', which doesn't contain AssemblyA
-
-			TestUtils.AssertThrows( delegate { Obfuscar.Obfuscator.CreateFromXml( xml ); }, typeof( ApplicationException ),
-				"Unable", "resolve dependency", "AssemblyA" );
+			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyD.dll"), Path.Combine (TestHelper.InputPath, "AssemblyD.dll"));
+			TestUtils.AssertThrows (delegate {
+				Obfuscar.Obfuscator.CreateFromXml (xml);
+			}, typeof(ApplicationException),
+				"Unable", "resolve dependency", "AssemblyC");
 		}
 	}
 }

@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -34,61 +33,65 @@ namespace ObfuscarTests
 {
 	static class AssemblyHelper
 	{
-		public static void CheckAssembly( string name, int expectedTypes, 
-			Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType )
+		public static void CheckAssembly (string name, int expectedTypes, 
+			Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType)
 		{
-            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
-				Path.Combine( TestHelper.OutputPath, name + ".dll" ) );
+			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
+				Path.Combine (TestHelper.OutputPath, name + ".dll"));
 
-			Assert.AreEqual( expectedTypes + 1, assmDef.MainModule.Types.Count,
-				String.Format( "Should contain only {0} types, and <Module>.", expectedTypes ) );
+			Assert.AreEqual (expectedTypes + 1, assmDef.MainModule.Types.Count,
+				String.Format ("Should contain only {0} types, and <Module>.", expectedTypes));
 
 			bool foundType = false;
 
-			foreach ( TypeDefinition typeDef in assmDef.MainModule.Types )
-			{
-				if ( typeDef.Name == "<Module>" )
+			foreach (TypeDefinition typeDef in assmDef.MainModule.Types) {
+				if (typeDef.Name == "<Module>")
 					continue;
-				else if ( isType( typeDef ) )
-				{
+				else if (isType (typeDef)) {
 					foundType = true;
 
-					if ( checkType != null )
-						checkType( typeDef );
+					if (checkType != null)
+						checkType (typeDef);
+
+					if (typeDef.HasNestedTypes) {
+						foreach (var nested in typeDef.NestedTypes) {
+							if (isType (nested)) {
+								checkType (nested);
+							}
+						}
+					}
 				}
 			}
 
-			Assert.IsTrue( foundType, "Should have found non-<Module> type." );
+			Assert.IsTrue (foundType, "Should have found non-<Module> type.");
 		}
 
-		public static void CheckAssembly( string name, int expectedTypes, string[] expectedMethods, string[] notExpectedMethods,
-			Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType )
+		public static void CheckAssembly (string name, int expectedTypes, string[] expectedMethods, string[] notExpectedMethods,
+			Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType)
 		{
-			C5.HashSet<string> methodsToFind = new C5.HashSet<string>( );
-			methodsToFind.AddAll( expectedMethods );
-			C5.HashSet<string> methodsNotToFind = new C5.HashSet<string>( );
-			methodsNotToFind.AddAll( notExpectedMethods );
+			C5.HashSet<string> methodsToFind = new C5.HashSet<string> ();
+			methodsToFind.AddAll (expectedMethods);
+			C5.HashSet<string> methodsNotToFind = new C5.HashSet<string> ();
+			methodsNotToFind.AddAll (notExpectedMethods);
 
-			CheckAssembly( name, expectedTypes, isType,
-				delegate( TypeDefinition typeDef )
-				{
-					// make sure we have enough methods...
-					Assert.AreEqual( expectedMethods.Length + notExpectedMethods.Length, typeDef.Methods.Count,
-						"Some of the methods for the type are missing." );
+			CheckAssembly (name, expectedTypes, isType,
+				delegate( TypeDefinition typeDef ) {
+				// make sure we have enough methods...
+				Assert.AreEqual (expectedMethods.Length + notExpectedMethods.Length + 1, typeDef.Methods.Count,
+						"Some of the methods for the type are missing.");
 
-					foreach ( MethodDefinition method in typeDef.Methods )
-					{
-						Assert.IsFalse( methodsNotToFind.Contains( method.Name ), String.Format(
-							"Did not expect to find method '{0}'.", method.Name ) );
+				foreach (MethodDefinition method in typeDef.Methods) {
+					Assert.IsFalse (methodsNotToFind.Contains (method.Name), String.Format (
+							"Did not expect to find method '{0}'.", method.Name));
 
-						methodsToFind.Remove( method.Name );
-					}
+					methodsToFind.Remove (method.Name);
+				}
 
-					if ( checkType != null )
-						checkType( typeDef );
-				} );
+				if (checkType != null)
+					checkType (typeDef);
+			});
 
-			Assert.IsFalse( methodsToFind.Count > 0, "Failed to find all expected methods." );
+			Assert.IsFalse (methodsToFind.Count > 0, "Failed to find all expected methods.");
 		}
 	}
 }
