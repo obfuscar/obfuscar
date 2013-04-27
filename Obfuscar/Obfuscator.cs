@@ -295,7 +295,7 @@ namespace Obfuscar
 						if (field.IsRuntimeSpecialName && field.Name == "value__") {
 							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
 							nameGroup.Add (fieldKey.Name);
-						} else if (field.IsPublic) {
+						} else if (field.DeclaringType.IsPublic && field.IsPublic) {
 							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "public field");
 							nameGroup.Add (fieldKey.Name);
 						} else {
@@ -653,7 +653,8 @@ namespace Obfuscar
 							continue;
 						}
 
-						if ((prop.GetMethod != null && prop.GetMethod.IsPublic) || (prop.SetMethod != null && prop.SetMethod.IsPublic)) {
+					    var hasPublicProperty = (prop.GetMethod != null && prop.GetMethod.IsPublic) || (prop.SetMethod != null && prop.SetMethod.IsPublic);
+					    if (prop.DeclaringType.IsPublic && hasPublicProperty) {
 							m.Update (ObfuscationStatus.Skipped, "public property");
 							continue;
 						}
@@ -755,7 +756,8 @@ namespace Obfuscar
 							continue;
 						}
 
-						if (evt.AddMethod.IsPublic || evt.RemoveMethod.IsPublic) {
+					    var hasPublicEvent = evt.AddMethod.IsPublic || evt.RemoveMethod.IsPublic;
+					    if (evt.DeclaringType.IsPublic && hasPublicEvent) {
 							m.Update (ObfuscationStatus.Skipped, "public event");
 							continue;
 						}
@@ -815,7 +817,7 @@ namespace Obfuscar
 							skiprename = "runtime method";
 						}
 
-						if (method.IsPublic) {
+						if (method.DeclaringType.IsPublic && method.IsPublic) {
 							skiprename = "public method";
 						}
 
