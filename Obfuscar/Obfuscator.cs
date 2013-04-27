@@ -653,7 +653,7 @@ namespace Obfuscar
 							continue;
 						}
 
-						if (prop.GetMethod.IsPublic || prop.SetMethod.IsPublic) {
+						if ((prop.GetMethod != null && prop.GetMethod.IsPublic) || (prop.SetMethod != null && prop.SetMethod.IsPublic)) {
 							m.Update (ObfuscationStatus.Skipped, "public property");
 							continue;
 						}
