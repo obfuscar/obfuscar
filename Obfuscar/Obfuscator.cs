@@ -156,6 +156,7 @@ namespace Obfuscar
 		private void LoadFromReader (XmlReader reader, string projectFileDirectory)
 		{
 			project = Project.FromXml (reader, projectFileDirectory);
+			NameMaker.UseUnicodeChars = project.Settings.UseUnicodeNames;
 
 			// make sure everything looks good
 			project.CheckSettings ();
@@ -297,7 +298,7 @@ namespace Obfuscar
 						} else if (field.IsPublic) {
 							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "public field");
 							nameGroup.Add (fieldKey.Name);
-					    } else {
+						} else {
 							// skip filtered fields
 							if (info.ShouldSkip (fieldKey, Project.InheritMap)) {
 								map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
