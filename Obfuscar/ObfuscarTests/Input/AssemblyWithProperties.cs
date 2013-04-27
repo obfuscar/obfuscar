@@ -28,7 +28,7 @@ using System.Text;
 
 namespace TestClasses
 {
-	public class ClassA
+	internal class ClassA
 	{
 		private int property1 = 17;
 		private int property2 = 17;

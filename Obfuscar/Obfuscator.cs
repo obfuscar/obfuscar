@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml;
 using Mono.Cecil;
@@ -653,8 +654,8 @@ namespace Obfuscar
 							continue;
 						}
 
-					    var hasPublicProperty = (prop.GetMethod != null && prop.GetMethod.IsPublic) || (prop.SetMethod != null && prop.SetMethod.IsPublic);
-					    if (prop.DeclaringType.IsPublic && hasPublicProperty) {
+						var hasPublicProperty = (prop.GetMethod != null && prop.GetMethod.IsPublic) || (prop.SetMethod != null && prop.SetMethod.IsPublic);
+						if (prop.DeclaringType.IsPublic && hasPublicProperty) {
 							m.Update (ObfuscationStatus.Skipped, "public property");
 							continue;
 						}
@@ -756,8 +757,8 @@ namespace Obfuscar
 							continue;
 						}
 
-					    var hasPublicEvent = evt.AddMethod.IsPublic || evt.RemoveMethod.IsPublic;
-					    if (evt.DeclaringType.IsPublic && hasPublicEvent) {
+						var hasPublicEvent = evt.AddMethod.IsPublic || evt.RemoveMethod.IsPublic;
+						if (evt.DeclaringType.IsPublic && hasPublicEvent) {
 							m.Update (ObfuscationStatus.Skipped, "public event");
 							continue;
 						}
@@ -858,7 +859,7 @@ namespace Obfuscar
 							}
 						}
 
-						if (method.DeclaringType.BaseType != null && method.DeclaringType.BaseType.Scope != type.Scope) {
+						if (PublicMethodOverriding (method)) {
 							skiprename = "override of another assembly's method";
 						}
 
@@ -926,6 +927,57 @@ namespace Obfuscar
 					}
 				}
 			}
+		}
+
+		private bool PublicMethodOverriding (MethodDefinition method)
+		{
+			var type = method.DeclaringType;
+			if (type.HasInterfaces)
+				foreach (TypeReference interface1 in type.Interfaces) {
+					TypeDefinition interface2 = interface1.Resolve ();
+					if (interface2.HasMethods)
+						foreach (MethodDefinition method1 in interface2.Methods) {
+							var name = Override (method, method1);
+							if (name != null && interface2.IsPublic) {
+								return true;
+							}
+						}
+				}
+
+			if (type.BaseType == null)
+				return false;
+
+			var typeDefinition = type.BaseType.Resolve ();
+			foreach (var method1 in typeDefinition.Methods) {
+				var name = Override (method, method1);
+				if (name != null && typeDefinition.IsPublic)
+					return true;
+			}
+
+			return false;
+		}
+
+		private string Override (MethodDefinition method, MethodDefinition method1)
+		{
+			if (method.HasParameters != method1.HasParameters)
+				return null;
+
+			if (method.Parameters.Count != method1.Parameters.Count)
+				return null;
+
+			for (int index = 0; index < method.Parameters.Count; index++)
+				if (method.Parameters [index].ParameterType.FullName != method1.Parameters [index].ParameterType.FullName)
+					return null;
+
+			if (method.Name == method1.Name)
+				return method.Name;
+
+			var thing = map.GetClass (new TypeKey (method1.DeclaringType));
+			foreach (var obfuscatedMethod in thing.Methods.Values)
+				if (obfuscatedMethod.StatusText == method1.Name && obfuscatedMethod.OldName == method.Name)
+					return obfuscatedMethod.StatusText;
+
+			return null;
 		}
 
 		private void RenameVirtualMethod (AssemblyInfo info, Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
@@ -1046,21 +1098,59 @@ namespace Obfuscar
 			if (t.Status == ObfuscationStatus.Skipped)
 				return null;
 
+			// got a new name for the method
+			t.Status = ObfuscationStatus.WillRename;
+			var baseName = MethodOverriding (method);
+			if (baseName != null) {
+				t.StatusText = baseName;
+			} else {
+				t.StatusText = GetNewName (sigNames, method);
+			}
+
+			t.OldName = method.Name;
+
+			return GetNewName (sigNames, method);
+		}
+
+		private string GetNewName (Dictionary<ParamSig, NameGroup> sigNames, MethodDefinition method)
+		{
 			// counts are grouping according to signature
 			ParamSig sig = new ParamSig (method);
 
 			NameGroup nameGroup = GetNameGroup (sigNames, sig);
 
 			string newName = nameGroup.GetNext ();
-
-			// got a new name for the method
-			t.Status = ObfuscationStatus.WillRename;
-			t.StatusText = newName;
-
 			// make sure the name groups is updated
 			nameGroup.Add (newName);
-
 			return newName;
+		}
+
+		private string MethodOverriding (MethodDefinition method)
+		{
+			var type = method.DeclaringType;
+
+			if (type.HasInterfaces)
+				foreach (TypeReference interface1 in type.Interfaces) {
+					TypeDefinition interface2 = interface1.Resolve ();
+					if (interface2.HasMethods)
+						foreach (MethodDefinition method1 in interface2.Methods) {
+							var name = Override (method, method1);
+							if (name != null)
+								return name;
+						}
+				}
+
+			if (type.BaseType == null)
+				return null;
+
+			var typeDefinition = type.BaseType.Resolve ();
+			foreach (var method1 in typeDefinition.Methods) {
+				var name = Override (method, method1);
+				if (name != null)
+					return name;
+			}
+
+			return null;
 		}
 
 		void RenameMethod (AssemblyInfo info, Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method)

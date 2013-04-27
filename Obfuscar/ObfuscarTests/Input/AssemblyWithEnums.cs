@@ -28,7 +28,7 @@ using System.Text;
 
 namespace TestClasses
 {
-	public enum Enum1
+	internal enum Enum1
 	{
 		Value1,
 		Value2,

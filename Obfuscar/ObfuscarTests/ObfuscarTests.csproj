@@ -63,12 +63,14 @@
       <HintPath>..\..\ThirdParty\C5\C5.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil">
-      <HintPath>..\..\ThirdParty\Mono\Mono.Cecil.dll</HintPath>
+      <HintPath>..\..\cecil\bin\net_4_0_Debug\Mono.Cecil.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyHelper.cs" />
-    <Compile Include="AttributeTests.cs" />
+    <Compile Include="AttributeTests.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="SigningTests.cs" />
     <Compile Include="SkipNestedTypeTests.cs" />
     <Compile Include="SkipVirtualMethodTest.cs" />

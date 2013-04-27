@@ -66,12 +66,7 @@ namespace Obfuscar
 
 		private static bool AssemblyIsSigned (AssemblyDefinition def)
 		{
-			if (def.Name.PublicKeyToken != null && def.Name.Hash != null)
-				return Array.Exists (def.Name.Hash, delegate( byte b ) {
-					return b != 0;
-				});
-			else
-				return false;
+			return def.Name.PublicKeyToken.Length != 0;
 		}
 
 		public static AssemblyInfo FromXml (Project project, XmlReader reader, Variables vars)
@@ -324,7 +319,7 @@ namespace Obfuscar
 			try {
 				definition = AssemblyDefinition.ReadAssembly (filename);
 				name = definition.Name.Name;
-			} catch (System.IO.FileNotFoundException e) {
+			} catch (System.IO.IOException e) {
 				throw new ApplicationException ("Unable to find assembly:  " + filename, e);
 			}
 		}

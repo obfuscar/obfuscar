@@ -51,14 +51,15 @@ namespace Obfuscar
 		private readonly string inherits;
 		private readonly bool? isStatic;
 		[SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
-		private readonly bool? isSerializable;
+		private readonly bool?
+			isSerializable;
 
 		public TypeSkipFlags SkipFlags {
 			get { return this.skipFlags; }
 		}
 
 		public TypeTester (string name)
-            : this(name, TypeSkipFlags.SkipNone, null)
+            : this(name, TypeSkipFlags.SkipNone, string.Empty)
 		{
 		}
 

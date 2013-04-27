@@ -28,7 +28,7 @@ using System.Text;
 
 namespace TestClasses
 {
-	public class ClassA
+	internal class ClassA
 	{
 		public delegate void Handler( );
 

@@ -28,7 +28,7 @@ using System.Text;
 
 namespace TestClasses
 {
-	public class ClassA
+	internal class ClassA
 	{
 		public class NestedClassA
 		{
