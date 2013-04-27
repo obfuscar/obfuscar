@@ -966,7 +966,7 @@ namespace Obfuscar
 				return null;
 
 			for (int index = 0; index < method.Parameters.Count; index++)
-				if (method.Parameters [index].ParameterType.FullName != method1.Parameters [index].ParameterType.FullName)
+				if (!method1.Parameters[index].ParameterType.IsGenericParameter && method.Parameters[index].ParameterType.FullName != method1.Parameters[index].ParameterType.FullName)
 					return null;
 
 			if (method.Name == method1.Name)
@@ -1100,16 +1100,9 @@ namespace Obfuscar
 
 			// got a new name for the method
 			t.Status = ObfuscationStatus.WillRename;
-			var baseName = MethodOverriding (method);
-			if (baseName != null) {
-				t.StatusText = baseName;
-			} else {
-				t.StatusText = GetNewName (sigNames, method);
-			}
-
+			t.StatusText = MethodOverriding (method) ?? GetNewName (sigNames, method);
 			t.OldName = method.Name;
-
-			return GetNewName (sigNames, method);
+			return t.StatusText;
 		}
 
 		private string GetNewName (Dictionary<ParamSig, NameGroup> sigNames, MethodDefinition method)
