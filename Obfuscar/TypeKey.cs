@@ -106,11 +106,12 @@ namespace Obfuscar
 		public bool Matches (TypeReference type)
 		{
 			// Remove generic type parameters and compare full names
-			type.DeclaringType = type.DeclaringType; // Hack: Update full name
+			var instanceType = type as GenericInstanceType;
+			if (instanceType == null)
+				type.DeclaringType = type.DeclaringType; // Hack: Update full name
 			string typefullname = type.ToString ();
-			if (type is GenericInstanceType) {
-				typefullname = ((GenericInstanceType)type).ElementType.ToString ();
-			}
+			if (instanceType != null)
+				typefullname = instanceType.ElementType.ToString ();
 			return typefullname == fullname;
 		}
 
