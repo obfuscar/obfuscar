@@ -35,9 +35,9 @@ namespace Obfuscar
 	{
 		private readonly Project project;
 		private readonly Dictionary<string, AssemblyDefinition> cache =
-            new Dictionary<string, AssemblyDefinition> ();
+			new Dictionary<string, AssemblyDefinition> ();
 		private readonly IAssemblyResolver resolver = new V4AssemblyResolver ();
-        private List<string> extraFolders = new List<string>(); 
+		private List<string> extraFolders = new List<string> ();
 
 		public List<string> ExtraFolders { get { return extraFolders; } set { extraFolders = value; } }
 
@@ -143,11 +143,16 @@ namespace Obfuscar
 			return typeDef;
 		}
 
-        #region IAssemblyResolver Members
+		#region IAssemblyResolver Members
 
 		public AssemblyDefinition Resolve (AssemblyNameReference name)
 		{
 			return SelfResolve (name);
+		}
+
+		public AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
+		{
+			return Resolve (name);
 		}
 
 		public AssemblyDefinition Resolve (string fullName)
@@ -157,7 +162,12 @@ namespace Obfuscar
 			return assmDef;
 		}
 
-        #endregion
+		public AssemblyDefinition Resolve (string fullName, ReaderParameters parameters)
+		{
+			return Resolve (fullName);
+		}
+
+		#endregion
 	}
 
 	public delegate AssemblyDefinition AssemblyResolveEventHandler (object sender, AssemblyNameReference reference);
@@ -182,10 +192,10 @@ namespace Obfuscar
 		private List<String> m_directories;
 		private string[] m_monoGacPaths;
 		private static readonly string[] _extentions = new string[]
-        {
-            ".dll", 
-            ".exe"
-        };
+		{
+			".dll", 
+			".exe"
+		};
 
 		private string[] MonoGacPaths {
 			get {
@@ -211,9 +221,19 @@ namespace Obfuscar
 			return (string[])this.m_directories.ToArray ();
 		}
 
+		public AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
+		{
+			return Resolve (name);
+		}
+
 		public virtual AssemblyDefinition Resolve (string fullName)
 		{
 			return this.Resolve (AssemblyNameReference.Parse (fullName));
+		}
+
+		public AssemblyDefinition Resolve (string fullName, ReaderParameters parameters)
+		{
+			return Resolve (fullName);
 		}
 
 		public V4AssemblyResolver ()
@@ -299,8 +319,8 @@ namespace Obfuscar
 				return GetAssembly (typeof(object).Module.FullyQualifiedName);
 
 			var path = Directory.GetParent (
-                Directory.GetParent (
-                    typeof(object).Module.FullyQualifiedName).FullName
+				Directory.GetParent (
+					typeof(object).Module.FullyQualifiedName).FullName
 			).FullName;
 
 			if (OnMono ()) {
@@ -393,9 +413,9 @@ namespace Obfuscar
 		static string GetCurrentMonoGac ()
 		{
 			return Path.Combine (
-                Directory.GetParent (
-                    Path.GetDirectoryName (typeof(object).Module.FullyQualifiedName)).FullName,
-                "gac");
+				Directory.GetParent (
+					Path.GetDirectoryName (typeof(object).Module.FullyQualifiedName)).FullName,
+				"gac");
 		}
 
 		List<string> gac_paths;
@@ -446,17 +466,17 @@ namespace Obfuscar
 		static string GetAssemblyFile (AssemblyNameReference reference, string prefix, string gac)
 		{
 			var gac_folder = new StringBuilder ()
-                .Append (prefix)
-                .Append (reference.Version)
-                .Append ("__");
+				.Append (prefix)
+				.Append (reference.Version)
+				.Append ("__");
 
 			for (int i = 0; i < reference.PublicKeyToken.Length; i++)
 				gac_folder.Append (reference.PublicKeyToken [i].ToString ("x2"));
 
 			return Path.Combine (
-                Path.Combine (
-                    Path.Combine (gac, reference.Name), gac_folder.ToString ()),
-                reference.Name + ".dll");
+				Path.Combine (
+					Path.Combine (gac, reference.Name), gac_folder.ToString ()),
+				reference.Name + ".dll");
 		}
 
 
