@@ -40,6 +40,7 @@ namespace Obfuscar
 			"\u205A\u205B\u205C\u205D\u205E\u205F\u2060" +
 			"\u2061\u2062\u2063\u2064\u206A\u206B\u206C\u206D\u206E\u206F" +
 			"\u3000";
+		private static readonly string koreanChars;
 
 		static NameMaker ()
 		{
@@ -49,39 +50,46 @@ namespace Obfuscar
 					System.Diagnostics.Debug.Assert (lUnicode [i] != lUnicode [j], "Duplicate Char");
 				}
 			}
+
 			UseUnicodeChars = false;
+
 			// Fill the char array used for renaming with characters
 			// from Hangul (Korean) unicode character set.
+			var chars = new List<char>(128);
+			var rnd = new Random();
+			var startPoint = rnd.Next(0xAC00, 0xD5D0);
+			for (int i = startPoint; i < startPoint + 128; i++)
+				chars.Add((char)i);
 
-			//var chars = new List<char>(128);
+			chars.Sort((x,y) => rnd.Next(-1,1));
+			koreanChars = new string(chars.ToArray());
 
-			//var rnd = new System.Random();
-
-			//var startPoint = rnd.Next(0xAC00, 0xD5D0);
-
-			//for (int i=startPoint; i<startPoint + 128; i++) {
-			//chars.Add((char) i);
-			//}
-
-			//chars.Sort((x,y)=>{
-			//return rnd.Next(-1,1);
-			//});
-
-			//uniqueChars = chars.ToArray();
-			//numUniqueChars = uniqueChars.Length;
+			UseKoreanChars = false;
 		}
 
 		public static bool UseUnicodeChars {
 			get {
-				return uniqueChars != defaultChars;
+				return uniqueChars == unicodeChars;
 			}
 			set {
-				if (value) {
+				if (value)
 					uniqueChars = unicodeChars;
-				} else {
+				else
 					uniqueChars = defaultChars;
-				}
-				numUniqueChars = defaultChars.Length;
+
+				numUniqueChars = uniqueChars.Length;
+			}
+		}
+
+		public static bool UseKoreanChars {
+			get { return unicodeChars == koreanChars; }
+			set {
+				if (value)
+					uniqueChars = koreanChars;
+				else
+					uniqueChars = defaultChars;
+
+				numUniqueChars = uniqueChars.Length;
 			}
 		}
 

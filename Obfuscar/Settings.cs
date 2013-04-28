@@ -38,6 +38,7 @@ namespace Obfuscar
 		bool renameEvents;
 		bool reuseNames;
 		bool useUnicodeNames;
+		bool useKoreanNames;
 		bool xmlMapping;
 		bool hideStrings;
 		bool renegerateDebugInfo;
@@ -54,6 +55,7 @@ namespace Obfuscar
 			renameEvents = XmlConvert.ToBoolean (vars.GetValue ("RenameEvents", "true"));
 			reuseNames = XmlConvert.ToBoolean (vars.GetValue ("ReuseNames", "true"));
 			useUnicodeNames = XmlConvert.ToBoolean (vars.GetValue ("UseUnicodeNames", "false"));
+			useKoreanNames = XmlConvert.ToBoolean (vars.GetValue ("UseKoreanNames", "false"));
 			hideStrings = XmlConvert.ToBoolean (vars.GetValue ("HideStrings", "true"));
 
 			xmlMapping = XmlConvert.ToBoolean (vars.GetValue ("XmlMapping", "false"));
@@ -103,6 +105,11 @@ namespace Obfuscar
 
 		public bool UseUnicodeNames {
 			get { return useUnicodeNames; }
+		}
+
+		public bool UseKoreanNames
+		{
+			get { return useKoreanNames; }
 		}
 
 		public string KeyFile {
