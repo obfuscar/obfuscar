@@ -28,7 +28,7 @@ using System.Text;
 
 namespace TestClasses
 {
-	public class ClassA<GenType>
+	internal class ClassA<GenType>
 	{
 		protected virtual void Method1( GenType param )
 		{
@@ -39,7 +39,7 @@ namespace TestClasses
 		}
 	}
 
-	public class ClassB : ClassA<int>
+	internal class ClassB : ClassA<int>
 	{
 		protected override void Method2( int param )
 		{
