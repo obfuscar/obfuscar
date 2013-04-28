@@ -158,6 +158,7 @@ namespace Obfuscar
 		{
 			project = Project.FromXml (reader, projectFileDirectory);
 			NameMaker.UseUnicodeChars = project.Settings.UseUnicodeNames;
+			NameMaker.UseKoreanChars = project.Settings.UseKoreanNames;
 
 			// make sure everything looks good
 			project.CheckSettings ();
