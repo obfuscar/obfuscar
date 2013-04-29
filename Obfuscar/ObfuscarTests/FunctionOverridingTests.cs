@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -34,72 +33,85 @@ using Obfuscar;
 
 namespace ObfuscarTests
 {
-    [TestFixture]
-    public class FunctionOverridingTests
-    {
-        Obfuscar.ObfuscationMap BuildAndObfuscateAssemblies()
-        {
-            string xml = String.Format(
+	[TestFixture]
+	public class FunctionOverridingTests
+	{
+		Obfuscar.ObfuscationMap BuildAndObfuscateAssemblies ()
+		{
+			string xml = String.Format (
                 @"<?xml version='1.0'?>" +
-                @"<Obfuscator>" +
-                @"<Var name='InPath' value='{0}' />" +
-                @"<Var name='OutPath' value='{1}' />" +
-                @"<Module file='$(InPath)\AssemblyWithOverrides.dll' />" +
-                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"<Obfuscator>" +
+				@"<Var name='InPath' value='{0}' />" +
+				@"<Var name='OutPath' value='{1}' />" +
+				@"<Var name='KeepPublicApi' value='true' />" +
+				@"<Module file='$(InPath)\AssemblyWithOverrides.dll' />" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
-            Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate("AssemblyWithOverrides", String.Empty, xml);
+			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithOverrides", String.Empty, xml);
 
-            return obfuscator.Mapping;
-        }
+			return obfuscator.Mapping;
+		}
 
-        MethodDefinition FindByName(TypeDefinition typeDef, string name)
-        {
-            foreach (MethodDefinition method in typeDef.Methods)
-                if (method.Name == name)
-                    return method;
+		MethodDefinition FindByName (TypeDefinition typeDef, string name)
+		{
+			foreach (MethodDefinition method in typeDef.Methods)
+				if (method.Name == name)
+					return method;
 
-            Assert.Fail(String.Format("Expected to find method: {0}", name));
-            return null; // never here
-        }
+			Assert.Fail (String.Format ("Expected to find method: {0}", name));
+			return null; // never here
+		}
 
-        [Test]
-        public void CheckClassHasAttribute()
-        {
-            Obfuscar.ObfuscationMap map = BuildAndObfuscateAssemblies();
+		[Test]
+		public void CheckClassHasAttribute ()
+		{
+			Obfuscar.ObfuscationMap map = BuildAndObfuscateAssemblies ();
 
-            string assmName = "AssemblyWithOverrides.dll";
+			string assmName = "AssemblyWithOverrides.dll";
 
-            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
-                Path.Combine(TestHelper.InputPath, assmName));
+			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
+                Path.Combine (TestHelper.InputPath, assmName));
 
-            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
-                Path.Combine(TestHelper.OutputPath, assmName));
+			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly (
+                Path.Combine (TestHelper.OutputPath, assmName));
 
-            TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.ClassA");
-            MethodDefinition classAmethod2 = FindByName(classAType, "Method2");
-            MethodDefinition classAcompare = FindByName(classAType, "CompareTo");
+			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.ClassA");
+			MethodDefinition classAmethod2 = FindByName (classAType, "Method2");
+			MethodDefinition classAcompare = FindByName (classAType, "CompareTo");
 
-            TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.ClassB");
-            MethodDefinition classBmethod2 = FindByName(classBType, "Method2");
-            MethodDefinition classBcompare = FindByName(classBType, "CompareTo");
+			TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.ClassB");
+			MethodDefinition classBmethod2 = FindByName (classBType, "Method2");
+			MethodDefinition classBcompare = FindByName (classBType, "CompareTo");
 
-            Obfuscar.ObfuscatedThing classAEntry = map.GetMethod(new Obfuscar.MethodKey(classAmethod2));
-            ObfuscatedThing classAEntry1 = map.GetMethod(new MethodKey(classAcompare));
-            Obfuscar.ObfuscatedThing classBEntry = map.GetMethod(new Obfuscar.MethodKey(classBmethod2));
-            Obfuscar.ObfuscatedThing classBEntry1 = map.GetMethod(new Obfuscar.MethodKey(classBcompare));
+			TypeDefinition classCType = inAssmDef.MainModule.GetType ("TestClasses.ClassC");
+			MethodDefinition classCmethod1 = FindByName (classCType, "Method1");
 
-            Assert.IsTrue(
+			TypeDefinition classDType = inAssmDef.MainModule.GetType ("TestClasses.ClassD");
+			MethodDefinition classDmethod1 = FindByName (classDType, "Method1");
+
+			Obfuscar.ObfuscatedThing classAEntry = map.GetMethod (new Obfuscar.MethodKey (classAmethod2));
+			ObfuscatedThing classAEntry1 = map.GetMethod (new MethodKey (classAcompare));
+			Obfuscar.ObfuscatedThing classBEntry = map.GetMethod (new Obfuscar.MethodKey (classBmethod2));
+			Obfuscar.ObfuscatedThing classBEntry1 = map.GetMethod (new Obfuscar.MethodKey (classBcompare));
+			ObfuscatedThing classCEntry = map.GetMethod (new MethodKey (classCmethod1));
+			ObfuscatedThing classDEntry = map.GetMethod (new MethodKey (classDmethod1));
+
+			Assert.IsTrue (
                 classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
-                classBEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
+				classBEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
                 "Both methods should have been renamed.");
             
-            Assert.IsTrue(
+			Assert.IsTrue (
                 classAEntry.StatusText == classBEntry.StatusText,
                 "Both methods should have been renamed to the same thing.");
 
-            Assert.IsTrue(classAEntry1.Status == ObfuscationStatus.Skipped);
+			Assert.IsTrue (classAEntry1.Status == ObfuscationStatus.Skipped);
 
-            Assert.IsTrue(classBEntry1.Status == ObfuscationStatus.Skipped);
-        }
-    }
+			Assert.IsTrue (classBEntry1.Status == ObfuscationStatus.Skipped);
+
+			Assert.IsTrue (classCEntry.Status == ObfuscationStatus.Skipped);
+
+			Assert.IsTrue (classDEntry.Status == ObfuscationStatus.Skipped);
+		}
+	}
 }

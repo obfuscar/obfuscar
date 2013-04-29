@@ -55,4 +55,23 @@ namespace TestClasses
 			return 0;
 		}
 	}
+
+	public class ClassC
+	{
+		protected virtual void Method1 (int param)
+		{			
+		}
+	}
+
+	public class ClassE : ClassC
+	{ 
+	}
+
+	internal class ClassD : ClassE
+	{
+		protected override void Method1 (int param)
+		{			
+		}
+	}
+
 }

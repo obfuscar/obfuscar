@@ -157,13 +157,16 @@ namespace Obfuscar
 		private void LoadFromReader (XmlReader reader, string projectFileDirectory)
 		{
 			project = Project.FromXml (reader, projectFileDirectory);
+			// make sure everything looks good
+			project.CheckSettings ();
 			NameMaker.UseUnicodeChars = project.Settings.UseUnicodeNames;
 			NameMaker.UseKoreanChars = project.Settings.UseKoreanNames;
 
-			// make sure everything looks good
-			project.CheckSettings ();
-
 			LogOutput ("Loading assemblies...");
+			LogOutput ("Extra framework folders: ");
+			foreach (var lExtraPath in project.ExtraPaths?? new string[0]) 
+				LogOutput (lExtraPath + ", ");
+
 			project.LoadAssemblies ();
 		}
 
@@ -174,49 +177,77 @@ namespace Obfuscar
 		{
 			string outPath = project.Settings.OutPath;
 
+			//copy excluded assemblies
+			foreach (AssemblyInfo copyInfo in project.CopyAssemblyList) {
+				string outName = Path.Combine (outPath, Path.GetFileName (copyInfo.Filename));
+				copyInfo.Definition.Write (outName);
+			}
+
 			// save the modified assemblies
 			foreach (AssemblyInfo info in project) {
 				string outName = Path.Combine (outPath, Path.GetFileName (info.Filename));
+				if (project.Settings.RegenerateDebugInfo)
+					info.Definition.Write (outName, new WriterParameters { SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider () });
+				else
+					info.Definition.Write (outName);
 
-				info.Definition.Write (outName);
-
-				// Re-sign assembly
 				if (info.Definition.Name.HasPublicKey) {
-					if (project.Settings.KeyFile != null) {
-						string keyfilepath = project.Settings.KeyFile;
-
-						if (string.CompareOrdinal (keyfilepath, "auto") == 0) {
-							keyfilepath = null;
-							foreach (CustomAttribute ca in info.Definition.CustomAttributes) {
-								if (ca.Constructor.DeclaringType.FullName ==
-									typeof(System.Reflection.AssemblyKeyFileAttribute).FullName) {
-									keyfilepath = (string)ca.ConstructorArguments [0].Value;
-								}
-							}
-
-							if (keyfilepath == null) {
-								throw new ApplicationException (string.Format ("KeyFile='auto', but assembly '{0}' contains no AssemblyKeyFileAttribute", info.Filename));
-							}
-						}
-
-						if (!Path.IsPathRooted (keyfilepath)) {
-							foreach (string checkpath in new[] { ".", Path.GetDirectoryName(info.Filename) }) {
-								string newpath = Path.Combine (checkpath, keyfilepath);
-								if (File.Exists (newpath)) {
-									keyfilepath = newpath;
-									break;
-								}
-							}
-						}
-
-						try {
-							var sn = new StrongName (CryptoConvert.FromCapiKeyBlob (File.ReadAllBytes (keyfilepath)));
-							sn.Sign (outName);
-						} catch (Exception ex) {
-							throw new ApplicationException (string.Format ("Failed to sign '{1}' with key file \"{0}\"", keyfilepath, info.Filename), ex);
-						}
+					if (project.KeyContainerName != null) {
+						MsNetSigner.SignAssemblyFromKeyContainer (outName, project.KeyContainerName);
+					} else {
+						var sn = new StrongName (project.KeyValue);
+						sn.Sign (outName);
 					}
 				}
+
+				// TODO: review whether this is still needed 
+				// SignAssembly (info, outName);
+			}
+
+			TypeNameCache.nameCache.Clear ();
+		}
+
+		private void SignAssembly (AssemblyInfo info, string outName)
+		{
+			// Re-sign assembly
+			if (!info.Definition.Name.HasPublicKey)
+				return;
+
+			if (project.Settings.KeyFile == null)
+				return;
+
+			string keyfilepath = project.Settings.KeyFile;
+
+			if (string.CompareOrdinal (keyfilepath, "auto") == 0) {
+				keyfilepath = null;
+				foreach (CustomAttribute ca in info.Definition.CustomAttributes) {
+					if (ca.Constructor.DeclaringType.FullName ==
+						typeof(System.Reflection.AssemblyKeyFileAttribute).FullName) {
+						keyfilepath = (string)ca.ConstructorArguments [0].Value;
+					}
+				}
+
+				if (keyfilepath == null) {
+					throw new ApplicationException (string.Format ("KeyFile='auto', but assembly '{0}' contains no AssemblyKeyFileAttribute", info.Filename));
+				}
+			}
+
+			if (!Path.IsPathRooted (keyfilepath)) {
+				foreach (string checkpath in new[] { ".", Path.GetDirectoryName(info.Filename) }) {
+					string newpath = Path.Combine (checkpath, keyfilepath);
+					if (File.Exists (newpath)) {
+						keyfilepath = newpath;
+						break;
+					}
+				}
+			}
+
+			try {
+				var sn = new StrongName (CryptoConvert.FromCapiKeyBlob (File.ReadAllBytes (keyfilepath)));
+				sn.Sign (outName);
+			} catch (Exception ex) {
+				throw new ApplicationException (
+					string.Format ("Failed to sign '{1}' with key file \"{0}\"", keyfilepath, info.Filename), ex);
 			}
 		}
 
@@ -229,10 +260,15 @@ namespace Obfuscar
 				"Mapping.xml" : "Mapping.txt";
 
 			string logPath = Path.Combine (project.Settings.OutPath, filename);
+			if (!String.IsNullOrEmpty (project.Settings.LogFilePath))
+				logPath = project.Settings.LogFilePath;
 
-			using (TextWriter file = File.CreateText(logPath)) {
+			string lPath = Path.GetDirectoryName (logPath);
+			if (!String.IsNullOrEmpty (lPath) && !Directory.Exists (lPath))
+				Directory.CreateDirectory (lPath);
+
+			using (TextWriter file = File.CreateText(logPath))
 				SaveMapping (file);
-			}
 		}
 
 		/// <summary>
@@ -297,7 +333,7 @@ namespace Obfuscar
 						if (field.IsRuntimeSpecialName && field.Name == "value__") {
 							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
 							nameGroup.Add (fieldKey.Name);
-						} else if (field.DeclaringType.IsPublic && field.IsPublic) {
+						} else if (project.Settings.KeepPublicApi && field.DeclaringType.IsPublic && field.IsPublic) {
 							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "public field");
 							nameGroup.Add (fieldKey.Name);
 						} else {
@@ -453,7 +489,7 @@ namespace Obfuscar
 					string fullName = type.FullName;
 
 					if (ShouldRename (type)) {
-						if (!info.ShouldSkip (unrenamedTypeKey, Project.InheritMap) && !type.IsPublic) {
+						if (!info.ShouldSkip (unrenamedTypeKey, Project.InheritMap) && !(project.Settings.KeepPublicApi && type.IsPublic)) {
 							string name;
 							string ns;
 							if (project.Settings.ReuseNames) {
@@ -655,8 +691,8 @@ namespace Obfuscar
 							continue;
 						}
 
-						var hasPublicProperty = (prop.GetMethod != null && prop.GetMethod.IsPublic) || (prop.SetMethod != null && prop.SetMethod.IsPublic);
-						if (prop.DeclaringType.IsPublic && hasPublicProperty) {
+						var hasPublicProperty = (prop.GetMethod != null && (prop.GetMethod.IsPublic || prop.GetMethod.IsFamily)) || (prop.SetMethod != null && (prop.SetMethod.IsPublic || prop.SetMethod.IsFamily));
+						if (project.Settings.KeepPublicApi && prop.DeclaringType.IsPublic && hasPublicProperty) {
 							m.Update (ObfuscationStatus.Skipped, "public property");
 							continue;
 						}
@@ -758,8 +794,8 @@ namespace Obfuscar
 							continue;
 						}
 
-						var hasPublicEvent = evt.AddMethod.IsPublic || evt.RemoveMethod.IsPublic;
-						if (evt.DeclaringType.IsPublic && hasPublicEvent) {
+						var hasPublicEvent = evt.AddMethod.IsPublic || evt.AddMethod.IsFamily || evt.RemoveMethod.IsPublic || evt.RemoveMethod.IsFamily;
+						if (project.Settings.KeepPublicApi && evt.DeclaringType.IsPublic && hasPublicEvent) {
 							m.Update (ObfuscationStatus.Skipped, "public event");
 							continue;
 						}
@@ -819,7 +855,7 @@ namespace Obfuscar
 							skiprename = "runtime method";
 						}
 
-						if (method.DeclaringType.IsPublic && method.IsPublic) {
+						if (project.Settings.KeepPublicApi && method.DeclaringType.IsPublic && (method.IsPublic || method.IsFamily)) {
 							skiprename = "public method";
 						}
 
@@ -860,8 +896,9 @@ namespace Obfuscar
 							}
 						}
 
-						if (PublicMethodOverriding (method)) {
-							skiprename = "override of another assembly's method";
+						var baseMethod = GetOverriddenMethod (method);
+						if (baseMethod != null && project.Settings.KeepPublicApi && (baseMethod.IsPublic || baseMethod.IsFamily) && baseMethod.DeclaringType.IsPublic) {
+							skiprename = "override public method";
 						}
 
 						// if we need to skip the method or we don't yet have a name planned for a method, rename it
@@ -930,7 +967,7 @@ namespace Obfuscar
 			}
 		}
 
-		private bool PublicMethodOverriding (MethodDefinition method)
+		private MethodDefinition GetOverriddenMethod (MethodDefinition method)
 		{
 			var type = method.DeclaringType;
 			if (type.HasInterfaces)
@@ -939,23 +976,24 @@ namespace Obfuscar
 					if (interface2.HasMethods)
 						foreach (MethodDefinition method1 in interface2.Methods) {
 							var name = Override (method, method1);
-							if (name != null && interface2.IsPublic) {
-								return true;
-							}
+							if (name != null)
+								return method1;
 						}
 				}
 
-			if (type.BaseType == null)
-				return false;
+			var baseType = type.BaseType;
+			while (baseType != null) {
+				var typeDefinition = baseType.Resolve ();
+				foreach (var method1 in typeDefinition.Methods) {
+					var name = Override (method, method1);
+					if (name != null)
+						return method1;
+				}
 
-			var typeDefinition = type.BaseType.Resolve ();
-			foreach (var method1 in typeDefinition.Methods) {
-				var name = Override (method, method1);
-				if (name != null && typeDefinition.IsPublic)
-					return true;
+				baseType = typeDefinition.BaseType;
 			}
 
-			return false;
+			return null;
 		}
 
 		private string Override (MethodDefinition method, MethodDefinition method1)
@@ -967,7 +1005,7 @@ namespace Obfuscar
 				return null;
 
 			for (int index = 0; index < method.Parameters.Count; index++)
-				if (!method1.Parameters[index].ParameterType.IsGenericParameter && method.Parameters[index].ParameterType.FullName != method1.Parameters[index].ParameterType.FullName)
+				if (!method1.Parameters [index].ParameterType.IsGenericParameter && method.Parameters [index].ParameterType.FullName != method1.Parameters [index].ParameterType.FullName)
 					return null;
 
 			if (method.Name == method1.Name)
@@ -1367,6 +1405,26 @@ namespace Obfuscar
 
 
 				library.MainModule.Types.Add (newtype);
+			}
+		}
+
+		public static class MsNetSigner
+		{
+			[System.Runtime.InteropServices.DllImport("mscoree.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
+			private static extern bool StrongNameSignatureGeneration (
+				[/*In, */System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)]string wzFilePath,
+				[/*In, */System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)]string wzKeyContainer,
+				/*[In]*/byte[] pbKeyBlob,
+				/*[In]*/uint cbKeyBlob,
+				/*[In]*/IntPtr ppbSignatureBlob, // not supported, always pass 0.
+				[System.Runtime.InteropServices.Out]out uint pcbSignatureBlob
+			);
+
+			public static void SignAssemblyFromKeyContainer (string assemblyname, string keyname)
+			{
+				uint dummy;
+				if (!StrongNameSignatureGeneration (assemblyname, keyname, null, 0, IntPtr.Zero, out dummy))
+					throw new Exception ("Unable to sign assembly using key from key container - " + keyname);
 			}
 		}
 	}
