@@ -58,7 +58,6 @@ namespace Obfuscar
 
 		public ObfuscationStatus Status = ObfuscationStatus.Unknown;
 		public string StatusText;
-		public string OldName;
 
 		public override string ToString ()
 		{
