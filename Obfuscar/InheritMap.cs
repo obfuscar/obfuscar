@@ -115,7 +115,10 @@ namespace Obfuscar
 						if (!methodGroups.TryGetValue (methods [i], out group))
 							group = null;
 
-						for (j = i + 1; j < methods.Length && MethodsMatch(methods, i, j); j++) {
+						for (j = i + 1; j < methods.Length; j++) {
+							if (!MethodsMatch(methods, i, j))
+								continue;
+
 							// found an override
 
 							// see if either method is already in a group
@@ -141,7 +144,7 @@ namespace Obfuscar
 							group.External = true;
 
 						// move on to the next thing that doesn't match
-						i = j;
+						i++;
 					}
 				}
 			}
@@ -149,7 +152,7 @@ namespace Obfuscar
 
 		static bool MethodsMatch (MethodKey[] methods, int i, int j)
 		{
-			return methods [i].Equals ((NameParamSig)methods [j]);
+			return methods [i].Equals ((NameParamSig) methods [j]);
 		}
 
 		void GetBaseTypes (HashSet<TypeKey> baseTypes, TypeDefinition type)

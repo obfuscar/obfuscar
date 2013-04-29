@@ -157,10 +157,13 @@ namespace Obfuscar
 		private void LoadFromReader (XmlReader reader, string projectFileDirectory)
 		{
 			project = Project.FromXml (reader, projectFileDirectory);
+
 			// make sure everything looks good
 			project.CheckSettings ();
-			NameMaker.UseUnicodeChars = project.Settings.UseUnicodeNames;
-			NameMaker.UseKoreanChars = project.Settings.UseKoreanNames;
+			if (project.Settings.UseUnicodeNames)
+				NameMaker.UseUnicodeChars = true;
+			if (project.Settings.UseKoreanNames)
+				NameMaker.UseKoreanChars = true;
 
 			LogOutput ("Loading assemblies...");
 			LogOutput ("Extra framework folders: ");
@@ -896,11 +899,6 @@ namespace Obfuscar
 							}
 						}
 
-						var baseMethod = GetOverriddenMethod (method);
-						if (baseMethod != null && project.Settings.KeepPublicApi && (baseMethod.IsPublic || baseMethod.IsFamily) && baseMethod.DeclaringType.IsPublic) {
-							skiprename = "override public method";
-						}
-
 						// if we need to skip the method or we don't yet have a name planned for a method, rename it
 						if ((skiprename != null && m.Status != ObfuscationStatus.Skipped) ||
 							m.Status == ObfuscationStatus.Unknown) {
@@ -965,58 +963,6 @@ namespace Obfuscar
 					}
 				}
 			}
-		}
-
-		private MethodDefinition GetOverriddenMethod (MethodDefinition method)
-		{
-			var type = method.DeclaringType;
-			if (type.HasInterfaces)
-				foreach (TypeReference interface1 in type.Interfaces) {
-					TypeDefinition interface2 = interface1.Resolve ();
-					if (interface2.HasMethods)
-						foreach (MethodDefinition method1 in interface2.Methods) {
-							var name = Override (method, method1);
-							if (name != null)
-								return method1;
-						}
-				}
-
-			var baseType = type.BaseType;
-			while (baseType != null) {
-				var typeDefinition = baseType.Resolve ();
-				foreach (var method1 in typeDefinition.Methods) {
-					var name = Override (method, method1);
-					if (name != null)
-						return method1;
-				}
-
-				baseType = typeDefinition.BaseType;
-			}
-
-			return null;
-		}
-
-		private string Override (MethodDefinition method, MethodDefinition method1)
-		{
-			if (method.HasParameters != method1.HasParameters)
-				return null;
-
-			if (method.Parameters.Count != method1.Parameters.Count)
-				return null;
-
-			for (int index = 0; index < method.Parameters.Count; index++)
-				if (!method1.Parameters [index].ParameterType.IsGenericParameter && method.Parameters [index].ParameterType.FullName != method1.Parameters [index].ParameterType.FullName)
-					return null;
-
-			if (method.Name == method1.Name)
-				return method.Name;
-
-			var thing = map.GetClass (new TypeKey (method1.DeclaringType));
-			foreach (var obfuscatedMethod in thing.Methods.Values)
-				if (obfuscatedMethod.StatusText == method1.Name && obfuscatedMethod.OldName == method.Name)
-					return obfuscatedMethod.StatusText;
-
-			return null;
 		}
 
 		private void RenameVirtualMethod (AssemblyInfo info, Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
@@ -1139,8 +1085,7 @@ namespace Obfuscar
 
 			// got a new name for the method
 			t.Status = ObfuscationStatus.WillRename;
-			t.StatusText = MethodOverriding (method) ?? GetNewName (sigNames, method);
-			t.OldName = method.Name;
+			t.StatusText = GetNewName (sigNames, method);
 			return t.StatusText;
 		}
 
@@ -1152,37 +1097,10 @@ namespace Obfuscar
 			NameGroup nameGroup = GetNameGroup (sigNames, sig);
 
 			string newName = nameGroup.GetNext ();
+
 			// make sure the name groups is updated
 			nameGroup.Add (newName);
 			return newName;
-		}
-
-		private string MethodOverriding (MethodDefinition method)
-		{
-			var type = method.DeclaringType;
-
-			if (type.HasInterfaces)
-				foreach (TypeReference interface1 in type.Interfaces) {
-					TypeDefinition interface2 = interface1.Resolve ();
-					if (interface2.HasMethods)
-						foreach (MethodDefinition method1 in interface2.Methods) {
-							var name = Override (method, method1);
-							if (name != null)
-								return name;
-						}
-				}
-
-			if (type.BaseType == null)
-				return null;
-
-			var typeDefinition = type.BaseType.Resolve ();
-			foreach (var method1 in typeDefinition.Methods) {
-				var name = Override (method, method1);
-				if (name != null)
-					return name;
-			}
-
-			return null;
 		}
 
 		void RenameMethod (AssemblyInfo info, Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method)

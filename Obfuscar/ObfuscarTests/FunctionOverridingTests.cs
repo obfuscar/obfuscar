@@ -39,11 +39,11 @@ namespace ObfuscarTests
 		Obfuscar.ObfuscationMap BuildAndObfuscateAssemblies ()
 		{
 			string xml = String.Format (
-                @"<?xml version='1.0'?>" +
+				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-				@"<Var name='KeepPublicApi' value='true' />" +
+				@"<Var name='KeepPublicApi' value='false' />" +
 				@"<Module file='$(InPath)\AssemblyWithOverrides.dll' />" +
 				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
@@ -70,10 +70,10 @@ namespace ObfuscarTests
 			string assmName = "AssemblyWithOverrides.dll";
 
 			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
-                Path.Combine (TestHelper.InputPath, assmName));
+				Path.Combine (TestHelper.InputPath, assmName));
 
 			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly (
-                Path.Combine (TestHelper.OutputPath, assmName));
+				Path.Combine (TestHelper.OutputPath, assmName));
 
 			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.ClassA");
 			MethodDefinition classAmethod2 = FindByName (classAType, "Method2");
@@ -97,21 +97,21 @@ namespace ObfuscarTests
 			ObfuscatedThing classDEntry = map.GetMethod (new MethodKey (classDmethod1));
 
 			Assert.IsTrue (
-                classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
+				classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
 				classBEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
-                "Both methods should have been renamed.");
-            
+				"Both methods should have been renamed.");
+			
 			Assert.IsTrue (
-                classAEntry.StatusText == classBEntry.StatusText,
-                "Both methods should have been renamed to the same thing.");
+				classAEntry.StatusText == classBEntry.StatusText,
+				"Both methods should have been renamed to the same thing.");
 
 			Assert.IsTrue (classAEntry1.Status == ObfuscationStatus.Skipped);
 
 			Assert.IsTrue (classBEntry1.Status == ObfuscationStatus.Skipped);
 
-			Assert.IsTrue (classCEntry.Status == ObfuscationStatus.Skipped);
+			Assert.IsTrue (classCEntry.Status == ObfuscationStatus.Renamed);
 
-			Assert.IsTrue (classDEntry.Status == ObfuscationStatus.Skipped);
+			Assert.IsTrue (classDEntry.Status == ObfuscationStatus.Renamed);
 		}
 	}
 }
