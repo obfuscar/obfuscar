@@ -110,6 +110,10 @@
       <Project>{d68133bd-1e63-496e-9ede-4fbdbf77b486}</Project>
       <Name>Mono.Cecil</Name>
     </ProjectReference>
+    <ProjectReference Include="..\cecil\symbols\pdb\Mono.Cecil.Pdb.csproj">
+      <Project>{63e6915c-7ea4-4d76-ab28-0d7191eea626}</Project>
+      <Name>Mono.Cecil.Pdb</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

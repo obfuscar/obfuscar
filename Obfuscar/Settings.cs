@@ -36,6 +36,7 @@ namespace Obfuscar
 		bool markedOnly;
 		bool renameProperties;
 		bool renameEvents;
+		bool keepPublicApi;
 		bool reuseNames;
 		bool useUnicodeNames;
 		bool useKoreanNames;
@@ -53,6 +54,7 @@ namespace Obfuscar
 
 			renameProperties = XmlConvert.ToBoolean (vars.GetValue ("RenameProperties", "true"));
 			renameEvents = XmlConvert.ToBoolean (vars.GetValue ("RenameEvents", "true"));
+			keepPublicApi = XmlConvert.ToBoolean (vars.GetValue ("KeepPublicApi", "false"));
 			reuseNames = XmlConvert.ToBoolean (vars.GetValue ("ReuseNames", "true"));
 			useUnicodeNames = XmlConvert.ToBoolean (vars.GetValue ("UseUnicodeNames", "false"));
 			useKoreanNames = XmlConvert.ToBoolean (vars.GetValue ("UseKoreanNames", "false"));
@@ -91,6 +93,10 @@ namespace Obfuscar
 			get { return renameEvents; }
 		}
 
+		public bool KeepPublicApi {
+			get { return keepPublicApi; }			
+		}
+
 		public bool ReuseNames {
 			get { return reuseNames; }
 		}
@@ -107,8 +113,7 @@ namespace Obfuscar
 			get { return useUnicodeNames; }
 		}
 
-		public bool UseKoreanNames
-		{
+		public bool UseKoreanNames {
 			get { return useKoreanNames; }
 		}
 
