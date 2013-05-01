@@ -77,7 +77,7 @@ namespace Obfuscar
 		private readonly Dictionary<TypeKey, TypeKey[]> baseTypes = new Dictionary<TypeKey, TypeKey[]> ();
 		AssemblyCache m_cache;
 
-		private AssemblyCache Cache {
+	    internal AssemblyCache Cache {
 			get {
 				if (m_cache == null) {
 					m_cache = new AssemblyCache (project);
