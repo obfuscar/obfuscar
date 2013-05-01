@@ -50,7 +50,7 @@ namespace Obfuscar
 				Console.WriteLine ("Done.");
 
 				obfuscator.RunRules ();
-                
+				
 				Console.WriteLine ("Completed, {0:f2} secs.", (Environment.TickCount - start) / 1000.0);
 			} catch (ApplicationException e) {
 				Console.WriteLine ();
