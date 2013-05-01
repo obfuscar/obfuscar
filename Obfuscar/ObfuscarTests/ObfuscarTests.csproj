@@ -71,6 +71,7 @@
     <Compile Include="AttributeTests.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="CustomAttributeTests.cs" />
     <Compile Include="FunctionOverridingTests.cs" />
     <Compile Include="SigningTests.cs" />
     <Compile Include="SkipNestedTypeTests.cs" />
