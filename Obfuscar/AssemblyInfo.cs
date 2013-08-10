@@ -263,14 +263,21 @@ namespace Obfuscar
 
 		public IEnumerable<TypeDefinition> GetAllTypeDefinitions ()
 		{
-			foreach (TypeDefinition typedef in definition.MainModule.Types) {
-				yield return typedef;
-				foreach (TypeDefinition nestedtypedef in typedef.NestedTypes)
-					yield return nestedtypedef;
-			}
+			var result = new List<TypeDefinition>();
+			foreach (TypeDefinition typedef in definition.MainModule.Types)
+				GetAllTypeDefinitions (typedef, result);
+
+			return result;
 		}
 
-		IEnumerable<MemberReference> getMemberReferences ()
+		private void GetAllTypeDefinitions (TypeDefinition type, IList<TypeDefinition> result)
+		{
+			result.Add (type);
+			foreach (var nestedTypeDefition in type.NestedTypes) 
+				GetAllTypeDefinitions (nestedTypeDefition, result);
+		}
+
+		private IEnumerable<MemberReference> getMemberReferences ()
 		{
 			HashSet<MemberReference> memberreferences = new HashSet<MemberReference> ();
 			foreach (TypeDefinition type in this.GetAllTypeDefinitions()) {

@@ -74,4 +74,16 @@ namespace TestClasses
 		}
 	}
 
+	internal abstract class ClassF
+	{
+		protected abstract int Test();
+	}
+
+	internal class ClassG
+	{
+		protected virtual int Test()
+		{
+			return 1;
+		}
+	}
 }
