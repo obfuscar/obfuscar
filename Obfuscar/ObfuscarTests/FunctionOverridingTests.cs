@@ -96,6 +96,15 @@ namespace ObfuscarTests
 			ObfuscatedThing classCEntry = map.GetMethod (new MethodKey (classCmethod1));
 			ObfuscatedThing classDEntry = map.GetMethod (new MethodKey (classDmethod1));
 
+		    var classFType = inAssmDef.MainModule.GetType("TestClasses.ClassF");
+		    var classFmethod = FindByName(classFType, "Test");
+
+		    var classGType = inAssmDef.MainModule.GetType("TestClasses.ClassG");
+		    var classGmethod = FindByName(classGType, "Test");
+
+		    var classFEntry = map.GetMethod(new MethodKey(classFmethod));
+		    var classGEntry = map.GetMethod(new MethodKey(classGmethod));
+
 			Assert.IsTrue (
 				classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
 				classBEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
@@ -112,6 +121,10 @@ namespace ObfuscarTests
 			Assert.IsTrue (classCEntry.Status == ObfuscationStatus.Renamed);
 
 			Assert.IsTrue (classDEntry.Status == ObfuscationStatus.Renamed);
+
+            Assert.IsTrue(classFEntry.Status == ObfuscationStatus.Renamed && classGEntry.Status == ObfuscationStatus.Renamed, "Both methods should have been renamed.");
+
+            Assert.IsTrue(classFEntry.StatusText == classGEntry.StatusText, "Both methods should have been renamed to the same thing.");
 		}
 	}
 }
