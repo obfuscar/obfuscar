@@ -62,11 +62,9 @@ namespace Obfuscar
 
 		private Project project;
 		private ObfuscationMap map = new ObfuscationMap ();
-
 		// Unique names for type and members
 		private int uniqueTypeNameIndex;
 		private int uniqueMemberNameIndex;
-
 		/// <summary>
 		/// Creates an obfuscator initialized from a project file.
 		/// </summary>
@@ -85,7 +83,6 @@ namespace Obfuscar
 				throw new ApplicationException ("Unable to read specified project file:  " + projfile, e);
 			}
 		}
-
 		/// <summary>
 		/// Creates an obfuscator initialized from a project file.
 		/// </summary>
@@ -146,13 +143,12 @@ namespace Obfuscar
 
 		private static XmlReaderSettings GetReaderSettings ()
 		{
-			var settings = new XmlReaderSettings
-				{
-					IgnoreProcessingInstructions = true,
-					IgnoreWhitespace = true,
-					XmlResolver = null,
-					DtdProcessing = DtdProcessing.Parse
-				};
+			var settings = new XmlReaderSettings {
+				IgnoreProcessingInstructions = true,
+				IgnoreWhitespace = true,
+				XmlResolver = null,
+				DtdProcessing = DtdProcessing.Parse
+			};
 			return settings;
 		}
 
@@ -178,7 +174,6 @@ namespace Obfuscar
 
 			project.LoadAssemblies ();
 		}
-
 		/// <summary>
 		/// Saves changes made to assemblies to the output path.
 		/// </summary>
@@ -259,7 +254,6 @@ namespace Obfuscar
 					string.Format ("Failed to sign '{1}' with key file \"{0}\"", keyfilepath, info.Filename), ex);
 			}
 		}
-
 		/// <summary>
 		/// Saves the name mapping to the output path.
 		/// </summary>
@@ -279,7 +273,6 @@ namespace Obfuscar
 			using (TextWriter file = File.CreateText(logPath))
 				SaveMapping (file);
 		}
-
 		/// <summary>
 		/// Saves the name mapping to a text writer.
 		/// </summary>
@@ -290,15 +283,12 @@ namespace Obfuscar
 
 			mapWriter.WriteMap (map);
 		}
-
 		/// <summary>
 		/// Returns the obfuscation map for the project.
 		/// </summary>
 		internal ObfuscationMap Mapping {
 			get { return map; }
 		}
-
-
 		/// <summary>
 		/// Calls the SemanticsAttributes-getter for all methods
 		/// </summary>
@@ -312,7 +302,6 @@ namespace Obfuscar
 				}
 			}
 		}
-
 		/// <summary>
 		/// Renames fields in the project.
 		/// </summary>
@@ -390,7 +379,6 @@ namespace Obfuscar
 			field.Name = newName;
 			map.UpdateField (fieldKey, ObfuscationStatus.Renamed, newName);
 		}
-
 		/// <summary>
 		/// Renames constructor, method, and generic parameters.
 		/// </summary>
@@ -463,7 +451,6 @@ namespace Obfuscar
 
 			return !project.Settings.MarkedOnly;
 		}
-
 		/// <summary>
 		/// Renames types and resources in the project.
 		/// </summary>
@@ -479,7 +466,7 @@ namespace Obfuscar
 					resources.Add (res);
 				}
 
-				var xamlFiles = GetXamlDocuments(library);
+				var xamlFiles = GetXamlDocuments (library);
 
 				// Save the original names of all types because parent (declaring) types of nested types may be already renamed.
 				// The names are used for the mappings file.
@@ -499,23 +486,18 @@ namespace Obfuscar
 					TypeKey unrenamedTypeKey = unrenamedTypeKeys [type];
 					string fullName = type.FullName;
 
-					if (!ShouldRename(type))
-					{
-						map.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, "marked");
+					if (!ShouldRename (type)) {
+						map.UpdateType (oldTypeKey, ObfuscationStatus.Skipped, "marked");
 
 						// go through the list of resources, remove ones that would be renamed
-						for (int i = 0; i < resources.Count;)
-						{
-							Resource res = resources[i];
+						for (int i = 0; i < resources.Count;) {
+							Resource res = resources [i];
 							string resName = res.Name;
 
-							if (Path.GetFileNameWithoutExtension(resName) == fullName)
-							{
-								resources.RemoveAt(i);
-								map.AddResource(resName, ObfuscationStatus.Skipped, "marked");
-							}
-							else
-							{
+							if (Path.GetFileNameWithoutExtension (resName) == fullName) {
+								resources.RemoveAt (i);
+								map.AddResource (resName, ObfuscationStatus.Skipped, "marked");
+							} else {
 								i++;
 							}
 						}
@@ -523,23 +505,18 @@ namespace Obfuscar
 						continue;
 					}
 
-				    var namesInXaml = NamesInXaml(xamlFiles);
-					if (info.ShouldSkip(unrenamedTypeKey, Project.InheritMap) || project.Settings.KeepPublicApi && type.IsPublic || namesInXaml.Contains(type.FullName))
-					{
-						map.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, "filtered");
+					var namesInXaml = NamesInXaml (xamlFiles);
+					if (info.ShouldSkip (unrenamedTypeKey, Project.InheritMap) || project.Settings.KeepPublicApi && type.IsPublic || namesInXaml.Contains (type.FullName)) {
+						map.UpdateType (oldTypeKey, ObfuscationStatus.Skipped, "filtered");
 
 						// go through the list of resources, remove ones that would be renamed
-						for (int i = 0; i < resources.Count;)
-						{
-							Resource res = resources[i];
+						for (int i = 0; i < resources.Count;) {
+							Resource res = resources [i];
 							string resName = res.Name;
-							if (Path.GetFileNameWithoutExtension(resName) == fullName)
-							{
-								resources.RemoveAt(i);
-								map.AddResource(resName, ObfuscationStatus.Skipped, "filtered");
-							}
-							else
-							{
+							if (Path.GetFileNameWithoutExtension (resName) == fullName) {
+								resources.RemoveAt (i);
+								map.AddResource (resName, ObfuscationStatus.Skipped, "filtered");
+							} else {
 								i++;
 							}
 						}
@@ -549,75 +526,62 @@ namespace Obfuscar
 
 					string name;
 					string ns;
-					if (project.Settings.ReuseNames)
-					{
-						name = NameMaker.UniqueTypeName(typeIndex);
-						ns = NameMaker.UniqueNamespace(typeIndex);
-					}
-					else
-					{
-						name = NameMaker.UniqueName(uniqueTypeNameIndex);
-						ns = NameMaker.UniqueNamespace(uniqueTypeNameIndex);
+					if (project.Settings.ReuseNames) {
+						name = NameMaker.UniqueTypeName (typeIndex);
+						ns = NameMaker.UniqueNamespace (typeIndex);
+					} else {
+						name = NameMaker.UniqueName (uniqueTypeNameIndex);
+						ns = NameMaker.UniqueNamespace (uniqueTypeNameIndex);
 						uniqueTypeNameIndex++;
 					}
 
-					if (type.GenericParameters.Count > 0)
-					{
-						name += '`' + type.GenericParameters.Count.ToString();
+					if (type.GenericParameters.Count > 0) {
+						name += '`' + type.GenericParameters.Count.ToString ();
 					}
 
-					if (type.DeclaringType != null)
-					{
+					if (type.DeclaringType != null) {
 						// Nested types do not have namespaces
 						ns = "";
 					}
 
-					TypeKey newTypeKey = new TypeKey(info.Name, ns, name);
+					TypeKey newTypeKey = new TypeKey (info.Name, ns, name);
 					typeIndex++;
 
 					// go through the list of renamed types and try to rename resources
-					for (int i = 0; i < resources.Count;)
-					{
-						Resource res = resources[i];
+					for (int i = 0; i < resources.Count;) {
+						Resource res = resources [i];
 						string resName = res.Name;
 
-						if (Path.GetFileNameWithoutExtension(resName) == fullName)
-						{
+						if (Path.GetFileNameWithoutExtension (resName) == fullName) {
 							// If one of the type's methods return a ResourceManager and contains a string with the full type name,
 							// we replace the type string with the obfuscated one.
 							// This is for the Visual Studio generated resource designer code.
-							foreach (MethodDefinition method in type.Methods)
-							{
-								if (method.ReturnType.FullName != "System.Resources.ResourceManager")
-								{
+							foreach (MethodDefinition method in type.Methods) {
+								if (method.ReturnType.FullName != "System.Resources.ResourceManager") {
 									continue;
 								}
 
-								for (int j = 0; j < method.Body.Instructions.Count; j++)
-								{
-									Instruction instruction = method.Body.Instructions[j];
+								for (int j = 0; j < method.Body.Instructions.Count; j++) {
+									Instruction instruction = method.Body.Instructions [j];
 									if (instruction.OpCode == OpCodes.Ldstr &&
-										(string)instruction.Operand == fullName)
-									{
+										(string)instruction.Operand == fullName) {
 										instruction.Operand = newTypeKey.Fullname;
 									}
 								}
 							}
 
-							string suffix = resName.Substring(fullName.Length);
+							string suffix = resName.Substring (fullName.Length);
 							string newName = newTypeKey.Fullname + suffix;
 							res.Name = newName;
-							resources.RemoveAt(i);
-							map.AddResource(resName, ObfuscationStatus.Renamed, newName);
-						}
-						else
-						{
+							resources.RemoveAt (i);
+							map.AddResource (resName, ObfuscationStatus.Renamed, newName);
+						} else {
 							i++;
 						}
 					}
 
-					RenameType(info, type, oldTypeKey, newTypeKey, unrenamedTypeKey);
-					typerenamemap.Add(unrenamedTypeKey.Fullname.Replace('/', '+'), type.FullName.Replace('/', '+'));
+					RenameType (info, type, oldTypeKey, newTypeKey, unrenamedTypeKey);
+					typerenamemap.Add (unrenamedTypeKey.Fullname.Replace('/', '+'), type.FullName.Replace ('/', '+'));
 				}
 
 				foreach (Resource res in resources) {
@@ -626,60 +590,53 @@ namespace Obfuscar
 			}
 		}
 
-		private HashSet<string> NamesInXaml(List<XDocument> xamlFiles)
+		private HashSet<string> NamesInXaml (List<XDocument> xamlFiles)
 		{
-		    var result = new HashSet<string>();
-		    if (xamlFiles.Count == 0)
-		        return result;
+			var result = new HashSet<string> ();
+			if (xamlFiles.Count == 0)
+				return result;
 
-		    foreach (var doc in xamlFiles)
-		        foreach (XElement child in doc.Descendants())
-		        {
-		            var classAttribute = child.Attributes().FirstOrDefault(node => node.Name.LocalName == "Class");
-		            if (classAttribute == null)
-		                continue;
+			foreach (var doc in xamlFiles)
+				foreach (XElement child in doc.Descendants()) {
+					var classAttribute = child.Attributes ().FirstOrDefault (node => node.Name.LocalName == "Class");
+					if (classAttribute == null)
+						continue;
 
-		            result.Add(classAttribute.Value);
-		        }
+					result.Add (classAttribute.Value);
+				}
 
-		    return result;
+			return result;
 		}
 
-		private List<XDocument> GetXamlDocuments(AssemblyDefinition library)
+		private List<XDocument> GetXamlDocuments (AssemblyDefinition library)
 		{
-			var result = new List<XDocument>();
-			foreach (Resource res in library.MainModule.Resources)
-			{
+			var result = new List<XDocument> ();
+			foreach (Resource res in library.MainModule.Resources) {
 				var embed = res as EmbeddedResource;
 				if (embed == null)
 					continue;
 
-				Stream s = embed.GetResourceStream();
+				Stream s = embed.GetResourceStream ();
 				s.Position = 0;
 				ResourceReader reader;
-				try
-				{
-					reader = new ResourceReader(s);
-				}
-				catch (ArgumentException)
-				{
+				try {
+					reader = new ResourceReader (s);
+				} catch (ArgumentException) {
 					continue;
 				}
 
-				foreach (DictionaryEntry entry in reader.Cast<DictionaryEntry>().OrderBy(e => e.Key.ToString()))
-				{
-					if (entry.Key.ToString().EndsWith(".baml", StringComparison.OrdinalIgnoreCase))
-					{
+				foreach (DictionaryEntry entry in reader.Cast<DictionaryEntry>().OrderBy(e => e.Key.ToString())) {
+					if (entry.Key.ToString ().EndsWith (".baml", StringComparison.OrdinalIgnoreCase)) {
 						Stream stream;
 						if (entry.Value is Stream)
 							stream = (Stream)entry.Value;
 						else if (entry.Value is byte[])
-							stream = new MemoryStream((byte[])entry.Value);
+							stream = new MemoryStream ((byte[])entry.Value);
 						else
 							continue;
 
 						using (var bamlReader = new XmlBamlReader(stream, new CecilTypeResolver(project.InheritMap.Cache, library)))
-							result.Add(XDocument.Load(bamlReader));
+							result.Add (XDocument.Load(bamlReader));
 					}
 				}
 			}
@@ -749,7 +706,7 @@ namespace Obfuscar
 		{
 			return GetNameGroup (GetSigNames (baseSigNames, typeKey), sig);
 		}
-		
+
 		private NameGroup GetNameGroup<KeyType> (Dictionary<KeyType, NameGroup> sigNames, KeyType sig)
 		{
 			NameGroup nameGroup;
@@ -1064,7 +1021,7 @@ namespace Obfuscar
 		}
 
 		private void RenameVirtualMethod (AssemblyInfo info, Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-			Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method, string skipRename)
+		                                  Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method, string skipRename)
 		{
 			// if method is in a group, look for group key
 			MethodGroup group = project.InheritMap.GetMethodGroup (methodKey);
@@ -1084,7 +1041,7 @@ namespace Obfuscar
 				ParamSig sig = new ParamSig (method);
 
 				// get name groups for classes in the group
-				NameGroup[] nameGroups = GetNameGroups (baseSigNames,  @group.Methods, sig);
+				NameGroup[] nameGroups = GetNameGroups (baseSigNames, @group.Methods, sig);
 
 				if (@group.External)
 					skipRename = "external base class or interface";
@@ -1097,7 +1054,7 @@ namespace Obfuscar
 					groupName = NameGroup.GetNext (nameGroups);
 				}
 
-				 @group.Name = groupName;
+				@group.Name = groupName;
 
 				// set up methods to be renamed
 				foreach (MethodKey m in @group.Methods)
@@ -1113,14 +1070,14 @@ namespace Obfuscar
 				// group is named, so we need to un-name it
 
 				Debug.Assert (!@group.External,
-							 "Group's external flag should have been handled when the group was created, " +
+				              "Group's external flag should have been handled when the group was created, " +
 					"and all methods in the group should already be marked skipped.");
 
 				// counts are grouping according to signature
 				ParamSig sig = new ParamSig (method);
 
 				// get name groups for classes in the group
-				NameGroup[] nameGroups = GetNameGroups (baseSigNames,  @group.Methods, sig);
+				NameGroup[] nameGroups = GetNameGroups (baseSigNames, @group.Methods, sig);
 
 				// make sure to remove the old group name from the classes' name groups
 				for (int i = 0; i < nameGroups.Length; i++)
@@ -1129,7 +1086,7 @@ namespace Obfuscar
 				// since this method has to be skipped, we need to use the method 
 				// name as new group name
 				groupName = method.Name;
-				 @group.Name = groupName;
+				@group.Name = groupName;
 
 				// set up methods to be renamed
 				foreach (MethodKey m in @group.Methods)
@@ -1143,12 +1100,12 @@ namespace Obfuscar
 				Debug.Assert (m.Status == ObfuscationStatus.Skipped ||
 					((m.Status == ObfuscationStatus.WillRename || m.Status == ObfuscationStatus.Renamed) &&
 					m.StatusText == groupName),
-							 "If the method isn't skipped, and the group already has a name...method should have one too.");
+				              "If the method isn't skipped, and the group already has a name...method should have one too.");
 			}
 		}
 
 		NameGroup[] GetNameGroups (Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-			IEnumerable<MethodKey> methodKeys, ParamSig sig)
+		                           IEnumerable<MethodKey> methodKeys, ParamSig sig)
 		{
 			// build unique set of classes in group
 			HashSet<TypeKey> typeKeys = new HashSet<TypeKey> ();
@@ -1211,12 +1168,24 @@ namespace Obfuscar
 		void RenameMethod (AssemblyInfo info, MethodKey methodKey, MethodDefinition method, string newName)
 		{
 			// find references, rename them, then rename the method itself
-			foreach (AssemblyInfo reference in info.ReferencedBy) {
+			var references = new List<AssemblyInfo> ();
+			references.AddRange (info.ReferencedBy);
+			if (!references.Contains (info)) {
+				references.Add (info);
+			}
+
+			foreach (AssemblyInfo reference in references) {
 				for (int i = 0; i < reference.UnrenamedReferences.Count;) {
 					MethodReference member = reference.UnrenamedReferences [i] as MethodReference;
 					if (member != null) {
 						if (methodKey.Matches (member)) {
-							member.Name = newName;
+							var generic = member as GenericInstanceMethod;
+							if (generic == null) {
+								member.Name = newName;
+							} else {
+								generic.ElementMethod.Name = newName;
+							}
+
 							reference.UnrenamedReferences.RemoveAt (i);
 
 							// since we removed one, continue without the increment
