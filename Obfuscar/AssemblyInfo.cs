@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Diagnostics;
-
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -57,7 +56,6 @@ namespace Obfuscar
 		}
 
 		bool initialized = false;
-
 		// to create, use FromXml
 		private AssemblyInfo (Project project)
 		{
@@ -202,14 +200,14 @@ namespace Obfuscar
 
 			return info;
 		}
-
 		/// <summary>
 		/// Called by project to finish initializing the assembly.
 		/// </summary>
 		internal void Init ()
 		{
 			unrenamedReferences = new List<MemberReference> ();
-			foreach (MemberReference member in getMemberReferences()) {
+			var items = getMemberReferences ();
+			foreach (MemberReference member in items) {
 				// FIXME: Figure out why these exist if they are never used.
 				// MethodReference mr = member as MethodReference;
 				// FieldReference fr = member as FieldReference;
@@ -263,7 +261,7 @@ namespace Obfuscar
 
 		public IEnumerable<TypeDefinition> GetAllTypeDefinitions ()
 		{
-			var result = new List<TypeDefinition>();
+			var result = new List<TypeDefinition> ();
 			foreach (TypeDefinition typedef in definition.MainModule.Types)
 				GetAllTypeDefinitions (typedef, result);
 
@@ -286,8 +284,7 @@ namespace Obfuscar
 						foreach (Instruction inst in method.Body.Instructions) {
 							MemberReference memberref = inst.Operand as MemberReference;
 							if (memberref != null) {
-								if (memberref is MethodReference && !(memberref is MethodDefinition || memberref is MethodSpecification || memberref is CallSite)
-									|| memberref is FieldReference && !(memberref is FieldDefinition)) {
+								if (IsOnlyReference (memberref) || memberref is FieldReference && !(memberref is FieldDefinition)) {
 									// FIXME: Figure out why this exists if it is never used.
 									// int c = memberreferences.Count;
 									memberreferences.Add (memberref);
@@ -298,6 +295,27 @@ namespace Obfuscar
 				}
 			}
 			return memberreferences;
+		}
+
+		private bool IsOnlyReference (MemberReference memberref)
+		{
+			if (memberref is MethodReference) {
+				if (memberref is MethodDefinition) {
+					return false;
+				}
+
+				if (memberref is MethodSpecification) {
+					if (memberref is GenericInstanceMethod) {
+						return true;
+					}
+
+					return false;
+				}
+
+				return !(memberref is CallSite);
+			}
+
+			return false;
 		}
 
 		IEnumerable<TypeReference> getTypeReferences ()
@@ -444,7 +462,6 @@ namespace Obfuscar
 
 			return skipEvents.IsMatch (evt, map);
 		}
-
 		/// <summary>
 		/// Makes sure that the assembly definition has been loaded (by <see cref="LoadAssembly"/>).
 		/// </summary>
@@ -453,7 +470,6 @@ namespace Obfuscar
 			if (definition == null)
 				throw new InvalidOperationException ("Expected that AssemblyInfo.LoadAssembly would be called before use.");
 		}
-
 		/// <summary>
 		/// Makes sure that the assembly has been initialized (by <see cref="Init"/>).
 		/// </summary>
