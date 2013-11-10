@@ -89,7 +89,7 @@ namespace Obfuscar
 			}
 
 			if (!reader.IsEmptyElement) {
-				while (reader.Read()) {
+				while (reader.Read ()) {
 					if (reader.NodeType == XmlNodeType.Element) {
 						string name = Helper.GetAttribute (reader, "name", vars);
                     
@@ -200,6 +200,7 @@ namespace Obfuscar
 
 			return info;
 		}
+
 		/// <summary>
 		/// Called by project to finish initializing the assembly.
 		/// </summary>
@@ -271,7 +272,7 @@ namespace Obfuscar
 		private void GetAllTypeDefinitions (TypeDefinition type, IList<TypeDefinition> result)
 		{
 			result.Add (type);
-			foreach (var nestedTypeDefition in type.NestedTypes) 
+			foreach (var nestedTypeDefition in type.NestedTypes)
 				GetAllTypeDefinitions (nestedTypeDefition, result);
 		}
 
@@ -397,15 +398,22 @@ namespace Obfuscar
 			skipMethods.Add (new MethodTester (method));
 		}
 
-		public bool ShouldSkip (string ns, InheritMap map)
+		private bool ShouldSkip (string ns, InheritMap map)
 		{
 			return skipNamespaces.IsMatch (ns, map);
 		}
 
-		public bool ShouldSkip (TypeKey type, TypeSkipFlags flag, InheritMap map)
+		public bool ShouldSkip (TypeKey type, TypeSkipFlags flag, InheritMap map, bool hidePrivateApi)
 		{
-			if (ShouldSkip (type.Namespace, map))
-				return true;
+			if (ShouldSkip (type.Namespace, map)) {
+				if (type.TypeDefinition.IsPublic) {
+					return true;
+				}
+
+				if (!hidePrivateApi) {
+					return true;
+				}
+			}
 
 			foreach (TypeTester typeTester in skipTypes) {
 				if ((typeTester.SkipFlags & flag) > 0 && typeTester.Test (type, map))
@@ -415,53 +423,61 @@ namespace Obfuscar
 			return false;
 		}
 
-		public bool ShouldSkip (TypeKey type, InheritMap map)
+		public bool ShouldSkip (TypeKey type, InheritMap map, bool hidePrivateApi)
 		{
-			if (ShouldSkip (type.Namespace, map))
-				return true;
+			if (ShouldSkip (type.Namespace, map)) {
+				if (type.TypeDefinition.IsPublic) {
+					return true;
+				}
+
+				if (!hidePrivateApi) {
+					return true;
+				}
+			}
 
 			return skipTypes.IsMatch (type, map);
 		}
 
-		public bool ShouldSkip (MethodKey method, InheritMap map)
+		public bool ShouldSkip (MethodKey method, InheritMap map, bool hidePrivateApi)
 		{
-			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipMethod, map))
+			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipMethod, map, hidePrivateApi))
 				return true;
 
 			return skipMethods.IsMatch (method, map);
 		}
 
-		public bool ShouldSkipStringHiding (MethodKey method, InheritMap map)
+		public bool ShouldSkipStringHiding (MethodKey method, InheritMap map, bool hidePrivateApi)
 		{
-			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipStringHiding, map))
+			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipStringHiding, map, hidePrivateApi))
 				return true;
 
 			return skipStringHiding.IsMatch (method, map);
 		}
 
-		public bool ShouldSkip (FieldKey field, InheritMap map)
+		public bool ShouldSkip (FieldKey field, InheritMap map, bool hidePrivateApi)
 		{
-			if (ShouldSkip (field.TypeKey, TypeSkipFlags.SkipField, map))
+			if (ShouldSkip (field.TypeKey, TypeSkipFlags.SkipField, map, hidePrivateApi))
 				return true;
 
 			return skipFields.IsMatch (field, map);
 		}
 
-		public bool ShouldSkip (PropertyKey prop, InheritMap map)
+		public bool ShouldSkip (PropertyKey prop, InheritMap map, bool hidePrivateApi)
 		{
-			if (ShouldSkip (prop.TypeKey, TypeSkipFlags.SkipProperty, map))
+			if (ShouldSkip (prop.TypeKey, TypeSkipFlags.SkipProperty, map, hidePrivateApi))
 				return true;
 
 			return skipProperties.IsMatch (prop, map);
 		}
 
-		public bool ShouldSkip (EventKey evt, InheritMap map)
+		public bool ShouldSkip (EventKey evt, InheritMap map, bool keepPrivateApi)
 		{
-			if (ShouldSkip (evt.TypeKey, TypeSkipFlags.SkipEvent, map))
+			if (ShouldSkip (evt.TypeKey, TypeSkipFlags.SkipEvent, map, keepPrivateApi))
 				return true;
 
 			return skipEvents.IsMatch (evt, map);
 		}
+
 		/// <summary>
 		/// Makes sure that the assembly definition has been loaded (by <see cref="LoadAssembly"/>).
 		/// </summary>
@@ -470,6 +486,7 @@ namespace Obfuscar
 			if (definition == null)
 				throw new InvalidOperationException ("Expected that AssemblyInfo.LoadAssembly would be called before use.");
 		}
+
 		/// <summary>
 		/// Makes sure that the assembly has been initialized (by <see cref="Init"/>).
 		/// </summary>

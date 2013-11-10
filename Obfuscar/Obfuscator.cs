@@ -42,7 +42,7 @@ using Ricciolo.StylesExplorer.MarkupReflection;
 
 namespace Obfuscar
 {
-	[SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
+	[SuppressMessage ("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
 	public class Obfuscator
 	{
 		public bool hideStrings {
@@ -65,11 +65,12 @@ namespace Obfuscar
 		// Unique names for type and members
 		private int uniqueTypeNameIndex;
 		private int uniqueMemberNameIndex;
+
 		/// <summary>
 		/// Creates an obfuscator initialized from a project file.
 		/// </summary>
 		/// <param name="projfile">Path to project file.</param>
-		[SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
+		[SuppressMessage ("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
 		public Obfuscator (string projfile)
 		{
 			// open XmlTextReader over xml string stream
@@ -83,6 +84,7 @@ namespace Obfuscar
 				throw new ApplicationException ("Unable to read specified project file:  " + projfile, e);
 			}
 		}
+
 		/// <summary>
 		/// Creates an obfuscator initialized from a project file.
 		/// </summary>
@@ -169,11 +171,12 @@ namespace Obfuscar
 
 			LogOutput ("Loading assemblies...");
 			LogOutput ("Extra framework folders: ");
-			foreach (var lExtraPath in project.ExtraPaths?? new string[0]) 
+			foreach (var lExtraPath in project.ExtraPaths?? new string[0])
 				LogOutput (lExtraPath + ", ");
 
 			project.LoadAssemblies ();
 		}
+
 		/// <summary>
 		/// Saves changes made to assemblies to the output path.
 		/// </summary>
@@ -226,7 +229,7 @@ namespace Obfuscar
 				keyfilepath = null;
 				foreach (CustomAttribute ca in info.Definition.CustomAttributes) {
 					if (ca.Constructor.DeclaringType.FullName ==
-						typeof(System.Reflection.AssemblyKeyFileAttribute).FullName) {
+					    typeof(System.Reflection.AssemblyKeyFileAttribute).FullName) {
 						keyfilepath = (string)ca.ConstructorArguments [0].Value;
 					}
 				}
@@ -254,6 +257,7 @@ namespace Obfuscar
 					string.Format ("Failed to sign '{1}' with key file \"{0}\"", keyfilepath, info.Filename), ex);
 			}
 		}
+
 		/// <summary>
 		/// Saves the name mapping to the output path.
 		/// </summary>
@@ -273,6 +277,7 @@ namespace Obfuscar
 			using (TextWriter file = File.CreateText(logPath))
 				SaveMapping (file);
 		}
+
 		/// <summary>
 		/// Saves the name mapping to a text writer.
 		/// </summary>
@@ -283,12 +288,14 @@ namespace Obfuscar
 
 			mapWriter.WriteMap (map);
 		}
+
 		/// <summary>
 		/// Returns the obfuscation map for the project.
 		/// </summary>
 		internal ObfuscationMap Mapping {
 			get { return map; }
 		}
+
 		/// <summary>
 		/// Calls the SemanticsAttributes-getter for all methods
 		/// </summary>
@@ -302,6 +309,7 @@ namespace Obfuscar
 				}
 			}
 		}
+
 		/// <summary>
 		/// Renames fields in the project.
 		/// </summary>
@@ -336,7 +344,7 @@ namespace Obfuscar
 							nameGroup.Add (fieldKey.Name);
 						} else {
 							// skip filtered fields
-							if (info.ShouldSkip (fieldKey, Project.InheritMap)) {
+							if (info.ShouldSkip (fieldKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
 								map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
 								nameGroup.Add (fieldKey.Name);
 							} else {
@@ -379,6 +387,7 @@ namespace Obfuscar
 			field.Name = newName;
 			map.UpdateField (fieldKey, ObfuscationStatus.Renamed, newName);
 		}
+
 		/// <summary>
 		/// Renames constructor, method, and generic parameters.
 		/// </summary>
@@ -397,7 +406,7 @@ namespace Obfuscar
 							RenameParams (method, info);
 
 						// rename the class parameters
-						if (!info.ShouldSkip (new TypeKey (type), Project.InheritMap)) {
+						if (!info.ShouldSkip (new TypeKey (type), Project.InheritMap, Project.Settings.HidePrivateApi)) {
 							int index = 0;
 							foreach (GenericParameter param in type.GenericParameters)
 								param.Name = NameMaker.UniqueName (index++);
@@ -410,7 +419,7 @@ namespace Obfuscar
 		private void RenameParams (MethodDefinition method, AssemblyInfo info)
 		{
 			MethodKey methodkey = new MethodKey (method);
-			if (!info.ShouldSkip (methodkey, Project.InheritMap)) {
+			if (!info.ShouldSkip (methodkey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
 				foreach (ParameterDefinition param in method.Parameters) {
 					if (param.CustomAttributes.Count == 0) {
 						param.Name = null;
@@ -428,29 +437,14 @@ namespace Obfuscar
 
 		private bool ShouldRename (TypeDefinition type, bool member = false)
 		{
-			var obfuscarObfuscate = typeof(ObfuscateAttribute).FullName;
-			var reflectionObfuscate = typeof(System.Reflection.ObfuscationAttribute).FullName;
-
-			foreach (CustomAttribute attr in type.CustomAttributes) {
-				var attrFullName = attr.Constructor.DeclaringType.FullName;
-				if (attrFullName == obfuscarObfuscate) {
-					return (bool)(Helper.GetAttributePropertyByName (attr, "ShouldObfuscate") ?? true);
-				}
-
-				if (attrFullName == reflectionObfuscate) {
-					var applyToMembers = (bool)(Helper.GetAttributePropertyByName (attr, "ApplyToMembers") ?? true);
-					var rename = !(bool)(Helper.GetAttributePropertyByName (attr, "Exclude") ?? false);
-					
-					if (member && !applyToMembers) {
-						return !rename;
-					}
-
-					return rename;
-				}
+			var marked = type.ObfuscationMarked ();
+			if (marked != null) {
+				return marked.Value;
 			}
 
 			return !project.Settings.MarkedOnly;
 		}
+
 		/// <summary>
 		/// Renames types and resources in the project.
 		/// </summary>
@@ -506,22 +500,24 @@ namespace Obfuscar
 					}
 
 					var namesInXaml = NamesInXaml (xamlFiles);
-					if (info.ShouldSkip (unrenamedTypeKey, Project.InheritMap) || project.Settings.KeepPublicApi && type.IsPublic || namesInXaml.Contains (type.FullName)) {
-						map.UpdateType (oldTypeKey, ObfuscationStatus.Skipped, "filtered");
+					if (info.ShouldSkip (unrenamedTypeKey, Project.InheritMap, Project.Settings.HidePrivateApi) || project.Settings.KeepPublicApi && type.IsPublic || namesInXaml.Contains (type.FullName)) {
+						if (type.ObfuscationMarked () != true) {
+							map.UpdateType (oldTypeKey, ObfuscationStatus.Skipped, "filtered");
 
-						// go through the list of resources, remove ones that would be renamed
-						for (int i = 0; i < resources.Count;) {
-							Resource res = resources [i];
-							string resName = res.Name;
-							if (Path.GetFileNameWithoutExtension (resName) == fullName) {
-								resources.RemoveAt (i);
-								map.AddResource (resName, ObfuscationStatus.Skipped, "filtered");
-							} else {
-								i++;
+							// go through the list of resources, remove ones that would be renamed
+							for (int i = 0; i < resources.Count;) {
+								Resource res = resources [i];
+								string resName = res.Name;
+								if (Path.GetFileNameWithoutExtension (resName) == fullName) {
+									resources.RemoveAt (i);
+									map.AddResource (resName, ObfuscationStatus.Skipped, "filtered");
+								} else {
+									i++;
+								}
 							}
-						}
 
-						continue;
+							continue;
+						}
 					}
 
 					string name;
@@ -564,7 +560,7 @@ namespace Obfuscar
 								for (int j = 0; j < method.Body.Instructions.Count; j++) {
 									Instruction instruction = method.Body.Instructions [j];
 									if (instruction.OpCode == OpCodes.Ldstr &&
-										(string)instruction.Operand == fullName) {
+									    (string)instruction.Operand == fullName) {
 										instruction.Operand = newTypeKey.Fullname;
 									}
 								}
@@ -581,7 +577,7 @@ namespace Obfuscar
 					}
 
 					RenameType (info, type, oldTypeKey, newTypeKey, unrenamedTypeKey);
-					typerenamemap.Add (unrenamedTypeKey.Fullname.Replace('/', '+'), type.FullName.Replace ('/', '+'));
+					typerenamemap.Add (unrenamedTypeKey.Fullname.Replace ('/', '+'), type.FullName.Replace ('/', '+'));
 				}
 
 				foreach (Resource res in resources) {
@@ -636,7 +632,7 @@ namespace Obfuscar
 							continue;
 
 						using (var bamlReader = new XmlBamlReader(stream, new CecilTypeResolver(project.InheritMap.Cache, library)))
-							result.Add (XDocument.Load(bamlReader));
+							result.Add (XDocument.Load (bamlReader));
 					}
 				}
 			}
@@ -756,7 +752,7 @@ namespace Obfuscar
 						}
 
 						// skip filtered props
-						if (info.ShouldSkip (propKey, Project.InheritMap)) {
+						if (info.ShouldSkip (propKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
 							m.Update (ObfuscationStatus.Skipped, "filtered");
 
 							// make sure get/set get skipped too
@@ -859,7 +855,7 @@ namespace Obfuscar
 						}
 
 						// skip filtered events
-						if (info.ShouldSkip (evtKey, Project.InheritMap)) {
+						if (info.ShouldSkip (evtKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
 							m.Update (ObfuscationStatus.Skipped, "filtered");
 
 							// make sure add/remove get skipped too
@@ -918,7 +914,7 @@ namespace Obfuscar
 						}
 
 						// skip filtered methods
-						if (info.ShouldSkip (methodKey, Project.InheritMap)) {
+						if (info.ShouldSkip (methodKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
 							skiprename = "filtered";
 						}
 
@@ -956,7 +952,7 @@ namespace Obfuscar
 
 						// if we need to skip the method or we don't yet have a name planned for a method, rename it
 						if ((skiprename != null && m.Status != ObfuscationStatus.Skipped) ||
-							m.Status == ObfuscationStatus.Unknown) {
+						    m.Status == ObfuscationStatus.Unknown) {
 							RenameVirtualMethod (info, baseSigNames, sigNames, methodKey, method, skiprename);
 						}
 					}
@@ -1071,7 +1067,7 @@ namespace Obfuscar
 
 				Debug.Assert (!@group.External,
 				              "Group's external flag should have been handled when the group was created, " +
-					"and all methods in the group should already be marked skipped.");
+				              "and all methods in the group should already be marked skipped.");
 
 				// counts are grouping according to signature
 				ParamSig sig = new ParamSig (method);
@@ -1098,8 +1094,8 @@ namespace Obfuscar
 			} else {
 				ObfuscatedThing m = map.GetMethod (methodKey);
 				Debug.Assert (m.Status == ObfuscationStatus.Skipped ||
-					((m.Status == ObfuscationStatus.WillRename || m.Status == ObfuscationStatus.Renamed) &&
-					m.StatusText == groupName),
+				((m.Status == ObfuscationStatus.WillRename || m.Status == ObfuscationStatus.Renamed) &&
+				m.StatusText == groupName),
 				              "If the method isn't skipped, and the group already has a name...method should have one too.");
 			}
 		}
@@ -1131,7 +1127,7 @@ namespace Obfuscar
 
 			// if it already has a name, return it
 			if (t.Status == ObfuscationStatus.Renamed ||
-				t.Status == ObfuscationStatus.WillRename)
+			    t.Status == ObfuscationStatus.WillRename)
 				return t.StatusText;
 
 			// don't mess with methods we decided to skip
@@ -1281,7 +1277,7 @@ namespace Obfuscar
 					// TypeKey typeKey = new TypeKey(type);
 					if (ShouldRename (type, true)) {
 						foreach (MethodDefinition method in type.Methods) {
-							if (!info.ShouldSkipStringHiding (new MethodKey (method), Project.InheritMap) && method.Body != null) {
+							if (!info.ShouldSkipStringHiding (new MethodKey (method), Project.InheritMap, Project.Settings.HidePrivateApi) && method.Body != null) {
 								for (int i = 0; i < method.Body.Instructions.Count; i++) {
 									Instruction instruction = method.Body.Instructions [i];
 									if (instruction.OpCode == OpCodes.Ldstr) {
@@ -1395,10 +1391,10 @@ namespace Obfuscar
 
 		public static class MsNetSigner
 		{
-			[System.Runtime.InteropServices.DllImport("mscoree.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
+			[System.Runtime.InteropServices.DllImport ("mscoree.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
 			private static extern bool StrongNameSignatureGeneration (
-				[/*In, */System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)]string wzFilePath,
-				[/*In, */System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)]string wzKeyContainer,
+				[/*In, */System.Runtime.InteropServices.MarshalAs (System.Runtime.InteropServices.UnmanagedType.LPWStr)]string wzFilePath,
+				[/*In, */System.Runtime.InteropServices.MarshalAs (System.Runtime.InteropServices.UnmanagedType.LPWStr)]string wzKeyContainer,
 				/*[In]*/byte[] pbKeyBlob,
 				/*[In]*/uint cbKeyBlob,
 				/*[In]*/IntPtr ppbSignatureBlob, // not supported, always pass 0.
