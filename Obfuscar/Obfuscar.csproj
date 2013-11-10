@@ -145,6 +145,7 @@
     <Compile Include="PropertyKey.cs" />
     <Compile Include="PropertyTester.cs" />
     <Compile Include="MapWriter.cs" />
+    <Compile Include="TypeDefinitionExtensions.cs" />
     <Compile Include="TypeKey.cs" />
     <Compile Include="FieldTester.cs" />
     <Compile Include="MethodTester.cs" />
