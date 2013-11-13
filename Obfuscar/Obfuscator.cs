@@ -339,26 +339,35 @@ namespace Obfuscar
 						if (field.IsRuntimeSpecialName && field.Name == "value__") {
 							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
 							nameGroup.Add (fieldKey.Name);
-						} else if (project.Settings.KeepPublicApi && field.DeclaringType.IsPublic && field.IsPublic) {
-							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "public field");
-							nameGroup.Add (fieldKey.Name);
-						} else {
-							// skip filtered fields
-							if (info.ShouldSkip (fieldKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
+							continue;
+						} 
+                        
+						if (project.Settings.KeepPublicApi && field.DeclaringType.IsPublic && field.IsPublic) {
+							if (type.ObfuscationMarked () != true) {
+								map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "public field");
+								nameGroup.Add (fieldKey.Name);
+								continue;
+							}
+						} 
+
+						// skip filtered fields
+						if (info.ShouldSkip (fieldKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
+							if (type.ObfuscationMarked () != true) {
 								map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
 								nameGroup.Add (fieldKey.Name);
-							} else {
-								string newName;
-								if (project.Settings.ReuseNames) {
-									newName = nameGroup.GetNext ();
-								} else {
-									newName = NameMaker.UniqueName (uniqueMemberNameIndex++);
-								}
-
-								RenameField (info, fieldKey, field, newName);
-								nameGroup.Add (newName);
+								continue;
 							}
+						} 
+
+						string newName;
+						if (project.Settings.ReuseNames) {
+							newName = nameGroup.GetNext ();
+						} else {
+							newName = NameMaker.UniqueName (uniqueMemberNameIndex++);
 						}
+
+						RenameField (info, fieldKey, field, newName);
+						nameGroup.Add (newName);
 					}
 				}
 			}
@@ -406,11 +415,12 @@ namespace Obfuscar
 							RenameParams (method, info);
 
 						// rename the class parameters
-						if (!info.ShouldSkip (new TypeKey (type), Project.InheritMap, Project.Settings.HidePrivateApi)) {
-							int index = 0;
-							foreach (GenericParameter param in type.GenericParameters)
-								param.Name = NameMaker.UniqueName (index++);
-						}
+						if (info.ShouldSkip (new TypeKey (type), Project.InheritMap, Project.Settings.HidePrivateApi) && type.ObfuscationMarked () != true)
+							continue;
+                            
+						int index = 0;
+						foreach (GenericParameter param in type.GenericParameters)
+							param.Name = NameMaker.UniqueName (index++);						
 					}
 				}
 			}
@@ -747,24 +757,28 @@ namespace Obfuscar
 
 						var hasPublicProperty = (prop.GetMethod != null && (prop.GetMethod.IsPublic || prop.GetMethod.IsFamily)) || (prop.SetMethod != null && (prop.SetMethod.IsPublic || prop.SetMethod.IsFamily));
 						if (project.Settings.KeepPublicApi && prop.DeclaringType.IsPublic && hasPublicProperty) {
-							m.Update (ObfuscationStatus.Skipped, "public property");
-							continue;
+							if (type.ObfuscationMarked () != true) {
+								m.Update (ObfuscationStatus.Skipped, "public property");
+								continue;
+							}
 						}
 
 						// skip filtered props
 						if (info.ShouldSkip (propKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
-							m.Update (ObfuscationStatus.Skipped, "filtered");
+							if (type.ObfuscationMarked () != true) {
+								m.Update (ObfuscationStatus.Skipped, "filtered");
 
-							// make sure get/set get skipped too
-							if (prop.GetMethod != null) {
-								info.ForceSkip (new MethodKey (prop.GetMethod));
-							}
+								// make sure get/set get skipped too
+								if (prop.GetMethod != null) {
+									info.ForceSkip (new MethodKey (prop.GetMethod));
+								}
 
-							if (prop.SetMethod != null) {
-								info.ForceSkip (new MethodKey (prop.SetMethod));
-							}
+								if (prop.SetMethod != null) {
+									info.ForceSkip (new MethodKey (prop.SetMethod));
+								}
 
-							continue;
+								continue;
+							}							
 						}
 							
 						if (type.BaseType != null && type.BaseType.Name.EndsWith ("Attribute") && prop.SetMethod != null && (prop.SetMethod.Attributes & MethodAttributes.Public) != 0) {
@@ -850,19 +864,23 @@ namespace Obfuscar
 
 						var hasPublicEvent = evt.AddMethod.IsPublic || evt.AddMethod.IsFamily || evt.RemoveMethod.IsPublic || evt.RemoveMethod.IsFamily;
 						if (project.Settings.KeepPublicApi && evt.DeclaringType.IsPublic && hasPublicEvent) {
-							m.Update (ObfuscationStatus.Skipped, "public event");
-							continue;
+							if (type.ObfuscationMarked () != true) {
+								m.Update (ObfuscationStatus.Skipped, "public event");
+								continue;
+							}
 						}
 
 						// skip filtered events
 						if (info.ShouldSkip (evtKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
-							m.Update (ObfuscationStatus.Skipped, "filtered");
+							if (type.ObfuscationMarked () != true) {
+								m.Update (ObfuscationStatus.Skipped, "filtered");
 
-							// make sure add/remove get skipped too
-							info.ForceSkip (new MethodKey (evt.AddMethod));
-							info.ForceSkip (new MethodKey (evt.RemoveMethod));
+								// make sure add/remove get skipped too
+								info.ForceSkip (new MethodKey (evt.AddMethod));
+								info.ForceSkip (new MethodKey (evt.RemoveMethod));
 
-							continue;
+								continue;
+							}
 						}
 
 						// add to to collection for removal
@@ -910,12 +928,14 @@ namespace Obfuscar
 						}
 
 						if (project.Settings.KeepPublicApi && method.DeclaringType.IsPublic && (method.IsPublic || method.IsFamily)) {
-							skiprename = "public method";
+							if (type.ObfuscationMarked () != true)
+								skiprename = "public method";
 						}
 
 						// skip filtered methods
 						if (info.ShouldSkip (methodKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
-							skiprename = "filtered";
+							if (type.ObfuscationMarked () != true)
+								skiprename = "filtered";
 						}
 
 						// update status for skipped non-virtual methods immediately...status for
@@ -966,8 +986,7 @@ namespace Obfuscar
 						}
 					}
 				}
-
-
+                
 				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
 					if (type.FullName == "<Module>") {
 						continue;
