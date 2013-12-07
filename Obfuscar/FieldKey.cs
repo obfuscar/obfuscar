@@ -115,5 +115,13 @@ namespace Obfuscar
 		{
 			return String.Format ("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
 		}
+
+		internal bool ShouldSkip (bool hidePrivateApi)
+		{
+			if (fieldDefinition.IsPublic)
+				return true;
+
+			return !hidePrivateApi;
+		}
 	}
 }

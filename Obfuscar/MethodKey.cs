@@ -24,7 +24,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using Mono.Cecil;
 using Mono.Cecil.Metadata;
 
@@ -80,9 +79,9 @@ namespace Obfuscar
 		public bool Equals (MethodKey other)
 		{
 			return other != null &&
-				hashCode == other.hashCode &&
-				(typeKey == null ? other.typeKey == null : typeKey == other.typeKey) &&
-				Equals ((NameParamSig)other);
+			hashCode == other.hashCode &&
+			(typeKey == null ? other.typeKey == null : typeKey == other.typeKey) &&
+			Equals ((NameParamSig)other);
 		}
 
 		public override bool Equals (object obj)
@@ -126,6 +125,14 @@ namespace Obfuscar
 			if (cmp == 0)
 				cmp = typeKey.CompareTo (other.typeKey);
 			return cmp;
+		}
+
+		internal bool ShouldSkip (bool hidePrivateApi)
+		{
+			if (methodDefinition.IsPublic)
+				return true;
+
+			return !hidePrivateApi;
 		}
 	}
 }

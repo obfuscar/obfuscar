@@ -406,10 +406,6 @@ namespace Obfuscar
 		public bool ShouldSkip (TypeKey type, TypeSkipFlags flag, InheritMap map, bool hidePrivateApi)
 		{
 			if (ShouldSkip (type.Namespace, map)) {
-				if (type.TypeDefinition.IsPublic) {
-					return true;
-				}
-
 				if (!hidePrivateApi) {
 					return true;
 				}
@@ -443,6 +439,9 @@ namespace Obfuscar
 			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipMethod, map, hidePrivateApi))
 				return true;
 
+			if (method.ShouldSkip (hidePrivateApi))
+				return true;
+
 			return skipMethods.IsMatch (method, map);
 		}
 
@@ -459,6 +458,9 @@ namespace Obfuscar
 			if (ShouldSkip (field.TypeKey, TypeSkipFlags.SkipField, map, hidePrivateApi))
 				return true;
 
+			if (field.ShouldSkip (hidePrivateApi))
+				return true;
+
 			return skipFields.IsMatch (field, map);
 		}
 
@@ -467,12 +469,18 @@ namespace Obfuscar
 			if (ShouldSkip (prop.TypeKey, TypeSkipFlags.SkipProperty, map, hidePrivateApi))
 				return true;
 
+			if (prop.ShouldSkip (hidePrivateApi))
+				return true;
+
 			return skipProperties.IsMatch (prop, map);
 		}
 
-		public bool ShouldSkip (EventKey evt, InheritMap map, bool keepPrivateApi)
+		public bool ShouldSkip (EventKey evt, InheritMap map, bool hidePrivateApi)
 		{
-			if (ShouldSkip (evt.TypeKey, TypeSkipFlags.SkipEvent, map, keepPrivateApi))
+			if (ShouldSkip (evt.TypeKey, TypeSkipFlags.SkipEvent, map, hidePrivateApi))
+				return true;
+
+			if (evt.ShouldSkip (hidePrivateApi))
 				return true;
 
 			return skipEvents.IsMatch (evt, map);
