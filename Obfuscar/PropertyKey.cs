@@ -22,11 +22,7 @@
 /// </copyright>
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
-
 using Mono.Cecil;
-using Mono.Cecil.Metadata;
 
 namespace Obfuscar
 {
@@ -113,6 +109,14 @@ namespace Obfuscar
 		public override string ToString ()
 		{
 			return String.Format ("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
+		}
+
+		internal bool ShouldSkip (bool hidePrivateApi)
+		{
+			if ((propertyDefinition.GetMethod != null && propertyDefinition.GetMethod.IsPublic) || (propertyDefinition.SetMethod != null && propertyDefinition.SetMethod.IsPublic))
+				return true;
+
+			return !hidePrivateApi;
 		}
 	}
 }

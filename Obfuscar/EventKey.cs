@@ -24,7 +24,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using Mono.Cecil;
 using Mono.Cecil.Metadata;
 
@@ -123,6 +122,14 @@ namespace Obfuscar
 		public override string ToString ()
 		{
 			return String.Format ("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
+		}
+
+		internal bool ShouldSkip (bool hidePrivateApi)
+		{
+			if (eventDefinition.AddMethod.IsPublic || eventDefinition.RemoveMethod.IsPublic)
+				return true;
+
+			return !hidePrivateApi;
 		}
 	}
 }
