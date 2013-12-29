@@ -24,6 +24,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.CodeDom.Compiler;
 
@@ -37,10 +38,8 @@ namespace ObfuscarTests
 	{
 		protected void CheckProperties (string name, int expectedTypes, string[] expected, string[] notExpected)
 		{
-			C5.HashSet<string> propsToFind = new C5.HashSet<string> ();
-			propsToFind.AddAll (expected);
-			C5.HashSet<string> propsNotToFind = new C5.HashSet<string> ();
-			propsNotToFind.AddAll (notExpected);
+			HashSet<string> propsToFind = new HashSet<string> (expected);
+			HashSet<string> propsNotToFind = new HashSet<string> (notExpected);
 
 			string[] expectedMethods = new string[expected.Length * 2];
 			for (int i = 0; i < expected.Length; i ++) {
@@ -82,6 +81,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithProperties.dll' />" +
 				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 

@@ -38,10 +38,8 @@ namespace ObfuscarTests
 	{
 		protected void CheckEnums( string name, int expectedTypes, string[] expected, string[] notExpected )
 		{
-			C5.HashSet<string> valsToFind = new C5.HashSet<string>( );
-			valsToFind.AddAll( expected );
-			C5.HashSet<string> valsNotToFind = new C5.HashSet<string>( );
-			valsNotToFind.AddAll( notExpected );
+			HashSet<string> valsToFind = new HashSet<string>(expected );
+			HashSet<string> valsNotToFind = new HashSet<string>(notExpected );
 
 			AssemblyHelper.CheckAssembly( name, expectedTypes,
 				delegate( TypeDefinition typeDef ) { return typeDef.BaseType.FullName == "System.Enum"; },
@@ -72,6 +70,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithEnums.dll' />" +
 				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
@@ -96,6 +95,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithEnums.dll'>" +
 				@"<SkipField type='TestClasses.Enum1' name='Value2' />" +
 				@"</Module>" +
@@ -123,6 +123,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithEnums.dll'>" +
 				@"<SkipField type='TestClasses.Enum1' rx='Value\d' />" +
 				@"</Module>" +

@@ -69,10 +69,8 @@ namespace ObfuscarTests
 		public static void CheckAssembly (string name, int expectedTypes, string[] expectedMethods, string[] notExpectedMethods,
 			Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType)
 		{
-			C5.HashSet<string> methodsToFind = new C5.HashSet<string> ();
-			methodsToFind.AddAll (expectedMethods);
-			C5.HashSet<string> methodsNotToFind = new C5.HashSet<string> ();
-			methodsNotToFind.AddAll (notExpectedMethods);
+			HashSet<string> methodsToFind = new HashSet<string> (expectedMethods);
+			HashSet<string> methodsNotToFind = new HashSet<string> (notExpectedMethods);
 
 			CheckAssembly (name, expectedTypes, isType,
 				delegate( TypeDefinition typeDef ) {

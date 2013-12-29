@@ -126,8 +126,10 @@ namespace Obfuscar
 
 		internal bool ShouldSkip (bool hidePrivateApi)
 		{
-			if (eventDefinition.AddMethod.IsPublic || eventDefinition.RemoveMethod.IsPublic)
-				return true;
+            if (typeKey.TypeDefinition.IsPublic &&
+                (eventDefinition.AddMethod.IsPublic ||
+                eventDefinition.RemoveMethod.IsPublic))
+                return true;
 
 			return !hidePrivateApi;
 		}

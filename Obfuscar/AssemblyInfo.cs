@@ -421,6 +421,9 @@ namespace Obfuscar
 
 		public bool ShouldSkip (TypeKey type, InheritMap map, bool hidePrivateApi)
 		{
+            if (skipTypes.IsMatch(type, map))
+                return true;
+
 			if (ShouldSkip (type.Namespace, map)) {
 				if (type.TypeDefinition.IsPublic) {
 					return true;
@@ -431,7 +434,7 @@ namespace Obfuscar
 				}
 			}
 
-			return skipTypes.IsMatch (type, map);
+			return false;
 		}
 
 		public bool ShouldSkip (MethodKey method, InheritMap map, bool hidePrivateApi)
@@ -439,10 +442,10 @@ namespace Obfuscar
 			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipMethod, map, hidePrivateApi))
 				return true;
 
-			if (method.ShouldSkip (hidePrivateApi))
+			if (skipMethods.IsMatch (method, map))
 				return true;
 
-			return skipMethods.IsMatch (method, map);
+			return method.ShouldSkip (hidePrivateApi);
 		}
 
 		public bool ShouldSkipStringHiding (MethodKey method, InheritMap map, bool hidePrivateApi)
@@ -458,10 +461,10 @@ namespace Obfuscar
 			if (ShouldSkip (field.TypeKey, TypeSkipFlags.SkipField, map, hidePrivateApi))
 				return true;
 
-			if (field.ShouldSkip (hidePrivateApi))
+			if (skipFields.IsMatch (field, map))
 				return true;
 
-			return skipFields.IsMatch (field, map);
+            return field.ShouldSkip(hidePrivateApi);
 		}
 
 		public bool ShouldSkip (PropertyKey prop, InheritMap map, bool hidePrivateApi)
@@ -469,10 +472,10 @@ namespace Obfuscar
 			if (ShouldSkip (prop.TypeKey, TypeSkipFlags.SkipProperty, map, hidePrivateApi))
 				return true;
 
-			if (prop.ShouldSkip (hidePrivateApi))
+			if (skipProperties.IsMatch (prop, map))
 				return true;
 
-			return skipProperties.IsMatch (prop, map);
+            return prop.ShouldSkip(hidePrivateApi);
 		}
 
 		public bool ShouldSkip (EventKey evt, InheritMap map, bool hidePrivateApi)
@@ -480,10 +483,10 @@ namespace Obfuscar
 			if (ShouldSkip (evt.TypeKey, TypeSkipFlags.SkipEvent, map, hidePrivateApi))
 				return true;
 
-			if (evt.ShouldSkip (hidePrivateApi))
+			if (skipEvents.IsMatch (evt, map))
 				return true;
 
-			return skipEvents.IsMatch (evt, map);
+			return evt.ShouldSkip (hidePrivateApi);
 		}
 
 		/// <summary>

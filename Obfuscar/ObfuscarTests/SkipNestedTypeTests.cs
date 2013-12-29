@@ -50,7 +50,7 @@ namespace ObfuscarTests
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithNestedTypes", string.Empty, xml);
 
-			C5.HashSet<string> typesToFind = new C5.HashSet<string> ();
+			HashSet<string> typesToFind = new HashSet<string> ();
 			typesToFind.Add ("A.A");
 			typesToFind.Add ("A.A/a");
 			typesToFind.Add ("A.A/NestedClassA");

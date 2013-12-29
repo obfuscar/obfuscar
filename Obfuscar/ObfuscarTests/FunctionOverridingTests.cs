@@ -90,9 +90,9 @@ namespace ObfuscarTests
 			MethodDefinition classDmethod1 = FindByName (classDType, "Method1");
 
 			Obfuscar.ObfuscatedThing classAEntry = map.GetMethod (new Obfuscar.MethodKey (classAmethod2));
-			ObfuscatedThing classAEntry1 = map.GetMethod (new MethodKey (classAcompare));
+			ObfuscatedThing classACompareEntry = map.GetMethod (new MethodKey (classAcompare));
 			Obfuscar.ObfuscatedThing classBEntry = map.GetMethod (new Obfuscar.MethodKey (classBmethod2));
-			Obfuscar.ObfuscatedThing classBEntry1 = map.GetMethod (new Obfuscar.MethodKey (classBcompare));
+			Obfuscar.ObfuscatedThing classBCompareEntry = map.GetMethod (new Obfuscar.MethodKey (classBcompare));
 			ObfuscatedThing classCEntry = map.GetMethod (new MethodKey (classCmethod1));
 			ObfuscatedThing classDEntry = map.GetMethod (new MethodKey (classDmethod1));
 
@@ -114,9 +114,9 @@ namespace ObfuscarTests
 				classAEntry.StatusText == classBEntry.StatusText,
 				"Both methods should have been renamed to the same thing.");
 
-			Assert.IsTrue (classAEntry1.Status == ObfuscationStatus.Skipped);
+			Assert.IsTrue (classACompareEntry.Status == ObfuscationStatus.Skipped);
 
-			Assert.IsTrue (classBEntry1.Status == ObfuscationStatus.Skipped);
+			Assert.IsTrue (classBCompareEntry.Status == ObfuscationStatus.Skipped);
 
 			Assert.IsTrue (classCEntry.Status == ObfuscationStatus.Renamed);
 
