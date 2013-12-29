@@ -35,6 +35,9 @@ namespace TestClasses
 		}
 		public class NestedClassB
 		{
+			public class NestedClassC
+			{				
+			}
 		}
 	}
 }

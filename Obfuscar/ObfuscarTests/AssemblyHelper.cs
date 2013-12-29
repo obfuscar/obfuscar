@@ -49,21 +49,20 @@ namespace ObfuscarTests
 					continue;
 				else if (isType (typeDef)) {
 					foundType = true;
-
 					if (checkType != null)
-						checkType (typeDef);
-
-					if (typeDef.HasNestedTypes) {
-						foreach (var nested in typeDef.NestedTypes) {
-							if (isType (nested)) {
-								checkType (nested);
-							}
-						}
-					}
+						CheckTypeNested (typeDef, isType, checkType);                    
 				}
 			}
 
 			Assert.IsTrue (foundType, "Should have found non-<Module> type.");
+		}
+
+		private static void CheckTypeNested (TypeDefinition typeDef, Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType)
+		{
+			checkType (typeDef);
+			if (typeDef.HasNestedTypes)
+				foreach (var nested in typeDef.NestedTypes)
+					CheckTypeNested (nested, isType, checkType); 
 		}
 
 		public static void CheckAssembly (string name, int expectedTypes, string[] expectedMethods, string[] notExpectedMethods,
