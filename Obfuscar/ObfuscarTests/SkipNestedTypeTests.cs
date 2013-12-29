@@ -23,9 +23,6 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.IO;
-using System.Reflection;
 using NUnit.Framework;
 using Mono.Cecil;
 
@@ -52,10 +49,11 @@ namespace ObfuscarTests
 			HashSet<string> typesToFind = new HashSet<string> ();
 			typesToFind.Add ("A.A");
 			typesToFind.Add ("A.A/a");
+			typesToFind.Add ("A.A/a/B");
 			typesToFind.Add ("A.A/NestedClassA");
 
 			AssemblyHelper.CheckAssembly ("AssemblyWithNestedTypes", 1,
-				delegate( TypeDefinition typeDef) {
+				delegate {
 					return true;
 				},
 				delegate( TypeDefinition typeDef) {
