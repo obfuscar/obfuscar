@@ -26,7 +26,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.CodeDom.Compiler;
-
 using NUnit.Framework;
 using Mono.Cecil;
 
@@ -37,18 +36,16 @@ namespace ObfuscarTests
 	{
 		protected void CheckEvents (string name, int expectedTypes, string[] expected, string[] notExpected)
 		{
-			C5.HashSet<string> eventsToFind = new C5.HashSet<string> ();
-			eventsToFind.AddAll (expected);
-			C5.HashSet<string> eventsNotToFind = new C5.HashSet<string> ();
-			eventsNotToFind.AddAll (notExpected);
+			HashSet<string> eventsToFind = new HashSet<string> (expected);
+			HashSet<string> eventsNotToFind = new HashSet<string> (notExpected);
 
-			C5.HashSet<string> methodsToFind = new C5.HashSet<string> ();
+			HashSet<string> methodsToFind = new HashSet<string> ();
 			for (int i = 0; i < expected.Length; i++) {
 				methodsToFind.Add ("add_" + expected [i]);
 				methodsToFind.Add ("remove_" + expected [i]);
 			}
 
-			C5.HashSet<string> methodsNotToFind = new C5.HashSet<string> ();
+			HashSet<string> methodsNotToFind = new HashSet<string> ();
 			for (int i = 0; i < notExpected.Length; i++) {
 				methodsNotToFind.Add ("add_" + notExpected [i]);
 				methodsNotToFind.Add ("remove_" + notExpected [i]);
@@ -57,40 +54,40 @@ namespace ObfuscarTests
 			bool foundDelType = false;
 
 			AssemblyHelper.CheckAssembly (name, expectedTypes,
-				delegate( TypeDefinition typeDef ) {
-				if (typeDef.BaseType.FullName == "System.MulticastDelegate") {
-					foundDelType = true;
-					return false;
-				} else
-					return true;
-			},
-				delegate( TypeDefinition typeDef ) {
-				// make sure we have enough methods...
-				// 2 methods / event + a method to fire them
-				Assert.AreEqual (methodsToFind.Count + methodsNotToFind.Count + 2, typeDef.Methods.Count,
+				delegate( TypeDefinition typeDef) {
+					if (typeDef.BaseType.FullName == "System.MulticastDelegate") {
+						foundDelType = true;
+						return false;
+					} else
+						return true;
+				},
+				delegate( TypeDefinition typeDef) {
+					// make sure we have enough methods...
+					// 2 methods / event + a method to fire them
+					Assert.AreEqual (methodsToFind.Count + methodsNotToFind.Count + 2, typeDef.Methods.Count,
 						"Some of the methods for the type are missing.");
 
-				foreach (MethodDefinition method in typeDef.Methods) {
-					Assert.IsFalse (methodsNotToFind.Contains (method.Name), String.Format (
+					foreach (MethodDefinition method in typeDef.Methods) {
+						Assert.IsFalse (methodsNotToFind.Contains (method.Name), String.Format (
 							"Did not expect to find method '{0}'.", method.Name));
 
-					methodsToFind.Remove (method.Name);
-				}
+						methodsToFind.Remove (method.Name);
+					}
 
-				Assert.AreEqual (expected.Length, typeDef.Events.Count,
+					Assert.AreEqual (expected.Length, typeDef.Events.Count,
 						expected.Length == 1 ? "Type should have 1 event (others dropped by default)." :
 						String.Format ("Type should have {0} events (others dropped by default).", expected.Length));
 
-				foreach (EventDefinition evt in typeDef.Events) {
-					Assert.IsFalse (eventsNotToFind.Contains (evt.Name), String.Format (
+					foreach (EventDefinition evt in typeDef.Events) {
+						Assert.IsFalse (eventsNotToFind.Contains (evt.Name), String.Format (
 							"Did not expect to find event '{0}'.", evt.Name));
 
-					eventsToFind.Remove (evt.Name);
-				}
+						eventsToFind.Remove (evt.Name);
+					}
 
-				Assert.IsFalse (methodsToFind.Count > 0, "Failed to find all expected methods.");
-				Assert.IsFalse (eventsToFind.Count > 0, "Failed to find all expected events.");
-			});
+					Assert.IsFalse (methodsToFind.Count > 0, "Failed to find all expected methods.");
+					Assert.IsFalse (eventsToFind.Count > 0, "Failed to find all expected events.");
+				});
 
 			Assert.IsTrue (foundDelType, "Should have found the delegate type.");
 		}
@@ -99,12 +96,13 @@ namespace ObfuscarTests
 		public void CheckDropsEvents ()
 		{
 			string xml = String.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath)\AssemblyWithEvents.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
+				             @"<Module file='$(InPath)\AssemblyWithEvents.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithEvents", String.Empty, xml);
 
@@ -118,19 +116,18 @@ namespace ObfuscarTests
 
 			CheckEvents ("AssemblyWithEvents", 1, expected, notExpected);
 		}
-
 		// TODO: [Test]
 		public void CheckSkipEventsByName ()
 		{
 			string xml = String.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath)\AssemblyWithEvents.dll'>" +
-				@"<SkipEvent type='TestClasses.ClassA' name='Event2' attrib='public' />" +
-				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Module file='$(InPath)\AssemblyWithEvents.dll'>" +
+				             @"<SkipEvent type='TestClasses.ClassA' name='Event2' attrib='public' />" +
+				             @"</Module>" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithEvents", String.Empty, xml);
 
@@ -145,19 +142,18 @@ namespace ObfuscarTests
 
 			CheckEvents ("AssemblyWithEvents", 1, expected, notExpected);
 		}
-
 		// TODO: [Test]
 		public void CheckSkipEventsByRx ()
 		{
 			string xml = String.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath)\AssemblyWithEvents.dll'>" +
-				@"<SkipEvent type='TestClasses.ClassA' rx='Event\d' />" +
-				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Module file='$(InPath)\AssemblyWithEvents.dll'>" +
+				             @"<SkipEvent type='TestClasses.ClassA' rx='Event\d' />" +
+				             @"</Module>" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithEvents", String.Empty, xml);
 

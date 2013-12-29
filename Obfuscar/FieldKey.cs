@@ -34,7 +34,7 @@ namespace Obfuscar
 		readonly FieldDefinition fieldDefinition;
 
 		public FieldKey (FieldDefinition field)
-			: this(new TypeKey((TypeDefinition)field.DeclaringType), field.FieldType.FullName, field.Name, field)
+			: this (new TypeKey ((TypeDefinition)field.DeclaringType), field.FieldType.FullName, field.Name, field)
 		{
 		}
 
@@ -118,7 +118,7 @@ namespace Obfuscar
 
 		internal bool ShouldSkip (bool hidePrivateApi)
 		{
-			if (fieldDefinition.IsPublic)
+			if (typeKey.TypeDefinition.IsPublic && fieldDefinition.IsPublic)
 				return true;
 
 			return !hidePrivateApi;

@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Reflection;
-
 using NUnit.Framework;
 using Mono.Cecil;
 
@@ -39,14 +38,15 @@ namespace ObfuscarTests
 		public void CheckSkipsVirtualMethodFromInterface ()
 		{
 			string xml = String.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath)\SkipVirtualMethodTest1.dll'>" +
-				@"<SkipMethod type='SkipVirtualMethodTest.Interface1' name='Method1' />" +
-				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
+				             @"<Module file='$(InPath)\SkipVirtualMethodTest1.dll'>" +
+				             @"<SkipMethod type='SkipVirtualMethodTest.Interface1' name='Method1' />" +
+				             @"</Module>" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			TestHelper.BuildAndObfuscate ("SkipVirtualMethodTest", "1", xml);
 
@@ -59,9 +59,9 @@ namespace ObfuscarTests
 			};
 
 			AssemblyHelper.CheckAssembly ("SkipVirtualMethodTest1", 2, expected, notExpected,
-				delegate( TypeDefinition typeDef ) {
-				return !typeDef.IsInterface;
-			}, 
+				delegate( TypeDefinition typeDef) {
+					return !typeDef.IsInterface;
+				}, 
 				CheckType);
 		}
 
@@ -69,14 +69,15 @@ namespace ObfuscarTests
 		public void CheckSkipsVirtualMethodFromClass ()
 		{
 			string xml = String.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath)\SkipVirtualMethodTest2.dll'>" +
-				@"<SkipMethod type='SkipVirtualMethodTest.Class1' name='Method1' />" +
-				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
+				             @"<Module file='$(InPath)\SkipVirtualMethodTest2.dll'>" +
+				             @"<SkipMethod type='SkipVirtualMethodTest.Class1' name='Method1' />" +
+				             @"</Module>" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			TestHelper.BuildAndObfuscate ("SkipVirtualMethodTest", "2", xml);
 
@@ -89,9 +90,9 @@ namespace ObfuscarTests
 			};
 
 			AssemblyHelper.CheckAssembly ("SkipVirtualMethodTest2", 2, expected, notExpected,
-				delegate( TypeDefinition typeDef ) {
-				return !typeDef.IsInterface;
-			},
+				delegate( TypeDefinition typeDef) {
+					return !typeDef.IsInterface;
+				},
 				CheckType);
 		}
 
@@ -103,7 +104,7 @@ namespace ObfuscarTests
 			object obj = Activator.CreateInstance (type);
 
 			object result = type.InvokeMember ("Method1", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, obj, null);
-			Assert.IsInstanceOf<string>(result, "Method1 returns a string.");
+			Assert.IsInstanceOf<string> (result, "Method1 returns a string.");
 
 			Assert.AreEqual ("Method1 result", result, "Method1 is expected to return a specific string.");
 		}

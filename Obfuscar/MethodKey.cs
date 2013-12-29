@@ -35,12 +35,12 @@ namespace Obfuscar
 		readonly int hashCode;
 		readonly MethodDefinition methodDefinition;
 
-		public MethodKey (MethodDefinition method) : this(new TypeKey((TypeDefinition)method.DeclaringType), method)
+		public MethodKey (MethodDefinition method) : this (new TypeKey ((TypeDefinition)method.DeclaringType), method)
 		{
 		}
 
 		public MethodKey (TypeKey typeKey, MethodDefinition method)
-			: base(method)
+			: base (method)
 		{
 			this.typeKey = typeKey;
 			this.methodDefinition = method;
@@ -129,7 +129,7 @@ namespace Obfuscar
 
 		internal bool ShouldSkip (bool hidePrivateApi)
 		{
-			if (methodDefinition.IsPublic)
+			if (typeKey.TypeDefinition.IsPublic && methodDefinition.IsPublic)
 				return true;
 
 			return !hidePrivateApi;

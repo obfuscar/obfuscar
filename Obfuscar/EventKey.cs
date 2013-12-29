@@ -37,12 +37,12 @@ namespace Obfuscar
 		readonly EventDefinition eventDefinition;
 
 		public EventKey (EventDefinition evt)
-            : this(new TypeKey((TypeDefinition)evt.DeclaringType), evt)
+            : this (new TypeKey ((TypeDefinition)evt.DeclaringType), evt)
 		{
 		}
 
 		public EventKey (TypeKey typeKey, EventDefinition evt)
-            : this(typeKey, evt.EventType.FullName, evt.Name, evt)
+            : this (typeKey, evt.EventType.FullName, evt.Name, evt)
 		{
 		}
 
@@ -126,7 +126,9 @@ namespace Obfuscar
 
 		internal bool ShouldSkip (bool hidePrivateApi)
 		{
-			if (eventDefinition.AddMethod.IsPublic || eventDefinition.RemoveMethod.IsPublic)
+			if (typeKey.TypeDefinition.IsPublic &&
+			             (eventDefinition.AddMethod.IsPublic ||
+			             eventDefinition.RemoveMethod.IsPublic))
 				return true;
 
 			return !hidePrivateApi;
