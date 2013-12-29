@@ -37,18 +37,16 @@ namespace ObfuscarTests
 	{
 		protected void CheckEvents (string name, int expectedTypes, string[] expected, string[] notExpected)
 		{
-			C5.HashSet<string> eventsToFind = new C5.HashSet<string> ();
-			eventsToFind.AddAll (expected);
-			C5.HashSet<string> eventsNotToFind = new C5.HashSet<string> ();
-			eventsNotToFind.AddAll (notExpected);
+			HashSet<string> eventsToFind = new HashSet<string> (expected);
+			HashSet<string> eventsNotToFind = new HashSet<string> (notExpected);
 
-			C5.HashSet<string> methodsToFind = new C5.HashSet<string> ();
+			HashSet<string> methodsToFind = new HashSet<string> ();
 			for (int i = 0; i < expected.Length; i++) {
 				methodsToFind.Add ("add_" + expected [i]);
 				methodsToFind.Add ("remove_" + expected [i]);
 			}
 
-			C5.HashSet<string> methodsNotToFind = new C5.HashSet<string> ();
+			HashSet<string> methodsNotToFind = new HashSet<string> ();
 			for (int i = 0; i < notExpected.Length; i++) {
 				methodsNotToFind.Add ("add_" + notExpected [i]);
 				methodsNotToFind.Add ("remove_" + notExpected [i]);
@@ -103,6 +101,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithEvents.dll' />" +
 				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
