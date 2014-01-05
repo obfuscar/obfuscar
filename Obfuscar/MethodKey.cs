@@ -127,10 +127,10 @@ namespace Obfuscar
 			return cmp;
 		}
 
-		internal bool ShouldSkip (bool hidePrivateApi)
+		internal bool ShouldSkip (bool keepPublicApi, bool hidePrivateApi)
 		{
 			if (typeKey.TypeDefinition.IsPublic && methodDefinition.IsPublic)
-				return true;
+				return keepPublicApi;
 
 			return !hidePrivateApi;
 		}

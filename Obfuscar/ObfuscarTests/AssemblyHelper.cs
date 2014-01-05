@@ -61,7 +61,8 @@ namespace ObfuscarTests
 			checkType (typeDef);
 			if (typeDef.HasNestedTypes)
 				foreach (var nested in typeDef.NestedTypes)
-					CheckTypeNested (nested, isType, checkType); 
+					if (isType (nested))
+						CheckTypeNested (nested, isType, checkType); 
 		}
 
 		public static void CheckAssembly (string name, int expectedTypes, string[] expectedMethods, string[] notExpectedMethods,
