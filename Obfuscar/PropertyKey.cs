@@ -111,14 +111,14 @@ namespace Obfuscar
 			return String.Format ("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
 		}
 
-		internal bool ShouldSkip (bool hidePrivateApi)
+		internal bool ShouldSkip (bool keepPublicApi, bool hidePrivateApi)
 		{
 			if (typeKey.TypeDefinition.IsPublic && 
                 ((propertyDefinition.GetMethod != null && 
                 propertyDefinition.GetMethod.IsPublic) || 
                 (propertyDefinition.SetMethod != null && 
                 propertyDefinition.SetMethod.IsPublic)))
-				return true;
+				return keepPublicApi;
 
 			return !hidePrivateApi;
 		}

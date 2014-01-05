@@ -124,12 +124,12 @@ namespace Obfuscar
 			return String.Format ("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
 		}
 
-		internal bool ShouldSkip (bool hidePrivateApi)
+		internal bool ShouldSkip (bool keepPublicApi, bool hidePrivateApi)
 		{
             if (typeKey.TypeDefinition.IsPublic &&
-                (eventDefinition.AddMethod.IsPublic ||
-                eventDefinition.RemoveMethod.IsPublic))
-                return true;
+			    (eventDefinition.AddMethod.IsPublic ||
+			    eventDefinition.RemoveMethod.IsPublic))
+				return keepPublicApi;
 
 			return !hidePrivateApi;
 		}

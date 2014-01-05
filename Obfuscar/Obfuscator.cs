@@ -77,7 +77,7 @@ namespace Obfuscar
 			XmlReaderSettings settings = GetReaderSettings ();
 
 			try {
-				using (XmlReader reader = XmlReader.Create(File.OpenRead(projfile), settings)) {
+				using (XmlReader reader = XmlReader.Create (File.OpenRead (projfile), settings)) {
 					LoadFromReader (reader, Path.GetDirectoryName (projfile));
 				}
 			} catch (IOException e) {
@@ -138,7 +138,7 @@ namespace Obfuscar
 			// open XmlTextReader over xml string stream
 			XmlReaderSettings settings = GetReaderSettings ();
 
-			using (XmlReader reader = XmlReader.Create(new StringReader(xml), settings)) {
+			using (XmlReader reader = XmlReader.Create (new StringReader (xml), settings)) {
 				return new Obfuscator (reader);
 			}
 		}
@@ -274,7 +274,7 @@ namespace Obfuscar
 			if (!String.IsNullOrEmpty (lPath) && !Directory.Exists (lPath))
 				Directory.CreateDirectory (lPath);
 
-			using (TextWriter file = File.CreateText(logPath))
+			using (TextWriter file = File.CreateText (logPath))
 				SaveMapping (file);
 		}
 
@@ -351,7 +351,7 @@ namespace Obfuscar
 						} 
 
 						// skip filtered fields
-						if (info.ShouldSkip (fieldKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
+						if (info.ShouldSkip (fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi)) {
 							if (type.ObfuscationMarked () != true) {
 								map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
 								nameGroup.Add (fieldKey.Name);
@@ -415,7 +415,7 @@ namespace Obfuscar
 							RenameParams (method, info);
 
 						// rename the class parameters
-						if (info.ShouldSkip (new TypeKey (type), Project.InheritMap, Project.Settings.HidePrivateApi) && type.ObfuscationMarked () != true)
+						if (info.ShouldSkip (new TypeKey (type), Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi) && type.ObfuscationMarked () != true)
 							continue;
                             
 						int index = 0;
@@ -429,7 +429,7 @@ namespace Obfuscar
 		private void RenameParams (MethodDefinition method, AssemblyInfo info)
 		{
 			MethodKey methodkey = new MethodKey (method);
-			if (!info.ShouldSkip (methodkey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
+			if (!info.ShouldSkip (methodkey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi)) {
 				foreach (ParameterDefinition param in method.Parameters) {
 					if (param.CustomAttributes.Count == 0) {
 						param.Name = null;
@@ -510,7 +510,7 @@ namespace Obfuscar
 					}
 
 					var namesInXaml = NamesInXaml (xamlFiles);
-					if (info.ShouldSkip (unrenamedTypeKey, Project.InheritMap, Project.Settings.HidePrivateApi) || project.Settings.KeepPublicApi && type.IsPublic || namesInXaml.Contains (type.FullName)) {
+					if (info.ShouldSkip (unrenamedTypeKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi) || project.Settings.KeepPublicApi && type.IsPublic || namesInXaml.Contains (type.FullName)) {
 						if (type.ObfuscationMarked () != true) {
 							map.UpdateType (oldTypeKey, ObfuscationStatus.Skipped, "filtered");
 
@@ -641,7 +641,7 @@ namespace Obfuscar
 						else
 							continue;
 
-						using (var bamlReader = new XmlBamlReader(stream, new CecilTypeResolver(project.InheritMap.Cache, library)))
+						using (var bamlReader = new XmlBamlReader (stream, new CecilTypeResolver (project.InheritMap.Cache, library)))
 							result.Add (XDocument.Load (bamlReader));
 					}
 				}
@@ -764,7 +764,7 @@ namespace Obfuscar
 						}
 
 						// skip filtered props
-						if (info.ShouldSkip (propKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
+						if (info.ShouldSkip (propKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi)) {
 							if (type.ObfuscationMarked () != true) {
 								m.Update (ObfuscationStatus.Skipped, "filtered");
 
@@ -871,7 +871,7 @@ namespace Obfuscar
 						}
 
 						// skip filtered events
-						if (info.ShouldSkip (evtKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
+						if (info.ShouldSkip (evtKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi)) {
 							if (type.ObfuscationMarked () != true) {
 								m.Update (ObfuscationStatus.Skipped, "filtered");
 
@@ -933,7 +933,7 @@ namespace Obfuscar
 						}
 
 						// skip filtered methods
-						if (info.ShouldSkip (methodKey, Project.InheritMap, Project.Settings.HidePrivateApi)) {
+						if (info.ShouldSkip (methodKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi)) {
 							if (type.ObfuscationMarked () != true)
 								skiprename = "filtered";
 						}
@@ -1085,8 +1085,8 @@ namespace Obfuscar
 				// group is named, so we need to un-name it
 
 				Debug.Assert (!@group.External,
-				              "Group's external flag should have been handled when the group was created, " +
-				              "and all methods in the group should already be marked skipped.");
+					"Group's external flag should have been handled when the group was created, " +
+					"and all methods in the group should already be marked skipped.");
 
 				// counts are grouping according to signature
 				ParamSig sig = new ParamSig (method);
@@ -1115,7 +1115,7 @@ namespace Obfuscar
 				Debug.Assert (m.Status == ObfuscationStatus.Skipped ||
 				((m.Status == ObfuscationStatus.WillRename || m.Status == ObfuscationStatus.Renamed) &&
 				m.StatusText == groupName),
-				              "If the method isn't skipped, and the group already has a name...method should have one too.");
+					"If the method isn't skipped, and the group already has a name...method should have one too.");
 			}
 		}
 
