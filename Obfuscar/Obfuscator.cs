@@ -336,7 +336,13 @@ namespace Obfuscar
 						string sig = field.FieldType.FullName;
 						var fieldKey = new FieldKey (typeKey, sig, field.Name, field);
 						NameGroup nameGroup = GetNameGroup (nameGroups, sig);
-						if (field.IsRuntimeSpecialName && field.Name == "value__") {
+                        if (field.ObfuscationMarked() == false) {
+                            map.UpdateField(fieldKey, ObfuscationStatus.Skipped, "obfuscation excluded");
+                            nameGroup.Add(fieldKey.Name);
+                            continue;
+                        }
+
+						if ((field.IsRuntimeSpecialName && field.Name == "value__")) {
 							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
 							nameGroup.Add (fieldKey.Name);
 							continue;
@@ -750,6 +756,11 @@ namespace Obfuscar
 						ObfuscatedThing m = map.GetProperty (propKey);
 
 						// skip runtime special properties
+                        if (prop.ObfuscationMarked() == false) {
+                            m.Update(ObfuscationStatus.Skipped, "obfuscation excluded");
+                            continue;
+                        }
+
 						if (prop.IsRuntimeSpecialName) {
 							m.Update (ObfuscationStatus.Skipped, "runtime special");
 							continue;
@@ -856,7 +867,12 @@ namespace Obfuscar
 						EventKey evtKey = new EventKey (typeKey, evt);
 						ObfuscatedThing m = map.GetEvent (evtKey);
 
-						// skip runtime special events
+                        if (evt.ObfuscationMarked() == false) {
+                            m.Update(ObfuscationStatus.Skipped, "obfuscation excluded");
+                            continue;
+                        }
+                        
+                        // skip runtime special events
 						if (evt.IsRuntimeSpecialName) {
 							m.Update (ObfuscationStatus.Skipped, "runtime special");
 							continue;
@@ -923,6 +939,10 @@ namespace Obfuscar
 						ObfuscatedThing m = map.GetMethod (methodKey);
 
 						// skip runtime methods
+                        if (method.ObfuscationMarked() == false)
+                            skiprename = "obfuscation excluded";
+
+
 						if (method.IsRuntime) {
 							skiprename = "runtime method";
 						}
