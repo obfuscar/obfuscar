@@ -343,7 +343,10 @@ namespace Obfuscar
 			this.filename = filename;
 
 			try {
-				definition = AssemblyDefinition.ReadAssembly (filename);
+                definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters { 
+                    ReadingMode = Mono.Cecil.ReadingMode.Immediate,
+                    ReadSymbols = System.IO.File.Exists(System.IO.Path.ChangeExtension(filename, "pdb")) 
+                });
 				name = definition.Name.Name;
 			} catch (System.IO.IOException e) {
 				throw new ApplicationException ("Unable to find assembly:  " + filename, e);
