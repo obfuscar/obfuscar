@@ -190,6 +190,14 @@ namespace Obfuscar
 				copyInfo.Definition.Write (outName);
 			}
 
+            // Cecil does not properly update the name cache, so force that:
+            foreach (AssemblyInfo info in project)
+            {
+                var types = info.Definition.MainModule.Types;
+                for (int i = 0; i < types.Count; i++)
+                    types[i] = types[i]; 
+            }
+
 			// save the modified assemblies
 			foreach (AssemblyInfo info in project) {
 				string outName = Path.Combine (outPath, Path.GetFileName (info.Filename));
@@ -466,7 +474,7 @@ namespace Obfuscar
 		/// </summary>
 		public void RenameTypes ()
 		{
-			var typerenamemap = new Dictionary<string, string> (); // For patching the parameters of typeof(xx) attribute constructors
+			//var typerenamemap = new Dictionary<string, string> (); // For patching the parameters of typeof(xx) attribute constructors
 			foreach (AssemblyInfo info in project) {
 				AssemblyDefinition library = info.Definition;
 
@@ -602,7 +610,7 @@ namespace Obfuscar
 					}
 
 					RenameType (info, type, oldTypeKey, newTypeKey, unrenamedTypeKey);
-					typerenamemap.Add (unrenamedTypeKey.Fullname.Replace ('/', '+'), type.FullName.Replace ('/', '+'));
+					//typerenamemap.Add (unrenamedTypeKey.Fullname.Replace ('/', '+'), type.FullName.Replace ('/', '+'));
 				}
 
 				foreach (Resource res in resources) {

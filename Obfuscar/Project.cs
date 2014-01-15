@@ -125,6 +125,21 @@ namespace Obfuscar
 			}
 		}
 
+        AssemblyCache m_cache;
+
+        internal AssemblyCache Cache
+        {
+            get
+            {
+                if (m_cache == null)
+                {
+                    m_cache = new AssemblyCache(this);
+                }
+
+                return m_cache;
+            }
+        }
+
 		public static Project FromXml (XmlReader reader, string projectFileDirectory)
 		{
 			Project project = new Project ();
