@@ -26,7 +26,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
-
 using Mono.Cecil;
 
 namespace Obfuscar
@@ -49,41 +48,57 @@ namespace Obfuscar
 		private AssemblyDefinition SelfResolve (AssemblyNameReference name)
 		{
 			AssemblyDefinition assmDef;
-			if (!cache.TryGetValue (name.FullName, out assmDef)) {
-				assmDef = null;
+			if (cache.TryGetValue (name.FullName, out assmDef)) {
+				return assmDef;
+			}
 
-				string[] exts = new string[] { ".dll", ".exe" };
-
-				foreach (string ext in exts) {
-					string file = Path.Combine (project.Settings.InPath, name.Name + ext);
-					if (File.Exists (file) && MatchAssemblyName (file, name)) {
-						assmDef = AssemblyDefinition.ReadAssembly (file);
-						if (assmDef.Name.FullName != name.FullName) {
-							assmDef = null;
-							continue;
-						}
-						cache [name.FullName] = assmDef;
-						break;
+			assmDef = null;
+			string[] exts = new string[] { ".dll", ".exe" };
+			foreach (string ext in exts) {
+				string file = Path.Combine (project.Settings.InPath, name.Name + ext);
+				if (File.Exists (file) && MatchAssemblyName (file, name)) {
+					assmDef = AssemblyDefinition.ReadAssembly (file);
+					if (assmDef.Name.FullName != name.FullName) {
+						assmDef = null;
+						continue;
 					}
+
+					cache [name.FullName] = assmDef;
+					return assmDef;
 				}
-				if (assmDef == null) {
-					foreach (string extrapath in extraFolders) {
-						foreach (string ext in exts) {
-							string file = Path.Combine (extrapath, name.Name + ext);
-							if (File.Exists (file) && MatchAssemblyName (file, name)) {
-								assmDef = AssemblyDefinition.ReadAssembly (file);
-								if (assmDef.Name.FullName != name.FullName) {
-									assmDef = null;
-									continue;
-								}
-								cache [name.FullName] = assmDef;
-								return assmDef;
+			}
+
+			if (assmDef == null) {
+				foreach (string extrapath in extraFolders) {
+					foreach (string ext in exts) {
+						string file = Path.Combine (extrapath, name.Name + ext);
+						if (File.Exists (file) && MatchAssemblyName (file, name)) {
+							assmDef = AssemblyDefinition.ReadAssembly (file);
+							if (assmDef.Name.FullName != name.FullName) {
+								assmDef = null;
+								continue;
 							}
+
+							cache [name.FullName] = assmDef;
+							return assmDef;
 						}
 					}
 				}
 			}
 
+            if (assmDef == null)
+            {
+                try
+                {
+                    assmDef = resolver.Resolve(name);
+                }
+                catch (FileNotFoundException)
+                {
+                    throw new ApplicationException("Unable to resolve dependency:  " + name.Name);
+                }
+            }
+            if (assmDef != null)
+                cache[name.FullName] = assmDef;
 			return assmDef;
 		}
 
@@ -168,13 +183,17 @@ namespace Obfuscar
 		}
 
 		#endregion
+
+		internal void Register (AssemblyDefinition definition)
+		{
+			cache [definition.FullName] = definition;
+		}
 	}
 
 	public delegate AssemblyDefinition AssemblyResolveEventHandler (object sender, AssemblyNameReference reference);
 
 	public sealed class AssemblyResolveEventArgs : EventArgs
 	{
-
 		readonly AssemblyNameReference reference;
 
 		public AssemblyNameReference AssemblyReference {
@@ -191,8 +210,7 @@ namespace Obfuscar
 	{
 		private List<String> m_directories;
 		private string[] m_monoGacPaths;
-		private static readonly string[] _extentions = new string[]
-		{
+		private static readonly string[] _extentions = new string[] {
 			".dll", 
 			".exe"
 		};
@@ -240,7 +258,7 @@ namespace Obfuscar
 		{
 			this.m_directories = new List<String> ();
 			this.m_directories.Add (".");
-			this.m_directories.Add ("bin"); 
+			this.m_directories.Add ("bin");
 		}
 
 		public event AssemblyResolveEventHandler ResolveFailure;
@@ -319,9 +337,9 @@ namespace Obfuscar
 				return GetAssembly (typeof(object).Module.FullyQualifiedName);
 
 			var path = Directory.GetParent (
-				Directory.GetParent (
-					typeof(object).Module.FullyQualifiedName).FullName
-			).FullName;
+				                    Directory.GetParent (
+					                    typeof(object).Module.FullyQualifiedName).FullName
+			                    ).FullName;
 
 			if (OnMono ()) {
 				if (version.Major == 1)
@@ -466,9 +484,9 @@ namespace Obfuscar
 		static string GetAssemblyFile (AssemblyNameReference reference, string prefix, string gac)
 		{
 			var gac_folder = new StringBuilder ()
-				.Append (prefix)
-				.Append (reference.Version)
-				.Append ("__");
+                .Append (prefix)
+                .Append (reference.Version)
+                .Append ("__");
 
 			for (int i = 0; i < reference.PublicKeyToken.Length; i++)
 				gac_folder.Append (reference.PublicKeyToken [i].ToString ("x2"));
@@ -478,8 +496,5 @@ namespace Obfuscar
 					Path.Combine (gac, reference.Name), gac_folder.ToString ()),
 				reference.Name + ".dll");
 		}
-
-
 	}
-
 }
