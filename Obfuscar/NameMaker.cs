@@ -124,6 +124,11 @@ namespace Obfuscar
 			return builder.ToString ();
 		}
 
+        public static string UniqueNestedTypeName(int index)
+        {
+            return UniqueName (index, null);
+        }
+
 		public static string UniqueTypeName (int index)
 		{
 			return UniqueName (index % numUniqueChars, ".");

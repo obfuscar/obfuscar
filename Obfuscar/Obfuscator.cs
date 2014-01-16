@@ -538,15 +538,24 @@ namespace Obfuscar
 
 					string name;
 					string ns;
-					if (project.Settings.ReuseNames) {
-						name = NameMaker.UniqueTypeName (typeIndex);
-						ns = NameMaker.UniqueNamespace (typeIndex);
-					} else {
-						name = NameMaker.UniqueName (uniqueTypeNameIndex);
-						ns = NameMaker.UniqueNamespace (uniqueTypeNameIndex);
-						uniqueTypeNameIndex++;
-					}
-
+                    if (type.IsNested)
+                    {
+                        ns = "";
+                        name = NameMaker.UniqueNestedTypeName(type.DeclaringType.NestedTypes.IndexOf(type));
+                    }
+                    else
+                    {
+                        if (project.Settings.ReuseNames) {
+                            name = NameMaker.UniqueTypeName(typeIndex);
+                            ns = NameMaker.UniqueNamespace(typeIndex);
+                        }
+                        else {
+                            name = NameMaker.UniqueName(uniqueTypeNameIndex);
+                            ns = NameMaker.UniqueNamespace(uniqueTypeNameIndex);
+                            uniqueTypeNameIndex++;
+                        }
+                    }
+                        
 					if (type.GenericParameters.Count > 0) {
 						name += '`' + type.GenericParameters.Count.ToString ();
 					}
