@@ -281,6 +281,11 @@ namespace Obfuscar
 			HashSet<MemberReference> memberreferences = new HashSet<MemberReference> ();
 			foreach (TypeDefinition type in this.GetAllTypeDefinitions()) {
 				foreach (MethodDefinition method in type.Methods) {
+					foreach (MethodReference memberref in method.Overrides) {
+						if (IsOnlyReference (memberref)) {
+							memberreferences.Add (memberref);
+						}
+					}
 					if (method.Body != null) {
 						foreach (Instruction inst in method.Body.Instructions) {
 							MemberReference memberref = inst.Operand as MemberReference;
@@ -343,25 +348,25 @@ namespace Obfuscar
 			this.filename = filename;
 
 			try {
-				bool readSymbols = project.Settings.RegenerateDebugInfo && System.IO.File.Exists(System.IO.Path.ChangeExtension(filename, "pdb"));
-                try {
-                    definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters 
-                    { 
-                        ReadingMode = Mono.Cecil.ReadingMode.Immediate,
-                        ReadSymbols = readSymbols,
-                        AssemblyResolver = project.Cache
-                    });
-                } catch { // If there's a non-matching pdb next to it, this fails, else just try again
-                    if (!readSymbols) throw;
-                    definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
-                    {
-                        ReadingMode = Mono.Cecil.ReadingMode.Immediate,
-                        ReadSymbols = false,
-                        AssemblyResolver = project.Cache
-                    });
-                }
+				bool readSymbols = project.Settings.RegenerateDebugInfo && System.IO.File.Exists (System.IO.Path.ChangeExtension (filename, "pdb"));
+				try {
+					definition = AssemblyDefinition.ReadAssembly (filename, new ReaderParameters { 
+						ReadingMode = Mono.Cecil.ReadingMode.Immediate,
+						ReadSymbols = readSymbols,
+						AssemblyResolver = project.Cache
+					});
+				} catch { // If there's a non-matching pdb next to it, this fails, else just try again
+					if (!readSymbols)
+						throw;
+					definition = AssemblyDefinition.ReadAssembly (filename, new ReaderParameters {
+						ReadingMode = Mono.Cecil.ReadingMode.Immediate,
+						ReadSymbols = false,
+						AssemblyResolver = project.Cache
+					});
+				}
 
-                project.Cache.Register(definition);				name = definition.Name.Name;
+				project.Cache.Register (definition);				
+				name = definition.Name.Name;
 			} catch (System.IO.IOException e) {
 				throw new ObfuscarException ("Unable to find assembly:  " + filename, e);
 			}
