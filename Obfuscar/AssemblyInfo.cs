@@ -281,6 +281,7 @@ namespace Obfuscar
 			HashSet<MemberReference> memberreferences = new HashSet<MemberReference> ();
 			foreach (TypeDefinition type in this.GetAllTypeDefinitions()) {
 				foreach (MethodDefinition method in type.Methods) {
+
 					foreach (MethodReference memberref in method.Overrides) {
 						if (IsOnlyReference (memberref)) {
 							memberreferences.Add (memberref);
