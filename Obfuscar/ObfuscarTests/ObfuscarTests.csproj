@@ -55,15 +55,14 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="Mono.Cecil">
       <HintPath>..\..\cecil\bin\net_4_0_Debug\Mono.Cecil.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -93,6 +92,7 @@
     <Compile Include="TestUtils.cs" />
     <Compile Include="VariablesTests.cs" />
     <Compile Include="WildcardTests.cs" />
+    <Compile Include="ObfuscationAttributeTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -108,7 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Obfuscar.csproj">
-      <Project>{f28cddff-5a7a-413e-809e-15ffb8766e86}</Project>
+      <Project>{F28CDDFF-5A7A-413E-809E-15FFB8766E86}</Project>
       <Name>Obfuscar</Name>
     </ProjectReference>
   </ItemGroup>
