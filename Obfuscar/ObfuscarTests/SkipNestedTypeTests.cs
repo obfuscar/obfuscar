@@ -50,7 +50,7 @@ namespace ObfuscarTests
 			HashSet<string> typesToFind = new HashSet<string> ();
 			typesToFind.Add ("A.A");
 			typesToFind.Add ("A.A/a");
-			typesToFind.Add ("A.A/a/B");
+			typesToFind.Add ("A.A/a/A");
 			typesToFind.Add ("A.A/NestedClassA");
 
 			AssemblyHelper.CheckAssembly ("AssemblyWithNestedTypes", 1,
