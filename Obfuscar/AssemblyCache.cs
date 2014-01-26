@@ -86,19 +86,15 @@ namespace Obfuscar
 				}
 			}
 
-            if (assmDef == null)
-            {
-                try
-                {
-                    assmDef = resolver.Resolve(name);
-                }
-                catch (FileNotFoundException)
-                {
-                    throw new ObfuscarException("Unable to resolve dependency:  " + name.Name);
-                }
-            }
-            if (assmDef != null)
-                cache[name.FullName] = assmDef;
+			if (assmDef == null) {
+				try {
+					assmDef = resolver.Resolve (name);
+				} catch (FileNotFoundException) {
+					throw new ObfuscarException ("Unable to resolve dependency:  " + name.Name);
+				}
+			}
+			if (assmDef != null)
+				cache [name.FullName] = assmDef;
 			return assmDef;
 		}
 
@@ -189,9 +185,7 @@ namespace Obfuscar
 			cache [definition.FullName] = definition;
 		}
 	}
-
 	public delegate AssemblyDefinition AssemblyResolveEventHandler (object sender, AssemblyNameReference reference);
-
 	public sealed class AssemblyResolveEventArgs : EventArgs
 	{
 		readonly AssemblyNameReference reference;
@@ -337,9 +331,9 @@ namespace Obfuscar
 				return GetAssembly (typeof(object).Module.FullyQualifiedName);
 
 			var path = Directory.GetParent (
-				                    Directory.GetParent (
-					                    typeof(object).Module.FullyQualifiedName).FullName
-			                    ).FullName;
+				           Directory.GetParent (
+					           typeof(object).Module.FullyQualifiedName).FullName
+			           ).FullName;
 
 			if (OnMono ()) {
 				if (version.Major == 1)
