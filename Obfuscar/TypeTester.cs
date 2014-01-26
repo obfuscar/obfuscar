@@ -101,7 +101,7 @@ namespace Obfuscar
 						return false;
 					}
 				} else {
-					throw new ApplicationException (string.Format ("'{0}' is not valid for the 'attrib' value of the SkipType element. Only 'public' is supported by now.", attrib));
+                    throw new ObfuscarException(string.Format("'{0}' is not valid for the 'attrib' value of the SkipType element. Only 'public' is supported by now.", attrib));
 				}
 			}
 

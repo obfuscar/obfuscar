@@ -27,9 +27,9 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.CodeDom.Compiler;
-
 using NUnit.Framework;
 using Mono.Cecil;
+using Obfuscar;
 
 namespace ObfuscarTests
 {
@@ -37,43 +37,44 @@ namespace ObfuscarTests
 	public class SigningTests
 	{
 		[Test]
-		public void CheckCannotObfuscateSigned( )
+		public void CheckCannotObfuscateSigned ()
 		{
-			string xml = String.Format(
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath)\AssemblyForSigning.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
+			string xml = String.Format (
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Module file='$(InPath)\AssemblyForSigning.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
-			TestHelper.CleanInput( );
+			TestHelper.CleanInput ();
 
 			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			TestHelper.BuildAssembly( "AssemblyForSigning", String.Empty, "/keyfile:" + TestHelper.InputPath + @"\SigningKey.snk" );
+			TestHelper.BuildAssembly ("AssemblyForSigning", String.Empty, "/keyfile:" + TestHelper.InputPath + @"\SigningKey.snk");
 
-			TestUtils.AssertThrows( delegate { TestHelper.Obfuscate( xml ); }, typeof( ApplicationException ),
-				"signed assembly", "invalid", "AssemblyForSigning" );
+			TestUtils.AssertThrows (delegate {
+				TestHelper.Obfuscate (xml);
+			}, typeof(ObfuscarException),
+				"signed assembly", "invalid", "AssemblyForSigning");
 		}
-
 		// [Test] no longer valid due to Cecil changes
-		public void CheckCanObfuscateDelaySigned( )
+		public void CheckCanObfuscateDelaySigned ()
 		{
-			string xml = String.Format(
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath)\AssemblyForSigning.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
+			string xml = String.Format (
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Module file='$(InPath)\AssemblyForSigning.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
-			TestHelper.CleanInput( );
+			TestHelper.CleanInput ();
 
 			// build it with the delaysign option (embeds the public key, reserves space for the signature, but does not sign)
-			TestHelper.BuildAssembly( "AssemblyForSigning", String.Empty, "/delaysign /keyfile:" + TestHelper.InputPath + @"\SigningKey.snk" );
+			TestHelper.BuildAssembly ("AssemblyForSigning", String.Empty, "/delaysign /keyfile:" + TestHelper.InputPath + @"\SigningKey.snk");
 
 			// this should not throw
-			TestHelper.Obfuscate( xml );
+			TestHelper.Obfuscate (xml);
 		}
 	}
 }

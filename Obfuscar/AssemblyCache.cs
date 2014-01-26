@@ -94,7 +94,7 @@ namespace Obfuscar
                 }
                 catch (FileNotFoundException)
                 {
-                    throw new ApplicationException("Unable to resolve dependency:  " + name.Name);
+                    throw new ObfuscarException("Unable to resolve dependency:  " + name.Name);
                 }
             }
             if (assmDef != null)
@@ -131,7 +131,7 @@ namespace Obfuscar
 							assmDef = resolver.Resolve (name);
 							cache [name.FullName] = assmDef;
 						} catch (FileNotFoundException) {
-							throw new ApplicationException ("Unable to resolve dependency:  " + name.Name);
+							throw new ObfuscarException ("Unable to resolve dependency:  " + name.Name);
 						}
 					}
 

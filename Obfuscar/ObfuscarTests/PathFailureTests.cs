@@ -25,8 +25,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using NUnit.Framework;
+using Obfuscar;
 
 namespace ObfuscarTests
 {
@@ -36,43 +36,49 @@ namespace ObfuscarTests
 		internal const string BadPath = "Q:\\Does\\Not\\Exist";
 
 		[Test]
-		public void CheckBadPathIsBad( )
+		public void CheckBadPathIsBad ()
 		{
 			// if badPath exists, the other tests here are no good
-			Assert.IsFalse( System.IO.Directory.Exists( BadPath ), "Didn't expect BadPath to exist." );
+			Assert.IsFalse (System.IO.Directory.Exists (BadPath), "Didn't expect BadPath to exist.");
 		}
 
 		[Test]
-		public void CheckBadProjectPath( )
+		public void CheckBadProjectPath ()
 		{
-			TestUtils.AssertThrows( delegate { new Obfuscar.Obfuscator( BadPath ); }, typeof( ApplicationException ),
-				"Unable", "read", BadPath );
+			TestUtils.AssertThrows (delegate {
+				new Obfuscar.Obfuscator (BadPath);
+			}, typeof(ObfuscarException),
+				"Unable", "read", BadPath);
 		}
 
 		[Test]
-		public void CheckBadModuleFile( )
+		public void CheckBadModuleFile ()
 		{
-			string xml = String.Format(
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Module file='{0}\ObfuscarTests.dll' />" +
-				@"</Obfuscator>", BadPath );
+			string xml = String.Format (
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Module file='{0}\ObfuscarTests.dll' />" +
+				             @"</Obfuscator>", BadPath);
 
-			TestUtils.AssertThrows( delegate { Obfuscar.Obfuscator.CreateFromXml( xml ); }, typeof( ApplicationException ),
-				"Unable", "find assembly", BadPath );
+			TestUtils.AssertThrows (delegate {
+				Obfuscar.Obfuscator.CreateFromXml (xml);
+			}, typeof(ObfuscarException),
+				"Unable", "find assembly", BadPath);
 		}
 
 		[Test]
-		public void CheckBadInPath( )
+		public void CheckBadInPath ()
 		{
-			string xml = String.Format( 
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"</Obfuscator>", BadPath );
+			string xml = String.Format (
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"</Obfuscator>", BadPath);
 
-			TestUtils.AssertThrows( delegate { Obfuscar.Obfuscator.CreateFromXml( xml ); }, typeof( ApplicationException ),
-				"InPath", "must exist", BadPath );
+			TestUtils.AssertThrows (delegate {
+				Obfuscar.Obfuscator.CreateFromXml (xml);
+			}, typeof(ObfuscarException),
+				"InPath", "must exist", BadPath);
 		}
 	}
 }

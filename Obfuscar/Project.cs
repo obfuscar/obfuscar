@@ -111,14 +111,14 @@ namespace Obfuscar
 					//    }
 					//    catch
 					//    {
-					//        throw new ApplicationException(String.Format("Failure loading key from container - \"{0}\"", vars.GetValue("KeyContainer", null)), CryptEx);
+					//        throw new ObfuscarException(String.Format("Failure loading key from container - \"{0}\"", vars.GetValue("KeyContainer", null)), CryptEx);
 					//    }
 					//}
 				} else {
 					try {
 						keyvalue = CryptoConvert.FromCapiKeyBlob (File.ReadAllBytes (vars.GetValue ("KeyFile", null)));
 					} catch (Exception ex) {
-						throw new ApplicationException (String.Format ("Failure loading key file \"{0}\"", vars.GetValue ("KeyFile", null)), ex);
+						throw new ObfuscarException (String.Format ("Failure loading key file \"{0}\"", vars.GetValue ("KeyFile", null)), ex);
 					}
 				}           				
 				return keyvalue;
@@ -184,13 +184,13 @@ namespace Obfuscar
 		public void CheckSettings ()
 		{
 			if (!Directory.Exists (Settings.InPath))
-				throw new ApplicationException ("Path specified by InPath variable must exist:" + Settings.InPath);
+				throw new ObfuscarException ("Path specified by InPath variable must exist:" + Settings.InPath);
 
 			if (!Directory.Exists (Settings.OutPath)) {
 				try {
 					Directory.CreateDirectory (Settings.OutPath);
 				} catch (IOException e) {
-					throw new ApplicationException ("Could not create path specified by OutPath:  " + Settings.OutPath, e);
+					throw new ObfuscarException ("Could not create path specified by OutPath:  " + Settings.OutPath, e);
 				}
 			}
 		}
