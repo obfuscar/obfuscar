@@ -26,53 +26,52 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
-
 using NUnit.Framework;
+using Obfuscar;
 
 namespace ObfuscarTests
 {
 	[TestFixture]
 	public class OutPathTests
 	{
-		private void CheckOutPath( string testPath )
+		private void CheckOutPath (string testPath)
 		{
-			Assert.IsFalse( Directory.Exists( testPath ), "Need a writeable temp path...wanted to create " + testPath );
+			Assert.IsFalse (Directory.Exists (testPath), "Need a writeable temp path...wanted to create " + testPath);
 
-			try
-			{
-				string xml = String.Format(
-					@"<?xml version='1.0'?>" +
-					@"<Obfuscator>" +
-					@"<Var name='OutPath' value='{0}' />" +
-					@"</Obfuscator>", testPath );
+			try {
+				string xml = String.Format (
+					             @"<?xml version='1.0'?>" +
+					             @"<Obfuscator>" +
+					             @"<Var name='OutPath' value='{0}' />" +
+					             @"</Obfuscator>", testPath);
 
-				Obfuscar.Obfuscator.CreateFromXml( xml );
+				Obfuscar.Obfuscator.CreateFromXml (xml);
 
-				Assert.IsTrue( Directory.Exists( testPath ), "Obfuscator should have created its missing OutPath." );
-			}
-			finally
-			{
+				Assert.IsTrue (Directory.Exists (testPath), "Obfuscator should have created its missing OutPath.");
+			} finally {
 				// clean up...
-				if ( Directory.Exists( testPath ) )
-					Directory.Delete( testPath );
+				if (Directory.Exists (testPath))
+					Directory.Delete (testPath);
 			}
 		}
 
 		[Test]
-		public void CheckCanCreateOutPath( )
+		public void CheckCanCreateOutPath ()
 		{
-			string testPath = System.IO.Path.Combine( System.IO.Path.GetTempPath( ), "ObfuscarTestOutPath" );
+			string testPath = System.IO.Path.Combine (System.IO.Path.GetTempPath (), "ObfuscarTestOutPath");
 
-			CheckOutPath( testPath );
+			CheckOutPath (testPath);
 		}
 
 		[Test]
-		public void CheckInvalidOutPath( )
+		public void CheckInvalidOutPath ()
 		{
-			string testPath = System.IO.Path.Combine( PathFailureTests.BadPath, "ObfuscarTestOutPath" );
+			string testPath = System.IO.Path.Combine (PathFailureTests.BadPath, "ObfuscarTestOutPath");
 
-			TestUtils.AssertThrows( delegate { CheckOutPath( testPath ); }, typeof( ApplicationException ),
-				"Could not create", "OutPath", testPath );
+			TestUtils.AssertThrows (delegate {
+				CheckOutPath (testPath);
+			}, typeof(ObfuscarException),
+				"Could not create", "OutPath", testPath);
 		}
 	}
 }

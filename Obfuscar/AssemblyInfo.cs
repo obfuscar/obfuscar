@@ -79,7 +79,7 @@ namespace Obfuscar
 				info.LoadAssembly (val);
 
 				if (AssemblyIsSigned (info.Definition) && project.Settings.KeyFile == null)
-					throw new ApplicationException ("Obfuscating a signed assembly would result in an invalid assembly:  " + info.Name + "; use the KeyFile property to set a key to use");
+					throw new ObfuscarException ("Obfuscating a signed assembly would result in an invalid assembly:  " + info.Name + "; use the KeyFile property to set a key to use");
 			} else
 				throw new InvalidOperationException ("Need valid file attribute.");
 
@@ -363,7 +363,7 @@ namespace Obfuscar
 
                 project.Cache.Register(definition);				name = definition.Name.Name;
 			} catch (System.IO.IOException e) {
-				throw new ApplicationException ("Unable to find assembly:  " + filename, e);
+				throw new ObfuscarException ("Unable to find assembly:  " + filename, e);
 			}
 		}
 

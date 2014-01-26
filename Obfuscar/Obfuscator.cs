@@ -81,7 +81,7 @@ namespace Obfuscar
 					LoadFromReader (reader, Path.GetDirectoryName (projfile));
 				}
 			} catch (IOException e) {
-				throw new ApplicationException ("Unable to read specified project file:  " + projfile, e);
+				throw new ObfuscarException ("Unable to read specified project file:  " + projfile, e);
 			}
 		}
 
@@ -243,7 +243,7 @@ namespace Obfuscar
 				}
 
 				if (keyfilepath == null) {
-					throw new ApplicationException (string.Format ("KeyFile='auto', but assembly '{0}' contains no AssemblyKeyFileAttribute", info.Filename));
+					throw new ObfuscarException (string.Format ("KeyFile='auto', but assembly '{0}' contains no AssemblyKeyFileAttribute", info.Filename));
 				}
 			}
 
@@ -261,7 +261,7 @@ namespace Obfuscar
 				var sn = new StrongName (CryptoConvert.FromCapiKeyBlob (File.ReadAllBytes (keyfilepath)));
 				sn.Sign (outName);
 			} catch (Exception ex) {
-				throw new ApplicationException (
+				throw new ObfuscarException (
 					string.Format ("Failed to sign '{1}' with key file \"{0}\"", keyfilepath, info.Filename), ex);
 			}
 		}

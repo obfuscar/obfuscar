@@ -25,7 +25,6 @@ using System;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Text;
-
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -71,16 +70,15 @@ namespace Obfuscar
 	class InheritMap
 	{
 		private readonly Project project;
-
 		// method to group map
 		private readonly Dictionary<MethodKey, MethodGroup> methodGroups = new Dictionary<MethodKey, MethodGroup> ();
 		private readonly Dictionary<TypeKey, TypeKey[]> baseTypes = new Dictionary<TypeKey, TypeKey[]> ();
 
-        internal AssemblyCache Cache {
-            get {
-                return project.Cache;
-            }
-        }
+		internal AssemblyCache Cache {
+			get {
+				return project.Cache;
+			}
+		}
 
 		public InheritMap (Project project)
 		{
@@ -111,7 +109,7 @@ namespace Obfuscar
 							group = null;
 
 						for (j = i + 1; j < methods.Length; j++) {
-							if (!MethodsMatch(methods, i, j))
+							if (!MethodsMatch (methods, i, j))
 								continue;
 
 							// found an override
@@ -147,7 +145,7 @@ namespace Obfuscar
 
 		static bool MethodsMatch (MethodKey[] methods, int i, int j)
 		{
-			return methods [i].Equals ((NameParamSig) methods [j]);
+			return methods [i].Equals ((NameParamSig)methods [j]);
 		}
 
 		void GetBaseTypes (HashSet<TypeKey> baseTypes, TypeDefinition type)

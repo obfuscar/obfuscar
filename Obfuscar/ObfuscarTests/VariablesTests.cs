@@ -25,8 +25,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using NUnit.Framework;
+using Obfuscar;
 
 namespace ObfuscarTests
 {
@@ -34,23 +34,25 @@ namespace ObfuscarTests
 	public class VariablesTests
 	{
 		[Test]
-		public void CheckReplace( )
+		public void CheckReplace ()
 		{
-			Obfuscar.Variables variables = new Obfuscar.Variables( );
-			variables.Add( "Key1", "Value1" );
+			Obfuscar.Variables variables = new Obfuscar.Variables ();
+			variables.Add ("Key1", "Value1");
 
-			string result = variables.Replace( "This: $(Key1) got replaced." );
-			Assert.AreEqual( "This: Value1 got replaced.", result );
+			string result = variables.Replace ("This: $(Key1) got replaced.");
+			Assert.AreEqual ("This: Value1 got replaced.", result);
 		}
 
 		[Test]
-		public void CheckBadReplace( )
+		public void CheckBadReplace ()
 		{
-			Obfuscar.Variables variables = new Obfuscar.Variables( );
-			variables.Add( "Key1", "Value1" );
+			Obfuscar.Variables variables = new Obfuscar.Variables ();
+			variables.Add ("Key1", "Value1");
 
-			TestUtils.AssertThrows( delegate { variables.Replace( "$(Unreplaceable)" ); }, typeof( ApplicationException ),
-				"Unable", "replace", "Unreplaceable" );
+			TestUtils.AssertThrows (delegate {
+				variables.Replace ("$(Unreplaceable)");
+			}, typeof(ObfuscarException),
+				"Unable", "replace", "Unreplaceable");
 		}
 	}
 }

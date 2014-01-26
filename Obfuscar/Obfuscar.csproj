@@ -142,6 +142,7 @@
     <Compile Include="EventTester.cs" />
     <Compile Include="EventKey.cs" />
     <Compile Include="NamespaceTester.cs" />
+    <Compile Include="ObfuscarException.cs" />
     <Compile Include="PropertyKey.cs" />
     <Compile Include="PropertyTester.cs" />
     <Compile Include="MapWriter.cs" />

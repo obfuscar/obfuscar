@@ -26,8 +26,8 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.CodeDom.Compiler;
-
 using NUnit.Framework;
+using Obfuscar;
 
 namespace ObfuscarTests
 {
@@ -64,11 +64,11 @@ namespace ObfuscarTests
 		public void CheckGoodDependency ()
 		{
 			string xml = String.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Module file='$(InPath)\AssemblyB.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Module file='$(InPath)\AssemblyB.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath);
 
 			Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml (xml);
 		}
@@ -77,18 +77,18 @@ namespace ObfuscarTests
 		public void CheckDeletedDependency ()
 		{
 			string xml = String.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Module file='$(InPath)\AssemblyB.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Module file='$(InPath)\AssemblyB.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath);
 
 			// explicitly delete AssemblyA
 			File.Delete (Path.Combine (TestHelper.InputPath, "AssemblyA.dll"));
 
 			TestUtils.AssertThrows (delegate {
 				Obfuscar.Obfuscator.CreateFromXml (xml);
-			}, typeof(ApplicationException),
+			}, typeof(ObfuscarException),
 				"Unable", "resolve dependency", "AssemblyA");
 		}
 
@@ -96,16 +96,16 @@ namespace ObfuscarTests
 		public void CheckMissingDependency ()
 		{
 			string xml = String.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Module file='{0}\AssemblyD.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Module file='{0}\AssemblyD.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath);
 
 			// InPath defaults to '.', which doesn't contain AssemblyA
 			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyD.dll"), Path.Combine (TestHelper.InputPath, "AssemblyD.dll"));
 			TestUtils.AssertThrows (delegate {
 				Obfuscar.Obfuscator.CreateFromXml (xml);
-			}, typeof(ApplicationException),
+			}, typeof(ObfuscarException),
 				"Unable", "resolve dependency", "AssemblyC");
 		}
 	}
