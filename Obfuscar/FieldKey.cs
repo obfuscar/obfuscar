@@ -118,7 +118,7 @@ namespace Obfuscar
 
 		internal bool ShouldSkip (bool keepPublicApi, bool hidePrivateApi)
 		{
-			if (typeKey.TypeDefinition.IsPublic && fieldDefinition.IsPublic)
+			if (typeKey.TypeDefinition.IsPublic && (fieldDefinition.IsPublic || fieldDefinition.IsFamily))
 				return keepPublicApi;
 
 			return !hidePrivateApi;

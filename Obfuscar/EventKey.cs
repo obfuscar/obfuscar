@@ -22,10 +22,7 @@
 /// </copyright>
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Mono.Cecil;
-using Mono.Cecil.Metadata;
 
 namespace Obfuscar
 {
@@ -124,11 +121,19 @@ namespace Obfuscar
 			return String.Format ("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
 		}
 
+		private bool IsAddPublic ()
+		{
+			return eventDefinition.AddMethod != null && (eventDefinition.AddMethod.IsPublic || eventDefinition.AddMethod.IsFamily);
+		}
+
+		private bool IsRemovePublic ()
+		{
+			return eventDefinition.RemoveMethod != null && (eventDefinition.RemoveMethod.IsPublic || eventDefinition.RemoveMethod.IsFamily);
+		}
+
 		internal bool ShouldSkip (bool keepPublicApi, bool hidePrivateApi)
 		{
-			if (typeKey.TypeDefinition.IsPublic &&
-			    (eventDefinition.AddMethod.IsPublic ||
-			    eventDefinition.RemoveMethod.IsPublic))
+			if (typeKey.TypeDefinition.IsPublic && (IsAddPublic () || IsRemovePublic ()))
 				return keepPublicApi;
 
 			return !hidePrivateApi;
