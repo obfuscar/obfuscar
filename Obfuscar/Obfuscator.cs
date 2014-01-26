@@ -931,7 +931,7 @@ namespace Obfuscar
 					// to be skipped as neccessary
 					foreach (MethodDefinition method in type.Methods) {
 						string skiprename = null;
-						if (!ShouldRename (type, true)) {
+						if (!ShouldRename (type, true) && method.ObfuscationMarked() == false) {
 							skiprename = "ObfuscateAttribute found on type.";
 						}
 
