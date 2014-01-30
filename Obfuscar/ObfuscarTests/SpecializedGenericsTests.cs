@@ -27,7 +27,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.CodeDom.Compiler;
-
 using NUnit.Framework;
 using Mono.Cecil;
 
@@ -36,61 +35,62 @@ namespace ObfuscarTests
 	[TestFixture]
 	public class SpecializedGenericsTests
 	{
-		Obfuscar.ObfuscationMap BuildAndObfuscateAssemblies( )
+		Obfuscar.ObfuscationMap BuildAndObfuscateAssemblies ()
 		{
-			string xml = String.Format(
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath)\AssemblyWithSpecializedGenerics.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
+			string xml = String.Format (
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
+				             @"<Module file='$(InPath)\AssemblyWithSpecializedGenerics.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
-			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate( "AssemblyWithSpecializedGenerics", String.Empty, xml );
+			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithSpecializedGenerics", String.Empty, xml);
 
 			return obfuscator.Mapping;
 		}
 
-		MethodDefinition FindByName( TypeDefinition typeDef, string name )
+		MethodDefinition FindByName (TypeDefinition typeDef, string name)
 		{
-			foreach ( MethodDefinition method in typeDef.Methods )
-				if ( method.Name == name )
+			foreach (MethodDefinition method in typeDef.Methods)
+				if (method.Name == name)
 					return method;
 
-			Assert.Fail( String.Format( "Expected to find method: {0}", name ) );
+			Assert.Fail (String.Format ("Expected to find method: {0}", name));
 			return null; // never here
 		}
 
 		[Test]
-		public void CheckClassHasAttribute( )
+		public void CheckClassHasAttribute ()
 		{
-			Obfuscar.ObfuscationMap map = BuildAndObfuscateAssemblies( );
+			Obfuscar.ObfuscationMap map = BuildAndObfuscateAssemblies ();
 
 			string assmName = "AssemblyWithSpecializedGenerics.dll";
 
-            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
-				Path.Combine( TestHelper.InputPath, assmName ) );
+			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
+				                                        Path.Combine (TestHelper.InputPath, assmName));
 
-            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
-				Path.Combine( TestHelper.OutputPath, assmName ) );
+			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly (
+				                                         Path.Combine (TestHelper.OutputPath, assmName));
 
-			TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.ClassA`1");
-			MethodDefinition classAmethod2 = FindByName( classAType, "Method2" );
+			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.ClassA`1");
+			MethodDefinition classAmethod2 = FindByName (classAType, "Method2");
 
-			TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.ClassB");
-			MethodDefinition classBmethod2 = FindByName( classBType, "Method2" );
+			TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.ClassB");
+			MethodDefinition classBmethod2 = FindByName (classBType, "Method2");
 
-			Obfuscar.ObfuscatedThing classAEntry = map.GetMethod( new Obfuscar.MethodKey( classAmethod2 ) );
-			Obfuscar.ObfuscatedThing classBEntry = map.GetMethod( new Obfuscar.MethodKey( classBmethod2 ) );
+			Obfuscar.ObfuscatedThing classAEntry = map.GetMethod (new Obfuscar.MethodKey (classAmethod2));
+			Obfuscar.ObfuscatedThing classBEntry = map.GetMethod (new Obfuscar.MethodKey (classBmethod2));
 
-			Assert.IsTrue(
+			Assert.IsTrue (
 				classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
 				classBEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
-				"Both methods should have been renamed." );
+				"Both methods should have been renamed.");
 
-			Assert.IsTrue(
+			Assert.IsTrue (
 				classAEntry.StatusText == classBEntry.StatusText,
-				"Both methods should have been renamed to the same thing." );
+				"Both methods should have been renamed to the same thing.");
 		}
 	}
 }

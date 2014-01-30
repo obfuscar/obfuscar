@@ -44,6 +44,7 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='KeepPublicApi' value='false' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithOverrides.dll' />" +
 				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
