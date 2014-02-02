@@ -263,17 +263,17 @@ namespace Obfuscar
 
 		private class Graph
 		{
-			public List<Node> Root = new List<Node> ();
+			public List<Node<TypeDefinition>> Root = new List<Node<TypeDefinition>> ();
 
 			public Graph (List<TypeDefinition> items)
 			{
 				foreach (var item in items)
-					Root.Add (new Node { Definition = item });
+					Root.Add (new Node<TypeDefinition> { Definition = item });
 
 				AddParents (Root);
 			}
 
-			private static void AddParents (List<Node> nodes)
+			private static void AddParents (List<Node<TypeDefinition>> nodes)
 			{
 				foreach (var node in nodes) {
 					var baseType = node.Definition.BaseType;
@@ -296,9 +296,9 @@ namespace Obfuscar
 				}
 			}
 
-			private static Node SearchNode (TypeReference baseType, List<Node> nodes)
+			private static Node<TypeDefinition> SearchNode (TypeReference baseType, List<Node<TypeDefinition>> nodes)
 			{
-				return nodes.FirstOrDefault(node => node.Definition.FullName == baseType.FullName);
+				return nodes.FirstOrDefault (node => node.Definition.FullName == baseType.FullName);
 			}
 
 			internal IEnumerable<TypeDefinition> GetOrderedList ()
@@ -308,10 +308,10 @@ namespace Obfuscar
 				return result;
 			}
 
-			private void CleanPool (List<Node> pool, List<TypeDefinition> result)
+			private void CleanPool (List<Node<TypeDefinition>> pool, List<TypeDefinition> result)
 			{
 				while (pool.Count > 0) {
-					var toRemoved = new List<Node> ();
+					var toRemoved = new List<Node<TypeDefinition>> ();
 					foreach (var node in pool) {
 						if (node.Parents.Count == 0) {
 							toRemoved.Add (node);
@@ -335,13 +335,13 @@ namespace Obfuscar
 			}
 		}
 
-		private class Node
+		private class Node<T>
 		{
-			public List<Node> Parents = new List<Node> ();
-			public List<Node> Children = new List<Node> ();
-			public TypeDefinition Definition;
+			public List<Node<T>> Parents = new List<Node<T>> ();
+			public List<Node<T>> Children = new List<Node<T>> ();
+			public T Definition;
 
-			public void AppendTo (Node parent)
+			public void AppendTo (Node<T> parent)
 			{
 				if (parent == null)
 					return;
@@ -359,7 +359,7 @@ namespace Obfuscar
 
 			var graph = new Graph (result);
 			var list = graph.GetOrderedList ();
-			if (list.Count () != result.Count) 
+			if (list.Count () != result.Count)
 				throw new Exception ("Graph error");
 
 			return list;
