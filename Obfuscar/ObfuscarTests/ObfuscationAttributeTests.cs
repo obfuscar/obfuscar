@@ -87,5 +87,22 @@ namespace ObfuscarTests
 			Assert.IsTrue (classD.Status == ObfuscationStatus.Skipped, "PublicClass2 shouldn't have been obfuscated.");
 			Assert.IsTrue (method3.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
 		}
+
+		[Test]
+		public void CheckException ()
+		{
+			string xml = String.Format (
+				                      @"<?xml version='1.0'?>" +
+				                      @"								<Obfuscator>" +
+				                      @"								<Var name='InPath' value='{0}' />" +
+				                      @"								<Var name='OutPath' value='{1}' />" +
+				                      @"<Var name='HidePrivateApi' value='true' />" +
+				                      @"								<Module file='$(InPath)\AssemblyWithTypesAttrs2.dll'>" +
+				                      @"								</Module>" +
+				                      @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+
+			var exception = Assert.Throws<ObfuscarException> (() => TestHelper.BuildAndObfuscate ("AssemblyWithTypesAttrs2", string.Empty, xml));
+			Assert.IsTrue (exception.Message.StartsWith ("Inconsistent virtual method obfuscation"));
+		}
 	}
 }

@@ -73,6 +73,7 @@ namespace ObfuscarTests
 				             @"<Obfuscator>" +
 				             @"<Var name='InPath' value='{0}' />" +
 				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='KeepPublicApi' value='true' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
 				             @"<Module file='$(InPath)\SkipVirtualMethodTest2.dll'>" +
 				             @"<SkipMethod type='SkipVirtualMethodTest.Class1' name='Method1' />" +

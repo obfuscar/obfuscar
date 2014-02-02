@@ -23,6 +23,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Diagnostics;
@@ -92,7 +93,7 @@ namespace Obfuscar
 				while (reader.Read ()) {
 					if (reader.NodeType == XmlNodeType.Element) {
 						string name = Helper.GetAttribute (reader, "name", vars);
-                    
+
 						string rxStr = Helper.GetAttribute (reader, "rx");
 						Regex rx = null;
 						if (!string.IsNullOrEmpty (rxStr)) {
@@ -119,7 +120,7 @@ namespace Obfuscar
 						switch (reader.Name) {
 						case "SkipNamespace":
 							if (rx != null) {
-								info.skipNamespaces.Add (new NamespaceTester (rx));	
+								info.skipNamespaces.Add (new NamespaceTester (rx));
 							} else {
 								info.skipNamespaces.Add (new NamespaceTester (name));
 							}
@@ -146,7 +147,7 @@ namespace Obfuscar
 							val = Helper.GetAttribute (reader, "skipEvents", vars);
 							if (val.Length > 0 && XmlConvert.ToBoolean (val))
 								skipFlags |= TypeSkipFlags.SkipEvent;
-                                
+
 							if (rx != null) {
 								info.skipTypes.Add (new TypeTester (rx, skipFlags, attrib, inherits, isStatic, isSerializable));
 							} else {
@@ -260,13 +261,108 @@ namespace Obfuscar
 			initialized = true;
 		}
 
+		private class Graph
+		{
+			public List<Node> Root = new List<Node> ();
+
+			public Graph (List<TypeDefinition> items)
+			{
+				foreach (var item in items)
+					Root.Add (new Node { Definition = item });
+
+				AddParents (Root);
+			}
+
+			private static void AddParents (List<Node> nodes)
+			{
+				foreach (var node in nodes) {
+					var baseType = node.Definition.BaseType;
+					if (baseType != null) {
+						var parent = SearchNode (baseType, nodes);
+						node.AppendTo (parent);
+					}
+
+					if (node.Definition.HasInterfaces)
+						foreach (var inter in node.Definition.Interfaces) {
+							var parent = SearchNode (inter, nodes);
+							node.AppendTo (parent);
+						}
+
+					var nestedParent = node.Definition.DeclaringType;
+					if (nestedParent != null) {
+						var parent = SearchNode (nestedParent, nodes);
+						node.AppendTo (parent);                        
+					}
+				}
+			}
+
+			private static Node SearchNode (TypeReference baseType, List<Node> nodes)
+			{
+				return nodes.FirstOrDefault(node => node.Definition.FullName == baseType.FullName);
+			}
+
+			internal IEnumerable<TypeDefinition> GetOrderedList ()
+			{
+				var result = new List<TypeDefinition> ();
+				CleanPool (Root, result);
+				return result;
+			}
+
+			private void CleanPool (List<Node> pool, List<TypeDefinition> result)
+			{
+				while (pool.Count > 0) {
+					var toRemoved = new List<Node> ();
+					foreach (var node in pool) {
+						if (node.Parents.Count == 0) {
+							toRemoved.Add (node);
+							if (result.Contains (node.Definition))
+								continue;
+
+							result.Add (node.Definition);
+						}
+					}
+
+					foreach (var remove in toRemoved) {
+						pool.Remove (remove);
+						foreach (var child in remove.Children) {
+							if (result.Contains (child.Definition))
+								continue;
+
+							child.Parents.Remove (remove);
+						}
+					}
+				}
+			}
+		}
+
+		private class Node
+		{
+			public List<Node> Parents = new List<Node> ();
+			public List<Node> Children = new List<Node> ();
+			public TypeDefinition Definition;
+
+			public void AppendTo (Node parent)
+			{
+				if (parent == null)
+					return;
+
+				parent.Children.Add (this);
+				Parents.Add (parent);
+			}
+		}
+
 		public IEnumerable<TypeDefinition> GetAllTypeDefinitions ()
 		{
 			var result = new List<TypeDefinition> ();
 			foreach (TypeDefinition typedef in definition.MainModule.Types)
 				GetAllTypeDefinitions (typedef, result);
 
-			return result;
+			var graph = new Graph (result);
+			var list = graph.GetOrderedList ();
+			if (list.Count () != result.Count) 
+				throw new Exception ("Graph error");
+
+			return list;
 		}
 
 		private void GetAllTypeDefinitions (TypeDefinition type, IList<TypeDefinition> result)
@@ -351,7 +447,7 @@ namespace Obfuscar
 			try {
 				bool readSymbols = project.Settings.RegenerateDebugInfo && System.IO.File.Exists (System.IO.Path.ChangeExtension (filename, "pdb"));
 				try {
-					definition = AssemblyDefinition.ReadAssembly (filename, new ReaderParameters { 
+					definition = AssemblyDefinition.ReadAssembly (filename, new ReaderParameters {
 						ReadingMode = Mono.Cecil.ReadingMode.Immediate,
 						ReadSymbols = readSymbols,
 						AssemblyResolver = project.Cache
@@ -366,7 +462,7 @@ namespace Obfuscar
 					});
 				}
 
-				project.Cache.Register (definition);				
+				project.Cache.Register (definition);
 				name = definition.Name.Name;
 			} catch (System.IO.IOException e) {
 				throw new ObfuscarException ("Unable to find assembly:  " + filename, e);

@@ -47,13 +47,14 @@ namespace ObfuscarTests
 		public void CheckGeneric ()
 		{
 			string xml = String.Format (
-				                      @"<?xml version='1.0'?>" +
-				                      @"<Obfuscator>" +
-				                      @"<Var name='InPath' value='{0}' />" +
-				                      @"<Var name='OutPath' value='{1}' />" +
-				                      @"<Var name='KeyFile' value='$(InPath)\..\dockpanelsuite.snk' />" +
-				                      @"<Module file='$(InPath)\Microsoft.Practices.Unity.dll' />" +
-				                      @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='KeyFile' value='$(InPath)\..\dockpanelsuite.snk' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
+				             @"<Module file='$(InPath)\Microsoft.Practices.Unity.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			TestHelper.CleanInput ();
 
@@ -64,7 +65,7 @@ namespace ObfuscarTests
 			var map = TestHelper.Obfuscate (xml).Mapping;
 
 			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
-				                                        Path.Combine (TestHelper.InputPath, "Microsoft.Practices.Unity.dll"));
+				                               Path.Combine (TestHelper.InputPath, "Microsoft.Practices.Unity.dll"));
 
 			TypeDefinition classAType = inAssmDef.MainModule.GetType ("Microsoft.Practices.ObjectBuilder2.PolicyListExtensions");
 			var type = map.GetClass (new TypeKey (classAType));
@@ -78,7 +79,7 @@ namespace ObfuscarTests
 			var typeB = map.GetClass (new TypeKey (classB));
 
 			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly (
-				                                         Path.Combine (TestHelper.OutputPath, "Microsoft.Practices.Unity.dll"));
+				                                Path.Combine (TestHelper.OutputPath, "Microsoft.Practices.Unity.dll"));
 
 			var name = type.StatusText.Substring (27);
 			var obfuscated = outAssmDef.MainModule.GetType (name);
