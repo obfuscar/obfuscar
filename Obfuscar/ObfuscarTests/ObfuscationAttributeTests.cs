@@ -2,6 +2,7 @@ using Mono.Cecil;
 using NUnit.Framework;
 using Obfuscar;
 using System;
+using System.CodeDom.Compiler;
 using System.IO;
 
 namespace ObfuscarTests
@@ -9,6 +10,32 @@ namespace ObfuscarTests
 	[TestFixture]
 	public class ObfuscationAttributeTests
 	{
+		[SetUp]
+		public void BuildTestAssemblies ()
+		{
+			TestHelper.CleanInput ();
+
+			Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider ();
+
+			CompilerParameters cp = new CompilerParameters ();
+			cp.GenerateExecutable = false;
+			cp.GenerateInMemory = false;
+			cp.TreatWarningsAsErrors = true;
+			;
+
+			string assemblyAPath = Path.Combine (TestHelper.InputPath, "AssemblyA.dll");
+			cp.OutputAssembly = assemblyAPath;
+			CompilerResults cr = provider.CompileAssemblyFromFile (cp, Path.Combine (TestHelper.InputPath, "AssemblyA.cs"));
+			if (cr.Errors.Count > 0)
+				Assert.Fail ("Unable to compile test assembly:  AssemblyA");
+
+			cp.ReferencedAssemblies.Add (assemblyAPath);
+			cp.OutputAssembly = Path.Combine (TestHelper.InputPath, "AssemblyB.dll");
+			cr = provider.CompileAssemblyFromFile (cp, Path.Combine (TestHelper.InputPath, "AssemblyB.cs"));
+			if (cr.Errors.Count > 0)
+				Assert.Fail ("Unable to compile test assembly:  AssemblyB");
+		}
+
 		static MethodDefinition FindByName (TypeDefinition typeDef, string name)
 		{
 			foreach (MethodDefinition method in typeDef.Methods)
@@ -92,16 +119,37 @@ namespace ObfuscarTests
 		public void CheckException ()
 		{
 			string xml = String.Format (
+				             @"<?xml version='1.0'?>" +
+				             @"								<Obfuscator>" +
+				             @"								<Var name='InPath' value='{0}' />" +
+				             @"								<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
+				             @"								<Module file='$(InPath)\AssemblyWithTypesAttrs2.dll'>" +
+				             @"								</Module>" +
+				             @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+
+			var exception = Assert.Throws<ObfuscarException> (() => TestHelper.BuildAndObfuscate ("AssemblyWithTypesAttrs2", string.Empty, xml));
+			Assert.IsTrue (exception.Message.StartsWith ("Inconsistent virtual method obfuscation"));
+		}
+
+		[Test]
+		public void CheckCrossAssembly ()
+		{
+			string xml = String.Format (
 				                      @"<?xml version='1.0'?>" +
 				                      @"								<Obfuscator>" +
 				                      @"								<Var name='InPath' value='{0}' />" +
 				                      @"								<Var name='OutPath' value='{1}' />" +
 				                      @"<Var name='HidePrivateApi' value='true' />" +
-				                      @"								<Module file='$(InPath)\AssemblyWithTypesAttrs2.dll'>" +
+				                      @"								<Module file='$(InPath)\AssemblyE.dll' />" +
+				                      @"								<Module file='$(InPath)\AssemblyF.dll'>" +
 				                      @"								</Module>" +
 				                      @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
-			var exception = Assert.Throws<ObfuscarException> (() => TestHelper.BuildAndObfuscate ("AssemblyWithTypesAttrs2", string.Empty, xml));
+			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyE.dll"), Path.Combine (TestHelper.InputPath, "AssemblyE.dll"), true);
+			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyF.dll"), Path.Combine (TestHelper.InputPath, "AssemblyF.dll"), true);
+
+			var exception = Assert.Throws<ObfuscarException> (() => TestHelper.Obfuscate (xml));
 			Assert.IsTrue (exception.Message.StartsWith ("Inconsistent virtual method obfuscation"));
 		}
 	}
