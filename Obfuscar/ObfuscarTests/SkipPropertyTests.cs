@@ -98,7 +98,7 @@ namespace ObfuscarTests
 			CheckProperties ("AssemblyWithProperties", 1, expected, notExpected);
 		}
 
-		// TODO: [Test]
+		[Test]
 		public void CheckSkipPropertyByName ()
 		{
 			string xml = String.Format (
@@ -106,6 +106,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithProperties.dll'>" +
 				@"<SkipProperty type='TestClasses.ClassA' name='Property2' />" +
 				@"</Module>" +
@@ -125,7 +126,7 @@ namespace ObfuscarTests
 			CheckProperties ("AssemblyWithProperties", 1, expected, notExpected);
 		}
 
-		// TODO: [Test]
+		[Test]
 		public void CheckSkipPropertyByRx ()
 		{
 			string xml = String.Format (
@@ -133,6 +134,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithProperties.dll'>" +
 				@"<SkipProperty type='TestClasses.ClassA' rx='Property\d' />" +
 				@"</Module>" +

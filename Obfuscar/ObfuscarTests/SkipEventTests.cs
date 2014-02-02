@@ -118,7 +118,7 @@ namespace ObfuscarTests
 			CheckEvents ("AssemblyWithEvents", 1, expected, notExpected);
 		}
 
-		// TODO: [Test]
+		[Test]
 		public void CheckSkipEventsByName ()
 		{
 			string xml = String.Format (
@@ -126,6 +126,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithEvents.dll'>" +
 				@"<SkipEvent type='TestClasses.ClassA' name='Event2' attrib='public' />" +
 				@"</Module>" +
@@ -145,7 +146,7 @@ namespace ObfuscarTests
 			CheckEvents ("AssemblyWithEvents", 1, expected, notExpected);
 		}
 
-		// TODO: [Test]
+		[Test]
 		public void CheckSkipEventsByRx ()
 		{
 			string xml = String.Format (
@@ -153,6 +154,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithEvents.dll'>" +
 				@"<SkipEvent type='TestClasses.ClassA' rx='Event\d' />" +
 				@"</Module>" +
