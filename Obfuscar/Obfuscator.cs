@@ -1134,6 +1134,16 @@ namespace Obfuscar
 				Debug.Assert (!@group.External,
 					"Group's external flag should have been handled when the group was created, " +
 					"and all methods in the group should already be marked skipped.");
+				map.UpdateMethod (methodKey, ObfuscationStatus.Skipped, skipRename);
+
+				var message = new StringBuilder ("Inconsistent virtual method obfuscation state detected. Abort. Please review the following methods,")
+                .AppendLine ();
+				foreach (var item in @group.Methods) {
+					var state = map.GetMethod (item);
+					message.AppendFormat ("{0}->{1}:{2}", item, state.Status, state.StatusText).AppendLine ();
+				}
+
+				throw new ObfuscarException (message.ToString ());
 
 				// counts are grouping according to signature
 				ParamSig sig = new ParamSig (method);
