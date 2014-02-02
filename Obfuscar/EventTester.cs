@@ -25,7 +25,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
-
 using Mono.Cecil;
 
 namespace Obfuscar
@@ -56,7 +55,7 @@ namespace Obfuscar
 
 		public bool Test (EventKey evt, InheritMap map)
 		{
-			if (Helper.CompareOptionalRegex (evt.TypeKey.Fullname, type) && MethodTester.CheckMemberVisibility (attrib, typeAttrib, evt.AddMethodAttributes, evt.DeclaringType)) {
+			if (Helper.CompareOptionalRegex (evt.TypeKey.Fullname, type) && !MethodTester.CheckMemberVisibility (attrib, typeAttrib, evt.AddMethodAttributes, evt.DeclaringType)) {
 				if (name != null)
 					return Helper.CompareOptionalRegex (evt.Name, name);
 				else
