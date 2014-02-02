@@ -190,13 +190,12 @@ namespace Obfuscar
 				copyInfo.Definition.Write (outName);
 			}
 
-            // Cecil does not properly update the name cache, so force that:
-            foreach (AssemblyInfo info in project)
-            {
-                var types = info.Definition.MainModule.Types;
-                for (int i = 0; i < types.Count; i++)
-                    types[i] = types[i]; 
-            }
+			// Cecil does not properly update the name cache, so force that:
+			foreach (AssemblyInfo info in project) {
+				var types = info.Definition.MainModule.Types;
+				for (int i = 0; i < types.Count; i++)
+					types [i] = types [i]; 
+			}
 
 			// save the modified assemblies
 			foreach (AssemblyInfo info in project) {
@@ -333,7 +332,7 @@ namespace Obfuscar
 
 					var typeKey = new TypeKey (type);
 
-					if (!ShouldRename (type, true)) {
+					if (!MarkedAsShouldRename (type, true)) {
 						continue;
 					}
 
@@ -344,11 +343,11 @@ namespace Obfuscar
 						string sig = field.FieldType.FullName;
 						var fieldKey = new FieldKey (typeKey, sig, field.Name, field);
 						NameGroup nameGroup = GetNameGroup (nameGroups, sig);
-                        if (field.ObfuscationMarked() == false) {
-                            map.UpdateField(fieldKey, ObfuscationStatus.Skipped, "obfuscation excluded");
-                            nameGroup.Add(fieldKey.Name);
-                            continue;
-                        }
+						if (field.ObfuscationMarked () == false) {
+							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "obfuscation excluded");
+							nameGroup.Add (fieldKey.Name);
+							continue;
+						}
 
 						if ((field.IsRuntimeSpecialName && field.Name == "value__")) {
 							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
@@ -423,7 +422,7 @@ namespace Obfuscar
 						continue;
 					}
 
-					if (ShouldRename (type, true)) {
+					if (MarkedAsShouldRename (type, true)) {
 						// rename the method parameters
 						foreach (MethodDefinition method in type.Methods)
 							RenameParams (method, info);
@@ -459,11 +458,20 @@ namespace Obfuscar
 			}
 		}
 
-		private bool ShouldRename (TypeDefinition type, bool member = false)
+		private bool MarkedAsShouldRename (TypeDefinition type, bool member = false)
 		{
 			var marked = type.ObfuscationMarked ();
 			if (marked != null) {
 				return marked.Value;
+			}
+
+			var parentType = type.DeclaringType;            
+			while (parentType != null) {
+				var parent = parentType.ObfuscationMarked ();
+				if (parent != null)
+					return parent.Value;
+
+				parentType = parentType.DeclaringType;
 			}
 
 			return !project.Settings.MarkedOnly;
@@ -504,7 +512,7 @@ namespace Obfuscar
 					TypeKey unrenamedTypeKey = unrenamedTypeKeys [type];
 					string fullName = type.FullName;
 
-					if (!ShouldRename (type)) {
+					if (!MarkedAsShouldRename (type)) {
 						map.UpdateType (oldTypeKey, ObfuscationStatus.Skipped, "marked");
 
 						// go through the list of resources, remove ones that would be renamed
@@ -546,23 +554,19 @@ namespace Obfuscar
 
 					string name;
 					string ns;
-                    if (type.IsNested)
-                    {
-                        ns = "";
-                        name = NameMaker.UniqueNestedTypeName(type.DeclaringType.NestedTypes.IndexOf(type));
-                    }
-                    else
-                    {
-                        if (project.Settings.ReuseNames) {
-                            name = NameMaker.UniqueTypeName(typeIndex);
-                            ns = NameMaker.UniqueNamespace(typeIndex);
-                        }
-                        else {
-                            name = NameMaker.UniqueName(uniqueTypeNameIndex);
-                            ns = NameMaker.UniqueNamespace(uniqueTypeNameIndex);
-                            uniqueTypeNameIndex++;
-                        }
-                    }
+					if (type.IsNested) {
+						ns = "";
+						name = NameMaker.UniqueNestedTypeName (type.DeclaringType.NestedTypes.IndexOf (type));
+					} else {
+						if (project.Settings.ReuseNames) {
+							name = NameMaker.UniqueTypeName (typeIndex);
+							ns = NameMaker.UniqueNamespace (typeIndex);
+						} else {
+							name = NameMaker.UniqueName (uniqueTypeNameIndex);
+							ns = NameMaker.UniqueNamespace (uniqueTypeNameIndex);
+							uniqueTypeNameIndex++;
+						}
+					}
                         
 					if (type.GenericParameters.Count > 0) {
 						name += '`' + type.GenericParameters.Count.ToString ();
@@ -664,17 +668,12 @@ namespace Obfuscar
 						else
 							continue;
 
-                        try
-                        {
-                            using (var bamlReader = new XmlBamlReader(stream, new CecilTypeResolver(project.InheritMap.Cache, library)))
-                                result.Add(XDocument.Load(bamlReader));
-                        }
-                        catch (ArgumentException)
-                        {
-                        }
-                        catch (FileNotFoundException)
-                        {
-                        }
+						try {
+							using (var bamlReader = new XmlBamlReader (stream, new CecilTypeResolver (project.InheritMap.Cache, library)))
+								result.Add (XDocument.Load (bamlReader));
+						} catch (ArgumentException) {
+						} catch (FileNotFoundException) {
+						}
 					}
 				}
 			}
@@ -771,7 +770,7 @@ namespace Obfuscar
 
 					TypeKey typeKey = new TypeKey (type);
 
-					if (!ShouldRename (type, true)) {
+					if (!MarkedAsShouldRename (type, true)) {
 						continue;
 					}
 
@@ -782,10 +781,10 @@ namespace Obfuscar
 						ObfuscatedThing m = map.GetProperty (propKey);
 
 						// skip runtime special properties
-                        if (prop.ObfuscationMarked() == false) {
-                            m.Update(ObfuscationStatus.Skipped, "obfuscation excluded");
-                            continue;
-                        }
+						if (prop.ObfuscationMarked () == false) {
+							m.Update (ObfuscationStatus.Skipped, "obfuscation excluded");
+							continue;
+						}
 
 						if (prop.IsRuntimeSpecialName) {
 							m.Update (ObfuscationStatus.Skipped, "runtime special");
@@ -884,7 +883,7 @@ namespace Obfuscar
 					}
 
 					TypeKey typeKey = new TypeKey (type);
-					if (!ShouldRename (type, true)) {
+					if (!MarkedAsShouldRename (type, true)) {
 						continue;
 					}
 
@@ -893,12 +892,12 @@ namespace Obfuscar
 						EventKey evtKey = new EventKey (typeKey, evt);
 						ObfuscatedThing m = map.GetEvent (evtKey);
 
-                        if (evt.ObfuscationMarked() == false) {
-                            m.Update(ObfuscationStatus.Skipped, "obfuscation excluded");
-                            continue;
-                        }
+						if (evt.ObfuscationMarked () == false) {
+							m.Update (ObfuscationStatus.Skipped, "obfuscation excluded");
+							continue;
+						}
                         
-                        // skip runtime special events
+						// skip runtime special events
 						if (evt.IsRuntimeSpecialName) {
 							m.Update (ObfuscationStatus.Skipped, "runtime special");
 							continue;
@@ -957,7 +956,9 @@ namespace Obfuscar
 					// to be skipped as neccessary
 					foreach (MethodDefinition method in type.Methods) {
 						string skiprename = null;
-						if (!ShouldRename (type, true) && method.ObfuscationMarked() == false) {
+						var typeShouldRename = MarkedAsShouldRename (type, true);
+						var methodShouldRename = method.ObfuscationMarked ();
+						if (!typeShouldRename && methodShouldRename != true) {
 							skiprename = "ObfuscateAttribute found on type.";
 						}
 
@@ -965,8 +966,8 @@ namespace Obfuscar
 						ObfuscatedThing m = map.GetMethod (methodKey);
 
 						// skip runtime methods
-                        if (method.ObfuscationMarked() == false)
-                            skiprename = "obfuscation excluded";
+						if (methodShouldRename == false)
+							skiprename = "obfuscation excluded";
 
 
 						if (method.IsRuntime) {
@@ -1340,7 +1341,7 @@ namespace Obfuscar
 
 					// FIXME: Figure out why this exists if it is never used.
 					// TypeKey typeKey = new TypeKey(type);
-					if (ShouldRename (type, true)) {
+					if (MarkedAsShouldRename (type, true)) {
 						foreach (MethodDefinition method in type.Methods) {
 							if (!info.ShouldSkipStringHiding (new MethodKey (method), Project.InheritMap, Project.Settings.HidePrivateApi) && method.Body != null) {
 								for (int i = 0; i < method.Body.Instructions.Count; i++) {
