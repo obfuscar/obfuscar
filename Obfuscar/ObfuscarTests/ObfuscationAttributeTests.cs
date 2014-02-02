@@ -136,17 +136,17 @@ namespace ObfuscarTests
 		public void CheckCrossAssembly ()
 		{
 			string xml = String.Format (
-				                      @"<?xml version='1.0'?>" +
-				                      @"								<Obfuscator>" +
-				                      @"								<Var name='InPath' value='{0}' />" +
-				                      @"								<Var name='OutPath' value='{1}' />" +
-				                      @"<Var name='HidePrivateApi' value='true' />" +
-				                      @"								<Module file='$(InPath)\AssemblyE.dll' />" +
-				                      @"								<Module file='$(InPath)\AssemblyF.dll'>" +
-				                      @"								</Module>" +
-				                      @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"								<Obfuscator>" +
+				             @"								<Var name='InPath' value='{0}' />" +
+				             @"								<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
+				             @"								<Module file='$(InPath)\AssemblyF.dll'>" +
+				             @"								</Module>" +
+				             @"								<Module file='$(InPath)\AssemblyG.dll' />" +
+				             @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
-			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyE.dll"), Path.Combine (TestHelper.InputPath, "AssemblyE.dll"), true);
+			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyG.dll"), Path.Combine (TestHelper.InputPath, "AssemblyG.dll"), true);
 			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyF.dll"), Path.Combine (TestHelper.InputPath, "AssemblyF.dll"), true);
 
 			var exception = Assert.Throws<ObfuscarException> (() => TestHelper.Obfuscate (xml));

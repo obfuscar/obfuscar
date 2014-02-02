@@ -21,17 +21,15 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
+using Mono.Cecil;
+using Mono.Security.Cryptography;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
-using System.Xml;
-using System.Text.RegularExpressions;
 using System.IO;
-
-using Mono.Cecil;
-using Mono.Security.Cryptography;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Xml;
 
 namespace Obfuscar
 {
@@ -53,7 +51,6 @@ namespace Obfuscar
 		Settings settings;
 		// FIXME: Figure out why this exists if it is never used.
 		private RSA keyvalue;
-
 		// don't create.  call FromXml.
 		private Project ()
 		{
@@ -125,20 +122,17 @@ namespace Obfuscar
 			}
 		}
 
-        AssemblyCache m_cache;
+		AssemblyCache m_cache;
 
-        internal AssemblyCache Cache
-        {
-            get
-            {
-                if (m_cache == null)
-                {
-                    m_cache = new AssemblyCache(this);
-                }
+		internal AssemblyCache Cache {
+			get {
+				if (m_cache == null) {
+					m_cache = new AssemblyCache (this);
+				}
 
-                return m_cache;
-            }
-        }
+				return m_cache;
+			}
+		}
 
 		public static Project FromXml (XmlReader reader, string projectFileDirectory)
 		{
@@ -146,7 +140,7 @@ namespace Obfuscar
 
 			project.vars.Add (SPECIALVAR_PROJECTFILEDIRECTORY, string.IsNullOrEmpty (projectFileDirectory) ? "." : projectFileDirectory);
 
-			while (reader.Read()) {
+			while (reader.Read ()) {
 				if (reader.NodeType == XmlNodeType.Element) {
 					switch (reader.Name) {
 					case "Var":
@@ -176,6 +170,92 @@ namespace Obfuscar
 			}
 
 			return project;
+		}
+
+		private class Graph
+		{
+			public List<Node<AssemblyInfo>> Root = new List<Node<AssemblyInfo>> ();
+
+			public Graph (List<AssemblyInfo> items)
+			{
+				foreach (var item in items)
+					Root.Add (new Node<AssemblyInfo> { Entity = item });
+
+				AddParents (Root);
+			}
+
+			private static void AddParents (List<Node<AssemblyInfo>> nodes)
+			{
+				foreach (var node in nodes) {
+					var references = node.Entity.References;
+					foreach (var reference in references) {
+						var parent = SearchNode (reference, nodes);
+						node.AppendTo (parent);
+					}
+				}
+			}
+
+			private static Node<AssemblyInfo> SearchNode (AssemblyInfo baseType, List<Node<AssemblyInfo>> nodes)
+			{
+				return nodes.FirstOrDefault (node => node.Entity == baseType);
+			}
+
+			internal IEnumerable<AssemblyInfo> GetOrderedList ()
+			{
+				var result = new List<AssemblyInfo> ();
+				CleanPool (Root, result);
+				return result;
+			}
+
+			private void CleanPool (List<Node<AssemblyInfo>> pool, List<AssemblyInfo> result)
+			{
+				while (pool.Count > 0) {
+					var toRemoved = new List<Node<AssemblyInfo>> ();
+					foreach (var node in pool) {
+						if (node.Parents.Count == 0) {
+							toRemoved.Add (node);
+							if (result.Contains (node.Entity))
+								continue;
+
+							result.Add (node.Entity);
+						}
+					}
+
+					foreach (var remove in toRemoved) {
+						pool.Remove (remove);
+						foreach (var child in remove.Children) {
+							if (result.Contains (child.Entity))
+								continue;
+
+							child.Parents.Remove (remove);
+						}
+					}
+				}
+			}
+		}
+
+		// TODO: find a way reuse Node and Graph
+		private class Node<T>
+		{
+			public List<Node<T>> Parents = new List<Node<T>> ();
+			public List<Node<T>> Children = new List<Node<T>> ();
+			public T Entity;
+
+			public void AppendTo (Node<T> parent)
+			{
+				if (parent == null)
+					return;
+
+				parent.Children.Add (this);
+				Parents.Add (parent);
+			}
+		}
+
+		private void ReorderAssemblies ()
+		{
+			var graph = new Graph (assemblyList);
+			assemblyList.Clear ();
+			assemblyList.AddRange (graph.GetOrderedList ());
 		}
 
 		/// <summary>
@@ -234,6 +314,7 @@ namespace Obfuscar
 
 			// build inheritance map
 			inheritMap = new InheritMap (this);
+			ReorderAssemblies ();
 		}
 
 		/// <summary>
