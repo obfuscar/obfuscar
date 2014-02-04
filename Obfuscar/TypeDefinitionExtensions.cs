@@ -7,37 +7,47 @@ using System.Threading.Tasks;
 
 namespace Obfuscar
 {
-    internal static class TypeDefinitionExtensions
-    {
-        public static bool? ObfuscationMarked(this ICustomAttributeProvider type, bool member = false)
-        {
-            var obfuscarObfuscate = typeof(ObfuscateAttribute).FullName;
-            var reflectionObfuscate = typeof(System.Reflection.ObfuscationAttribute).FullName;
+	internal static class TypeDefinitionExtensions
+	{
+		public static bool IsTruePublic (this TypeDefinition type)
+		{
+			if (!type.IsPublic)
+				return false;
 
-            foreach (CustomAttribute attr in type.CustomAttributes)
-            {
-                var attrFullName = attr.Constructor.DeclaringType.FullName;
-                if (attrFullName == obfuscarObfuscate)
-                {
-                    return (bool)(Helper.GetAttributePropertyByName(attr, "ShouldObfuscate") ?? true);
-                }
+			var parentType = type.DeclaringType;
+			while (parentType != null) {
+				if (!parentType.IsPublic)
+					return false;
 
-                if (attrFullName == reflectionObfuscate)
-                {
-                    var applyToMembers = (bool)(Helper.GetAttributePropertyByName(attr, "ApplyToMembers") ?? true);
-                    var rename = !(bool)(Helper.GetAttributePropertyByName(attr, "Exclude") ?? false);
+				parentType = parentType.DeclaringType;
+			}
 
-                    if (member && !applyToMembers)
-                    {
-                        return !rename;
-                    }
+			return true;
+		}
 
-                    return rename;
-                }
-            }
+		public static bool? MarkedToRename (this ICustomAttributeProvider type, bool member = false)
+		{
+			var obfuscarObfuscate = typeof(ObfuscateAttribute).FullName;
+			var reflectionObfuscate = typeof(System.Reflection.ObfuscationAttribute).FullName;
 
-            // no attribute found.
-            return null;
-        }
-    }
+			foreach (CustomAttribute attr in type.CustomAttributes) {
+				var attrFullName = attr.Constructor.DeclaringType.FullName;
+				if (attrFullName == obfuscarObfuscate)
+					return (bool)(Helper.GetAttributePropertyByName (attr, "ShouldObfuscate") ?? true);
+
+				if (attrFullName == reflectionObfuscate) {
+					var applyToMembers = (bool)(Helper.GetAttributePropertyByName (attr, "ApplyToMembers") ?? true);
+					var rename = !(bool)(Helper.GetAttributePropertyByName (attr, "Exclude") ?? false);
+
+					if (member && !applyToMembers)
+						return !rename;
+
+					return rename;
+				}
+			}
+
+			// no attribute found.
+			return null;
+		}
+	}
 }

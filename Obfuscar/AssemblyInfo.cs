@@ -512,17 +512,12 @@ namespace Obfuscar
 			get { return referencedBy; }
 		}
 
-		public void ForceSkip (MethodKey method)
-		{
-			skipMethods.Add (new MethodTester (method));
-		}
-
 		private bool ShouldSkip (string ns, InheritMap map)
 		{
 			return skipNamespaces.IsMatch (ns, map);
 		}
 
-		public bool ShouldSkip (TypeKey type, TypeSkipFlags flag, InheritMap map, bool hidePrivateApi)
+		private bool ShouldSkip (TypeKey type, TypeSkipFlags flag, InheritMap map, bool hidePrivateApi)
 		{
 			if (ShouldSkip (type.Namespace, map)) {
 				if (!hidePrivateApi) {
@@ -538,33 +533,91 @@ namespace Obfuscar
 			return false;
 		}
 
-		public bool ShouldSkip (TypeKey type, InheritMap map, bool keepPublicApi, bool hidePrivateApi)
+		public bool ShouldSkip (TypeKey type, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly, out string message)
 		{
-            if (skipTypes.IsMatch(type, map))
+			var attribute = type.TypeDefinition.MarkedToRename ();
+			if (attribute != null) {
+				message = "skip by attribute";
+				return !attribute.Value;
+			}
+
+			if (markedOnly) {
+				message = "skip by markedOnly";
                 return true;
+			}
+
+			if (skipTypes.IsMatch (type, map)) {
+				message = "skip by type rule in configuration";
+				return true;
+			}
 
 			if (ShouldSkip (type.Namespace, map)) {
-				if (type.TypeDefinition.IsPublic) {
+				message = "skip by namespace rule in configuration";
+				return true;
+			}
+
+			if (type.TypeDefinition.IsTruePublic ()) {
+				message = "skip by keepPublicApi";
 					return keepPublicApi;
 				}
 
-				if (!hidePrivateApi) {
-					return true;
-				}
-			}
-
-			return false;
+			message = "skip by hidePrivateApi";
+			return !hidePrivateApi;
 		}
 
-		public bool ShouldSkip (MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi)
+		public bool ShouldSkip (MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
 		{
-			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipMethod, map, hidePrivateApi))
-				return true;
+			if (method.Method.IsRuntime) {
+				skiprename = "skip by runtime method";
+					return true;
+				}
 
-			if (skipMethods.IsMatch (method, map))
-				return true;
+			if (method.Method.IsSpecialName) {
+				switch (method.Method.SemanticsAttributes) {
+				case MethodSemanticsAttributes.Getter:
+				case MethodSemanticsAttributes.Setter:
+					skiprename = "skipping properties";
+					return !project.Settings.RenameProperties;
+				case MethodSemanticsAttributes.AddOn:
+				case MethodSemanticsAttributes.RemoveOn:
+					skiprename = "skipping events";
+					return !project.Settings.RenameEvents;
+				default:
+					skiprename = "skip by special name";
+					return true;
+			}
+			}
 
-			return method.ShouldSkip (keepPublicApi, hidePrivateApi);
+			var attribute = method.Method.MarkedToRename ();
+			// skip runtime methods
+			if (attribute != null) {
+				skiprename = "skip by attribute";
+				return !attribute.Value;
+		}
+
+			var parent = method.DeclaringType.MarkedToRename ();
+			if (parent != null) {
+				skiprename = "skip by type attribute";
+				return !parent.Value;
+			}
+
+			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipMethod, map, hidePrivateApi)) {
+				skiprename = "skip by type rule in configuration";
+				return true;
+			}
+
+			if (skipMethods.IsMatch (method, map)) {
+				skiprename = "skip by method rule in configuration";
+				return true;
+			}
+
+			if (method.DeclaringType.IsTruePublic () && (method.Method.IsPublic || method.Method.IsFamily)) {
+				skiprename = "skip by keepPublicApi";
+				return keepPublicApi;
+		}
+
+			skiprename = "skip by hidePrivateApi";
+			return !hidePrivateApi;
 		}
 
 		public bool ShouldSkipStringHiding (MethodKey method, InheritMap map, bool hidePrivateApi)
@@ -575,37 +628,141 @@ namespace Obfuscar
 			return skipStringHiding.IsMatch (method, map);
 		}
 
-		public bool ShouldSkip (FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi)
+		public bool ShouldSkip (FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
 		{
-			if (ShouldSkip (field.TypeKey, TypeSkipFlags.SkipField, map, hidePrivateApi))
+			// skip runtime methods
+			if ((field.Field.IsRuntimeSpecialName && field.Field.Name == "value__")) {
+				skiprename = "skip by special name";
 				return true;
+			}
 
-			if (skipFields.IsMatch (field, map))
+			var attribute = field.Field.MarkedToRename ();
+			if (attribute != null) {
+				skiprename = "skip by attribute";
+				return !attribute.Value;
+			}
+
+			var parent = field.DeclaringType.MarkedToRename ();
+			if (parent != null) {
+				skiprename = "skip by type attribute";
+				return !parent.Value;
+			}
+
+			if (ShouldSkip (field.TypeKey, TypeSkipFlags.SkipField, map, hidePrivateApi)) {
+				skiprename = "skip by type rule in configuration";
 				return true;
+			}
 
-			return field.ShouldSkip (keepPublicApi, hidePrivateApi);
+			if (skipFields.IsMatch (field, map)) {
+				skiprename = "skip by field rule in configuration";
+				return true;
 		}
 
-		public bool ShouldSkip (PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi)
-		{
-			if (ShouldSkip (prop.TypeKey, TypeSkipFlags.SkipProperty, map, hidePrivateApi))
-				return true;
+			if (field.DeclaringType.IsTruePublic () && (field.Field.IsPublic || field.Field.IsFamily)) {
+				skiprename = "skip by keepPublicApi";
+				return keepPublicApi;
+			}
 
-			if (skipProperties.IsMatch (prop, map))
-				return true;
-
-			return prop.ShouldSkip (keepPublicApi, hidePrivateApi);
+			skiprename = "skip by hidePrivateApi";
+			return !hidePrivateApi;
 		}
 
-		public bool ShouldSkip (EventKey evt, InheritMap map, bool keepPublicApi, bool hidePrivateApi)
+		public bool ShouldSkip (PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
 		{
-			if (ShouldSkip (evt.TypeKey, TypeSkipFlags.SkipEvent, map, hidePrivateApi))
+			if (prop.Property.IsRuntimeSpecialName) {
+				skiprename = "skip by runtime special name";
 				return true;
+			}
 
-			if (skipEvents.IsMatch (evt, map))
+			var attribute = prop.Property.MarkedToRename ();
+			if (attribute != null) {
+				skiprename = "skip by attribute";
+				return !attribute.Value;
+			}
+
+			var parent = prop.DeclaringType.MarkedToRename ();
+			if (parent != null) {
+				skiprename = "skip by type attribute";
+				return !parent.Value;
+			}
+
+			if (ShouldSkip (prop.TypeKey, TypeSkipFlags.SkipProperty, map, hidePrivateApi)) {
+				skiprename = "skip by type rule in configuration";
 				return true;
+			}
 
-			return evt.ShouldSkip (keepPublicApi, hidePrivateApi);
+			if (skipProperties.IsMatch (prop, map)) {
+				skiprename = "skip by property rule in configuration";
+				return true;
+		}
+
+			if (prop.DeclaringType.IsTruePublic () && (IsGetterPublic (prop.Property) || IsSetterPublic (prop.Property))) {
+				skiprename = "skip by keepPublicApi";
+				return keepPublicApi;
+			}
+
+			skiprename = "skip by hidePrivateApi";
+			return !hidePrivateApi;
+		}
+
+		public bool ShouldSkip (EventKey evt, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
+		{
+			// skip runtime special events
+			if (evt.Event.IsRuntimeSpecialName) {
+				skiprename = "skip by runtime special name";
+				return true;
+			}
+
+			var attribute = evt.Event.MarkedToRename ();
+			// skip runtime methods
+			if (attribute != null) {
+				skiprename = "skip by attribute";
+				return !attribute.Value;
+			}
+
+			var parent = evt.DeclaringType.MarkedToRename ();
+			if (parent != null) {
+				skiprename = "skip by type attribute";
+				return !parent.Value;
+			}
+
+			if (ShouldSkip (evt.TypeKey, TypeSkipFlags.SkipEvent, map, hidePrivateApi)) {
+				skiprename = "skip by type rule in configuration";
+				return true;
+			}
+
+			if (skipEvents.IsMatch (evt, map)) {
+				skiprename = "skip by event rule in configuration";
+				return true;
+		}
+
+			if (evt.DeclaringType.IsTruePublic () && (IsAddPublic (evt.Event) || IsRemovePublic (evt.Event))) {
+				skiprename = "skip by keepPublicApi";
+				return keepPublicApi;
+			}
+
+			skiprename = "skip by hidePrivateApi";
+			return !hidePrivateApi;
+		}
+
+		private bool IsAddPublic (EventDefinition eventDefinition)
+		{
+			return eventDefinition.AddMethod != null && (eventDefinition.AddMethod.IsPublic || eventDefinition.AddMethod.IsFamily);
+		}
+
+		private bool IsRemovePublic (EventDefinition eventDefinition)
+		{
+			return eventDefinition.RemoveMethod != null && (eventDefinition.RemoveMethod.IsPublic || eventDefinition.RemoveMethod.IsFamily);
+		}
+
+		private bool IsGetterPublic (PropertyDefinition propertyDefinition)
+		{
+			return propertyDefinition.GetMethod != null && (propertyDefinition.GetMethod.IsPublic || propertyDefinition.GetMethod.IsFamily);
+		}
+
+		private bool IsSetterPublic (PropertyDefinition propertyDefinition)
+		{
+			return propertyDefinition.SetMethod != null && (propertyDefinition.SetMethod.IsPublic || propertyDefinition.SetMethod.IsFamily);
 		}
 
 		/// <summary>

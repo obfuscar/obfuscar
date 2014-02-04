@@ -36,35 +36,25 @@ namespace ObfuscarTests
 			var obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
 			var map = obfuscator.Mapping;
 
-			HashSet<string> typesToFind = new HashSet<string> ();
-			typesToFind.Add ("TestClasses.InternalClass");
-
-			AssemblyHelper.CheckAssembly ("AssemblyWithTypes", 2,
-				delegate {
-					return true;
-				},
-				delegate(TypeDefinition typeDef) {
-					if (typesToFind.Contains (typeDef.ToString ())) {
-						typesToFind.Remove (typeDef.ToString ());
-					}
-				});
-			Assert.IsTrue (typesToFind.Count == 1, "could not find InternalClass, which should not have been obfuscated.");
-
 			string assmName = "AssemblyWithTypes.dll";
 
 			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
 				                               Path.Combine (TestHelper.InputPath, assmName));
 
-			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly (
-				                                Path.Combine (TestHelper.OutputPath, assmName));
+			var classBType = inAssmDef.MainModule.GetType ("TestClasses.InternalClass");
+			var classB = map.GetClass (new TypeKey (classBType));
+
+			Assert.IsTrue (classB.Status == ObfuscationStatus.Skipped, "Internal class is obfuscated");
 
 			var classAType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass");
+			var classA = map.GetClass (new TypeKey (classAType));
 			var classAmethod1 = FindByName (classAType, "PrivateMethod");
 			var classAmethod2 = FindByName (classAType, "PublicMethod");
 
 			var classAMethod1 = map.GetMethod (new MethodKey (classAmethod1));
 			var classAMethod2 = map.GetMethod (new MethodKey (classAmethod2));
 
+			Assert.IsTrue (classA.Status == ObfuscationStatus.Renamed, "Public class is not obfuscated");
 			Assert.IsTrue (classAMethod1.Status == ObfuscationStatus.Skipped, "private method is obfuscated.");
 			Assert.IsTrue (classAMethod2.Status == ObfuscationStatus.Renamed, "pubilc method is not obfuscated.");
 		}
@@ -77,6 +67,7 @@ namespace ObfuscarTests
 				             @"<Obfuscator>" +
 				             @"<Var name='InPath' value='{0}' />" +
 				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
 				             @"<Module file='$(InPath)\AssemblyWithTypes.dll'>" +
 				             @"</Module>" +
 				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
@@ -84,19 +75,14 @@ namespace ObfuscarTests
 			var obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
 			var map = obfuscator.Mapping;
 
-			HashSet<string> typesToFind = new HashSet<string> ();
-			typesToFind.Add ("TestClasses.InternalClass");
+			string assmName = "AssemblyWithTypes.dll";
+			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
+				                                        Path.Combine (TestHelper.InputPath, assmName));
 
-			AssemblyHelper.CheckAssembly ("AssemblyWithTypes", 2,
-				delegate {
-					return true;
-				},
-				delegate(TypeDefinition typeDef) {
-					if (typesToFind.Contains (typeDef.ToString ())) {
-						typesToFind.Remove (typeDef.ToString ());
-					}
-				});
-			Assert.IsTrue (typesToFind.Count == 1, "could find InternalClass, which should have been obfuscated.");
+			var classBType = inAssmDef.MainModule.GetType ("TestClasses.InternalClass");
+			var classB = map.GetClass (new TypeKey (classBType));
+
+			Assert.IsTrue (classB.Status == ObfuscationStatus.Renamed, "Internal class should have been obfuscated");
 		}
 
 		[Test]
@@ -115,27 +101,10 @@ namespace ObfuscarTests
 			var obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
 			var map = obfuscator.Mapping;
 
-			HashSet<string> typesToFind = new HashSet<string> ();
-			typesToFind.Add ("TestClasses.PublicClass");
-
-			AssemblyHelper.CheckAssembly ("AssemblyWithTypes", 2,
-				delegate {
-					return true;
-				},
-				delegate(TypeDefinition typeDef) {
-					if (typesToFind.Contains (typeDef.ToString ())) {
-						typesToFind.Remove (typeDef.ToString ());
-					}
-				});
-			Assert.IsTrue (typesToFind.Count == 1, "could find public class, which should have been obfuscated.");
-
 			string assmName = "AssemblyWithTypes.dll";
 
 			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
 				                               Path.Combine (TestHelper.InputPath, assmName));
-
-			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly (
-				                                Path.Combine (TestHelper.OutputPath, assmName));
 
 			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass");
 			MethodDefinition classAmethod1 = FindByName (classAType, "PrivateMethod");
@@ -144,6 +113,8 @@ namespace ObfuscarTests
 			ObfuscatedThing classAMethod1 = map.GetMethod (new MethodKey (classAmethod1));
 			ObfuscatedThing classAMethod2 = map.GetMethod (new MethodKey (classAmethod2));
 
+			var classA = map.GetClass (new TypeKey (classAType));
+			Assert.IsTrue (classA.Status == ObfuscationStatus.Renamed, "Public class should have been obfuscated");
 			Assert.IsTrue (classAMethod1.Status == ObfuscationStatus.Renamed, "private method is not obfuscated.");
 			Assert.IsTrue (classAMethod2.Status == ObfuscationStatus.Renamed, "pubilc method is not obfuscated.");
 
@@ -169,27 +140,10 @@ namespace ObfuscarTests
 			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
 			var map = obfuscator.Mapping;
 
-			HashSet<string> typesToFind = new HashSet<string> ();
-			typesToFind.Add ("TestClasses.PublicClass");
-
-			AssemblyHelper.CheckAssembly ("AssemblyWithTypes", 2,
-				delegate {
-					return true;
-				},
-				delegate(TypeDefinition typeDef) {
-					if (typesToFind.Contains (typeDef.ToString ())) {
-						typesToFind.Remove (typeDef.ToString ());
-					}
-				});
-			Assert.IsTrue (typesToFind.Count == 0, "could not find public class, which should not have been obfuscated.");
-
 			string assmName = "AssemblyWithTypes.dll";
 
 			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
 				                               Path.Combine (TestHelper.InputPath, assmName));
-
-			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly (
-				                                Path.Combine (TestHelper.OutputPath, assmName));
 
 			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass");
 			MethodDefinition classAmethod1 = FindByName (classAType, "PrivateMethod");
@@ -197,13 +151,42 @@ namespace ObfuscarTests
 
 			ObfuscatedThing classAMethod1 = map.GetMethod (new MethodKey (classAmethod1));
 			ObfuscatedThing classAMethod2 = map.GetMethod (new MethodKey (classAmethod2));
-
+			var classA = map.GetClass (new TypeKey (classAType));
+			Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "Public class shouldn't have been obfuscated");
 			Assert.IsTrue (classAMethod1.Status == ObfuscationStatus.Renamed, "private method is not obfuscated.");
 			Assert.IsTrue (classAMethod2.Status == ObfuscationStatus.Skipped, "pubilc method is obfuscated.");
 
 			var protectedMethod = FindByName (classAType, "ProtectedMethod");
 			var protectedAfter = map.GetMethod (new MethodKey (protectedMethod));
 			Assert.IsTrue (protectedAfter.Status == ObfuscationStatus.Skipped, "protected method is obfuscated.");
+		}
+
+		[Test]
+		public void CheckSkipNamespace ()
+		{
+			string xml = String.Format (
+				                      @"<?xml version='1.0'?>" +
+				                      @"<Obfuscator>" +
+				                      @"<Var name='InPath' value='{0}' />" +
+				                      @"<Var name='OutPath' value='{1}' />" +
+				                      @"<Var name='KeepPublicApi' value='false' />" +
+				                      @"<Var name='HidePrivateApi' value='true' />" +
+				                      @"<Module file='$(InPath)\AssemblyWithTypes.dll'>" +
+				                      @"<SkipNamespace name='TestClasses1' />" +
+				                      @"</Module>" +
+				                      @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+
+			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
+			var map = obfuscator.Mapping;
+
+			string assmName = "AssemblyWithTypes.dll";
+
+			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
+				                                        Path.Combine (TestHelper.InputPath, assmName));
+
+			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses1.PublicClass");
+			var classA = map.GetClass (new TypeKey (classAType));
+			Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "Public class shouldn't have been obfuscated");
 		}
 	}
 }

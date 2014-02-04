@@ -61,6 +61,10 @@ namespace Obfuscar
 			get { return (TypeDefinition)propertyDefinition.DeclaringType; }
 		}
 
+		public PropertyDefinition Property {
+			get { return propertyDefinition; }
+		}
+
 		public virtual bool Matches (MemberReference member)
 		{
 			PropertyReference propRef = member as PropertyReference;
@@ -109,24 +113,6 @@ namespace Obfuscar
 		public override string ToString ()
 		{
 			return String.Format ("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
-		}
-
-		private bool IsGetterPublic ()
-		{
-			return propertyDefinition.GetMethod != null && (propertyDefinition.GetMethod.IsPublic || propertyDefinition.GetMethod.IsFamily);
-		}
-
-		private bool IsSetterPublic ()
-		{
-			return propertyDefinition.SetMethod != null && (propertyDefinition.SetMethod.IsPublic || propertyDefinition.SetMethod.IsFamily);
-		}
-
-		internal bool ShouldSkip (bool keepPublicApi, bool hidePrivateApi)
-		{
-			if (typeKey.TypeDefinition.IsPublic && (IsGetterPublic () || IsSetterPublic ()))
-				return keepPublicApi;
-
-			return !hidePrivateApi;
 		}
 	}
 }

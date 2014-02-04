@@ -71,6 +71,10 @@ namespace Obfuscar
 			get { return (TypeDefinition)eventDefinition.DeclaringType; }
 		}
 
+		public EventDefinition Event {
+			get { return eventDefinition; }
+		}
+
 		public virtual bool Matches (MemberReference member)
 		{
 			EventReference evtRef = member as EventReference;
@@ -119,24 +123,6 @@ namespace Obfuscar
 		public override string ToString ()
 		{
 			return String.Format ("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
-		}
-
-		private bool IsAddPublic ()
-		{
-			return eventDefinition.AddMethod != null && (eventDefinition.AddMethod.IsPublic || eventDefinition.AddMethod.IsFamily);
-		}
-
-		private bool IsRemovePublic ()
-		{
-			return eventDefinition.RemoveMethod != null && (eventDefinition.RemoveMethod.IsPublic || eventDefinition.RemoveMethod.IsFamily);
-		}
-
-		internal bool ShouldSkip (bool keepPublicApi, bool hidePrivateApi)
-		{
-			if (typeKey.TypeDefinition.IsPublic && (IsAddPublic () || IsRemovePublic ()))
-				return keepPublicApi;
-
-			return !hidePrivateApi;
 		}
 	}
 }

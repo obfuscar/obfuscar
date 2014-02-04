@@ -65,6 +65,10 @@ namespace Obfuscar
 			get { return typeKey; }
 		}
 
+		public MethodDefinition Method {
+			get { return methodDefinition; }
+		}
+
 		public override bool Matches (MemberReference member)
 		{
 			MethodReference methodRef = member as MethodReference;
@@ -125,14 +129,6 @@ namespace Obfuscar
 			if (cmp == 0)
 				cmp = typeKey.CompareTo (other.typeKey);
 			return cmp;
-		}
-
-		internal bool ShouldSkip (bool keepPublicApi, bool hidePrivateApi)
-		{
-			if (typeKey.TypeDefinition.IsPublic && (methodDefinition.IsPublic || methodDefinition.IsFamily))
-				return keepPublicApi;
-
-			return !hidePrivateApi;
 		}
 	}
 }

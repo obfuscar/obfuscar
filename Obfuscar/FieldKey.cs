@@ -54,6 +54,10 @@ namespace Obfuscar
 			get { return (TypeDefinition)fieldDefinition.DeclaringType; }
 		}
 
+		public FieldDefinition Field {
+			get { return fieldDefinition; }
+		}
+
 		public TypeKey TypeKey {
 			get { return typeKey; }
 		}
@@ -114,14 +118,6 @@ namespace Obfuscar
 		public override string ToString ()
 		{
 			return String.Format ("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
-		}
-
-		internal bool ShouldSkip (bool keepPublicApi, bool hidePrivateApi)
-		{
-			if (typeKey.TypeDefinition.IsPublic && (fieldDefinition.IsPublic || fieldDefinition.IsFamily))
-				return keepPublicApi;
-
-			return !hidePrivateApi;
 		}
 	}
 }
