@@ -85,6 +85,10 @@ namespace ObfuscarTests
 			var obfuscated = outAssmDef.MainModule.GetType (name);
 			var method2 = FindByFullName (obfuscated, "System.Void " + name + "::" + m1.StatusText + "(" + typeB.StatusText.Substring (27) + ",System.Object)");
 			Assert.IsNotNull (method2);
+			var first = method2.Parameters[0].Name;
+			var second = method2.Parameters[1].Name;
+			Assert.AreEqual("", first);
+			Assert.AreEqual("", second);
 		}
 	}
 }
