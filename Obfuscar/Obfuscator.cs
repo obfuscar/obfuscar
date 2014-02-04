@@ -236,7 +236,7 @@ namespace Obfuscar
 				keyfilepath = null;
 				foreach (CustomAttribute ca in info.Definition.CustomAttributes) {
 					if (ca.Constructor.DeclaringType.FullName ==
-					    typeof(System.Reflection.AssemblyKeyFileAttribute).FullName) {
+					                   typeof(System.Reflection.AssemblyKeyFileAttribute).FullName) {
 						keyfilepath = (string)ca.ConstructorArguments [0].Value;
 					}
 				}
@@ -417,20 +417,18 @@ namespace Obfuscar
 		{
 			MethodKey methodkey = new MethodKey (method);
 			string skip;
-			if (!info.ShouldSkip (methodkey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, out skip)) {
-				foreach (ParameterDefinition param in method.Parameters) {
-					if (param.CustomAttributes.Count == 0) {
-						param.Name = null;
-					}
-				}
+			if (info.ShouldSkipParams (methodkey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, out skip))
+				return;
 
-				int index = 0;
-				foreach (GenericParameter param in method.GenericParameters) {
-					if (param.CustomAttributes.Count == 0) {
-						param.Name = NameMaker.UniqueName (index++);
-					}
-				}
-			}
+			foreach (ParameterDefinition param in method.Parameters)
+				if (param.CustomAttributes.Count == 0)
+					param.Name = null;
+
+			int index = 0;
+			foreach (GenericParameter param in method.GenericParameters)
+				if (param.CustomAttributes.Count == 0)
+					param.Name = NameMaker.UniqueName (index++);
+
 		}
 
 		/// <summary>
@@ -544,16 +542,14 @@ namespace Obfuscar
 							// we replace the type string with the obfuscated one.
 							// This is for the Visual Studio generated resource designer code.
 							foreach (MethodDefinition method in type.Methods) {
-								if (method.ReturnType.FullName != "System.Resources.ResourceManager") {
+								if (method.ReturnType.FullName != "System.Resources.ResourceManager")
 									continue;
-								}
 
 								for (int j = 0; j < method.Body.Instructions.Count; j++) {
 									Instruction instruction = method.Body.Instructions [j];
 									if (instruction.OpCode == OpCodes.Ldstr &&
-									    (string)instruction.Operand == fullName) {
+									                               (string)instruction.Operand == fullName)
 										instruction.Operand = newTypeKey.Fullname;
-									}
 								}
 							}
 
@@ -571,9 +567,8 @@ namespace Obfuscar
 					//typerenamemap.Add (unrenamedTypeKey.Fullname.Replace ('/', '+'), type.FullName.Replace ('/', '+'));
 				}
 
-				foreach (Resource res in resources) {
+				foreach (Resource res in resources)
 					map.AddResource (res.Name, ObfuscationStatus.Skipped, "no clear new name");
-				}
 			}
 		}
 
@@ -892,7 +887,7 @@ namespace Obfuscar
 
 						// if we need to skip the method or we don't yet have a name planned for a method, rename it
 						if ((skiprename != null && m.Status != ObfuscationStatus.Skipped) ||
-						    m.Status == ObfuscationStatus.Unknown) {
+						                      m.Status == ObfuscationStatus.Unknown) {
 							RenameVirtualMethod (info, baseSigNames, sigNames, methodKey, method, skiprename);
 						}
 					}
@@ -953,7 +948,7 @@ namespace Obfuscar
 		}
 
 		private void RenameVirtualMethod (AssemblyInfo info, Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-		                                  Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method, string skipRename)
+		                                       Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method, string skipRename)
 		{
 			// if method is in a group, look for group key
 			MethodGroup group = project.InheritMap.GetMethodGroup (methodKey);
@@ -1024,7 +1019,7 @@ namespace Obfuscar
 		}
 
 		NameGroup[] GetNameGroups (Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-		                           IEnumerable<MethodKey> methodKeys, ParamSig sig)
+		                                IEnumerable<MethodKey> methodKeys, ParamSig sig)
 		{
 			// build unique set of classes in group
 			HashSet<TypeKey> typeKeys = new HashSet<TypeKey> ();
@@ -1050,7 +1045,7 @@ namespace Obfuscar
 
 			// if it already has a name, return it
 			if (t.Status == ObfuscationStatus.Renamed ||
-			    t.Status == ObfuscationStatus.WillRename)
+			             t.Status == ObfuscationStatus.WillRename)
 				return t.StatusText;
 
 			// don't mess with methods we decided to skip

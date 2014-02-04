@@ -517,12 +517,10 @@ namespace Obfuscar
 			return skipNamespaces.IsMatch (ns, map);
 		}
 
-		private bool ShouldSkip (TypeKey type, TypeSkipFlags flag, InheritMap map, bool hidePrivateApi)
+		private bool ShouldSkip (TypeKey type, TypeSkipFlags flag, InheritMap map)
 		{
-			if (ShouldSkip (type.Namespace, map)) {
-				if (!hidePrivateApi) {
-					return true;
-				}
+			if (ShouldSkip (type.Namespace, map)) {				
+				return true;
 			}
 
 			foreach (TypeTester typeTester in skipTypes) {
@@ -601,7 +599,7 @@ namespace Obfuscar
 				return !parent.Value;
 			}
 
-			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipMethod, map, hidePrivateApi)) {
+			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipMethod, map)) {
 				skiprename = "skip by type rule in configuration";
 				return true;
 			}
@@ -620,9 +618,43 @@ namespace Obfuscar
 			return !hidePrivateApi;
 		}
 
+		public bool ShouldSkipParams (MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
+		{
+			var attribute = method.Method.MarkedToRename ();
+			// skip runtime methods
+			if (attribute != null) {
+				skiprename = "skip by attribute";
+				return !attribute.Value;
+			}
+
+			var parent = method.DeclaringType.MarkedToRename ();
+			if (parent != null) {
+				skiprename = "skip by type attribute";
+				return !parent.Value;
+			}
+
+			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipMethod, map)) {
+				skiprename = "skip by type rule in configuration";
+				return true;
+			}
+
+			if (skipMethods.IsMatch (method, map)) {
+				skiprename = "skip by method rule in configuration";
+				return true;
+			}
+
+			if (method.DeclaringType.IsTruePublic () && (method.Method.IsPublic || method.Method.IsFamily)) {
+				skiprename = "skip by keepPublicApi";
+				return keepPublicApi;
+			}
+
+			skiprename = "skip by hidePrivateApi";
+			return !hidePrivateApi;
+		}
+
 		public bool ShouldSkipStringHiding (MethodKey method, InheritMap map, bool hidePrivateApi)
 		{
-			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipStringHiding, map, hidePrivateApi))
+			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipStringHiding, map))
 				return true;
 
 			return skipStringHiding.IsMatch (method, map);
@@ -648,7 +680,7 @@ namespace Obfuscar
 				return !parent.Value;
 			}
 
-			if (ShouldSkip (field.TypeKey, TypeSkipFlags.SkipField, map, hidePrivateApi)) {
+			if (ShouldSkip (field.TypeKey, TypeSkipFlags.SkipField, map)) {
 				skiprename = "skip by type rule in configuration";
 				return true;
 			}
@@ -686,7 +718,7 @@ namespace Obfuscar
 				return !parent.Value;
 			}
 
-			if (ShouldSkip (prop.TypeKey, TypeSkipFlags.SkipProperty, map, hidePrivateApi)) {
+			if (ShouldSkip (prop.TypeKey, TypeSkipFlags.SkipProperty, map)) {
 				skiprename = "skip by type rule in configuration";
 				return true;
 			}
@@ -726,7 +758,7 @@ namespace Obfuscar
 				return !parent.Value;
 			}
 
-			if (ShouldSkip (evt.TypeKey, TypeSkipFlags.SkipEvent, map, hidePrivateApi)) {
+			if (ShouldSkip (evt.TypeKey, TypeSkipFlags.SkipEvent, map)) {
 				skiprename = "skip by type rule in configuration";
 				return true;
 			}
