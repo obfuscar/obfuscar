@@ -48,9 +48,9 @@ namespace TestClasses
         public void PublicMethod() // no
         { }
 
-        public class PublicNestedClass // no
+        public class PublicNestedClass // yes
         {
-			public class PublicNestedClass2
+			public class PublicNestedClass2 // yes
 			{
 			}
         }

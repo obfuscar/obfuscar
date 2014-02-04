@@ -26,7 +26,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.CodeDom.Compiler;
-
 using NUnit.Framework;
 using Mono.Cecil;
 
@@ -39,12 +38,13 @@ namespace ObfuscarTests
 		public void BuildAndObfuscateAssemblies ()
 		{
 			string xml = String.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath)\AssemblyWithCustomAttr.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
+				             @"<Module file='$(InPath)\AssemblyWithCustomAttr.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithCustomAttr", String.Empty, xml);
 		}
@@ -53,7 +53,7 @@ namespace ObfuscarTests
 		public void CheckClassHasAttribute ()
 		{
 			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
-				Path.Combine(TestHelper.OutputPath, "AssemblyWithCustomAttr.dll"));
+				                             Path.Combine (TestHelper.OutputPath, "AssemblyWithCustomAttr.dll"));
 
 			Assert.AreEqual (3, assmDef.MainModule.Types.Count, "Should contain only one type, and <Module>.");
 
@@ -67,7 +67,7 @@ namespace ObfuscarTests
 				Assert.AreEqual (1, typeDef.CustomAttributes.Count, "Type should have an attribute.");
 
 				CustomAttribute attr = typeDef.CustomAttributes [0];
-				Assert.AreEqual("System.Void A.a::.ctor(System.String)", attr.Constructor.ToString(),
+				Assert.AreEqual ("System.Void A.a::.ctor(System.String)", attr.Constructor.ToString (),
 					"Type should have ObsoleteAttribute on it.");
 
 				Assert.AreEqual (1, attr.ConstructorArguments.Count, "ObsoleteAttribute should have one parameter.");
@@ -82,7 +82,7 @@ namespace ObfuscarTests
 		public void CheckMethodHasAttribute ()
 		{
 			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
-				Path.Combine(TestHelper.OutputPath, "AssemblyWithCustomAttr.dll"));
+				                             Path.Combine (TestHelper.OutputPath, "AssemblyWithCustomAttr.dll"));
 
 			bool found = false;
 			foreach (TypeDefinition typeDef in assmDef.MainModule.Types) {
@@ -96,7 +96,7 @@ namespace ObfuscarTests
 				MethodDefinition methodDef = typeDef.Methods [0];
 
 				CustomAttribute attr = methodDef.CustomAttributes [0];
-				Assert.AreEqual("System.Void A.a::.ctor(System.String)", attr.Constructor.ToString(),
+				Assert.AreEqual ("System.Void A.a::.ctor(System.String)", attr.Constructor.ToString (),
 					"Type should have ObsoleteAttribute on it.");
 
 				Assert.AreEqual (1, attr.ConstructorArguments.Count, "ObsoleteAttribute should have one parameter.");

@@ -39,6 +39,7 @@ namespace ObfuscarTests
 				             @"<Obfuscator>" +
 				             @"<Var name='InPath' value='{0}' />" +
 				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
 				             @"<Module file='$(InPath)\AssemblyWithNestedTypes.dll'>" +
 				             @"<SkipType name='TestClasses.ClassA/NestedClassA' />" +
 				             @"</Module>" +

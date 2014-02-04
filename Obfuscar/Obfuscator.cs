@@ -98,36 +98,36 @@ namespace Obfuscar
 		{
 			// The SemanticAttributes of MethodDefinitions have to be loaded before any fields,properties or events are removed
 			this.LoadMethodSemantics ();
-			
+
 			LogOutput ("Renaming:  fields...");
 			this.RenameFields ();
-			
+
 			LogOutput ("parameters...");
 			this.RenameParams ();
-			
+
 			LogOutput ("properties...");
 			this.RenameProperties ();
-			
+
 			LogOutput ("events...");
 			this.RenameEvents ();
-			
+
 			LogOutput ("methods...");
 			this.RenameMethods ();
-			
+
 			LogOutput ("types...");
 			this.RenameTypes ();
-			
+
 			if (this.hideStrings) {
 				LogOutput ("hiding strings...\n");
 				this.HideStrings ();
 			}
-			
+
 			LogOutput ("Done.\n");
-			
+
 			LogOutput ("Saving assemblies...");
 			this.SaveAssemblies ();
 			LogOutput ("Done.\n");
-			
+
 			LogOutput ("Writing log file...");
 			this.SaveMapping ();
 			LogOutput ("Done.\n");
@@ -171,7 +171,7 @@ namespace Obfuscar
 
 			LogOutput ("Loading assemblies...");
 			LogOutput ("Extra framework folders: ");
-			foreach (var lExtraPath in project.ExtraPaths?? new string[0])
+			foreach (var lExtraPath in project.ExtraPaths ?? new string[0])
 				LogOutput (lExtraPath + ", ");
 
 			project.LoadAssemblies ();
@@ -194,7 +194,7 @@ namespace Obfuscar
 			foreach (AssemblyInfo info in project) {
 				var types = info.Definition.MainModule.Types;
 				for (int i = 0; i < types.Count; i++)
-					types [i] = types [i]; 
+					types [i] = types [i];
 			}
 
 			// save the modified assemblies
@@ -271,7 +271,7 @@ namespace Obfuscar
 		public void SaveMapping ()
 		{
 			string filename = project.Settings.XmlMapping ?
-				"Mapping.xml" : "Mapping.txt";
+                "Mapping.xml" : "Mapping.txt";
 
 			string logPath = Path.Combine (project.Settings.OutPath, filename);
 			if (!String.IsNullOrEmpty (project.Settings.LogFilePath))
@@ -291,7 +291,7 @@ namespace Obfuscar
 		public void SaveMapping (TextWriter writer)
 		{
 			IMapWriter mapWriter = project.Settings.XmlMapping ?
-				new XmlMapWriter (writer) : (IMapWriter)new TextMapWriter (writer);
+                new XmlMapWriter (writer) : (IMapWriter)new TextMapWriter (writer);
 
 			mapWriter.WriteMap (map);
 		}
@@ -309,7 +309,7 @@ namespace Obfuscar
 		public void LoadMethodSemantics ()
 		{
 			foreach (AssemblyInfo info in project) {
-				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {   
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
 					foreach (MethodDefinition method in type.Methods) {
 						method.SemanticsAttributes.ToString ();
 					}
@@ -322,7 +322,6 @@ namespace Obfuscar
 		/// </summary>
 		public void RenameFields ()
 		{
-			var nameGroups = new Dictionary<string, NameGroup> ();
 			foreach (var info in project) {
 				// loop through the types
 				foreach (var type in info.GetAllTypeDefinitions()) {
@@ -332,45 +331,21 @@ namespace Obfuscar
 
 					var typeKey = new TypeKey (type);
 
-					if (!MarkedAsShouldRename (type, true)) {
-						continue;
-					}
-
-					nameGroups.Clear ();
+					var nameGroups = new Dictionary<string, NameGroup> ();
 
 					// rename field, grouping according to signature
 					foreach (FieldDefinition field in type.Fields) {
 						string sig = field.FieldType.FullName;
 						var fieldKey = new FieldKey (typeKey, sig, field.Name, field);
 						NameGroup nameGroup = GetNameGroup (nameGroups, sig);
-						if (field.ObfuscationMarked () == false) {
-							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "obfuscation excluded");
+
+						// skip filtered fields
+						string skip;
+						if (info.ShouldSkip (fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, out skip)) {
+							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, skip);
 							nameGroup.Add (fieldKey.Name);
 							continue;
 						}
-
-						if ((field.IsRuntimeSpecialName && field.Name == "value__")) {
-							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
-							nameGroup.Add (fieldKey.Name);
-							continue;
-						} 
-                        
-						if (project.Settings.KeepPublicApi && field.DeclaringType.IsPublic && field.IsPublic) {
-							if (type.ObfuscationMarked () != true) {
-								map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "public field");
-								nameGroup.Add (fieldKey.Name);
-								continue;
-							}
-						} 
-
-						// skip filtered fields
-						if (info.ShouldSkip (fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi)) {
-							if (type.ObfuscationMarked () != true) {
-								map.UpdateField (fieldKey, ObfuscationStatus.Skipped, "filtered");
-								nameGroup.Add (fieldKey.Name);
-								continue;
-							}
-						} 
 
 						string newName;
 						if (project.Settings.ReuseNames) {
@@ -422,19 +397,18 @@ namespace Obfuscar
 						continue;
 					}
 
-					if (MarkedAsShouldRename (type, true)) {
-						// rename the method parameters
-						foreach (MethodDefinition method in type.Methods)
-							RenameParams (method, info);
+					// rename the method parameters
+					foreach (MethodDefinition method in type.Methods)
+						RenameParams (method, info);
 
-						// rename the class parameters
-						if (info.ShouldSkip (new TypeKey (type), Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi) && type.ObfuscationMarked () != true)
-							continue;
-                            
-						int index = 0;
-						foreach (GenericParameter param in type.GenericParameters)
-							param.Name = NameMaker.UniqueName (index++);						
-					}
+					string skip;
+					// rename the class parameters
+					if (info.ShouldSkip (new TypeKey (type), Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
+						continue;
+
+					int index = 0;
+					foreach (GenericParameter param in type.GenericParameters)
+						param.Name = NameMaker.UniqueName (index++);
 				}
 			}
 		}
@@ -442,7 +416,8 @@ namespace Obfuscar
 		private void RenameParams (MethodDefinition method, AssemblyInfo info)
 		{
 			MethodKey methodkey = new MethodKey (method);
-			if (!info.ShouldSkip (methodkey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi)) {
+			string skip;
+			if (!info.ShouldSkip (methodkey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, out skip)) {
 				foreach (ParameterDefinition param in method.Parameters) {
 					if (param.CustomAttributes.Count == 0) {
 						param.Name = null;
@@ -456,25 +431,6 @@ namespace Obfuscar
 					}
 				}
 			}
-		}
-
-		private bool MarkedAsShouldRename (TypeDefinition type, bool member = false)
-		{
-			var marked = type.ObfuscationMarked ();
-			if (marked != null) {
-				return marked.Value;
-			}
-
-			var parentType = type.DeclaringType;            
-			while (parentType != null) {
-				var parent = parentType.ObfuscationMarked ();
-				if (parent != null)
-					return parent.Value;
-
-				parentType = parentType.DeclaringType;
-			}
-
-			return !project.Settings.MarkedOnly;
 		}
 
 		/// <summary>
@@ -512,17 +468,17 @@ namespace Obfuscar
 					TypeKey unrenamedTypeKey = unrenamedTypeKeys [type];
 					string fullName = type.FullName;
 
-					if (!MarkedAsShouldRename (type)) {
-						map.UpdateType (oldTypeKey, ObfuscationStatus.Skipped, "marked");
+					string skip;
+					if (info.ShouldSkip (unrenamedTypeKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip)) {
+						map.UpdateType (oldTypeKey, ObfuscationStatus.Skipped, skip);
 
 						// go through the list of resources, remove ones that would be renamed
 						for (int i = 0; i < resources.Count;) {
 							Resource res = resources [i];
 							string resName = res.Name;
-
 							if (Path.GetFileNameWithoutExtension (resName) == fullName) {
 								resources.RemoveAt (i);
-								map.AddResource (resName, ObfuscationStatus.Skipped, "marked");
+								map.AddResource (resName, ObfuscationStatus.Skipped, skip);
 							} else {
 								i++;
 							}
@@ -532,24 +488,22 @@ namespace Obfuscar
 					}
 
 					var namesInXaml = NamesInXaml (xamlFiles);
-					if (info.ShouldSkip (unrenamedTypeKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi) || project.Settings.KeepPublicApi && type.IsPublic || namesInXaml.Contains (type.FullName)) {
-						if (type.ObfuscationMarked () != true) {
-							map.UpdateType (oldTypeKey, ObfuscationStatus.Skipped, "filtered");
+					if (namesInXaml.Contains (type.FullName)) {
+						map.UpdateType (oldTypeKey, ObfuscationStatus.Skipped, "filtered by BAML");
 
-							// go through the list of resources, remove ones that would be renamed
-							for (int i = 0; i < resources.Count;) {
-								Resource res = resources [i];
-								string resName = res.Name;
-								if (Path.GetFileNameWithoutExtension (resName) == fullName) {
-									resources.RemoveAt (i);
-									map.AddResource (resName, ObfuscationStatus.Skipped, "filtered");
-								} else {
-									i++;
-								}
+						// go through the list of resources, remove ones that would be renamed
+						for (int i = 0; i < resources.Count;) {
+							Resource res = resources [i];
+							string resName = res.Name;
+							if (Path.GetFileNameWithoutExtension (resName) == fullName) {
+								resources.RemoveAt (i);
+								map.AddResource (resName, ObfuscationStatus.Skipped, "filtered by BAML");
+							} else {
+								i++;
 							}
-
-							continue;
 						}
+
+						continue;
 					}
 
 					string name;
@@ -567,7 +521,7 @@ namespace Obfuscar
 							uniqueTypeNameIndex++;
 						}
 					}
-                        
+
 					if (type.GenericParameters.Count > 0) {
 						name += '`' + type.GenericParameters.Count.ToString ();
 					}
@@ -770,53 +724,29 @@ namespace Obfuscar
 
 					TypeKey typeKey = new TypeKey (type);
 
-					if (!MarkedAsShouldRename (type, true)) {
-						continue;
-					}
-
 					int index = 0;
 					List<PropertyDefinition> propsToDrop = new List<PropertyDefinition> ();
 					foreach (PropertyDefinition prop in type.Properties) {
 						PropertyKey propKey = new PropertyKey (typeKey, prop);
 						ObfuscatedThing m = map.GetProperty (propKey);
 
-						// skip runtime special properties
-						if (prop.ObfuscationMarked () == false) {
-							m.Update (ObfuscationStatus.Skipped, "obfuscation excluded");
-							continue;
-						}
-
-						if (prop.IsRuntimeSpecialName) {
-							m.Update (ObfuscationStatus.Skipped, "runtime special");
-							continue;
-						}
-
-						var hasPublicProperty = (prop.GetMethod != null && (prop.GetMethod.IsPublic || prop.GetMethod.IsFamily)) || (prop.SetMethod != null && (prop.SetMethod.IsPublic || prop.SetMethod.IsFamily));
-						if (project.Settings.KeepPublicApi && prop.DeclaringType.IsPublic && hasPublicProperty) {
-							if (type.ObfuscationMarked () != true) {
-								m.Update (ObfuscationStatus.Skipped, "public property");
-								continue;
-							}
-						}
-
+						string skip;
 						// skip filtered props
-						if (info.ShouldSkip (propKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi)) {
-							if (type.ObfuscationMarked () != true) {
-								m.Update (ObfuscationStatus.Skipped, "filtered");
+						if (info.ShouldSkip (propKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, out skip)) {
+							m.Update (ObfuscationStatus.Skipped, skip);
 
-								// make sure get/set get skipped too
-								if (prop.GetMethod != null) {
-									info.ForceSkip (new MethodKey (prop.GetMethod));
-								}
+							// make sure get/set get skipped too
+							if (prop.GetMethod != null) {
+								ForceSkip (prop.GetMethod, "skip by property");
+							}
 
-								if (prop.SetMethod != null) {
-									info.ForceSkip (new MethodKey (prop.SetMethod));
-								}
+							if (prop.SetMethod != null) {
+								ForceSkip (prop.SetMethod, "skip by property");
+							}
 
-								continue;
-							}							
+							continue;
 						}
-							
+
 						if (type.BaseType != null && type.BaseType.Name.EndsWith ("Attribute") && prop.SetMethod != null && (prop.SetMethod.Attributes & MethodAttributes.Public) != 0) {
 							// do not rename properties of custom attribute types which have a public setter method
 							m.Update (ObfuscationStatus.Skipped, "public setter of a custom attribute");
@@ -883,45 +813,20 @@ namespace Obfuscar
 					}
 
 					TypeKey typeKey = new TypeKey (type);
-					if (!MarkedAsShouldRename (type, true)) {
-						continue;
-					}
-
 					List<EventDefinition> evtsToDrop = new List<EventDefinition> ();
 					foreach (EventDefinition evt in type.Events) {
 						EventKey evtKey = new EventKey (typeKey, evt);
 						ObfuscatedThing m = map.GetEvent (evtKey);
 
-						if (evt.ObfuscationMarked () == false) {
-							m.Update (ObfuscationStatus.Skipped, "obfuscation excluded");
-							continue;
-						}
-                        
-						// skip runtime special events
-						if (evt.IsRuntimeSpecialName) {
-							m.Update (ObfuscationStatus.Skipped, "runtime special");
-							continue;
-						}
-
-						var hasPublicEvent = evt.AddMethod.IsPublic || evt.AddMethod.IsFamily || evt.RemoveMethod.IsPublic || evt.RemoveMethod.IsFamily;
-						if (project.Settings.KeepPublicApi && evt.DeclaringType.IsPublic && hasPublicEvent) {
-							if (type.ObfuscationMarked () != true) {
-								m.Update (ObfuscationStatus.Skipped, "public event");
-								continue;
-							}
-						}
-
+						string skip;
 						// skip filtered events
-						if (info.ShouldSkip (evtKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi)) {
-							if (type.ObfuscationMarked () != true) {
-								m.Update (ObfuscationStatus.Skipped, "filtered");
+						if (info.ShouldSkip (evtKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, out skip)) {
+							m.Update (ObfuscationStatus.Skipped, skip);
 
-								// make sure add/remove get skipped too
-								info.ForceSkip (new MethodKey (evt.AddMethod));
-								info.ForceSkip (new MethodKey (evt.RemoveMethod));
-
-								continue;
-							}
+							// make sure add/remove get skipped too
+							ForceSkip (evt.AddMethod, "skip by event");
+							ForceSkip (evt.RemoveMethod, "skip by event");
+							continue;
 						}
 
 						// add to to collection for removal
@@ -937,6 +842,13 @@ namespace Obfuscar
 					}
 				}
 			}
+		}
+
+		private void ForceSkip (MethodDefinition method, string skip)
+		{
+			var delete = map.GetMethod (new MethodKey (method));
+			delete.Status = ObfuscationStatus.Skipped;
+			delete.StatusText = skip;
 		}
 
 		public void RenameMethods ()
@@ -955,36 +867,19 @@ namespace Obfuscar
 					// first pass.  mark grouped virtual methods to be renamed, and mark some things
 					// to be skipped as neccessary
 					foreach (MethodDefinition method in type.Methods) {
-						string skiprename = null;
-						var typeShouldRename = MarkedAsShouldRename (type, true);
-						var methodShouldRename = method.ObfuscationMarked ();
-						if (!typeShouldRename && methodShouldRename != true) {
-							skiprename = "ObfuscateAttribute found on type.";
-						}
-
 						MethodKey methodKey = new MethodKey (typeKey, method);
 						ObfuscatedThing m = map.GetMethod (methodKey);
 
-						// skip runtime methods
-						if (methodShouldRename == false)
-							skiprename = "obfuscation excluded";
-
-
-						if (method.IsRuntime) {
-							skiprename = "runtime method";
-						}
-
-						if (project.Settings.KeepPublicApi && method.DeclaringType.IsPublic && (method.IsPublic || method.IsFamily)) {
-							if (type.ObfuscationMarked () != true)
-								skiprename = "public method";
+						if (m.Status == ObfuscationStatus.Skipped) {
+							// IMPORTANT: shortcut for event and property methods.
+							continue;
 						}
 
 						// skip filtered methods
-						if (info.ShouldSkip (methodKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi)) {
-							if (type.ObfuscationMarked () != true)
-								skiprename = "filtered";
-						}
-
+						string skiprename;
+						var toDo = info.ShouldSkip (methodKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, out skiprename);
+						if (!toDo)
+							skiprename = null;
 						// update status for skipped non-virtual methods immediately...status for
 						// skipped virtual methods gets updated in RenameVirtualMethod
 						if (!method.IsVirtual) {
@@ -993,28 +888,6 @@ namespace Obfuscar
 							}
 
 							continue;
-						}
-
-						if (method.IsSpecialName) {
-							switch (method.SemanticsAttributes) {
-							case MethodSemanticsAttributes.Getter:
-							case MethodSemanticsAttributes.Setter:
-								if (!project.Settings.RenameProperties) {
-									skiprename = "skipping properties";
-								}
-
-								break;
-							case MethodSemanticsAttributes.AddOn:
-							case MethodSemanticsAttributes.RemoveOn:
-								if (!project.Settings.RenameEvents) {
-									skiprename = "skipping events";
-								}
-
-								break;
-							default:
-								skiprename = "virtual and special name";
-								break;
-							}
 						}
 
 						// if we need to skip the method or we don't yet have a name planned for a method, rename it
@@ -1033,7 +906,7 @@ namespace Obfuscar
 						}
 					}
 				}
-                
+
 				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
 					if (type.FullName == "<Module>") {
 						continue;
@@ -1059,19 +932,16 @@ namespace Obfuscar
 								if (project.Settings.RenameProperties) {
 									RenameMethod (info, sigNames, methodKey, method);
 									method.SemanticsAttributes = 0;
-								} else
-									m.Update (ObfuscationStatus.Skipped, "skipping properties");
+								}
 								break;
 							case MethodSemanticsAttributes.AddOn:
 							case MethodSemanticsAttributes.RemoveOn:
 								if (project.Settings.RenameEvents) {
 									RenameMethod (info, sigNames, methodKey, method);
 									method.SemanticsAttributes = 0;
-								} else
-									m.Update (ObfuscationStatus.Skipped, "skipping events");
+								}
 								break;
 							default:
-								m.Update (ObfuscationStatus.Skipped, "special name");
 								break;
 							}
 						} else {
@@ -1144,29 +1014,6 @@ namespace Obfuscar
 				}
 
 				throw new ObfuscarException (message.ToString ());
-
-				// counts are grouping according to signature
-				ParamSig sig = new ParamSig (method);
-
-				// get name groups for classes in the group
-				NameGroup[] nameGroups = GetNameGroups (baseSigNames, @group.Methods, sig);
-
-				// make sure to remove the old group name from the classes' name groups
-				for (int i = 0; i < nameGroups.Length; i++)
-					nameGroups [i].Remove (groupName);
-
-				// since this method has to be skipped, we need to use the method 
-				// name as new group name
-				groupName = method.Name;
-				@group.Name = groupName;
-
-				// set up methods to be renamed
-				foreach (MethodKey m in @group.Methods)
-					map.UpdateMethod (m, ObfuscationStatus.Skipped, skipRename);
-
-				// make sure the classes' name groups are updated
-				for (int i = 0; i < nameGroups.Length; i++)
-					nameGroups [i].Add (groupName);
 			} else {
 				ObfuscatedThing m = map.GetMethod (methodKey);
 				Debug.Assert (m.Status == ObfuscationStatus.Skipped ||
@@ -1351,54 +1198,52 @@ namespace Obfuscar
 
 					// FIXME: Figure out why this exists if it is never used.
 					// TypeKey typeKey = new TypeKey(type);
-					if (MarkedAsShouldRename (type, true)) {
-						foreach (MethodDefinition method in type.Methods) {
-							if (!info.ShouldSkipStringHiding (new MethodKey (method), Project.InheritMap, Project.Settings.HidePrivateApi) && method.Body != null) {
-								for (int i = 0; i < method.Body.Instructions.Count; i++) {
-									Instruction instruction = method.Body.Instructions [i];
-									if (instruction.OpCode == OpCodes.Ldstr) {
-										string str = (string)instruction.Operand;
-										MethodDefinition individualStringMethodDefinition = null;
-										if (!methodByString.TryGetValue (str, out individualStringMethodDefinition)) {
-											string methodName = NameMaker.UniqueName (nameIndex++);
+					foreach (MethodDefinition method in type.Methods) {
+						if (!info.ShouldSkipStringHiding (new MethodKey (method), Project.InheritMap, Project.Settings.HidePrivateApi) && method.Body != null) {
+							for (int i = 0; i < method.Body.Instructions.Count; i++) {
+								Instruction instruction = method.Body.Instructions [i];
+								if (instruction.OpCode == OpCodes.Ldstr) {
+									string str = (string)instruction.Operand;
+									MethodDefinition individualStringMethodDefinition = null;
+									if (!methodByString.TryGetValue (str, out individualStringMethodDefinition)) {
+										string methodName = NameMaker.UniqueName (nameIndex++);
 
-											// Add the string to the data array
-											byte[] stringBytes = Encoding.UTF8.GetBytes (str);
-											int start = databytes.Count;
-											databytes.AddRange (stringBytes);
-											int count = databytes.Count - start;
+										// Add the string to the data array
+										byte[] stringBytes = Encoding.UTF8.GetBytes (str);
+										int start = databytes.Count;
+										databytes.AddRange (stringBytes);
+										int count = databytes.Count - start;
 
-											// Add a method for this string to our new class
-											individualStringMethodDefinition = new MethodDefinition (methodName, MethodAttributes.Static | MethodAttributes.Public | MethodAttributes.HideBySig, systemStringTypeReference);
-											individualStringMethodDefinition.Body = new MethodBody (individualStringMethodDefinition);
-											ILProcessor worker4 = individualStringMethodDefinition.Body.GetILProcessor ();
+										// Add a method for this string to our new class
+										individualStringMethodDefinition = new MethodDefinition (methodName, MethodAttributes.Static | MethodAttributes.Public | MethodAttributes.HideBySig, systemStringTypeReference);
+										individualStringMethodDefinition.Body = new MethodBody (individualStringMethodDefinition);
+										ILProcessor worker4 = individualStringMethodDefinition.Body.GetILProcessor ();
 
-											worker4.Emit (OpCodes.Ldsfld, stringArrayField);
-											worker4.Emit (OpCodes.Ldc_I4, stringIndex);
-											worker4.Emit (OpCodes.Ldelem_Ref);
-											worker4.Emit (OpCodes.Dup);
-											Instruction label20 = worker4.Create (OpCodes.Brtrue_S, stringGetterMethodDefinition.Body.Instructions [0]);
-											worker4.Append (label20);
-											worker4.Emit (OpCodes.Pop);
-											worker4.Emit (OpCodes.Ldc_I4, stringIndex);
-											worker4.Emit (OpCodes.Ldc_I4, start);
-											worker4.Emit (OpCodes.Ldc_I4, count);
-											worker4.Emit (OpCodes.Call, stringGetterMethodDefinition);
+										worker4.Emit (OpCodes.Ldsfld, stringArrayField);
+										worker4.Emit (OpCodes.Ldc_I4, stringIndex);
+										worker4.Emit (OpCodes.Ldelem_Ref);
+										worker4.Emit (OpCodes.Dup);
+										Instruction label20 = worker4.Create (OpCodes.Brtrue_S, stringGetterMethodDefinition.Body.Instructions [0]);
+										worker4.Append (label20);
+										worker4.Emit (OpCodes.Pop);
+										worker4.Emit (OpCodes.Ldc_I4, stringIndex);
+										worker4.Emit (OpCodes.Ldc_I4, start);
+										worker4.Emit (OpCodes.Ldc_I4, count);
+										worker4.Emit (OpCodes.Call, stringGetterMethodDefinition);
 
 
-											label20.Operand = worker4.Create (OpCodes.Ret);
-											worker4.Append ((Instruction)label20.Operand);
+										label20.Operand = worker4.Create (OpCodes.Ret);
+										worker4.Append ((Instruction)label20.Operand);
 
-											newtype.Methods.Add (individualStringMethodDefinition);
-											methodByString.Add (str, individualStringMethodDefinition);
+										newtype.Methods.Add (individualStringMethodDefinition);
+										methodByString.Add (str, individualStringMethodDefinition);
 
-											stringIndex++;
-										}
-										// Replace Ldstr with Call
-										ILProcessor worker = method.Body.GetILProcessor ();
-										Instruction newinstruction = worker.Create (OpCodes.Call, individualStringMethodDefinition);
-										worker.Replace (instruction, newinstruction);
+										stringIndex++;
 									}
+									// Replace Ldstr with Call
+									ILProcessor worker = method.Body.GetILProcessor ();
+									Instruction newinstruction = worker.Create (OpCodes.Call, individualStringMethodDefinition);
+									worker.Replace (instruction, newinstruction);
 								}
 							}
 						}
@@ -1471,9 +1316,9 @@ namespace Obfuscar
 			private static extern bool StrongNameSignatureGeneration (
 				[/*In, */System.Runtime.InteropServices.MarshalAs (System.Runtime.InteropServices.UnmanagedType.LPWStr)]string wzFilePath,
 				[/*In, */System.Runtime.InteropServices.MarshalAs (System.Runtime.InteropServices.UnmanagedType.LPWStr)]string wzKeyContainer,
-				/*[In]*/byte[] pbKeyBlob,
-				/*[In]*/uint cbKeyBlob,
-				/*[In]*/IntPtr ppbSignatureBlob, // not supported, always pass 0.
+                /*[In]*/byte[] pbKeyBlob,
+                /*[In]*/uint cbKeyBlob,
+                /*[In]*/IntPtr ppbSignatureBlob, // not supported, always pass 0.
 				[System.Runtime.InteropServices.Out]out uint pcbSignatureBlob
 			);
 

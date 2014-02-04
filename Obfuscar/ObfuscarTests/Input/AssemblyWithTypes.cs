@@ -50,3 +50,16 @@ namespace TestClasses
         { }
     }
 }
+
+namespace TestClasses1
+{
+    public class PublicClass
+    {
+        public void PublicMethod()
+        { }
+
+        public class PublicNestedClass
+        {
+        }
+    }
+}
