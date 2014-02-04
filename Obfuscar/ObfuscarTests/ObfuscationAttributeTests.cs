@@ -145,12 +145,15 @@ namespace ObfuscarTests
 				             @"								</Module>" +
 				             @"								<Module file='$(InPath)\AssemblyG.dll' />" +
 				             @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
-
+			Directory.Delete (TestHelper.OutputPath, true);
 			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyG.dll"), Path.Combine (TestHelper.InputPath, "AssemblyG.dll"), true);
 			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyF.dll"), Path.Combine (TestHelper.InputPath, "AssemblyF.dll"), true);
 
 			var exception = Assert.Throws<ObfuscarException> (() => TestHelper.Obfuscate (xml));
 			Assert.IsTrue (exception.Message.StartsWith ("Inconsistent virtual method obfuscation"));
+
+			Assert.IsFalse (File.Exists (Path.Combine (TestHelper.OutputPath, @"AssemblyG.dll")));
+			Assert.IsFalse (File.Exists (Path.Combine (TestHelper.OutputPath, @"AssemblyF.dll")));
 		}
 	}
 }

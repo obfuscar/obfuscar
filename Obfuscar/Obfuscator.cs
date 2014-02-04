@@ -428,7 +428,6 @@ namespace Obfuscar
 			foreach (GenericParameter param in method.GenericParameters)
 				if (param.CustomAttributes.Count == 0)
 					param.Name = NameMaker.UniqueName (index++);
-
 		}
 
 		/// <summary>
