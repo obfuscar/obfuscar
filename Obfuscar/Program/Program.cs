@@ -26,7 +26,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Obfuscar
 {
-	[SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
+	[SuppressMessage ("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
 	internal static class Program
 	{
 		private static void ShowHelp ()
@@ -34,7 +34,7 @@ namespace Obfuscar
 			Console.WriteLine ("Usage:  obfuscar [projectfile]");
 		}
 
-		[SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
+		[SuppressMessage ("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
 		private static int Main (string[] args)
 		{
 			if (args.Length < 1) {
@@ -52,7 +52,7 @@ namespace Obfuscar
 				obfuscator.RunRules ();
 				
 				Console.WriteLine ("Completed, {0:f2} secs.", (Environment.TickCount - start) / 1000.0);
-			} catch (ApplicationException e) {
+			} catch (ObfuscarException e) {
 				Console.WriteLine ();
 				Console.Error.WriteLine ("An error occurred during processing:");
 				Console.Error.WriteLine (e.Message);
