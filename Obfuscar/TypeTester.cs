@@ -26,19 +26,18 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.RegularExpressions;
-
 using Mono.Cecil;
 
 namespace Obfuscar
 {
 	[Flags]
-	public enum TypeSkipFlags
+	public enum TypeAffectFlags
 	{
 		SkipNone = 0x00,
-		SkipEvent = 0x01,
-		SkipProperty = 0x02,
-		SkipField = 0x04,
-		SkipMethod = 0x08,
+		AffectEvent = 0x01,
+		AffectProperty = 0x02,
+		AffectField = 0x04,
+		AffectMethod = 0x08,
 		SkipStringHiding = 0x10,
 	}
 
@@ -46,47 +45,47 @@ namespace Obfuscar
 	{
 		private readonly string name;
 		private readonly Regex nameRx;
-		private readonly TypeSkipFlags skipFlags;
+		private readonly TypeAffectFlags skipFlags;
 		private readonly string attrib;
 		private readonly string inherits;
 		private readonly bool? isStatic;
-		[SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
+		[SuppressMessage ("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
 		private readonly bool?
 			isSerializable;
 
-		public TypeSkipFlags SkipFlags {
+		public TypeAffectFlags AffectFlags {
 			get { return this.skipFlags; }
 		}
 
 		public TypeTester (string name)
-            : this(name, TypeSkipFlags.SkipNone, string.Empty)
+            : this (name, TypeAffectFlags.SkipNone, string.Empty)
 		{
 		}
 
-		public TypeTester (string name, TypeSkipFlags skipFlags, string attrib)
+		public TypeTester (string name, TypeAffectFlags skipFlags, string attrib)
 		{
 			this.name = name;
 			this.skipFlags = skipFlags;
 			this.attrib = attrib.ToLower ();
 		}
 
-		public TypeTester (string name, TypeSkipFlags skipFlags, string attrib, string inherits, bool? isStatic, bool? isSeriablizable) 
-            : this(name,skipFlags, attrib)
+		public TypeTester (string name, TypeAffectFlags skipFlags, string attrib, string inherits, bool? isStatic, bool? isSeriablizable) 
+            : this (name, skipFlags, attrib)
 		{
 			this.inherits = inherits;
 			this.isStatic = isStatic;
 			this.isSerializable = isSeriablizable;
 		}
 
-		public TypeTester (Regex nameRx, TypeSkipFlags skipFlags, string attrib)
+		public TypeTester (Regex nameRx, TypeAffectFlags skipFlags, string attrib)
 		{
 			this.nameRx = nameRx;
 			this.skipFlags = skipFlags;
 			this.attrib = attrib.ToLower ();
 		}
-        
-		public TypeTester (Regex nameRx, TypeSkipFlags skipFlags, string attrib, string inherits, bool? isStatic, bool? isSeriablizable) 
-            : this(nameRx,skipFlags, attrib)
+
+		public TypeTester (Regex nameRx, TypeAffectFlags skipFlags, string attrib, string inherits, bool? isStatic, bool? isSeriablizable) 
+            : this (nameRx, skipFlags, attrib)
 		{
 			this.inherits = inherits;
 			this.isStatic = isStatic;
@@ -101,7 +100,7 @@ namespace Obfuscar
 						return false;
 					}
 				} else {
-                    throw new ObfuscarException(string.Format("'{0}' is not valid for the 'attrib' value of the SkipType element. Only 'public' is supported by now.", attrib));
+					throw new ObfuscarException (string.Format ("'{0}' is not valid for the 'attrib' value of the SkipType element. Only 'public' is supported by now.", attrib));
 				}
 			}
 

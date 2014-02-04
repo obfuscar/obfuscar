@@ -41,6 +41,12 @@ namespace Obfuscar
 		private readonly PredicateCollection<FieldKey> skipFields = new PredicateCollection<FieldKey> ();
 		private readonly PredicateCollection<PropertyKey> skipProperties = new PredicateCollection<PropertyKey> ();
 		private readonly PredicateCollection<EventKey> skipEvents = new PredicateCollection<EventKey> ();
+		private readonly PredicateCollection<string> forceNamespaces = new PredicateCollection<string> ();
+		private readonly PredicateCollection<TypeKey> forceTypes = new PredicateCollection<TypeKey> ();
+		private readonly PredicateCollection<MethodKey> forceMethods = new PredicateCollection<MethodKey> ();
+		private readonly PredicateCollection<FieldKey> forceFields = new PredicateCollection<FieldKey> ();
+		private readonly PredicateCollection<PropertyKey> forceProperties = new PredicateCollection<PropertyKey> ();
+		private readonly PredicateCollection<EventKey> forceEvents = new PredicateCollection<EventKey> ();
 		private readonly PredicateCollection<MethodKey> skipStringHiding = new PredicateCollection<MethodKey> ();
 		private readonly List<AssemblyInfo> references = new List<AssemblyInfo> ();
 		private readonly List<AssemblyInfo> referencedBy = new List<AssemblyInfo> ();
@@ -125,28 +131,35 @@ namespace Obfuscar
 								info.skipNamespaces.Add (new NamespaceTester (name));
 							}
 							break;
+						case "ForceNamespace":
+							if (rx != null) {
+								info.forceNamespaces.Add (new NamespaceTester (rx));
+							} else {
+								info.forceNamespaces.Add (new NamespaceTester (name));
+							}
+							break;
 						case "SkipType":
-							TypeSkipFlags skipFlags = TypeSkipFlags.SkipNone;
+							TypeAffectFlags skipFlags = TypeAffectFlags.SkipNone;
 
 							val = Helper.GetAttribute (reader, "skipMethods", vars);
 							if (val.Length > 0 && XmlConvert.ToBoolean (val))
-								skipFlags |= TypeSkipFlags.SkipMethod;
+								skipFlags |= TypeAffectFlags.AffectMethod;
 
 							val = Helper.GetAttribute (reader, "skipStringHiding", vars);
 							if (val.Length > 0 && XmlConvert.ToBoolean (val))
-								skipFlags |= TypeSkipFlags.SkipStringHiding;
+								skipFlags |= TypeAffectFlags.SkipStringHiding;
 
 							val = Helper.GetAttribute (reader, "skipFields", vars);
 							if (val.Length > 0 && XmlConvert.ToBoolean (val))
-								skipFlags |= TypeSkipFlags.SkipField;
+								skipFlags |= TypeAffectFlags.AffectField;
 
 							val = Helper.GetAttribute (reader, "skipProperties", vars);
 							if (val.Length > 0 && XmlConvert.ToBoolean (val))
-								skipFlags |= TypeSkipFlags.SkipProperty;
+								skipFlags |= TypeAffectFlags.AffectProperty;
 
 							val = Helper.GetAttribute (reader, "skipEvents", vars);
 							if (val.Length > 0 && XmlConvert.ToBoolean (val))
-								skipFlags |= TypeSkipFlags.SkipEvent;
+								skipFlags |= TypeAffectFlags.AffectEvent;
 
 							if (rx != null) {
 								info.skipTypes.Add (new TypeTester (rx, skipFlags, attrib, inherits, isStatic, isSerializable));
@@ -154,11 +167,43 @@ namespace Obfuscar
 								info.skipTypes.Add (new TypeTester (name, skipFlags, attrib, inherits, isStatic, isSerializable));
 							}
 							break;
+						case "ForceType":
+							TypeAffectFlags forceFlags = TypeAffectFlags.SkipNone;
+
+							val = Helper.GetAttribute (reader, "forceMethods", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+								forceFlags |= TypeAffectFlags.AffectMethod;
+
+							val = Helper.GetAttribute (reader, "forceFields", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+								forceFlags |= TypeAffectFlags.AffectField;
+
+							val = Helper.GetAttribute (reader, "forceProperties", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+								forceFlags |= TypeAffectFlags.AffectProperty;
+
+							val = Helper.GetAttribute (reader, "forceEvents", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+								forceFlags |= TypeAffectFlags.AffectEvent;
+
+							if (rx != null) {
+								info.forceTypes.Add (new TypeTester (rx, forceFlags, attrib, inherits, isStatic, isSerializable));
+							} else {
+								info.forceTypes.Add (new TypeTester (name, forceFlags, attrib, inherits, isStatic, isSerializable));
+							}
+							break;
 						case "SkipMethod":
 							if (rx != null) {
 								info.skipMethods.Add (new MethodTester (rx, type, attrib, typeattrib, inherits, isStatic));
 							} else {
 								info.skipMethods.Add (new MethodTester (name, type, attrib, typeattrib, inherits, isStatic));
+							}
+							break;
+						case "ForceMethod":
+							if (rx != null) {
+								info.forceMethods.Add (new MethodTester (rx, type, attrib, typeattrib, inherits, isStatic));
+							} else {
+								info.forceMethods.Add (new MethodTester (name, type, attrib, typeattrib, inherits, isStatic));
 							}
 							break;
 						case "SkipStringHiding":
@@ -177,11 +222,27 @@ namespace Obfuscar
 								info.skipFields.Add (new FieldTester (name, type, attrib, typeattrib, inherits, decorator, isStatic, isSerializable));
 							}
 							break;
+						case "ForceField":
+							string decorator1 = Helper.GetAttribute (reader, "decorator", vars);
+
+							if (rx != null) {
+								info.forceFields.Add (new FieldTester (rx, type, attrib, typeattrib, inherits, decorator1, isStatic, isSerializable));
+							} else {
+								info.forceFields.Add (new FieldTester (name, type, attrib, typeattrib, inherits, decorator1, isStatic, isSerializable));
+							}
+							break;
 						case "SkipProperty":
 							if (rx != null) {
 								info.skipProperties.Add (new PropertyTester (rx, type, attrib, typeattrib));
 							} else {
 								info.skipProperties.Add (new PropertyTester (name, type, attrib, typeattrib));
+							}
+							break;
+						case "ForceProperty":
+							if (rx != null) {
+								info.forceProperties.Add (new PropertyTester (rx, type, attrib, typeattrib));
+							} else {
+								info.forceProperties.Add (new PropertyTester (name, type, attrib, typeattrib));
 							}
 							break;
 						case "SkipEvent":
@@ -190,8 +251,15 @@ namespace Obfuscar
 							} else {
 								info.skipEvents.Add (new EventTester (name, type, attrib, typeattrib));
 							}
+							break;						
+						case "ForceEvent":
+							if (rx != null) {
+								info.forceEvents.Add (new EventTester (rx, type, attrib, typeattrib));
+							} else {
+								info.forceEvents.Add (new EventTester (name, type, attrib, typeattrib));
+							}
 							break;
-						}
+						}                    
 					} else if (reader.NodeType == XmlNodeType.EndElement && reader.Name == "Module") {
 						// hit end of module element...stop reading
 						break;
@@ -517,14 +585,33 @@ namespace Obfuscar
 			return skipNamespaces.IsMatch (ns, map);
 		}
 
-		private bool ShouldSkip (TypeKey type, TypeSkipFlags flag, InheritMap map)
+		private bool ShouldForce (string ns, InheritMap map)
+		{
+			return forceNamespaces.IsMatch (ns, map);
+		}
+
+		private bool ShouldSkip (TypeKey type, TypeAffectFlags flag, InheritMap map)
 		{
 			if (ShouldSkip (type.Namespace, map)) {				
 				return true;
 			}
 
 			foreach (TypeTester typeTester in skipTypes) {
-				if ((typeTester.SkipFlags & flag) > 0 && typeTester.Test (type, map))
+				if ((typeTester.AffectFlags & flag) > 0 && typeTester.Test (type, map))
+					return true;
+			}
+
+			return false;
+		}
+
+		private bool ShouldForce (TypeKey type, TypeAffectFlags flag, InheritMap map)
+		{
+			if (ShouldForce (type.Namespace, map)) {
+				return true;
+			}
+
+			foreach (TypeTester typeTester in forceTypes) {
+				if ((typeTester.AffectFlags & flag) > 0 && typeTester.Test (type, map))
 					return true;
 			}
 
@@ -544,6 +631,16 @@ namespace Obfuscar
 				return true;
 			}
             
+			if (forceTypes.IsMatch (type, map)) {
+				message = "force by type rule in configuration";
+				return false;
+			}
+
+			if (ShouldForce (type.Namespace, map)) {
+				message = "force by namespace rule in configuration";
+				return false;
+			}
+
 			if (skipTypes.IsMatch (type, map)) {
 				message = "skip by type rule in configuration";
 				return true;
@@ -585,37 +682,8 @@ namespace Obfuscar
 					return true;
 				}
 			}
-            
-			var attribute = method.Method.MarkedToRename ();
-			// skip runtime methods
-			if (attribute != null) {
-				skiprename = "skip by attribute";
-				return !attribute.Value;
-			}
 
-			var parent = method.DeclaringType.MarkedToRename ();
-			if (parent != null) {
-				skiprename = "skip by type attribute";
-				return !parent.Value;
-			}
-
-			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipMethod, map)) {
-				skiprename = "skip by type rule in configuration";
-				return true;
-			}
-
-			if (skipMethods.IsMatch (method, map)) {
-				skiprename = "skip by method rule in configuration";
-				return true;
-			}
-            
-			if (method.DeclaringType.IsTruePublic () && (method.Method.IsPublic || method.Method.IsFamily)) {
-				skiprename = "skip by keepPublicApi";
-				return keepPublicApi;
-			}
-
-			skiprename = "skip by hidePrivateApi";
-			return !hidePrivateApi;
+			return ShouldSkipParams (method, map, keepPublicApi, hidePrivateApi, out skiprename);
 		}
 
 		public bool ShouldSkipParams (MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
@@ -633,7 +701,17 @@ namespace Obfuscar
 				return !parent.Value;
 			}
 
-			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipMethod, map)) {
+			if (ShouldForce (method.TypeKey, TypeAffectFlags.AffectMethod, map)) {
+				skiprename = "force by type rule in configuration";
+				return false;
+			}
+
+			if (forceMethods.IsMatch (method, map)) {
+				skiprename = "force by method rule in configuration";
+				return false;
+			}
+
+			if (ShouldSkip (method.TypeKey, TypeAffectFlags.AffectMethod, map)) {
 				skiprename = "skip by type rule in configuration";
 				return true;
 			}
@@ -654,7 +732,7 @@ namespace Obfuscar
 
 		public bool ShouldSkipStringHiding (MethodKey method, InheritMap map, bool hidePrivateApi)
 		{
-			if (ShouldSkip (method.TypeKey, TypeSkipFlags.SkipStringHiding, map))
+			if (ShouldSkip (method.TypeKey, TypeAffectFlags.SkipStringHiding, map))
 				return true;
 
 			return skipStringHiding.IsMatch (method, map);
@@ -680,7 +758,17 @@ namespace Obfuscar
 				return !parent.Value;
 			}
 
-			if (ShouldSkip (field.TypeKey, TypeSkipFlags.SkipField, map)) {
+			if (ShouldForce (field.TypeKey, TypeAffectFlags.AffectField, map)) {
+				skiprename = "force by type rule in configuration";
+				return false;
+			}
+
+			if (forceFields.IsMatch (field, map)) {
+				skiprename = "force by field rule in configuration";
+				return false;
+			}
+
+			if (ShouldSkip (field.TypeKey, TypeAffectFlags.AffectField, map)) {
 				skiprename = "skip by type rule in configuration";
 				return true;
 			}
@@ -718,7 +806,17 @@ namespace Obfuscar
 				return !parent.Value;
 			}
 
-			if (ShouldSkip (prop.TypeKey, TypeSkipFlags.SkipProperty, map)) {
+			if (ShouldForce (prop.TypeKey, TypeAffectFlags.AffectProperty, map)) {
+				skiprename = "force by type rule in configuration";
+				return false;
+			}
+
+			if (forceProperties.IsMatch (prop, map)) {
+				skiprename = "force by property rule in configuration";
+				return false;
+			}
+
+			if (ShouldSkip (prop.TypeKey, TypeAffectFlags.AffectProperty, map)) {
 				skiprename = "skip by type rule in configuration";
 				return true;
 			}
@@ -758,7 +856,17 @@ namespace Obfuscar
 				return !parent.Value;
 			}
 
-			if (ShouldSkip (evt.TypeKey, TypeSkipFlags.SkipEvent, map)) {
+			if (ShouldForce (evt.TypeKey, TypeAffectFlags.AffectEvent, map)) {
+				skiprename = "force by type rule in configuration";
+				return false;
+			}
+
+			if (forceEvents.IsMatch (evt, map)) {
+				skiprename = "force by event rule in configuration";
+				return false;
+			}
+
+			if (ShouldSkip (evt.TypeKey, TypeAffectFlags.AffectEvent, map)) {
 				skiprename = "skip by type rule in configuration";
 				return true;
 			}
