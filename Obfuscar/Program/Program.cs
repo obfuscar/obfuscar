@@ -37,7 +37,11 @@ namespace Obfuscar
 		[SuppressMessage ("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
 		private static int Main (string[] args)
 		{
-			if (args.Length < 1) {
+			Console.WriteLine ("Obfuscar is available at http://obfuscar.codeplex.com.");
+			Console.WriteLine ("(C) 2007-2014, Ryan Williams and other contributors.");
+			Console.WriteLine ();
+
+			if (args.Length != 1) {
 				ShowHelp ();
 				return 1;
 			}
