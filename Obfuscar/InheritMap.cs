@@ -88,10 +88,10 @@ namespace Obfuscar
 			AssemblyCache cache = new AssemblyCache (project);
 
 			foreach (var path in project.ExtraPaths)
-				cache.AddSearchDirectory (path);
+				cache.Resolver.AddSearchDirectory (path);
 
 			foreach (AssemblyInfo info in project) {
-				cache.AddSearchDirectory (System.IO.Path.GetDirectoryName (info.Filename));
+				cache.Resolver.AddSearchDirectory (System.IO.Path.GetDirectoryName (info.Filename));
 				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
 					if (type.FullName == "<Module>")
 						continue;
