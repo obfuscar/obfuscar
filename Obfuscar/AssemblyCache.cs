@@ -28,11 +28,12 @@ using System;
 
 namespace Obfuscar
 {
-	class AssemblyCache : BaseAssemblyResolver
+	class AssemblyCache
 	{
 		readonly Project project;
 		readonly Dictionary<string, AssemblyDefinition> cache =
 			new Dictionary<string, AssemblyDefinition> ();
+		public readonly BaseAssemblyResolver Resolver = new DefaultAssemblyResolver ();
 
 		public AssemblyCache (Project project)
 		{
@@ -54,15 +55,19 @@ namespace Obfuscar
 				return gi == null ? null : GetTypeDefinition (gi.ElementType);
 			}
 
-			// try to self resolve, fall back to default resolver
 			AssemblyDefinition assmDef;
+			if (cache.ContainsKey (name.FullName)) {
+				assmDef = cache [name.FullName];
+			} else {
+				// try to self resolve, fall back to default resolver                
 				try {
 					Console.WriteLine ("Trying to resolve dependency: " + name);
-					assmDef = Resolve (name);
+					assmDef = Resolver.Resolve (name);
 					cache [name.FullName] = assmDef;
 				} catch (FileNotFoundException) {
 					throw new ObfuscarException ("Unable to resolve dependency:  " + name.Name);
 				}
+			}
 
 			string fullName = null;
 			while (type.IsNested) {

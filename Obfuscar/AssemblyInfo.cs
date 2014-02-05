@@ -518,7 +518,7 @@ namespace Obfuscar
 					definition = AssemblyDefinition.ReadAssembly (filename, new ReaderParameters {
 						ReadingMode = Mono.Cecil.ReadingMode.Immediate,
 						ReadSymbols = readSymbols,
-						AssemblyResolver = project.Cache
+						AssemblyResolver = project.Cache.Resolver
 					});
 				} catch { // If there's a non-matching pdb next to it, this fails, else just try again
 					if (!readSymbols)
@@ -526,7 +526,7 @@ namespace Obfuscar
 					definition = AssemblyDefinition.ReadAssembly (filename, new ReaderParameters {
 						ReadingMode = Mono.Cecil.ReadingMode.Immediate,
 						ReadSymbols = false,
-						AssemblyResolver = project.Cache
+						AssemblyResolver = project.Cache.Resolver
 					});
 				}
 

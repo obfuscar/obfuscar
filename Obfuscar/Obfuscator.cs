@@ -205,17 +205,13 @@ namespace Obfuscar
 				else
 					info.Definition.Write (outName);
 
-				if (info.Definition.Name.HasPublicKey) {
-					if (project.KeyContainerName != null) {
-						MsNetSigner.SignAssemblyFromKeyContainer (outName, project.KeyContainerName);
-					} else {
-						var sn = new StrongName (project.KeyValue);
-						sn.Sign (outName);
-					}
+				if (info.Definition.Name.HasPublicKey)
+				if (project.KeyContainerName != null) {
+					MsNetSigner.SignAssemblyFromKeyContainer (outName, project.KeyContainerName);
+				} else {
+					var sn = new StrongName (project.KeyValue);
+					sn.Sign (outName);
 				}
-
-				// TODO: review whether this is still needed 
-				// SignAssembly (info, outName);
 			}
 
 			TypeNameCache.nameCache.Clear ();
@@ -236,7 +232,7 @@ namespace Obfuscar
 				keyfilepath = null;
 				foreach (CustomAttribute ca in info.Definition.CustomAttributes) {
 					if (ca.Constructor.DeclaringType.FullName ==
-					                   typeof(System.Reflection.AssemblyKeyFileAttribute).FullName) {
+					    typeof(System.Reflection.AssemblyKeyFileAttribute).FullName) {
 						keyfilepath = (string)ca.ConstructorArguments [0].Value;
 					}
 				}
@@ -547,7 +543,7 @@ namespace Obfuscar
 								for (int j = 0; j < method.Body.Instructions.Count; j++) {
 									Instruction instruction = method.Body.Instructions [j];
 									if (instruction.OpCode == OpCodes.Ldstr &&
-									                               (string)instruction.Operand == fullName)
+									    (string)instruction.Operand == fullName)
 										instruction.Operand = newTypeKey.Fullname;
 								}
 							}
@@ -617,7 +613,7 @@ namespace Obfuscar
 							continue;
 
 						try {
-							using (var bamlReader = new XmlBamlReader (stream, new CecilTypeResolver (project.InheritMap.Cache, library)))
+							using (var bamlReader = new XmlBamlReader (stream, new CecilTypeResolver (project.InheritMap.Cache.Resolver, library)))
 								result.Add (XDocument.Load (bamlReader));
 						} catch (ArgumentException) {
 						} catch (FileNotFoundException) {
@@ -886,7 +882,7 @@ namespace Obfuscar
 
 						// if we need to skip the method or we don't yet have a name planned for a method, rename it
 						if ((skiprename != null && m.Status != ObfuscationStatus.Skipped) ||
-						                      m.Status == ObfuscationStatus.Unknown) {
+						    m.Status == ObfuscationStatus.Unknown) {
 							RenameVirtualMethod (info, baseSigNames, sigNames, methodKey, method, skiprename);
 						}
 					}
@@ -947,7 +943,7 @@ namespace Obfuscar
 		}
 
 		private void RenameVirtualMethod (AssemblyInfo info, Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-		                                       Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method, string skipRename)
+		                                  Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method, string skipRename)
 		{
 			// if method is in a group, look for group key
 			MethodGroup group = project.InheritMap.GetMethodGroup (methodKey);
@@ -1018,7 +1014,7 @@ namespace Obfuscar
 		}
 
 		NameGroup[] GetNameGroups (Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-		                                IEnumerable<MethodKey> methodKeys, ParamSig sig)
+		                           IEnumerable<MethodKey> methodKeys, ParamSig sig)
 		{
 			// build unique set of classes in group
 			HashSet<TypeKey> typeKeys = new HashSet<TypeKey> ();
@@ -1044,7 +1040,7 @@ namespace Obfuscar
 
 			// if it already has a name, return it
 			if (t.Status == ObfuscationStatus.Renamed ||
-			             t.Status == ObfuscationStatus.WillRename)
+			    t.Status == ObfuscationStatus.WillRename)
 				return t.StatusText;
 
 			// don't mess with methods we decided to skip
@@ -1125,12 +1121,12 @@ namespace Obfuscar
 				int nameIndex = 0;
 
 				// We get the most used type references
-				TypeReference systemObjectTypeReference = library.MainModule.Import (typeof(Object));
-				TypeReference systemVoidTypeReference = library.MainModule.Import (typeof(void));
-				TypeReference systemStringTypeReference = library.MainModule.Import (typeof(String));
-				TypeReference systemValueTypeTypeReference = library.MainModule.Import (typeof(ValueType));
-				TypeReference systemByteTypeReference = library.MainModule.Import (typeof(byte));
-				TypeReference systemIntTypeReference = library.MainModule.Import (typeof(int));
+				var systemObjectTypeReference = library.MainModule.TypeSystem.Object;
+				var systemVoidTypeReference = library.MainModule.TypeSystem.Void;
+				var systemStringTypeReference = library.MainModule.TypeSystem.String;
+				var systemValueTypeTypeReference = new TypeReference ("System", "ValueType", library.MainModule, library.MainModule.TypeSystem.Corlib);
+				var systemByteTypeReference = library.MainModule.TypeSystem.Byte;
+				var systemIntTypeReference = library.MainModule.TypeSystem.Int32;
 
 				// New static class with a method for each unique string we substitute.
 				TypeDefinition newtype = new TypeDefinition ("<PrivateImplementationDetails>{" + Guid.NewGuid ().ToString ().ToUpper () + "}", null, TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, systemObjectTypeReference);
