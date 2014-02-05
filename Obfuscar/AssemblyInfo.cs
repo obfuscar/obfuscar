@@ -622,48 +622,48 @@ namespace Obfuscar
 		{
 			var attribute = type.TypeDefinition.MarkedToRename ();
 			if (attribute != null) {
-				message = "skip by attribute";
+				message = "attribute";
 				return !attribute.Value;
 			}
 
 			if (markedOnly) {
-				message = "skip by markedOnly";
+				message = "MarkedOnly option in configuration";
                 return true;
 			}
 
 			if (forceTypes.IsMatch (type, map)) {
-				message = "force by type rule in configuration";
+				message = "type rule in configuration";
 				return false;
 			}
 
 			if (ShouldForce (type.Namespace, map)) {
-				message = "force by namespace rule in configuration";
+				message = "namespace rule in configuration";
 				return false;
 			}
 
 			if (skipTypes.IsMatch (type, map)) {
-				message = "skip by type rule in configuration";
+				message = "type rule in configuration";
 				return true;
 			}
 
 			if (ShouldSkip (type.Namespace, map)) {
-				message = "skip by namespace rule in configuration";
+				message = "namespace rule in configuration";
 				return true;
 			}
 
 			if (type.TypeDefinition.IsTruePublic ()) {
-				message = "skip by keepPublicApi";
+				message = "KeepPublicApi option in configuration";
 					return keepPublicApi;
 				}
 
-			message = "skip by hidePrivateApi";
+			message = "HidePrivateApi option in configuration";
 			return !hidePrivateApi;
 		}
 
 		public bool ShouldSkip (MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
 		{
 			if (method.Method.IsRuntime) {
-				skiprename = "skip by runtime method";
+				skiprename = "runtime method";
 					return true;
 				}
 
@@ -678,7 +678,7 @@ namespace Obfuscar
 					skiprename = "skipping events";
 					return !project.Settings.RenameEvents;
 				default:
-					skiprename = "skip by special name";
+					skiprename = "special name";
 					return true;
 			}
 			}
@@ -691,42 +691,42 @@ namespace Obfuscar
 			var attribute = method.Method.MarkedToRename ();
 			// skip runtime methods
 			if (attribute != null) {
-				skiprename = "skip by attribute";
+				skiprename = "attribute";
 				return !attribute.Value;
 		}
 
 			var parent = method.DeclaringType.MarkedToRename ();
 			if (parent != null) {
-				skiprename = "skip by type attribute";
+				skiprename = "type attribute";
 				return !parent.Value;
 			}
 
 			if (ShouldForce (method.TypeKey, TypeAffectFlags.AffectMethod, map)) {
-				skiprename = "force by type rule in configuration";
+				skiprename = "type rule in configuration";
 				return false;
 			}
 
 			if (forceMethods.IsMatch (method, map)) {
-				skiprename = "force by method rule in configuration";
+				skiprename = "method rule in configuration";
 				return false;
 			}
 
 			if (ShouldSkip (method.TypeKey, TypeAffectFlags.AffectMethod, map)) {
-				skiprename = "skip by type rule in configuration";
+				skiprename = "type rule in configuration";
 				return true;
 			}
 
 			if (skipMethods.IsMatch (method, map)) {
-				skiprename = "skip by method rule in configuration";
+				skiprename = "method rule in configuration";
 				return true;
 			}
 
 			if (method.DeclaringType.IsTruePublic () && (method.Method.IsPublic || method.Method.IsFamily)) {
-				skiprename = "skip by keepPublicApi";
+				skiprename = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
 
-			skiprename = "skip by hidePrivateApi";
+			skiprename = "HidePrivateApi option in configuration";
 			return !hidePrivateApi;
 		}
 
@@ -742,96 +742,96 @@ namespace Obfuscar
 		{
 			// skip runtime methods
 			if ((field.Field.IsRuntimeSpecialName && field.Field.Name == "value__")) {
-				skiprename = "skip by special name";
+				skiprename = "special name";
 				return true;
 			}
 
 			var attribute = field.Field.MarkedToRename ();
 			if (attribute != null) {
-				skiprename = "skip by attribute";
+				skiprename = "attribute";
 				return !attribute.Value;
 			}
 
 			var parent = field.DeclaringType.MarkedToRename ();
 			if (parent != null) {
-				skiprename = "skip by type attribute";
+				skiprename = "type attribute";
 				return !parent.Value;
 			}
 
 			if (ShouldForce (field.TypeKey, TypeAffectFlags.AffectField, map)) {
-				skiprename = "force by type rule in configuration";
+				skiprename = "type rule in configuration";
 				return false;
 			}
 
 			if (forceFields.IsMatch (field, map)) {
-				skiprename = "force by field rule in configuration";
+				skiprename = "field rule in configuration";
 				return false;
 			}
 
 			if (ShouldSkip (field.TypeKey, TypeAffectFlags.AffectField, map)) {
-				skiprename = "skip by type rule in configuration";
+				skiprename = "type rule in configuration";
 				return true;
 			}
 
 			if (skipFields.IsMatch (field, map)) {
-				skiprename = "skip by field rule in configuration";
+				skiprename = "field rule in configuration";
 				return true;
 		}
 
 			if (field.DeclaringType.IsTruePublic () && (field.Field.IsPublic || field.Field.IsFamily)) {
-				skiprename = "skip by keepPublicApi";
+				skiprename = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
 
-			skiprename = "skip by hidePrivateApi";
+			skiprename = "HidePrivateApi option in configuration";
 			return !hidePrivateApi;
 		}
 
 		public bool ShouldSkip (PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
 		{
 			if (prop.Property.IsRuntimeSpecialName) {
-				skiprename = "skip by runtime special name";
+				skiprename = "runtime special name";
 				return true;
 			}
 
 			var attribute = prop.Property.MarkedToRename ();
 			if (attribute != null) {
-				skiprename = "skip by attribute";
+				skiprename = "attribute";
 				return !attribute.Value;
 			}
 
 			var parent = prop.DeclaringType.MarkedToRename ();
 			if (parent != null) {
-				skiprename = "skip by type attribute";
+				skiprename = "type attribute";
 				return !parent.Value;
 			}
 
 			if (ShouldForce (prop.TypeKey, TypeAffectFlags.AffectProperty, map)) {
-				skiprename = "force by type rule in configuration";
+				skiprename = "type rule in configuration";
 				return false;
 			}
 
 			if (forceProperties.IsMatch (prop, map)) {
-				skiprename = "force by property rule in configuration";
+				skiprename = "property rule in configuration";
 				return false;
 			}
 
 			if (ShouldSkip (prop.TypeKey, TypeAffectFlags.AffectProperty, map)) {
-				skiprename = "skip by type rule in configuration";
+				skiprename = "type rule in configuration";
 				return true;
 			}
 
 			if (skipProperties.IsMatch (prop, map)) {
-				skiprename = "skip by property rule in configuration";
+				skiprename = "property rule in configuration";
 				return true;
 		}
 
 			if (prop.DeclaringType.IsTruePublic () && (IsGetterPublic (prop.Property) || IsSetterPublic (prop.Property))) {
-				skiprename = "skip by keepPublicApi";
+				skiprename = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
 
-			skiprename = "skip by hidePrivateApi";
+			skiprename = "HidePrivateApi option in configuration";
 			return !hidePrivateApi;
 		}
 
@@ -839,49 +839,49 @@ namespace Obfuscar
 		{
 			// skip runtime special events
 			if (evt.Event.IsRuntimeSpecialName) {
-				skiprename = "skip by runtime special name";
+				skiprename = "runtime special name";
 				return true;
 			}
 
 			var attribute = evt.Event.MarkedToRename ();
 			// skip runtime methods
 			if (attribute != null) {
-				skiprename = "skip by attribute";
+				skiprename = "attribute";
 				return !attribute.Value;
 			}
 
 			var parent = evt.DeclaringType.MarkedToRename ();
 			if (parent != null) {
-				skiprename = "skip by type attribute";
+				skiprename = "type attribute";
 				return !parent.Value;
 			}
 
 			if (ShouldForce (evt.TypeKey, TypeAffectFlags.AffectEvent, map)) {
-				skiprename = "force by type rule in configuration";
+				skiprename = "type rule in configuration";
 				return false;
 			}
 
 			if (forceEvents.IsMatch (evt, map)) {
-				skiprename = "force by event rule in configuration";
+				skiprename = "event rule in configuration";
 				return false;
 			}
 
 			if (ShouldSkip (evt.TypeKey, TypeAffectFlags.AffectEvent, map)) {
-				skiprename = "skip by type rule in configuration";
+				skiprename = "type rule in configuration";
 				return true;
 			}
 
 			if (skipEvents.IsMatch (evt, map)) {
-				skiprename = "skip by event rule in configuration";
+				skiprename = "event rule in configuration";
 				return true;
 		}
 
 			if (evt.DeclaringType.IsTruePublic () && (IsAddPublic (evt.Event) || IsRemovePublic (evt.Event))) {
-				skiprename = "skip by keepPublicApi";
+				skiprename = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
 
-			skiprename = "skip by hidePrivateApi";
+			skiprename = "HidePrivateApi option in configuration";
 			return !hidePrivateApi;
 		}
 
