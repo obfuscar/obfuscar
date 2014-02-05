@@ -86,11 +86,12 @@ namespace Obfuscar
 
 			// cache for assemblies not in the project
 			AssemblyCache cache = new AssemblyCache (project);
-			//string[] lPaths = project.
-			cache.ExtraFolders.AddRange (project.ExtraPaths);
+
+			foreach (var path in project.ExtraPaths)
+				cache.AddSearchDirectory (path);
 
 			foreach (AssemblyInfo info in project) {
-				cache.ExtraFolders.Add (System.IO.Path.GetDirectoryName (info.Filename));
+				cache.AddSearchDirectory (System.IO.Path.GetDirectoryName (info.Filename));
 				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
 					if (type.FullName == "<Module>")
 						continue;
