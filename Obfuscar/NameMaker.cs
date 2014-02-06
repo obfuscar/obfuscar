@@ -61,13 +61,28 @@ namespace Obfuscar
 			for (int i = startPoint; i < startPoint + 128; i++)
 				chars.Add((char)i);
 
-			chars.Sort((x,y) => rnd.Next(-1,1));
+			ShuffleArray(chars, rnd);
 			koreanChars = new string(chars.ToArray());
 
 			UseKoreanChars = false;
 		}
 
-		public static bool UseUnicodeChars {
+		private static void ShuffleArray<T>(IList<T> list, Random rnd)
+		{
+			int n = list.Count;
+			while (n > 1)
+			{
+				n--;
+				int k = rnd.Next(n + 1);
+				T value = list[k];
+				list[k] = list[n];
+				list[n] = value;
+			}  
+
+		}
+
+		public static bool UseUnicodeChars
+		{
 			get {
 				return uniqueChars == unicodeChars;
 			}
