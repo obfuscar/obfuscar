@@ -613,7 +613,7 @@ namespace Obfuscar
 							continue;
 
 						try {
-							using (var bamlReader = new XmlBamlReader (stream, new CecilTypeResolver (project.InheritMap.Cache.Resolver, library)))
+							using (var bamlReader = new XmlBamlReader (stream, new CecilTypeResolver (project.InheritMap.Cache, library)))
 								result.Add (XDocument.Load (bamlReader));
 						} catch (ArgumentException) {
 						} catch (FileNotFoundException) {
