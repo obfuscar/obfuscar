@@ -40,11 +40,11 @@
 
 	<ItemGroup>
 		<CompileSolution Include="$(BasePath)\BasicExample.sln" />
-		<CompileSolution Include="..\..\Obfuscar\Obfuscar.sln" />
+		<CompileObfuscar Include="..\..\Obfuscar\Obfuscar.sln" />
 	</ItemGroup>
 
 	<!-- clean, compile and package! -->
-	<Target Name="BuildAll" DependsOnTargets="Clean;Compile;Obfuscate" />
+	<Target Name="BuildAll" DependsOnTargets="Prepare;Clean;Compile;Obfuscate" />
 
 	<!-- clean outputs and temp obfuscation files -->
 	<Target Name="Clean">
@@ -57,6 +57,12 @@
 		<RemoveDir Directories="$(ObfuscatorOutput)" />
 	</Target>
 
+	<!-- prepare -->
+	<Target Name="Prepare">
+		<MSBuild Projects="@(CompileObfuscar)"
+			Properties="Configuration=$(Configuration);BuildType=$(BuildType)" />
+	</Target>
+	
 	<!-- compile -->
 	<Target Name="Compile">
 		<MSBuild Projects="@(CompileSolution)"
