@@ -64,6 +64,35 @@ namespace Obfuscar
 
 		public string KeyContainerName = null;
 
+        public byte[] keyPair;
+        public byte[] KeyPair
+        {
+            get
+            {
+                if (keyPair != null)
+                    return keyPair;
+
+                var lKeyFileName = vars.GetValue("KeyFile", null);
+                var lKeyContainerName = vars.GetValue("KeyContainer", null);
+
+                if (lKeyFileName == null && lKeyContainerName == null)
+                    return null;
+                if (lKeyFileName != null && lKeyContainerName != null)
+                    throw new ObfuscarException("'Key file' and 'Key container' properties cann't be setted together.");
+
+                try
+                {
+                    keyPair = File.ReadAllBytes(vars.GetValue("KeyFile", null));
+                }
+                catch (Exception ex)
+                {
+                    throw new ObfuscarException(String.Format("Failure loading key file \"{0}\"", vars.GetValue("KeyFile", null)), ex);
+                }
+
+                return keyPair;
+            }
+        }
+
 		public RSA KeyValue {
 			get {
 				if (keyvalue != null)
@@ -75,49 +104,14 @@ namespace Obfuscar
 				if (lKeyFileName == null && lKeyContainerName == null)
 					return null;
 				if (lKeyFileName != null && lKeyContainerName != null)
-					throw new Exception ("'Key file' and 'Key container' properties cann't be setted together.");
+					throw new ObfuscarException ("'Key file' and 'Key container' properties cann't be setted together.");
 
 				if (vars.GetValue ("KeyContainer", null) != null) {
 					KeyContainerName = vars.GetValue ("KeyContainer", null);
-					return RSA.Create ();
-					//if (Type.GetType("System.MonoType") != null)
-					//    throw new Exception("Key containers are not supported for Mono.");
-
-					//try
-					//{
-					//    CspParameters cp = new CspParameters();
-					//    cp.KeyContainerName = vars.GetValue("KeyContainer", null);
-					//    cp.Flags = CspProviderFlags.UseMachineKeyStore | CspProviderFlags.UseExistingKey;
-					//    cp.KeyNumber = 1;
-
-					//    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(cp);
-					//    keyvalue = CryptoConvert.FromCapiKeyBlob(rsa.ExportCspBlob(false));
-					//}
-					//catch (Exception CryptEx)
-					////catch (System.Security.Cryptography.CryptographicException CryptEx)
-					//{
-					//    try
-					//    {
-					//        CspParameters cp = new CspParameters();
-					//        cp.KeyContainerName = vars.GetValue("KeyContainer", null);
-					//        cp.Flags = CspProviderFlags.UseExistingKey;
-					//        cp.KeyNumber = 1;
-
-					//        RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(cp);
-					//        keyvalue = CryptoConvert.FromCapiKeyBlob(rsa.ExportCspBlob(false));
-					//    }
-					//    catch
-					//    {
-					//        throw new ObfuscarException(String.Format("Failure loading key from container - \"{0}\"", vars.GetValue("KeyContainer", null)), CryptEx);
-					//    }
-					//}
-				} else {
-					try {
-						keyvalue = CryptoConvert.FromCapiKeyBlob (File.ReadAllBytes (vars.GetValue ("KeyFile", null)));
-					} catch (Exception ex) {
-						throw new ObfuscarException (String.Format ("Failure loading key file \"{0}\"", vars.GetValue ("KeyFile", null)), ex);
-					}
-				}           				
+                    if (Type.GetType("System.MonoType") != null)
+                        throw new ObfuscarException("Key containers are not supported for Mono.");
+				} 
+   				
 				return keyvalue;
 			}
 		}

@@ -200,65 +200,29 @@ namespace Obfuscar
 			// save the modified assemblies
 			foreach (AssemblyInfo info in project) {
 				string outName = Path.Combine (outPath, Path.GetFileName (info.Filename));
-				if (project.Settings.RegenerateDebugInfo)
-					info.Definition.Write (outName, new WriterParameters { SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider () });
-				else
-					info.Definition.Write (outName);
+                var parameters = new WriterParameters();
+                if (project.Settings.RegenerateDebugInfo)
+                {
+                   parameters.SymbolWriterProvider  = new Mono.Cecil.Pdb.PdbWriterProvider ();
+                }
 
-				if (info.Definition.Name.HasPublicKey)
-				if (project.KeyContainerName != null) {
-					MsNetSigner.SignAssemblyFromKeyContainer (outName, project.KeyContainerName);
-				} else {
-					var sn = new StrongName (project.KeyValue);
-					sn.Sign (outName);
-				}
+                if (info.Definition.Name.HasPublicKey)
+                {
+                    if (project.KeyContainerName != null)
+                    {
+                        info.Definition.Write(outName, parameters);
+                        MsNetSigner.SignAssemblyFromKeyContainer(outName, project.KeyContainerName);
+                    }
+
+                    if (project.KeyPair != null)
+                    {
+                        parameters.StrongNameKeyPair = new System.Reflection.StrongNameKeyPair(project.KeyPair);
+                        info.Definition.Write(outName, parameters);
+                    }
+                }
 			}
 
 			TypeNameCache.nameCache.Clear ();
-		}
-
-		private void SignAssembly (AssemblyInfo info, string outName)
-		{
-			// Re-sign assembly
-			if (!info.Definition.Name.HasPublicKey)
-				return;
-
-			if (project.Settings.KeyFile == null)
-				return;
-
-			string keyfilepath = project.Settings.KeyFile;
-
-			if (string.CompareOrdinal (keyfilepath, "auto") == 0) {
-				keyfilepath = null;
-				foreach (CustomAttribute ca in info.Definition.CustomAttributes) {
-					if (ca.Constructor.DeclaringType.FullName ==
-					    typeof(System.Reflection.AssemblyKeyFileAttribute).FullName) {
-						keyfilepath = (string)ca.ConstructorArguments [0].Value;
-					}
-				}
-
-				if (keyfilepath == null) {
-					throw new ObfuscarException (string.Format ("KeyFile='auto', but assembly '{0}' contains no AssemblyKeyFileAttribute", info.Filename));
-				}
-			}
-
-			if (!Path.IsPathRooted (keyfilepath)) {
-				foreach (string checkpath in new[] { ".", Path.GetDirectoryName(info.Filename) }) {
-					string newpath = Path.Combine (checkpath, keyfilepath);
-					if (File.Exists (newpath)) {
-						keyfilepath = newpath;
-						break;
-					}
-				}
-			}
-
-			try {
-				var sn = new StrongName (CryptoConvert.FromCapiKeyBlob (File.ReadAllBytes (keyfilepath)));
-				sn.Sign (outName);
-			} catch (Exception ex) {
-				throw new ObfuscarException (
-					string.Format ("Failed to sign '{1}' with key file \"{0}\"", keyfilepath, info.Filename), ex);
-			}
 		}
 
 		/// <summary>
