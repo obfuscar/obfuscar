@@ -198,26 +198,23 @@ namespace Obfuscar
 			// save the modified assemblies
 			foreach (AssemblyInfo info in project) {
 				string outName = Path.Combine (outPath, Path.GetFileName (info.Filename));
-                var parameters = new WriterParameters();
-                if (project.Settings.RegenerateDebugInfo)
-                {
-                   parameters.SymbolWriterProvider  = new Mono.Cecil.Pdb.PdbWriterProvider ();
-                }
+				var parameters = new WriterParameters ();
+				if (project.Settings.RegenerateDebugInfo)
+					parameters.SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider ();
 
-                if (info.Definition.Name.HasPublicKey)
-                {
-                    if (project.KeyContainerName != null)
-                    {
-                        info.Definition.Write(outName, parameters);
-                        MsNetSigner.SignAssemblyFromKeyContainer(outName, project.KeyContainerName);
-                    }
+				if (info.Definition.Name.HasPublicKey) {
+					if (project.KeyContainerName != null) {
+						info.Definition.Write (outName, parameters);
+						MsNetSigner.SignAssemblyFromKeyContainer (outName, project.KeyContainerName);
+					}
 
-                    if (project.KeyPair != null)
-                    {
-                        parameters.StrongNameKeyPair = new System.Reflection.StrongNameKeyPair(project.KeyPair);
-                        info.Definition.Write(outName, parameters);
-                    }
-                }
+					if (project.KeyPair != null) {
+						parameters.StrongNameKeyPair = new System.Reflection.StrongNameKeyPair (project.KeyPair);
+						info.Definition.Write (outName, parameters);
+					}
+				} else {
+					info.Definition.Write (outName, parameters);
+				}
 			}
 
 			TypeNameCache.nameCache.Clear ();
