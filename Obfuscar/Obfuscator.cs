@@ -1127,6 +1127,11 @@ namespace Obfuscar
 				var systemValueTypeTypeReference = new TypeReference ("System", "ValueType", library.MainModule, library.MainModule.TypeSystem.Corlib);
 				var systemByteTypeReference = library.MainModule.TypeSystem.Byte;
 				var systemIntTypeReference = library.MainModule.TypeSystem.Int32;
+				var encoding = new TypeReference ("System.Text", "Encoding", library.MainModule, library.MainModule.TypeSystem.Corlib).Resolve ();
+				var method1 = library.MainModule.Import (encoding.Methods.FirstOrDefault (method => method.Name == "get_UTF8"));
+				var method2 = library.MainModule.Import (encoding.Methods.FirstOrDefault (method => method.FullName == "System.String System.Text.Encoding::GetString(System.Byte[],System.Int32,System.Int32)"));
+				var runtimeHelpers = new TypeReference ("System.Runtime.CompilerServices", "RuntimeHelpers", library.MainModule, library.MainModule.TypeSystem.Corlib).Resolve ();
+				var method3 = library.MainModule.Import (runtimeHelpers.Methods.FirstOrDefault (method => method.Name == "InitializeArray"));
 
 				// New static class with a method for each unique string we substitute.
 				TypeDefinition newtype = new TypeDefinition ("<PrivateImplementationDetails>{" + Guid.NewGuid ().ToString ().ToUpper () + "}", null, TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, systemObjectTypeReference);
@@ -1159,15 +1164,11 @@ namespace Obfuscar
 				stringGetterMethodDefinition.Body.Variables.Add (new VariableDefinition (systemStringTypeReference));
 				ILProcessor worker3 = stringGetterMethodDefinition.Body.GetILProcessor ();
 
-				worker3.Emit (OpCodes.Call, library.MainModule.Import (typeof(System.Text.Encoding).GetProperty ("UTF8").GetGetMethod ()));
+				worker3.Emit (OpCodes.Call, method1);
 				worker3.Emit (OpCodes.Ldsfld, dataField);
 				worker3.Emit (OpCodes.Ldarg_1);
 				worker3.Emit (OpCodes.Ldarg_2);
-				worker3.Emit (OpCodes.Callvirt, library.MainModule.Import (typeof(System.Text.Encoding).GetMethod ("GetString", new[] {
-					typeof(byte[]),
-					typeof(int),
-					typeof(int)
-				})));
+				worker3.Emit (OpCodes.Callvirt, method2);
 				worker3.Emit (OpCodes.Stloc_0);
 
 				worker3.Emit (OpCodes.Ldsfld, stringArrayField);
@@ -1262,7 +1263,7 @@ namespace Obfuscar
 				worker2.Emit (OpCodes.Newarr, systemByteTypeReference);
 				worker2.Emit (OpCodes.Dup);
 				worker2.Emit (OpCodes.Ldtoken, dataConstantField);
-				worker2.Emit (OpCodes.Call, library.MainModule.Import (typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod ("InitializeArray")));
+				worker2.Emit (OpCodes.Call, method3);
 				worker2.Emit (OpCodes.Stsfld, dataField);
 
 				worker2.Emit (OpCodes.Ldc_I4_0);
