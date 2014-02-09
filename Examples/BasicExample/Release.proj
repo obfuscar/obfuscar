@@ -26,7 +26,7 @@
 
 	<!-- obfuscator bits -->
 	<PropertyGroup>
-		<ObfuscatorExe>..\..\Obfuscar\Bin\Release\obfuscar.Console.exe</ObfuscatorExe>
+		<ObfuscatorExe>..\..\Bin\Release\obfuscar.Console.exe</ObfuscatorExe>
 		<ObfuscatorProject>$(BasePath)\obfuscar.xml</ObfuscatorProject>
 		<ObfuscatorInput>$(BasePath)\Obfuscator_Input</ObfuscatorInput>
 		<ObfuscatorOutput>$(BasePath)\Obfuscator_Output</ObfuscatorOutput>
@@ -40,7 +40,7 @@
 
 	<ItemGroup>
 		<CompileSolution Include="$(BasePath)\BasicExample.sln" />
-		<CompileObfuscar Include="..\..\Obfuscar\Obfuscar.sln" />
+		<CompileObfuscar Include="..\..\Obfuscar.sln" />
 	</ItemGroup>
 
 	<!-- clean, compile and package! -->
