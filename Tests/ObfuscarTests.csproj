@@ -108,7 +108,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Obfuscar.csproj">
+    <ProjectReference Include="..\Obfuscar\Obfuscar.csproj">
       <Project>{F28CDDFF-5A7A-413E-809E-15FFB8766E86}</Project>
       <Name>Obfuscar</Name>
     </ProjectReference>

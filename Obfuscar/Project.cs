@@ -22,7 +22,6 @@
 /// </copyright>
 #endregion
 using Mono.Cecil;
-using Mono.Security.Cryptography;
 using System;
 using System.Collections;
 using System.Collections.Generic;

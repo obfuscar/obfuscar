@@ -36,8 +36,6 @@ using ILSpy.BamlDecompiler;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
-using Mono.Security;
-using Mono.Security.Cryptography;
 using Ricciolo.StylesExplorer.MarkupReflection;
 
 namespace Obfuscar
