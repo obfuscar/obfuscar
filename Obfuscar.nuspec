@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
+  <metadata>
+    <version>2.0.0-beta</version>
+    <authors>Ryan Williams, and other contributors.</authors>
+    <owners>Lex Li</owners>
+    <licenseUrl>https://obfuscar.codeplex.com/license</licenseUrl>
+    <projectUrl>https://obfuscar.codeplex.com</projectUrl>
+    <id>Obfuscar</id>
+    <title>Obfuscar</title>	
+	<iconUrl>http://lextudio.com/images/obfuscar32.png</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Obfuscar is a basic obfuscator for .NET assemblies. It uses massive overloading to rename metadata in .NET assemblies (including the names of methods, properties, events, fields, types and namespaces) to a minimal set, distinguishable in most cases only by signature.</description>
+    <summary>Open source obfuscar for .NET and Mono.</summary>
+    <releaseNotes>The changes since last commit on Google Code include,
+* Merged all patches from RemObjects' fork.
+	** Unicode chars can be used as obfuscated names.
+	** Better dependency resolution.
+	** Various other small fixes.
+* Merged patches from @AngryAnt (Emil Johansen)'s fork
+	** Korean chars can be used as obfuscated names.
+	** New tags are introduced (I could not yet verify every one, as there is no corresponding unit test cases).
+* Add an option to automatic exclude of public types and members so that public API is kept.
+* Add an option to automatic include all non-public types and members so that private API is obfuscated.
+* Add Force* rules to supplement Skip* rules.
+* Various bug fixes.</releaseNotes>
+    <copyright>(C) 2007-2014 Ryan Williams and other contributors.</copyright>
+    <language>en-US</language>
+    <tags>obfuscation,obfuscator,open source</tags>
+  </metadata>
+  <files>
+    <file src="bin\release\obfuscar.console.exe" target="tools" />
+  </files>
+</package>
