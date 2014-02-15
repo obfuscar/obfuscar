@@ -1267,7 +1267,7 @@ namespace Obfuscar
 
 		public void PostProcessing ()
 		{
-			foreach (AssemblyInfo info in project)
+			foreach (AssemblyInfo info in project) {
 				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
 					if (type.FullName == "<Module>")
 						continue;
@@ -1281,6 +1281,32 @@ namespace Obfuscar
 							method.Body.OptimizeMacros ();
 					}
 				}
+
+				if (!Project.Settings.SupressIldasm)
+					continue;
+
+				var module = info.Definition.MainModule;
+				var attribute = new TypeReference ("System.Runtime.CompilerServices", "SuppressIldasmAttribute", module, module.TypeSystem.Corlib).Resolve ();
+				CustomAttribute found = null;
+				foreach (CustomAttribute existing in module.CustomAttributes)
+				{
+					if (existing.Constructor.DeclaringType.FullName == attribute.FullName)
+					{
+						found = existing;
+						break;
+					}
+				}
+
+				//Only add if it's not there already
+				if (found != null)
+					continue;
+
+				//Add one
+				var add = module.Import (attribute.GetConstructors ().FirstOrDefault (item => !item.HasParameters));
+				MethodReference constructor = module.Import(add);
+				CustomAttribute attr = new CustomAttribute(constructor);
+				module.CustomAttributes.Add(attr);
+			}
 		}
 
 		public static class MsNetSigner

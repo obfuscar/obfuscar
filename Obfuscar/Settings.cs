@@ -44,6 +44,7 @@ namespace Obfuscar
 		bool xmlMapping;
 		bool hideStrings;
 		bool optimize;
+		bool supressIldasm;
 		bool renegerateDebugInfo;
 		string keyFile;
 
@@ -63,6 +64,7 @@ namespace Obfuscar
 			useKoreanNames = XmlConvert.ToBoolean (vars.GetValue ("UseKoreanNames", "false"));
 			hideStrings = XmlConvert.ToBoolean (vars.GetValue ("HideStrings", "true"));
 			optimize = XmlConvert.ToBoolean (vars.GetValue ("OptimizeMethods", "true"));
+			supressIldasm = XmlConvert.ToBoolean (vars.GetValue ("SupressIldasm", "true"));
 
 			xmlMapping = XmlConvert.ToBoolean (vars.GetValue ("XmlMapping", "false"));
 			renegerateDebugInfo = XmlConvert.ToBoolean (vars.GetValue ("RegenerateDebugInfo", "false"));
@@ -115,6 +117,10 @@ namespace Obfuscar
 
 		public bool Optimize {
 			get { return optimize; }
+		}
+
+		public bool SupressIldasm {
+			get { return supressIldasm; }
 		}
 
 		public bool XmlMapping {
