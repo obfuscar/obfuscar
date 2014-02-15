@@ -25,6 +25,7 @@ using Mono.Cecil;
 using System.Collections.Generic;
 using System.IO;
 using System;
+using Obfuscar.Helpers;
 
 namespace Obfuscar
 {
@@ -60,24 +61,12 @@ namespace Obfuscar
 				throw new ObfuscarException ("Unable to resolve dependency:  " + name.Name);
 			}
 
-			string fullName = null;
-			while (type.IsNested) {
-				if (fullName == null)
-					fullName = type.Name;
-				else
-					fullName = type.Name + "/" + fullName;
-				type = type.DeclaringType;
-			}
-
-			if (fullName == null)
-				fullName = type.Namespace + "." + type.Name;
-			else
-				fullName = type.Namespace + "." + type.Name + "/" + fullName;
+			string fullName = type.GetFullName ();
 			typeDef = assmDef.MainModule.GetType (fullName);
 			return typeDef;
 		}
 
-		public void RegisterAssembly (AssemblyDefinition assembly)
+		public new void RegisterAssembly (AssemblyDefinition assembly)
 		{
 			base.RegisterAssembly (assembly);
 		}

@@ -29,6 +29,7 @@ using System.Xml;
 using System.Diagnostics;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 
 namespace Obfuscar
 {
@@ -333,10 +334,10 @@ namespace Obfuscar
 		{
 			public List<Node<TypeDefinition>> Root = new List<Node<TypeDefinition>> ();
 
-			public Graph (List<TypeDefinition> items)
+			public Graph (IEnumerable<TypeDefinition> items)
 			{
 				foreach (var item in items)
-					Root.Add (new Node<TypeDefinition> { Definition = item });
+					Root.Add (new Node<TypeDefinition> { Item = item });
 
 				AddParents (Root);
 			}
@@ -344,19 +345,19 @@ namespace Obfuscar
 			private static void AddParents (List<Node<TypeDefinition>> nodes)
 			{
 				foreach (var node in nodes) {
-					var baseType = node.Definition.BaseType;
+					var baseType = node.Item.BaseType;
 					if (baseType != null) {
 						var parent = SearchNode (baseType, nodes);
 						node.AppendTo (parent);
 					}
 
-					if (node.Definition.HasInterfaces)
-						foreach (var inter in node.Definition.Interfaces) {
+					if (node.Item.HasInterfaces)
+						foreach (var inter in node.Item.Interfaces) {
 							var parent = SearchNode (inter, nodes);
 							node.AppendTo (parent);
 						}
 
-					var nestedParent = node.Definition.DeclaringType;
+					var nestedParent = node.Item.DeclaringType;
 					if (nestedParent != null) {
 						var parent = SearchNode (nestedParent, nodes);
 						node.AppendTo (parent);                        
@@ -366,7 +367,7 @@ namespace Obfuscar
 
 			private static Node<TypeDefinition> SearchNode (TypeReference baseType, List<Node<TypeDefinition>> nodes)
 			{
-				return nodes.FirstOrDefault (node => node.Definition.FullName == baseType.FullName);
+				return nodes.FirstOrDefault (node => node.Item.FullName == baseType.FullName);
 			}
 
 			internal IEnumerable<TypeDefinition> GetOrderedList ()
@@ -383,17 +384,17 @@ namespace Obfuscar
 					foreach (var node in pool) {
 						if (node.Parents.Count == 0) {
 							toRemoved.Add (node);
-							if (result.Contains (node.Definition))
+							if (result.Contains (node.Item))
 								continue;
 
-							result.Add (node.Definition);
+							result.Add (node.Item);
 						}
 					}
 
 					foreach (var remove in toRemoved) {
 						pool.Remove (remove);
 						foreach (var child in remove.Children) {
-							if (result.Contains (child.Definition))
+							if (result.Contains (child.Item))
 								continue;
 
 							child.Parents.Remove (remove);
@@ -403,41 +404,15 @@ namespace Obfuscar
 			}
 		}
 
-		private class Node<T>
-		{
-			public List<Node<T>> Parents = new List<Node<T>> ();
-			public List<Node<T>> Children = new List<Node<T>> ();
-			public T Definition;
-
-			public void AppendTo (Node<T> parent)
-			{
-				if (parent == null)
-					return;
-
-				parent.Children.Add (this);
-				Parents.Add (parent);
-			}
-		}
-
 		public IEnumerable<TypeDefinition> GetAllTypeDefinitions ()
 		{
-			var result = new List<TypeDefinition> ();
-			foreach (TypeDefinition typedef in definition.MainModule.Types)
-				GetAllTypeDefinitions (typedef, result);
-
+			var result = definition.MainModule.GetAllTypes ();
 			var graph = new Graph (result);
 			var list = graph.GetOrderedList ();
-			if (list.Count () != result.Count)
+			if (list.Count () != result.Count ())
 				throw new Exception ("Graph error");
 
 			return list;
-		}
-
-		private void GetAllTypeDefinitions (TypeDefinition type, IList<TypeDefinition> result)
-		{
-			result.Add (type);
-			foreach (var nestedTypeDefition in type.NestedTypes)
-				GetAllTypeDefinitions (nestedTypeDefition, result);
 		}
 
 		private IEnumerable<MemberReference> getMemberReferences ()

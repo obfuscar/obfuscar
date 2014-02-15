@@ -24,29 +24,31 @@
 using System;
 using System.Xml;
 using System.Text.RegularExpressions;
-
 using Mono.Cecil;
+using System.Collections.Generic;
 
 namespace Obfuscar
 {
+	class Node<T>
+	{
+		public List<Node<T>> Parents = new List<Node<T>> ();
+		public List<Node<T>> Children = new List<Node<T>> ();
+		public T Item;
+
+		public void AppendTo (Node<T> parent)
+		{
+			if (parent == null)
+				return;
+
+			parent.Children.Add (this);
+			Parents.Add (parent);
+		}
+	}
+
 	static class Helper
 	{
 		public static void Noop ()
 		{
-		}
-
-		/// <summary>
-		/// Returns the simplified name for the assembly where a type can be found,
-		/// for example, a type whose module is "Assembly.exe", "Assembly" would be 
-		/// returned.
-		/// </summary>
-		public static string GetScopeName (TypeReference type)
-		{
-			ModuleDefinition module = type.Scope as ModuleDefinition;
-			if (module != null)
-				return module.Assembly.Name.Name;
-			else
-				return type.Scope.Name;
 		}
 
 		/// <summary>
@@ -86,7 +88,7 @@ namespace Obfuscar
 						return false;
 					testIdx++;
 				} else {
-					while (!MatchWithWildCards(test, testIdx, pattern, patIdx + 1)) {
+					while (!MatchWithWildCards (test, testIdx, pattern, patIdx + 1)) {
 						if (test.Length <= testIdx++)
 							return false;
 					}

@@ -137,6 +137,7 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="EventTester.cs" />
     <Compile Include="EventKey.cs" />
+    <Compile Include="Helpers\TypeReferenceExtensions.cs" />
     <Compile Include="NamespaceTester.cs" />
     <Compile Include="ObfuscarException.cs" />
     <Compile Include="PropertyKey.cs" />
@@ -182,6 +183,10 @@
     <ProjectReference Include="..\cecil\Mono.Cecil.csproj">
       <Project>{d68133bd-1e63-496e-9ede-4fbdbf77b486}</Project>
       <Name>Mono.Cecil</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cecil\rocks\Mono.Cecil.Rocks.csproj">
+      <Project>{fbc6dd59-d09d-499c-b03c-99c1c78ff2ac}</Project>
+      <Name>Mono.Cecil.Rocks</Name>
     </ProjectReference>
     <ProjectReference Include="..\cecil\symbols\pdb\Mono.Cecil.Pdb.csproj">
       <Project>{63e6915c-7ea4-4d76-ab28-0d7191eea626}</Project>

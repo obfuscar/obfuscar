@@ -29,6 +29,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Xml;
+using Obfuscar.Helpers;
 
 namespace Obfuscar
 {
@@ -62,35 +63,30 @@ namespace Obfuscar
 		}
 
 		public string KeyContainerName = null;
+		public byte[] keyPair;
 
-        public byte[] keyPair;
-        public byte[] KeyPair
-        {
-            get
-            {
-                if (keyPair != null)
-                    return keyPair;
+		public byte[] KeyPair {
+			get {
+				if (keyPair != null)
+					return keyPair;
 
-                var lKeyFileName = vars.GetValue("KeyFile", null);
-                var lKeyContainerName = vars.GetValue("KeyContainer", null);
+				var lKeyFileName = vars.GetValue ("KeyFile", null);
+				var lKeyContainerName = vars.GetValue ("KeyContainer", null);
 
-                if (lKeyFileName == null && lKeyContainerName == null)
-                    return null;
-                if (lKeyFileName != null && lKeyContainerName != null)
-                    throw new ObfuscarException("'Key file' and 'Key container' properties cann't be setted together.");
+				if (lKeyFileName == null && lKeyContainerName == null)
+					return null;
+				if (lKeyFileName != null && lKeyContainerName != null)
+					throw new ObfuscarException ("'Key file' and 'Key container' properties cann't be setted together.");
 
-                try
-                {
-                    keyPair = File.ReadAllBytes(vars.GetValue("KeyFile", null));
-                }
-                catch (Exception ex)
-                {
-                    throw new ObfuscarException(String.Format("Failure loading key file \"{0}\"", vars.GetValue("KeyFile", null)), ex);
-                }
+				try {
+					keyPair = File.ReadAllBytes (vars.GetValue ("KeyFile", null));
+				} catch (Exception ex) {
+					throw new ObfuscarException (String.Format ("Failure loading key file \"{0}\"", vars.GetValue ("KeyFile", null)), ex);
+				}
 
-                return keyPair;
-            }
-        }
+				return keyPair;
+			}
+		}
 
 		public RSA KeyValue {
 			get {
@@ -107,8 +103,8 @@ namespace Obfuscar
 
 				if (vars.GetValue ("KeyContainer", null) != null) {
 					KeyContainerName = vars.GetValue ("KeyContainer", null);
-                    if (Type.GetType("System.MonoType") != null)
-                        throw new ObfuscarException("Key containers are not supported for Mono.");
+					if (Type.GetType ("System.MonoType") != null)
+						throw new ObfuscarException ("Key containers are not supported for Mono.");
 				} 
    				
 				return keyvalue;
@@ -172,7 +168,7 @@ namespace Obfuscar
 			public Graph (List<AssemblyInfo> items)
 			{
 				foreach (var item in items)
-					Root.Add (new Node<AssemblyInfo> { Entity = item });
+					Root.Add (new Node<AssemblyInfo> { Item = item });
 
 				AddParents (Root);
 			}
@@ -180,7 +176,7 @@ namespace Obfuscar
 			private static void AddParents (List<Node<AssemblyInfo>> nodes)
 			{
 				foreach (var node in nodes) {
-					var references = node.Entity.References;
+					var references = node.Item.References;
 					foreach (var reference in references) {
 						var parent = SearchNode (reference, nodes);
 						node.AppendTo (parent);
@@ -190,7 +186,7 @@ namespace Obfuscar
 
 			private static Node<AssemblyInfo> SearchNode (AssemblyInfo baseType, List<Node<AssemblyInfo>> nodes)
 			{
-				return nodes.FirstOrDefault (node => node.Entity == baseType);
+				return nodes.FirstOrDefault (node => node.Item == baseType);
 			}
 
 			internal IEnumerable<AssemblyInfo> GetOrderedList ()
@@ -207,40 +203,23 @@ namespace Obfuscar
 					foreach (var node in pool) {
 						if (node.Parents.Count == 0) {
 							toRemoved.Add (node);
-							if (result.Contains (node.Entity))
+							if (result.Contains (node.Item))
 								continue;
 
-							result.Add (node.Entity);
+							result.Add (node.Item);
 						}
 					}
 
 					foreach (var remove in toRemoved) {
 						pool.Remove (remove);
 						foreach (var child in remove.Children) {
-							if (result.Contains (child.Entity))
+							if (result.Contains (child.Item))
 								continue;
 
 							child.Parents.Remove (remove);
 						}
 					}
 				}
-			}
-		}
-
-		// TODO: find a way reuse Node and Graph
-		private class Node<T>
-		{
-			public List<Node<T>> Parents = new List<Node<T>> ();
-			public List<Node<T>> Children = new List<Node<T>> ();
-			public T Entity;
-
-			public void AppendTo (Node<T> parent)
-			{
-				if (parent == null)
-					return;
-
-				parent.Children.Add (this);
-				Parents.Add (parent);
 			}
 		}
 
@@ -315,7 +294,7 @@ namespace Obfuscar
 		/// </summary>
 		public bool Contains (TypeReference type)
 		{
-			string name = Helper.GetScopeName (type);
+			string name = type.GetScopeName ();
 
 			return assemblyMap.ContainsKey (name);
 		}
@@ -335,7 +314,7 @@ namespace Obfuscar
 
 			TypeDefinition typeDef = type as TypeDefinition;
 			if (typeDef == null) {
-				string name = Helper.GetScopeName (type);
+				string name = type.GetScopeName ();
 
 				AssemblyInfo info;
 				if (assemblyMap.TryGetValue (name, out info)) {

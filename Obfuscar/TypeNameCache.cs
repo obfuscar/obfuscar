@@ -24,8 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using Mono.Cecil;
+using Obfuscar.Helpers;
 
 namespace Obfuscar
 {
@@ -46,7 +46,7 @@ namespace Obfuscar
 			} else {
 				GenericInstanceType genType = type as GenericInstanceType;
 				if (genType != null) {
-					builder.AppendFormat ("[{2}]{0}.{1}<", genType.Namespace, genType.Name, Helper.GetScopeName (type));
+					builder.AppendFormat ("[{2}]{0}.{1}<", genType.Namespace, genType.Name, type.GetScopeName ());
 					for (int i = 0; i < genType.GenericArguments.Count; i++) {
 						TypeReference argType = genType.GenericArguments [i];
 
@@ -62,7 +62,7 @@ namespace Obfuscar
 						BuildTypeName (builder, arrType.ElementType);
 						builder.Append ("[]");
 					} else
-						builder.Append (String.Format ("[{1}]{0}", type.FullName, Helper.GetScopeName (type)));
+						builder.Append (String.Format ("[{1}]{0}", type.FullName, type.GetScopeName ()));
 				}
 			}
 		}

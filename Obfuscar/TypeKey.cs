@@ -24,8 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using Mono.Cecil;
+using Obfuscar.Helpers;
 
 namespace Obfuscar
 {
@@ -41,7 +41,7 @@ namespace Obfuscar
 		public TypeKey (TypeReference type)
 		{
 			this.typeReference = type;
-			this.scope = Helper.GetScopeName (type);
+			this.scope = type.GetScopeName ();
 
 			this.name = type.Name;
 			TypeReference declaringType = type;
@@ -64,7 +64,7 @@ namespace Obfuscar
 		}
 
 		public TypeKey (string scope, string ns, string name)
-			: this(scope, ns, name, ns + "." + name)
+			: this (scope, ns, name, ns + "." + name)
 		{
 		}
 
@@ -118,11 +118,11 @@ namespace Obfuscar
 		public bool Equals (TypeKey other)
 		{
 			return other != null &&
-				hashCode == other.hashCode &&
-				scope == other.scope &&
-				ns == other.ns &&
-				name == other.name &&
-				fullname == other.fullname;
+			hashCode == other.hashCode &&
+			scope == other.scope &&
+			ns == other.ns &&
+			name == other.name &&
+			fullname == other.fullname;
 		}
 
 		public override bool Equals (object obj)
