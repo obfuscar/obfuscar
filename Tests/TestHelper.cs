@@ -80,6 +80,7 @@ namespace ObfuscarTests
 			obfuscator.RenameEvents( );
 			obfuscator.RenameMethods( );
 			obfuscator.RenameTypes( );
+			obfuscator.PostProcessing ();
 			obfuscator.SaveAssemblies( );
 
 			return obfuscator;

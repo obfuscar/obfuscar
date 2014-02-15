@@ -20,6 +20,9 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+using Mono.Cecil.Rocks;
+
+
 #endregion
 using System;
 using System.Collections;
@@ -119,6 +122,8 @@ namespace Obfuscar
 				LogOutput ("hiding strings...\n");
 				this.HideStrings ();
 			}
+
+			this.PostProcessing ();
 
 			LogOutput ("Done.\n");
 
@@ -1258,6 +1263,24 @@ namespace Obfuscar
 
 				library.MainModule.Types.Add (newtype);
 			}
+		}
+
+		public void PostProcessing ()
+		{
+			foreach (AssemblyInfo info in project)
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
+					if (type.FullName == "<Module>")
+						continue;
+
+					TypeKey typeKey = new TypeKey (type);
+
+					// first pass.  mark grouped virtual methods to be renamed, and mark some things
+					// to be skipped as neccessary
+					foreach (MethodDefinition method in type.Methods) {
+						if (method.HasBody && Project.Settings.Optimize)
+							method.Body.OptimizeMacros ();
+					}
+				}
 		}
 
 		public static class MsNetSigner
