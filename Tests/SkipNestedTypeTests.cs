@@ -69,23 +69,23 @@ namespace ObfuscarTests
 		public void CheckDefault ()
 		{
 			string xml = String.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Var name='HidePrivateApi' value='true' />" +
-				@"<Var name='KeepPublicApi' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithNestedTypes2.dll'>" +
-				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
+				             @"<Var name='KeepPublicApi' value='true' />" +
+				             @"<Module file='$(InPath)\AssemblyWithNestedTypes2.dll'>" +
+				             @"</Module>" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithNestedTypes2", string.Empty, xml);
 
 			HashSet<string> typesToFind = new HashSet<string> ();
 			typesToFind.Add ("TestClasses.ClassA");
 			typesToFind.Add ("TestClasses.ClassA/A");
-			typesToFind.Add ("A.A/a/A");
-			typesToFind.Add ("A.A/NestedClassA");
+			typesToFind.Add ("TestClasses.ClassA/NestedClassB");
+			typesToFind.Add ("TestClasses.ClassA/NestedClassB/NestedClassC");
 
 			AssemblyHelper.CheckAssembly ("AssemblyWithNestedTypes2", 1,
 				delegate {

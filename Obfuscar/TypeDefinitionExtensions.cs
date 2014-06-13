@@ -1,28 +1,19 @@
 ﻿using Mono.Cecil;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Obfuscar
 {
 	internal static class TypeDefinitionExtensions
 	{
-		public static bool IsTruePublic (this TypeDefinition type)
+		static public bool IsTypePublic (this TypeDefinition type)
 		{
-			if (!type.IsPublic)
-				return false;
-
-			var parentType = type.DeclaringType;
-			while (parentType != null) {
-				if (!parentType.IsPublic)
+			if (type.DeclaringType != null) {
+				if (type.IsNestedFamily || type.IsNestedFamilyOrAssembly || type.IsNestedPublic)
+					return IsTypePublic (type.DeclaringType);
+				else
 					return false;
-
-				parentType = parentType.DeclaringType;
+			} else {
+				return type.IsPublic;
 			}
-
-			return true;
 		}
 
 		public static bool? MarkedToRename (this ICustomAttributeProvider type, bool member = false)

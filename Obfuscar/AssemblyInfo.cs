@@ -626,7 +626,7 @@ namespace Obfuscar
 				return true;
 			}
 
-			if (type.TypeDefinition.IsTruePublic ()) {
+			if (type.TypeDefinition.IsTypePublic ()) {
 				message = "KeepPublicApi option in configuration";
 					return keepPublicApi;
 				}
@@ -696,7 +696,7 @@ namespace Obfuscar
 				return true;
 			}
 
-			if (method.DeclaringType.IsTruePublic () && (method.Method.IsPublic || method.Method.IsFamily)) {
+			if (method.DeclaringType.IsTypePublic () && (method.Method.IsPublic || method.Method.IsFamily)) {
 				skiprename = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
@@ -753,7 +753,7 @@ namespace Obfuscar
 				return true;
 		}
 
-			if (field.DeclaringType.IsTruePublic () && (field.Field.IsPublic || field.Field.IsFamily)) {
+			if (field.DeclaringType.IsTypePublic () && (field.Field.IsPublic || field.Field.IsFamily)) {
 				skiprename = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
@@ -801,7 +801,7 @@ namespace Obfuscar
 				return true;
 		}
 
-			if (prop.DeclaringType.IsTruePublic () && (IsGetterPublic (prop.Property) || IsSetterPublic (prop.Property))) {
+			if (prop.DeclaringType.IsTypePublic () && (IsGetterPublic (prop.Property) || IsSetterPublic (prop.Property))) {
 				skiprename = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
@@ -851,7 +851,7 @@ namespace Obfuscar
 				return true;
 		}
 
-			if (evt.DeclaringType.IsTruePublic () && (IsAddPublic (evt.Event) || IsRemovePublic (evt.Event))) {
+			if (evt.DeclaringType.IsTypePublic () && (IsAddPublic (evt.Event) || IsRemovePublic (evt.Event))) {
 				skiprename = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}

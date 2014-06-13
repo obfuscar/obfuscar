@@ -53,7 +53,7 @@ namespace Obfuscar
 			this.attrib = attrib;
 			this.typeAttrib = typeAttrib;
 		}
-		
+
 		public MethodTester (Regex nameRx, string type, string attrib, string typeAttrib)
 		{
 			this.nameRx = nameRx;
@@ -62,15 +62,15 @@ namespace Obfuscar
 			this.typeAttrib = typeAttrib;
 		}
 
-		public MethodTester (string name, string type, string attrib, string typeAttrib, string inherits, bool? isStatic) 
-			: this(name, type, attrib, typeAttrib)
+		public MethodTester (string name, string type, string attrib, string typeAttrib, string inherits, bool? isStatic)
+			: this (name, type, attrib, typeAttrib)
 		{
 			this.inherits = inherits;
 			this.isStatic = isStatic;
 		}
 
 		public MethodTester (Regex nameRx, string type, string attrib, string typeAttrib, string inherits, bool? isStatic)
-			: this(nameRx, type, attrib, typeAttrib)
+			: this (nameRx, type, attrib, typeAttrib)
 		{
 			this.inherits = inherits;
 			this.isStatic = isStatic;
@@ -124,10 +124,10 @@ namespace Obfuscar
 		{
 			if (!string.IsNullOrEmpty (typeAttribute)) {
 				if (string.Equals (typeAttribute, "public", StringComparison.InvariantCultureIgnoreCase)) {
-					if (!IsTypePublic (declaringType))
+					if (!declaringType.IsTypePublic ())
 						return false;
 				} else
-                    throw new ObfuscarException(string.Format("'{0}' is not valid for the 'typeattrib' value of skip elements. Only 'public' is supported by now.", typeAttribute));
+					throw new ObfuscarException (string.Format ("'{0}' is not valid for the 'typeattrib' value of skip elements. Only 'public' is supported by now.", typeAttribute));
 			}
 
 			if (!string.IsNullOrEmpty (attribute)) {
@@ -139,7 +139,7 @@ namespace Obfuscar
 					if (!(accessmask == MethodAttributes.Public || accessmask == MethodAttributes.Family || accessmask == MethodAttributes.FamORAssem))
 						return true;
 				} else
-                    throw new ObfuscarException(string.Format("'{0}' is not valid for the 'attrib' value of skip elements. Only 'public' and 'protected' are supported by now.", attribute));
+					throw new ObfuscarException (string.Format ("'{0}' is not valid for the 'attrib' value of skip elements. Only 'public' and 'protected' are supported by now.", attribute));
 				
 				// attrib value given, but the member is not public/protected. We signal that the Skip* rule should be ignored. The member is obfuscated in any case.
 				return false;
@@ -147,18 +147,6 @@ namespace Obfuscar
 
 			// No attrib value given: The Skip* rule is processed normally.
 			return false;
-		}
-
-		static public bool IsTypePublic (TypeDefinition type)
-		{
-			if (type.DeclaringType != null) {
-				if (type.IsNestedFamily || type.IsNestedFamilyOrAssembly || type.IsNestedPublic)
-					return IsTypePublic ((TypeDefinition)type.DeclaringType);
-				else
-					return false;
-			} else {
-				return type.IsPublic;
-			}
 		}
 	}
 }

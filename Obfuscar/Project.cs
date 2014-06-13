@@ -50,7 +50,7 @@ namespace Obfuscar
 		InheritMap inheritMap;
 		Settings settings;
 		// FIXME: Figure out why this exists if it is never used.
-		private RSA keyvalue;
+		//private RSA keyvalue;
 		// don't create.  call FromXml.
 		private Project ()
 		{
@@ -90,8 +90,8 @@ namespace Obfuscar
 
 		public RSA KeyValue {
 			get {
-				if (keyvalue != null)
-					return keyvalue;
+				//if (keyvalue != null)
+				//	return keyvalue;
 
 				var lKeyFileName = vars.GetValue ("KeyFile", null);
 				var lKeyContainerName = vars.GetValue ("KeyContainer", null);
@@ -107,7 +107,8 @@ namespace Obfuscar
 						throw new ObfuscarException ("Key containers are not supported for Mono.");
 				} 
    				
-				return keyvalue;
+				return null;
+				//return keyvalue;
 			}
 		}
 
