@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30110.0
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{65D27ECD-E8FC-47CB-8CB0-819627673662}"
 	ProjectSection(SolutionItems) = preProject
@@ -21,6 +21,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObfuscarTests", "Tests\ObfuscarTests.csproj", "{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Cecil.Rocks", "cecil\rocks\Mono.Cecil.Rocks.csproj", "{FBC6DD59-D09D-499C-B03C-99C1C78FF2AC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Cecil", "Cecil", "{20881BD4-0DD6-45EA-9989-35FC8FE68A2D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Baml", "Baml\Baml.csproj", "{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -182,9 +186,38 @@ Global
 		{FBC6DD59-D09D-499C-B03C-99C1C78FF2AC}.winphone_Debug|Any CPU.Build.0 = winphone_Debug|Any CPU
 		{FBC6DD59-D09D-499C-B03C-99C1C78FF2AC}.winphone_Release|Any CPU.ActiveCfg = winphone_Release|Any CPU
 		{FBC6DD59-D09D-499C-B03C-99C1C78FF2AC}.winphone_Release|Any CPU.Build.0 = winphone_Release|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.net_2_0_Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.net_2_0_Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.net_2_0_Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.net_2_0_Release|Any CPU.Build.0 = Release|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.net_3_5_Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.net_3_5_Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.net_3_5_Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.net_3_5_Release|Any CPU.Build.0 = Release|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.net_4_0_Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.net_4_0_Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.net_4_0_Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.net_4_0_Release|Any CPU.Build.0 = Release|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.silverlight_Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.silverlight_Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.silverlight_Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.silverlight_Release|Any CPU.Build.0 = Release|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.winphone_Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.winphone_Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.winphone_Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25EE08C8-0C9D-49E3-86FE-A331E9D4F12A}.winphone_Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D68133BD-1E63-496E-9EDE-4FBDBF77B486} = {20881BD4-0DD6-45EA-9989-35FC8FE68A2D}
+		{63E6915C-7EA4-4D76-AB28-0D7191EEA626} = {20881BD4-0DD6-45EA-9989-35FC8FE68A2D}
+		{FBC6DD59-D09D-499C-B03C-99C1C78FF2AC} = {20881BD4-0DD6-45EA-9989-35FC8FE68A2D}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = Program\Obfuscar.exe.csproj

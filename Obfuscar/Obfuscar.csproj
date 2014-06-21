@@ -53,83 +53,12 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\CecilDependencyPropertyDescriptor.cs">
-      <Link>Baml\CecilDependencyPropertyDescriptor.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\CecilType.cs">
-      <Link>Baml\CecilType.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\CecilTypeResolver.cs">
-      <Link>Baml\CecilTypeResolver.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\BamlBinaryReader.cs">
-      <Link>Baml\BamlBinaryReader.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\BamlRecordType.cs">
-      <Link>Baml\BamlRecordType.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\IDependencyPropertyDescriptor.cs">
-      <Link>Baml\IDependencyPropertyDescriptor.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\IType.cs">
-      <Link>Baml\IType.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\ITypeResolver.cs">
-      <Link>Baml\ITypeResolver.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\KeyMapping.cs">
-      <Link>Baml\KeyMapping.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\KnownInfo.cs">
-      <Link>Baml\KnownInfo.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\NodesCollection.cs">
-      <Link>Baml\NodesCollection.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\PropertyDeclaration.cs">
-      <Link>Baml\PropertyDeclaration.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\ResourceName.cs">
-      <Link>Baml\ResourceName.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\TypeDeclaration.cs">
-      <Link>Baml\TypeDeclaration.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\XmlBamlElement.cs">
-      <Link>Baml\XmlBamlElement.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\XmlBamlNode.cs">
-      <Link>Baml\XmlBamlNode.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\XmlBamlProperty.cs">
-      <Link>Baml\XmlBamlProperty.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\XmlBamlPropertyElement.cs">
-      <Link>Baml\XmlBamlPropertyElement.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\XmlBamlReader.cs">
-      <Link>Baml\XmlBamlReader.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\XmlBamlSimpleProperty.cs">
-      <Link>Baml\XmlBamlSimpleProperty.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\XmlBamlText.cs">
-      <Link>Baml\XmlBamlText.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\XmlNamespace.cs">
-      <Link>Baml\XmlNamespace.cs</Link>
-    </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\XmlPIMapping.cs">
-      <Link>Baml\XmlPIMapping.cs</Link>
-    </Compile>
     <Compile Include="..\ThirdParty\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
@@ -180,6 +109,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Baml\Baml.csproj">
+      <Project>{25ee08c8-0c9d-49e3-86fe-a331e9d4f12a}</Project>
+      <Name>Baml</Name>
+    </ProjectReference>
     <ProjectReference Include="..\cecil\Mono.Cecil.csproj">
       <Project>{d68133bd-1e63-496e-9ede-4fbdbf77b486}</Project>
       <Name>Mono.Cecil</Name>

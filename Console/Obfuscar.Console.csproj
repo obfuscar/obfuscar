@@ -91,7 +91,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <PropertyGroup>
-    <PostBuildEvent Condition=" '$(Configuration)' == 'Release' ">"$(SolutionDir)packages\ILRepack.1.24.0\tools\ilrepack" /t:exe /out:Obfuscar.exe Obfuscar.Console.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Obfuscar.dll
+    <PostBuildEvent Condition=" '$(Configuration)' == 'Release' ">"$(SolutionDir)packages\ILRepack.1.24.0\tools\ilrepack" /t:exe /out:Obfuscar.exe Obfuscar.Console.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Baml.dll Obfuscar.dll
 del Obfuscar.Console.exe
 rename Obfuscar.exe Obfuscar.Console.exe</PostBuildEvent>
   </PropertyGroup>
