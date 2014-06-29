@@ -599,8 +599,8 @@ namespace Obfuscar
 					// check whether the referencing module references this type...if so,
 					// rename the reference
 					if (oldTypeKey.Matches (refType)) {
-						refType.Namespace = newTypeKey.Namespace;
-						refType.Name = newTypeKey.Name;
+						refType.GetElementType ().Namespace = newTypeKey.Namespace;
+						refType.GetElementType ().Name = newTypeKey.Name;
 
 						reference.UnrenamedTypeReferences.RemoveAt (i);
 

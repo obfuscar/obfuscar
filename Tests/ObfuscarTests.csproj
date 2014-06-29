@@ -94,6 +94,7 @@
     <Compile Include="VariablesTests.cs" />
     <Compile Include="WildcardTests.cs" />
     <Compile Include="ObfuscationAttributeTests.cs" />
+    <Compile Include="WpfToolkitTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

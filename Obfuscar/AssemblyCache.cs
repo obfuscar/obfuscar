@@ -55,7 +55,6 @@ namespace Obfuscar
 
 			AssemblyDefinition assmDef;
 			try {
-				Console.WriteLine ("Trying to resolve dependency: " + name);
 				assmDef = Resolve (name);
 			} catch (FileNotFoundException) {
 				throw new ObfuscarException ("Unable to resolve dependency:  " + name.Name);
