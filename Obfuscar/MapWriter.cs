@@ -311,14 +311,12 @@ namespace Obfuscar
 				writer.WriteStartElement ("skippedClass");
 				writer.WriteAttributeString ("name", classInfo.Name);
 				writer.WriteAttributeString ("reason", classInfo.StatusText);
-				writer.WriteEndElement ();
-				writer.WriteString ("\r\n");
-				return;
+			} else {
+				writer.WriteStartElement ("renamedClass");
+				writer.WriteAttributeString ("oldName", classInfo.Name);
+				writer.WriteAttributeString ("newName", classInfo.StatusText);
 			}
-			writer.WriteStartElement ("renamedClass");
-			writer.WriteAttributeString ("oldName", classInfo.Name);
-			writer.WriteAttributeString ("newName", classInfo.StatusText);
-
+			
 			int numRenamed = 0;
 			foreach (KeyValuePair<MethodKey, ObfuscatedThing> method in classInfo.Methods) {
 				if (method.Value.Status == ObfuscationStatus.Renamed) {
