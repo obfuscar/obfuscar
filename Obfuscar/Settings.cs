@@ -50,9 +50,9 @@ namespace Obfuscar
 
 		public Settings (Variables vars)
 		{
-			inPath = vars.GetValue ("InPath", ".");
-			outPath = vars.GetValue ("OutPath", ".");
-			logFilePath = vars.GetValue ("LogFile", "");
+			inPath = Environment.ExpandEnvironmentVariables (vars.GetValue ("InPath", "."));
+			outPath = Environment.ExpandEnvironmentVariables (vars.GetValue ("OutPath", "."));
+			logFilePath = Environment.ExpandEnvironmentVariables (vars.GetValue ("LogFile", ""));
 			markedOnly = XmlConvert.ToBoolean (vars.GetValue ("MarkedOnly", "false"));
 
 			renameProperties = XmlConvert.ToBoolean (vars.GetValue ("RenameProperties", "true"));
@@ -69,6 +69,7 @@ namespace Obfuscar
 			xmlMapping = XmlConvert.ToBoolean (vars.GetValue ("XmlMapping", "false"));
 			renegerateDebugInfo = XmlConvert.ToBoolean (vars.GetValue ("RegenerateDebugInfo", "false"));
 			keyFile = vars.GetValue ("KeyFile", null);
+			keyFile = keyFile == null ? null : Environment.ExpandEnvironmentVariables (keyFile);
 		}
 
 		public bool RegenerateDebugInfo {

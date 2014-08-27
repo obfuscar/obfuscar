@@ -24,8 +24,6 @@
 
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Text;
 using NUnit.Framework;
 using Obfuscar;
 
@@ -36,10 +34,11 @@ namespace ObfuscarTests
 	{
 		private void CheckOutPath (string testPath)
 		{
-			Assert.IsFalse (Directory.Exists (testPath), "Need a writeable temp path...wanted to create " + testPath);
+			var full = Environment.ExpandEnvironmentVariables (testPath);
+			Assert.IsFalse (Directory.Exists (full), "Need a writeable temp path...wanted to create " + testPath);
 
 			try {
-				string xml = String.Format (
+				string xml = string.Format (
 					             @"<?xml version='1.0'?>" +
 					             @"<Obfuscator>" +
 					             @"<Var name='OutPath' value='{0}' />" +
@@ -47,18 +46,26 @@ namespace ObfuscarTests
 
 				Obfuscar.Obfuscator.CreateFromXml (xml);
 
-				Assert.IsTrue (Directory.Exists (testPath), "Obfuscator should have created its missing OutPath.");
+				Assert.IsTrue (Directory.Exists (full), "Obfuscator should have created its missing OutPath.");
 			} finally {
 				// clean up...
-				if (Directory.Exists (testPath))
-					Directory.Delete (testPath);
+				if (Directory.Exists (full))
+					Directory.Delete (full);
 			}
 		}
 
 		[Test]
 		public void CheckCanCreateOutPath ()
 		{
-			string testPath = System.IO.Path.Combine (System.IO.Path.GetTempPath (), "ObfuscarTestOutPath");
+			string testPath = Path.Combine (Path.GetTempPath (), "ObfuscarTestOutPath");
+
+			CheckOutPath (testPath);
+		}
+
+		[Test]
+		public void CheckCanCreateOutPathWithEnvironmentVariables ()
+		{
+			string testPath = "%temp%\\ObfuscarTestOutPath";
 
 			CheckOutPath (testPath);
 		}
@@ -66,7 +73,7 @@ namespace ObfuscarTests
 		[Test]
 		public void CheckInvalidOutPath ()
 		{
-			string testPath = System.IO.Path.Combine (PathFailureTests.BadPath, "ObfuscarTestOutPath");
+			string testPath = Path.Combine (PathFailureTests.BadPath, "ObfuscarTestOutPath");
 
 			TestUtils.AssertThrows (delegate {
 				CheckOutPath (testPath);

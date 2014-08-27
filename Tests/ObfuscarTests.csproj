@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.50727</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -58,9 +56,6 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Mono.Cecil">
-      <HintPath>..\..\cecil\bin\net_4_0_Debug\Mono.Cecil.dll</HintPath>
-    </Reference>
     <Reference Include="nunit.framework">
       <HintPath>..\..\..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
     </Reference>
@@ -112,6 +107,10 @@
     <ProjectReference Include="..\Obfuscar\Obfuscar.csproj">
       <Project>{F28CDDFF-5A7A-413E-809E-15FFB8766E86}</Project>
       <Name>Obfuscar</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cecil\Mono.Cecil.csproj">
+      <Project>{D68133BD-1E63-496E-9EDE-4FBDBF77B486}</Project>
+      <Name>Mono.Cecil</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
