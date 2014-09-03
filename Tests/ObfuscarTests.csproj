@@ -69,6 +69,7 @@
     <Compile Include="BamlTests.cs" />
     <Compile Include="CustomAttributeTests.cs" />
     <Compile Include="FunctionOverridingTests.cs" />
+    <Compile Include="PortableTests.cs" />
     <Compile Include="SigningTests.cs" />
     <Compile Include="SkipNestedTypeTests.cs" />
     <Compile Include="SkipVirtualMethodTest.cs" />

@@ -1287,6 +1287,10 @@ namespace Obfuscar
 
 				var module = info.Definition.MainModule;
 				var attribute = new TypeReference ("System.Runtime.CompilerServices", "SuppressIldasmAttribute", module, module.TypeSystem.Corlib).Resolve ();
+				var reference = module.TypeSystem.Corlib as AssemblyNameReference;
+				if (attribute.Module.Assembly.FullName != reference.FullName)
+					return;
+
 				CustomAttribute found = null;
 				foreach (CustomAttribute existing in module.CustomAttributes)
 				{
