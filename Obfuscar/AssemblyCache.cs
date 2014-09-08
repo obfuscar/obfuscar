@@ -67,6 +67,11 @@ namespace Obfuscar
 
 		public new void RegisterAssembly (AssemblyDefinition assembly)
 		{
+			var path = assembly.GetPortableProfileDirectory ();
+			if (path != null && Directory.Exists (path)) {
+				AddSearchDirectory (path);
+			}
+
 			base.RegisterAssembly (assembly);
 		}
 	}
