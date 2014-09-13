@@ -13,20 +13,17 @@ namespace Obfuscar
 		{
 			foreach (var custom in assembly.CustomAttributes) {
 				if (custom.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute") {
-					var framework = custom.Properties [0].Argument.Value.ToString ();
-					if (!string.Equals (framework, ".NET Portable Subset")) {
+                    var framework = custom.Properties.First(property => property.Name == "FrameworkDisplayName");
+                    var content = framework.Argument.Value.ToString ();
+                    if (!string.Equals (content, ".NET Portable Subset")) {
 						return null;
 					}
 
 					var parts = custom.ConstructorArguments [0].Value.ToString ().Split (',');
-					var root = Environment.ExpandEnvironmentVariables (
-						                          Path.Combine (
-							                          "%systemdrive%",
-							                          "Program Files (x86)"));
+                    var root = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
 					return Environment.ExpandEnvironmentVariables (
 						Path.Combine (
-							"%systemdrive%", 
-							Directory.Exists (root) ? "Program Files (x86)" : "Program Files", 
+							root,
 							"Reference Assemblies", 
 							"Microsoft", 
 							"Framework",
