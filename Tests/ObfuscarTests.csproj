@@ -85,7 +85,6 @@
     <Compile Include="TestClasses2.cs" />
     <Compile Include="TestClasses.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestUtils.cs" />
     <Compile Include="UnityTests.cs" />
     <Compile Include="VariablesTests.cs" />
     <Compile Include="WildcardTests.cs" />

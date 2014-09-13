@@ -22,21 +22,18 @@
 /// </copyright>
 #endregion
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using NUnit.Framework;
 using Obfuscar;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
+    [TestFixture]
 	public class VariablesTests
 	{
 		[Test]
 		public void CheckReplace ()
 		{
-			Obfuscar.Variables variables = new Obfuscar.Variables ();
+			Variables variables = new Variables ();
 			variables.Add ("Key1", "Value1");
 
 			string result = variables.Replace ("This: $(Key1) got replaced.");
@@ -46,13 +43,10 @@ namespace ObfuscarTests
 		[Test]
 		public void CheckBadReplace ()
 		{
-			Obfuscar.Variables variables = new Obfuscar.Variables ();
+			Variables variables = new Variables ();
 			variables.Add ("Key1", "Value1");
-
-			TestUtils.AssertThrows (delegate {
-				variables.Replace ("$(Unreplaceable)");
-			}, typeof(ObfuscarException),
-				"Unable", "replace", "Unreplaceable");
+            var exception = Assert.Throws<ObfuscarException>(() => { variables.Replace("$(Unreplaceable)"); });
+            Assert.AreEqual("Unable to replace variable:  Unreplaceable", exception.Message);
 		}
 	}
 }

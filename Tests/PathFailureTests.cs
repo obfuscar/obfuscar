@@ -45,10 +45,8 @@ namespace ObfuscarTests
 		[Test]
 		public void CheckBadProjectPath ()
 		{
-			TestUtils.AssertThrows (delegate {
-				new Obfuscar.Obfuscator (BadPath);
-			}, typeof(ObfuscarException),
-				"Unable", "read", BadPath);
+            var exception = Assert.Throws<ObfuscarException>(() => { new Obfuscator(BadPath); });
+            Assert.AreEqual("Unable to read specified project file:  Q:\\Does\\Not\\Exist", exception.Message);
 		}
 
 		[Test]
@@ -59,11 +57,8 @@ namespace ObfuscarTests
 				             @"<Obfuscator>" +
 				             @"<Module file='{0}\ObfuscarTests.dll' />" +
 				             @"</Obfuscator>", BadPath);
-
-			TestUtils.AssertThrows (delegate {
-				Obfuscar.Obfuscator.CreateFromXml (xml);
-			}, typeof(ObfuscarException),
-				"Unable", "find assembly", BadPath);
+            var exception = Assert.Throws<ObfuscarException>(() => { Obfuscator.CreateFromXml(xml); });
+            Assert.AreEqual("Unable to find assembly:  Q:\\Does\\Not\\Exist\\ObfuscarTests.dll", exception.Message);
 		}
 
 		[Test]
@@ -74,11 +69,8 @@ namespace ObfuscarTests
 				             @"<Obfuscator>" +
 				             @"<Var name='InPath' value='{0}' />" +
 				             @"</Obfuscator>", BadPath);
-
-			TestUtils.AssertThrows (delegate {
-				Obfuscar.Obfuscator.CreateFromXml (xml);
-			}, typeof(ObfuscarException),
-				"InPath", "must exist", BadPath);
+            var exception = Assert.Throws<ObfuscarException>(() => { Obfuscator.CreateFromXml(xml); });
+            Assert.AreEqual("Path specified by InPath variable must exist:Q:\\Does\\Not\\Exist", exception.Message);
 		}
 	}
 }

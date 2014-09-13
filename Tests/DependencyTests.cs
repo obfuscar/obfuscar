@@ -85,11 +85,8 @@ namespace ObfuscarTests
 
 			// explicitly delete AssemblyA
 			File.Delete (Path.Combine (TestHelper.InputPath, "AssemblyA.dll"));
-
-			TestUtils.AssertThrows (delegate {
-				Obfuscar.Obfuscator.CreateFromXml (xml);
-			}, typeof(ObfuscarException),
-				"Unable", "resolve dependency", "AssemblyA");
+            var exception = Assert.Throws<ObfuscarException>(() => { Obfuscator.CreateFromXml(xml); });
+            Assert.AreEqual("Unable to resolve dependency:  AssemblyA", exception.Message);
 		}
 
 		[Test]
@@ -103,10 +100,8 @@ namespace ObfuscarTests
 
 			// InPath defaults to '.', which doesn't contain AssemblyA
 			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyD.dll"), Path.Combine (TestHelper.InputPath, "AssemblyD.dll"));
-			TestUtils.AssertThrows (delegate {
-				Obfuscar.Obfuscator.CreateFromXml (xml);
-			}, typeof(ObfuscarException),
-				"Unable", "resolve dependency", "AssemblyC");
+            var exception = Assert.Throws<ObfuscarException> (() => { Obfuscator.CreateFromXml (xml); });
+            Assert.AreEqual ("Unable to resolve dependency:  AssemblyC", exception.Message);
 		}
 	}
 }

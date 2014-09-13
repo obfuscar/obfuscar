@@ -51,11 +51,8 @@ namespace ObfuscarTests
 
 			// build it with the keyfile option (embeds the public key, and signs the assembly)
 			TestHelper.BuildAssembly ("AssemblyForSigning", String.Empty, "/keyfile:" + TestHelper.InputPath + @"\SigningKey.snk");
-
-			TestUtils.AssertThrows (delegate {
-				TestHelper.Obfuscate (xml);
-			}, typeof(ObfuscarException),
-				"signed assembly", "invalid", "AssemblyForSigning");
+            var exception = Assert.Throws<ObfuscarException>(() => { TestHelper.Obfuscate(xml); });
+            Assert.AreEqual("Obfuscating a signed assembly would result in an invalid assembly:  AssemblyForSigning; use the KeyFile property to set a key to use", exception.Message);
 		}
 		// [Test] no longer valid due to Cecil changes
 		public void CheckCanObfuscateDelaySigned ()

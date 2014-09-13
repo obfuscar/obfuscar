@@ -74,11 +74,8 @@ namespace ObfuscarTests
 		public void CheckInvalidOutPath ()
 		{
 			string testPath = Path.Combine (PathFailureTests.BadPath, "ObfuscarTestOutPath");
-
-			TestUtils.AssertThrows (delegate {
-				CheckOutPath (testPath);
-			}, typeof(ObfuscarException),
-				"Could not create", "OutPath", testPath);
+            var exception = Assert.Throws<ObfuscarException>(() => { CheckOutPath (testPath); });
+            Assert.AreEqual("Could not create path specified by OutPath:  Q:\\Does\\Not\\Exist\\ObfuscarTestOutPath", exception.Message);
 		}
 	}
 }
