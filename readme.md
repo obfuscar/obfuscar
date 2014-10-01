@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/4y3enjufejbn94hd)](https://ci.appveyor.com/project/lextm/obfuscar)
+
 #Homepage
 Please visit https://obfuscar.codeplex.com/ for further information on this project.
 
