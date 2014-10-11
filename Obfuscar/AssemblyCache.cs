@@ -32,6 +32,7 @@ namespace Obfuscar
 	class AssemblyCache : DefaultAssemblyResolver
 	{
 		readonly Project project;
+		private List<string> paths = new List<string> ();
 
 		public AssemblyCache (Project project)
 		{
@@ -68,11 +69,27 @@ namespace Obfuscar
 		public new void RegisterAssembly (AssemblyDefinition assembly)
 		{
 			var path = assembly.GetPortableProfileDirectory ();
-			if (path != null && Directory.Exists (path)) {
-				AddSearchDirectory (path);
-			}
+			if (path != null && Directory.Exists (path))
+				paths.Add (path);
 
 			base.RegisterAssembly (assembly);
+		}
+
+		public override AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
+		{
+			AssemblyDefinition result;
+			if (name.IsRetargetable) {
+				foreach (var path in paths)
+					AddSearchDirectory (path);
+
+				result = base.Resolve (name, parameters);
+				foreach (var path in paths)
+					RemoveSearchDirectory (path);
+			} else {
+				result = base.Resolve (name, parameters);
+			}
+
+			return result;
 		}
 	}
 }
