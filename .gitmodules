@@ -3,4 +3,4 @@
 	url = https://github.com/mono/cecil.git
 [submodule "ilspy"]
 	path = ilspy
-	url = https://github.com/lextm/ILSpy.git
+	url = https://github.com/icsharpcode/ILSpy.git
