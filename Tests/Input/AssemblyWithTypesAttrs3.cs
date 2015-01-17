@@ -28,44 +28,16 @@ using System.Text;
 
 namespace TestClasses
 {
-    internal enum TestEnum
+    public enum TestEnum
     {
         Default = 0,
         Test = 1
     }
 
-	internal class InternalClass
-	{
-        public void PublicMethod()
-        { }
-
-		public class PublicNestedClass
-		{
-		}
-	}
-
+    [System.Reflection.ObfuscationAttribute(Exclude=false, ApplyToMembers=true)]
     public class PublicClass
     {
-        private void PrivateMethod()
+        public virtual void PublicMethod()
         { }
-
-        public void PublicMethod()
-        { }
-
-        protected void ProtectedMethod()
-        { }
-    }
-}
-
-namespace TestClasses1
-{
-    public class PublicClass
-    {
-        public void PublicMethod()
-        { }
-
-        public class PublicNestedClass
-        {
-        }
     }
 }

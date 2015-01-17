@@ -6,14 +6,13 @@ namespace Obfuscar
 	{
 		static public bool IsTypePublic (this TypeDefinition type)
 		{
-			if (type.DeclaringType != null) {
-				if (type.IsNestedFamily || type.IsNestedFamilyOrAssembly || type.IsNestedPublic)
-					return IsTypePublic (type.DeclaringType);
-				else
-					return false;
-			} else {
+			if (type.DeclaringType == null)
 				return type.IsPublic;
-			}
+
+			if (type.IsNestedFamily || type.IsNestedFamilyOrAssembly || type.IsNestedPublic)
+				return IsTypePublic (type.DeclaringType);
+
+			return false;
 		}
 
 		public static bool? MarkedToRename (this ICustomAttributeProvider type, bool member = false)

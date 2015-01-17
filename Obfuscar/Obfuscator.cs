@@ -301,7 +301,7 @@ namespace Obfuscar
 
 						// skip filtered fields
 						string skip;
-						if (info.ShouldSkip (fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, out skip)) {
+						if (info.ShouldSkip (fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip)) {
 							map.UpdateField (fieldKey, ObfuscationStatus.Skipped, skip);
 							nameGroup.Add (fieldKey.Name);
 							continue;
@@ -377,7 +377,7 @@ namespace Obfuscar
 		{
 			MethodKey methodkey = new MethodKey (method);
 			string skip;
-			if (info.ShouldSkipParams (methodkey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, out skip))
+			if (info.ShouldSkipParams (methodkey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
 				return;
 
 			foreach (ParameterDefinition param in method.Parameters)
@@ -686,7 +686,7 @@ namespace Obfuscar
 
 						string skip;
 						// skip filtered props
-						if (info.ShouldSkip (propKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, out skip)) {
+						if (info.ShouldSkip (propKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip)) {
 							m.Update (ObfuscationStatus.Skipped, skip);
 
 							// make sure get/set get skipped too
@@ -774,7 +774,7 @@ namespace Obfuscar
 
 						string skip;
 						// skip filtered events
-						if (info.ShouldSkip (evtKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, out skip)) {
+						if (info.ShouldSkip (evtKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip)) {
 							m.Update (ObfuscationStatus.Skipped, skip);
 
 							// make sure add/remove get skipped too
@@ -831,7 +831,7 @@ namespace Obfuscar
 
 						// skip filtered methods
 						string skiprename;
-						var toDo = info.ShouldSkip (methodKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, out skiprename);
+						var toDo = info.ShouldSkip (methodKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skiprename);
 						if (!toDo)
 							skiprename = null;
 						// update status for skipped non-virtual methods immediately...status for

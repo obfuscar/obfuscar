@@ -635,10 +635,10 @@ namespace Obfuscar
 			return !hidePrivateApi;
 		}
 
-		public bool ShouldSkip (MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
+		public bool ShouldSkip (MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly, out string message)
 		{
 			if (method.Method.IsRuntime) {
-				skiprename = "runtime method";
+				message = "runtime method";
 					return true;
 				}
 
@@ -646,62 +646,67 @@ namespace Obfuscar
 				switch (method.Method.SemanticsAttributes) {
 				case MethodSemanticsAttributes.Getter:
 				case MethodSemanticsAttributes.Setter:
-					skiprename = "skipping properties";
+					message = "skipping properties";
 					return !project.Settings.RenameProperties;
 				case MethodSemanticsAttributes.AddOn:
 				case MethodSemanticsAttributes.RemoveOn:
-					skiprename = "skipping events";
+					message = "skipping events";
 					return !project.Settings.RenameEvents;
 				default:
-					skiprename = "special name";
+					message = "special name";
 					return true;
 			}
 			}
 
-			return ShouldSkipParams (method, map, keepPublicApi, hidePrivateApi, out skiprename);
+			return ShouldSkipParams (method, map, keepPublicApi, hidePrivateApi, markedOnly, out message);
 		}
 
-		public bool ShouldSkipParams (MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
+		public bool ShouldSkipParams (MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly, out string message)
 		{
 			var attribute = method.Method.MarkedToRename ();
 			// skip runtime methods
 			if (attribute != null) {
-				skiprename = "attribute";
+				message = "attribute";
 				return !attribute.Value;
 		}
 
 			var parent = method.DeclaringType.MarkedToRename ();
 			if (parent != null) {
-				skiprename = "type attribute";
+				message = "type attribute";
 				return !parent.Value;
 			}
 
+			if (markedOnly) {
+				message = "MarkedOnly option in configuration";
+				return true;
+			}
+
 			if (ShouldForce (method.TypeKey, TypeAffectFlags.AffectMethod, map)) {
-				skiprename = "type rule in configuration";
+				message = "type rule in configuration";
 				return false;
 			}
 
 			if (forceMethods.IsMatch (method, map)) {
-				skiprename = "method rule in configuration";
+				message = "method rule in configuration";
 				return false;
 			}
 
 			if (ShouldSkip (method.TypeKey, TypeAffectFlags.AffectMethod, map)) {
-				skiprename = "type rule in configuration";
+				message = "type rule in configuration";
 				return true;
 			}
 
 			if (skipMethods.IsMatch (method, map)) {
-				skiprename = "method rule in configuration";
+				message = "method rule in configuration";
 				return true;
 			}
 
 			if (method.DeclaringType.IsTypePublic () && (method.Method.IsPublic || method.Method.IsFamily)) {
-				skiprename = "KeepPublicApi option in configuration";
+				message = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
 
-			skiprename = "HidePrivateApi option in configuration";
+			message = "HidePrivateApi option in configuration";
 			return !hidePrivateApi;
 		}
 
@@ -713,150 +718,165 @@ namespace Obfuscar
 			return skipStringHiding.IsMatch (method, map);
 		}
 
-		public bool ShouldSkip (FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
+		public bool ShouldSkip (FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly, out string message)
 		{
 			// skip runtime methods
 			if ((field.Field.IsRuntimeSpecialName && field.Field.Name == "value__")) {
-				skiprename = "special name";
+				message = "special name";
 				return true;
 			}
 
 			var attribute = field.Field.MarkedToRename ();
 			if (attribute != null) {
-				skiprename = "attribute";
+				message = "attribute";
 				return !attribute.Value;
 			}
 
 			var parent = field.DeclaringType.MarkedToRename ();
 			if (parent != null) {
-				skiprename = "type attribute";
+				message = "type attribute";
 				return !parent.Value;
 			}
 
+			if (markedOnly) {
+				message = "MarkedOnly option in configuration";
+				return true;
+			}
+
 			if (ShouldForce (field.TypeKey, TypeAffectFlags.AffectField, map)) {
-				skiprename = "type rule in configuration";
+				message = "type rule in configuration";
 				return false;
 			}
 
 			if (forceFields.IsMatch (field, map)) {
-				skiprename = "field rule in configuration";
+				message = "field rule in configuration";
 				return false;
 			}
 
 			if (ShouldSkip (field.TypeKey, TypeAffectFlags.AffectField, map)) {
-				skiprename = "type rule in configuration";
+				message = "type rule in configuration";
 				return true;
 			}
 
 			if (skipFields.IsMatch (field, map)) {
-				skiprename = "field rule in configuration";
+				message = "field rule in configuration";
 				return true;
 		}
 
 			if (field.DeclaringType.IsTypePublic () && (field.Field.IsPublic || field.Field.IsFamily)) {
-				skiprename = "KeepPublicApi option in configuration";
+				message = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
 
-			skiprename = "HidePrivateApi option in configuration";
+			message = "HidePrivateApi option in configuration";
 			return !hidePrivateApi;
 		}
 
-		public bool ShouldSkip (PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
+		public bool ShouldSkip (PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly, out string message)
 		{
 			if (prop.Property.IsRuntimeSpecialName) {
-				skiprename = "runtime special name";
+				message = "runtime special name";
 				return true;
 			}
 
 			var attribute = prop.Property.MarkedToRename ();
 			if (attribute != null) {
-				skiprename = "attribute";
+				message = "attribute";
 				return !attribute.Value;
 			}
 
 			var parent = prop.DeclaringType.MarkedToRename ();
 			if (parent != null) {
-				skiprename = "type attribute";
+				message = "type attribute";
 				return !parent.Value;
 			}
 
+			if (markedOnly) {
+				message = "MarkedOnly option in configuration";
+				return true;
+			}
+
 			if (ShouldForce (prop.TypeKey, TypeAffectFlags.AffectProperty, map)) {
-				skiprename = "type rule in configuration";
+				message = "type rule in configuration";
 				return false;
 			}
 
 			if (forceProperties.IsMatch (prop, map)) {
-				skiprename = "property rule in configuration";
+				message = "property rule in configuration";
 				return false;
 			}
 
 			if (ShouldSkip (prop.TypeKey, TypeAffectFlags.AffectProperty, map)) {
-				skiprename = "type rule in configuration";
+				message = "type rule in configuration";
 				return true;
 			}
 
 			if (skipProperties.IsMatch (prop, map)) {
-				skiprename = "property rule in configuration";
+				message = "property rule in configuration";
 				return true;
 		}
 
 			if (prop.DeclaringType.IsTypePublic () && (IsGetterPublic (prop.Property) || IsSetterPublic (prop.Property))) {
-				skiprename = "KeepPublicApi option in configuration";
+				message = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
 
-			skiprename = "HidePrivateApi option in configuration";
+			message = "HidePrivateApi option in configuration";
 			return !hidePrivateApi;
 		}
 
-		public bool ShouldSkip (EventKey evt, InheritMap map, bool keepPublicApi, bool hidePrivateApi, out string skiprename)
+		public bool ShouldSkip (EventKey evt, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly, out string message)
 		{
 			// skip runtime special events
 			if (evt.Event.IsRuntimeSpecialName) {
-				skiprename = "runtime special name";
+				message = "runtime special name";
 				return true;
 			}
 
 			var attribute = evt.Event.MarkedToRename ();
 			// skip runtime methods
 			if (attribute != null) {
-				skiprename = "attribute";
+				message = "attribute";
 				return !attribute.Value;
 			}
 
 			var parent = evt.DeclaringType.MarkedToRename ();
 			if (parent != null) {
-				skiprename = "type attribute";
+				message = "type attribute";
 				return !parent.Value;
 			}
 
+			if (markedOnly) {
+				message = "MarkedOnly option in configuration";
+				return true;
+			}
+
 			if (ShouldForce (evt.TypeKey, TypeAffectFlags.AffectEvent, map)) {
-				skiprename = "type rule in configuration";
+				message = "type rule in configuration";
 				return false;
 			}
 
 			if (forceEvents.IsMatch (evt, map)) {
-				skiprename = "event rule in configuration";
+				message = "event rule in configuration";
 				return false;
 			}
 
 			if (ShouldSkip (evt.TypeKey, TypeAffectFlags.AffectEvent, map)) {
-				skiprename = "type rule in configuration";
+				message = "type rule in configuration";
 				return true;
 			}
 
 			if (skipEvents.IsMatch (evt, map)) {
-				skiprename = "event rule in configuration";
+				message = "event rule in configuration";
 				return true;
 		}
 
 			if (evt.DeclaringType.IsTypePublic () && (IsAddPublic (evt.Event) || IsRemovePublic (evt.Event))) {
-				skiprename = "KeepPublicApi option in configuration";
+				message = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
 
-			skiprename = "HidePrivateApi option in configuration";
+			message = "HidePrivateApi option in configuration";
 			return !hidePrivateApi;
 		}
 

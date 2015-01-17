@@ -46,6 +46,10 @@ namespace ObfuscarTests
 
 			Assert.IsTrue (classB.Status == ObfuscationStatus.Skipped, "Internal class is obfuscated");
 
+			var enumType = inAssmDef.MainModule.GetType ("TestClasses.TestEnum");
+			var enum1 = map.GetClass (new TypeKey (enumType));
+			Assert.IsTrue (enum1.Status == ObfuscationStatus.Skipped, "Internal enum is obfuscated");
+
 			var classAType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass");
 			var classA = map.GetClass (new TypeKey (classAType));
 			var classAmethod1 = FindByName (classAType, "PrivateMethod");
@@ -77,12 +81,16 @@ namespace ObfuscarTests
 
 			string assmName = "AssemblyWithTypes.dll";
 			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
-				                                        Path.Combine (TestHelper.InputPath, assmName));
+				                               Path.Combine (TestHelper.InputPath, assmName));
 
 			var classBType = inAssmDef.MainModule.GetType ("TestClasses.InternalClass");
 			var classB = map.GetClass (new TypeKey (classBType));
 
 			Assert.IsTrue (classB.Status == ObfuscationStatus.Renamed, "Internal class should have been obfuscated");
+
+			var enumType = inAssmDef.MainModule.GetType ("TestClasses.TestEnum");
+			var enum1 = map.GetClass (new TypeKey (enumType));
+			Assert.IsTrue (enum1.Status == ObfuscationStatus.Renamed, "Internal enum should have been obfuscated");
 		}
 
 		[Test]
@@ -165,6 +173,34 @@ namespace ObfuscarTests
 		public void CheckSkipNamespace ()
 		{
 			string xml = String.Format (
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='KeepPublicApi' value='false' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
+				             @"<Module file='$(InPath)\AssemblyWithTypes.dll'>" +
+				             @"<SkipNamespace name='TestClasses1' />" +
+				             @"</Module>" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+
+			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
+			var map = obfuscator.Mapping;
+
+			string assmName = "AssemblyWithTypes.dll";
+
+			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
+				                               Path.Combine (TestHelper.InputPath, assmName));
+
+			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses1.PublicClass");
+			var classA = map.GetClass (new TypeKey (classAType));
+			Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "Public class shouldn't have been obfuscated");
+		}
+
+		[Test]
+		public void CheckSkipEnum ()
+		{
+			string xml = String.Format (
 				                      @"<?xml version='1.0'?>" +
 				                      @"<Obfuscator>" +
 				                      @"<Var name='InPath' value='{0}' />" +
@@ -172,7 +208,7 @@ namespace ObfuscarTests
 				                      @"<Var name='KeepPublicApi' value='false' />" +
 				                      @"<Var name='HidePrivateApi' value='true' />" +
 				                      @"<Module file='$(InPath)\AssemblyWithTypes.dll'>" +
-				                      @"<SkipNamespace name='TestClasses1' />" +
+				                      @"<SkipType name='TestClasses.TestEnum' />" +
 				                      @"</Module>" +
 				                      @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
@@ -184,9 +220,9 @@ namespace ObfuscarTests
 			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
 				                                        Path.Combine (TestHelper.InputPath, assmName));
 
-			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses1.PublicClass");
-			var classA = map.GetClass (new TypeKey (classAType));
-			Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "Public class shouldn't have been obfuscated");
+			var enumType = inAssmDef.MainModule.GetType ("TestClasses.TestEnum");
+			var enum1 = map.GetClass (new TypeKey (enumType));
+			Assert.IsTrue (enum1.Status == ObfuscationStatus.Skipped, "Internal enum is obfuscated");
 		}
 	}
 }
