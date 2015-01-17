@@ -165,8 +165,8 @@ namespace ObfuscarTests
 				                      @"				<Obfuscator>" +
 				                      @"				<Var name='InPath' value='{0}' />" +
 				                      @"				<Var name='OutPath' value='{1}' />" +
-				                      @"             <Var name='KeepPublicApi' value='true' />" +
-				                      @"             <Var name='HidePrivateApi' value='false' />" +
+				                      @"             <Var name='KeepPublicApi' value='false' />" +
+				                      @"             <Var name='HidePrivateApi' value='true' />" +
 				                      @"             <Var name='MarkedOnly' value='true' />" +
 				                      @"				<Module file='$(InPath)\AssemblyWithTypesAttrs3.dll'>" +
 				                      @"				</Module>" +
@@ -207,9 +207,9 @@ namespace ObfuscarTests
 				                      @"				<Obfuscator>" +
 				                      @"				<Var name='InPath' value='{0}' />" +
 				                      @"				<Var name='OutPath' value='{1}' />" +
-				                      @"             <Var name='KeepPublicApi' value='true' />" +
-				                      @"             <Var name='HidePrivateApi' value='false' />" +
-				                      @"             <Var name='MarkedOnly' value='true' />" +
+				                      @"                <Var name='KeepPublicApi' value='false' />" +
+				                      @"                <Var name='HidePrivateApi' value='true' />" +
+				                      @"                <Var name='MarkedOnly' value='true' />" +
 				                      @"				<Module file='$(InPath)\AssemblyWithTypesAttrs.dll'>" +
 				                      @"				</Module>" +
 				                      @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
