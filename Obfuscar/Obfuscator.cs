@@ -38,7 +38,6 @@ using System.Xml.Linq;
 using ILSpy.BamlDecompiler;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Mono.Collections.Generic;
 using Ricciolo.StylesExplorer.MarkupReflection;
 
 namespace Obfuscar
@@ -98,41 +97,41 @@ namespace Obfuscar
 		public void RunRules ()
 		{
 			// The SemanticAttributes of MethodDefinitions have to be loaded before any fields,properties or events are removed
-			this.LoadMethodSemantics ();
+			LoadMethodSemantics ();
 
 			LogOutput ("Renaming:  fields...");
-			this.RenameFields ();
+			RenameFields ();
 
 			LogOutput ("parameters...");
-			this.RenameParams ();
+			RenameParams ();
 
 			LogOutput ("properties...");
-			this.RenameProperties ();
+			RenameProperties ();
 
 			LogOutput ("events...");
-			this.RenameEvents ();
+			RenameEvents ();
 
 			LogOutput ("methods...");
-			this.RenameMethods ();
+			RenameMethods ();
 
 			LogOutput ("types...");
-			this.RenameTypes ();
+			RenameTypes ();
 
-			if (this.hideStrings) {
+			if (hideStrings) {
 				LogOutput ("hiding strings...\n");
-				this.HideStrings ();
+				HideStrings ();
 			}
 
-			this.PostProcessing ();
+			PostProcessing ();
 
 			LogOutput ("Done.\n");
 
 			LogOutput ("Saving assemblies...");
-			this.SaveAssemblies ();
+			SaveAssemblies ();
 			LogOutput ("Done.\n");
 
 			LogOutput ("Writing log file...");
-			this.SaveMapping ();
+			SaveMapping ();
 			LogOutput ("Done.\n");
 		}
 
@@ -189,7 +188,9 @@ namespace Obfuscar
 
 			//copy excluded assemblies
 			foreach (AssemblyInfo copyInfo in project.CopyAssemblyList) {
-				string outName = Path.Combine (outPath, Path.GetFileName (copyInfo.Filename));
+				var fileName = Path.GetFileName (copyInfo.Filename);
+				Debug.Assert(fileName != null, "fileName != null");
+				string outName = Path.Combine (outPath, fileName);
 				copyInfo.Definition.Write (outName);
 			}
 
@@ -202,7 +203,9 @@ namespace Obfuscar
 
 			// save the modified assemblies
 			foreach (AssemblyInfo info in project) {
-				string outName = Path.Combine (outPath, Path.GetFileName (info.Filename));
+				var fileName = Path.GetFileName (info.Filename);
+				Debug.Assert(fileName != null, "fileName != null");
+				string outName = Path.Combine (outPath, fileName);
 				var parameters = new WriterParameters ();
 				if (project.Settings.RegenerateDebugInfo)
 					parameters.SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider ();
@@ -512,6 +515,7 @@ namespace Obfuscar
 								}
 							}
 
+							Debug.Assert(fullName != null, "fullName != null");
 							string suffix = resName.Substring (fullName.Length);
 							string newName = newTypeKey.Fullname + suffix;
 							res.Name = newName;
@@ -617,25 +621,6 @@ namespace Obfuscar
 			map.UpdateType (unrenamedTypeKey, ObfuscationStatus.Renamed, string.Format ("[{0}]{1}", newTypeKey.Scope, type));
 		}
 
-		private string GetObfuscatedTypeName (string typeString, IDictionary<string, string> typeRenameMap)
-		{
-			string[] typeparts = typeString.Split (new[] { ',' });
-			if (typeparts.Length > 0) { // be paranoid
-				string typename = typeparts [0].Trim ();
-				string obfuscatedtypename;
-				if (typeRenameMap.TryGetValue (typename, out obfuscatedtypename)) {
-					string newtypename = obfuscatedtypename;
-					for (int n = 1; n < typeparts.Length; n++) {
-						newtypename += ',' + typeparts [n];
-					}
-
-					return newtypename;
-				}
-			}
-
-			return typeString;
-		}
-
 		private Dictionary<ParamSig, NameGroup> GetSigNames (Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames, TypeKey typeKey)
 		{
 			Dictionary<ParamSig, NameGroup> sigNames;
@@ -652,7 +637,7 @@ namespace Obfuscar
 			return GetNameGroup (GetSigNames (baseSigNames, typeKey), sig);
 		}
 
-		private NameGroup GetNameGroup<KeyType> (Dictionary<KeyType, NameGroup> sigNames, KeyType sig)
+		private NameGroup GetNameGroup<TKeyType> (Dictionary<TKeyType, NameGroup> sigNames, TKeyType sig)
 		{
 			NameGroup nameGroup;
 			if (!sigNames.TryGetValue (sig, out nameGroup)) {
@@ -847,7 +832,7 @@ namespace Obfuscar
 						// if we need to skip the method or we don't yet have a name planned for a method, rename it
 						if ((skiprename != null && m.Status != ObfuscationStatus.Skipped) ||
 						    m.Status == ObfuscationStatus.Unknown) {
-							RenameVirtualMethod (info, baseSigNames, sigNames, methodKey, method, skiprename);
+							RenameVirtualMethod (baseSigNames, methodKey, method, skiprename);
 						}
 					}
 
@@ -895,8 +880,6 @@ namespace Obfuscar
 									method.SemanticsAttributes = 0;
 								}
 								break;
-							default:
-								break;
 							}
 						} else {
 							RenameMethod (info, sigNames, methodKey, method);
@@ -906,8 +889,7 @@ namespace Obfuscar
 			}
 		}
 
-		private void RenameVirtualMethod (AssemblyInfo info, Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-		                                  Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method, string skipRename)
+		private void RenameVirtualMethod (Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames, MethodKey methodKey, MethodDefinition method, string skipRename)
 		{
 			// if method is in a group, look for group key
 			MethodGroup group = project.InheritMap.GetMethodGroup (methodKey);
@@ -1075,6 +1057,9 @@ namespace Obfuscar
 			map.UpdateMethod (methodKey, ObfuscationStatus.Renamed, newName);
 		}
 
+		/// <summary>
+		/// Encoded strings using an auto-generated class.
+		/// </summary>
 		public void HideStrings ()
 		{
 			foreach (AssemblyInfo info in project) {
@@ -1159,7 +1144,7 @@ namespace Obfuscar
 								Instruction instruction = method.Body.Instructions [i];
 								if (instruction.OpCode == OpCodes.Ldstr) {
 									string str = (string)instruction.Operand;
-									MethodDefinition individualStringMethodDefinition = null;
+									MethodDefinition individualStringMethodDefinition;
 									if (!methodByString.TryGetValue (str, out individualStringMethodDefinition)) {
 										string methodName = NameMaker.UniqueName (nameIndex++);
 
@@ -1260,7 +1245,6 @@ namespace Obfuscar
 				worker2.Emit (OpCodes.Brtrue, label2);
 				worker2.Emit (OpCodes.Ret);
 
-
 				library.MainModule.Types.Add (newtype);
 			}
 		}
@@ -1271,8 +1255,6 @@ namespace Obfuscar
 				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
 					if (type.FullName == "<Module>")
 						continue;
-
-					TypeKey typeKey = new TypeKey (type);
 
 					// first pass.  mark grouped virtual methods to be renamed, and mark some things
 					// to be skipped as neccessary
@@ -1287,7 +1269,6 @@ namespace Obfuscar
 
 				var module = info.Definition.MainModule;
 				var attribute = new TypeReference ("System.Runtime.CompilerServices", "SuppressIldasmAttribute", module, module.TypeSystem.Corlib).Resolve ();
-				var reference = module.TypeSystem.Corlib as AssemblyNameReference;
 				if (attribute == null)
 					return;
 
