@@ -59,6 +59,7 @@
 
 	<!-- prepare -->
 	<Target Name="Prepare">
+	    <Exec Command='..\..\.nuget\nuget.exe restore @(CompileObfuscar)' />
 		<MSBuild Projects="@(CompileObfuscar)"
 			Properties="Configuration=$(Configuration);BuildType=$(BuildType)" />
 	</Target>
