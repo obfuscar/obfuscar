@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasicExampleExe", "BasicExampleExe\BasicExampleExe.csproj", "{34692B14-2581-4C19-BCCD-89437BDED3A0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasicExampleLibrary", "BasicExampleLibrary\BasicExampleLibrary.csproj", "{A0C6B6A8-50C0-4EC4-B1A7-8B237ADA0999}"
