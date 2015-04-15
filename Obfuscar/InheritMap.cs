@@ -21,12 +21,14 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-using System;
-using System.Diagnostics;
+
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Text;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
+using Mono.Collections.Generic;
 
 namespace Obfuscar
 {
@@ -135,7 +137,54 @@ namespace Obfuscar
 
 		static bool MethodsMatch (MethodKey[] methods, int i, int j)
 		{
-			return methods [i].Equals ((NameParamSig)methods [j]);
+			var left = methods [i];
+			var right = methods [j]; 
+			if (!ContainsGeneric (left.Method)
+			             && !ContainsGeneric (right.Method))
+				return left.Equals ((NameParamSig)right);
+
+			if (left.Name != right.Name)
+				return false;
+
+			if (left.Method.Parameters.Count != right.Method.Parameters.Count)
+				return false;
+
+			for (int index = 0; index < left.Method.Parameters.Count; index++) {
+				var left1 = ExtractGeneric (left.Method.Parameters [index]);
+				var right1 = ExtractGeneric (right.Method.Parameters [index]);
+				if (left1 == null && right1 == null)
+					continue;
+
+				if (left1 == null || right1 == null)
+					return false;
+
+				for (int paraIndex = 0; paraIndex < left1.Count; paraIndex++) {
+					var leftPara = left1 [paraIndex];
+					var rightPara = right1 [paraIndex];
+					if (leftPara is GenericParameter || rightPara is GenericParameter)
+						continue;
+					if (leftPara.FullName != rightPara.FullName)
+						return false;
+				}
+			}
+
+			return true;
+		}
+
+		private static bool ContainsGeneric (MethodDefinition method)
+		{
+			return method.Parameters.Any (parameter => {
+                var paraType = parameter.ParameterType as ByReferenceType;
+                var element = paraType == null ? parameter.ParameterType as GenericInstanceType : paraType.ElementType as GenericInstanceType;
+				return element != null && element.HasGenericArguments;
+			});
+		}
+
+		private static Collection<TypeReference> ExtractGeneric (ParameterDefinition parameter)
+		{
+			var paraType = parameter.ParameterType as ByReferenceType;
+		    var element = paraType == null ? parameter.ParameterType as GenericInstanceType : paraType.ElementType as GenericInstanceType;
+			return element == null ? null : element.GenericArguments;
 		}
 
 		void GetBaseTypes (HashSet<TypeKey> baseTypes, TypeDefinition type)
