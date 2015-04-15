@@ -30,7 +30,19 @@ namespace TestClasses
 {
 	internal class ClassA<GenType>
 	{
-		protected virtual void Method1( GenType param )
+		protected virtual void Method4( int param )
+		{
+		}
+
+		protected virtual void Method5( string param )
+		{
+		}
+
+        protected virtual void Method3( List<GenType> param )
+        {
+        }
+
+        protected virtual void Method1( GenType param )
 		{
 		}
 
@@ -44,5 +56,17 @@ namespace TestClasses
 		protected override void Method2( int param )
 		{
 		}
+
+		protected void Method6( List<int> param )
+		{
+		}
+
+		protected void Method7( List<int> param )
+		{
+		}
+
+        protected override void Method3( List<int> param )
+        {
+        }
 	}
 }
