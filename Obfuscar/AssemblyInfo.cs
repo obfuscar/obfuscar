@@ -258,7 +258,7 @@ namespace Obfuscar
 								info.forceEvents.Add (new EventTester (rx, type, attrib, typeattrib));
 							} else {
 								info.forceEvents.Add (new EventTester (name, type, attrib, typeattrib));
-						}
+							}
 							break;
 						}                    
 					} else if (reader.NodeType == XmlNodeType.EndElement && reader.Name == "Module") {
@@ -333,41 +333,46 @@ namespace Obfuscar
 		private class Graph
 		{
 			public List<Node<TypeDefinition>> Root = new List<Node<TypeDefinition>> ();
+			public Dictionary<string, Node<TypeDefinition>> _map = new Dictionary<string, Node<TypeDefinition>> ();
 
 			public Graph (IEnumerable<TypeDefinition> items)
 			{
-				foreach (var item in items)
-					Root.Add (new Node<TypeDefinition> { Item = item });
+				foreach (var item in items) {
+					var node = new Node<TypeDefinition> { Item = item };
+					Root.Add (node);
+					_map.Add (item.FullName, node);
+				}
 
-				AddParents (Root);
+				AddParents (Root, _map);
 			}
 
-			private static void AddParents (List<Node<TypeDefinition>> nodes)
+			private static void AddParents (List<Node<TypeDefinition>> nodes, Dictionary<string, Node<TypeDefinition>> map)
 			{
 				foreach (var node in nodes) {
 					var baseType = node.Item.BaseType;
 					if (baseType != null) {
-						var parent = SearchNode (baseType, nodes);
+						var parent = SearchNode (baseType, map);
 						node.AppendTo (parent);
 					}
 
 					if (node.Item.HasInterfaces)
 						foreach (var inter in node.Item.Interfaces) {
-							var parent = SearchNode (inter, nodes);
+							var parent = SearchNode (inter, map);
 							node.AppendTo (parent);
 						}
 
 					var nestedParent = node.Item.DeclaringType;
 					if (nestedParent != null) {
-						var parent = SearchNode (nestedParent, nodes);
+						var parent = SearchNode (nestedParent, map);
 						node.AppendTo (parent);                        
 					}
 				}
 			}
 
-			private static Node<TypeDefinition> SearchNode (TypeReference baseType, List<Node<TypeDefinition>> nodes)
+			private static Node<TypeDefinition> SearchNode (TypeReference baseType, Dictionary<string, Node<TypeDefinition>> map)
 			{
-				return nodes.FirstOrDefault (node => node.Item.FullName == baseType.FullName);
+				var key = baseType.FullName;
+				return map.ContainsKey (key) ? map [key] : null;
 			}
 
 			internal IEnumerable<TypeDefinition> GetOrderedList ()
@@ -404,15 +409,22 @@ namespace Obfuscar
 			}
 		}
 
+		private IEnumerable<TypeDefinition> _cached;
+
 		public IEnumerable<TypeDefinition> GetAllTypeDefinitions ()
 		{
+			if (_cached != null) {
+				return _cached;
+			}
+
 			var result = definition.MainModule.GetAllTypes ();
 			var graph = new Graph (result);
-			var list = graph.GetOrderedList ();
-			if (list.Count () != result.Count ())
-				throw new Exception ("Graph error");
+			return _cached = graph.GetOrderedList ();
+		}
 
-			return list;
+		public void InvalidateCache ()
+		{
+			_cached = null;
 		}
 
 		private IEnumerable<MemberReference> getMemberReferences ()
@@ -603,7 +615,7 @@ namespace Obfuscar
 
 			if (markedOnly) {
 				message = "MarkedOnly option in configuration";
-                return true;
+				return true;
 			}
 
 			if (forceTypes.IsMatch (type, map)) {
@@ -628,8 +640,8 @@ namespace Obfuscar
 
 			if (type.TypeDefinition.IsTypePublic ()) {
 				message = "KeepPublicApi option in configuration";
-					return keepPublicApi;
-				}
+				return keepPublicApi;
+			}
 
 			message = "HidePrivateApi option in configuration";
 			return !hidePrivateApi;
@@ -639,8 +651,8 @@ namespace Obfuscar
 		{
 			if (method.Method.IsRuntime) {
 				message = "runtime method";
-					return true;
-				}
+				return true;
+			}
 
 			if (method.Method.IsSpecialName) {
 				switch (method.Method.SemanticsAttributes) {
@@ -655,7 +667,7 @@ namespace Obfuscar
 				default:
 					message = "special name";
 					return true;
-			}
+				}
 			}
 
 			return ShouldSkipParams (method, map, keepPublicApi, hidePrivateApi, markedOnly, out message);
@@ -668,7 +680,7 @@ namespace Obfuscar
 			if (attribute != null) {
 				message = "attribute";
 				return !attribute.Value;
-		}
+			}
 
 			var parent = method.DeclaringType.MarkedToRename ();
 			if (parent != null) {
@@ -761,7 +773,7 @@ namespace Obfuscar
 			if (skipFields.IsMatch (field, map)) {
 				message = "field rule in configuration";
 				return true;
-		}
+			}
 
 			if (field.DeclaringType.IsTypePublic () && (field.Field.IsPublic || field.Field.IsFamily)) {
 				message = "KeepPublicApi option in configuration";
@@ -814,7 +826,7 @@ namespace Obfuscar
 			if (skipProperties.IsMatch (prop, map)) {
 				message = "property rule in configuration";
 				return true;
-		}
+			}
 
 			if (prop.DeclaringType.IsTypePublic () && (IsGetterPublic (prop.Property) || IsSetterPublic (prop.Property))) {
 				message = "KeepPublicApi option in configuration";
@@ -869,7 +881,7 @@ namespace Obfuscar
 			if (skipEvents.IsMatch (evt, map)) {
 				message = "event rule in configuration";
 				return true;
-		}
+			}
 
 			if (evt.DeclaringType.IsTypePublic () && (IsAddPublic (evt.Event) || IsRemovePublic (evt.Event))) {
 				message = "KeepPublicApi option in configuration";
