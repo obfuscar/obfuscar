@@ -76,12 +76,13 @@ namespace Obfuscar
 		private readonly Dictionary<MethodKey, MethodGroup> methodGroups = new Dictionary<MethodKey, MethodGroup> ();
 		private readonly Dictionary<TypeKey, TypeKey[]> baseTypes = new Dictionary<TypeKey, TypeKey[]> ();
 
-	    public InheritMap (Project project)
+		public InheritMap (Project project)
 		{
 			this.project = project;
 
 			// cache for assemblies not in the project
 			project.Cache = new AssemblyCache (project);
+
 			foreach (AssemblyInfo info in project) {
 				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
 					if (type.FullName == "<Module>")
@@ -139,8 +140,7 @@ namespace Obfuscar
 		{
 			var left = methods [i];
 			var right = methods [j]; 
-			if (!ContainsGeneric (left.Method)
-			             && !ContainsGeneric (right.Method))
+			if (!ContainsGeneric (left.Method) && !ContainsGeneric (right.Method))
 				return left.Equals ((NameParamSig)right);
 
 			if (left.Name != right.Name)
@@ -156,7 +156,7 @@ namespace Obfuscar
 					continue;
 
 				if (left1 == null || right1 == null)
-					return false;
+					continue;
 
 				for (int paraIndex = 0; paraIndex < left1.Count; paraIndex++) {
 					var leftPara = left1 [paraIndex];
@@ -174,8 +174,8 @@ namespace Obfuscar
 		private static bool ContainsGeneric (MethodDefinition method)
 		{
 			return method.Parameters.Any (parameter => {
-                var paraType = parameter.ParameterType as ByReferenceType;
-                var element = paraType == null ? parameter.ParameterType as GenericInstanceType : paraType.ElementType as GenericInstanceType;
+				var paraType = parameter.ParameterType as ByReferenceType;
+				var element = paraType == null ? parameter.ParameterType as GenericInstanceType : paraType.ElementType as GenericInstanceType;
 				return element != null && element.HasGenericArguments;
 			});
 		}
@@ -183,7 +183,7 @@ namespace Obfuscar
 		private static Collection<TypeReference> ExtractGeneric (ParameterDefinition parameter)
 		{
 			var paraType = parameter.ParameterType as ByReferenceType;
-		    var element = paraType == null ? parameter.ParameterType as GenericInstanceType : paraType.ElementType as GenericInstanceType;
+			var element = paraType == null ? parameter.ParameterType as GenericInstanceType : paraType.ElementType as GenericInstanceType;
 			return element == null ? null : element.GenericArguments;
 		}
 
