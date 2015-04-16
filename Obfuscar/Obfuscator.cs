@@ -311,7 +311,7 @@ namespace Obfuscar
 			// skip filtered fields
 			string skip;
 			if (info.ShouldSkip (fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi,
-				          Project.Settings.MarkedOnly, out skip)) {
+				    Project.Settings.MarkedOnly, out skip)) {
 				map.UpdateField (fieldKey, ObfuscationStatus.Skipped, skip);
 				nameGroup.Add (fieldKey.Name);
 				return;
@@ -587,7 +587,7 @@ namespace Obfuscar
 							continue;
 
 						try {
-							using (var bamlReader = new XmlBamlReader (stream, new CecilTypeResolver (project.InheritMap.Cache, library)))
+							using (var bamlReader = new XmlBamlReader (stream, new CecilTypeResolver (project.Cache, library)))
 								result.Add (XDocument.Load (bamlReader));
 						} catch (ArgumentException) {
 						} catch (FileNotFoundException) {
@@ -686,7 +686,7 @@ namespace Obfuscar
 		}
 
 		private int ProcessProperty (TypeKey typeKey, PropertyDefinition prop, AssemblyInfo info, TypeDefinition type, int index,
-		                               List<PropertyDefinition> propsToDrop)
+		                             List<PropertyDefinition> propsToDrop)
 		{
 			PropertyKey propKey = new PropertyKey (typeKey, prop);
 			ObfuscatedThing m = map.GetProperty (propKey);
@@ -694,7 +694,7 @@ namespace Obfuscar
 			string skip;
 			// skip filtered props
 			if (info.ShouldSkip (propKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi,
-				          Project.Settings.MarkedOnly, out skip)) {
+				    Project.Settings.MarkedOnly, out skip)) {
 				m.Update (ObfuscationStatus.Skipped, skip);
 
 				// make sure get/set get skipped too
@@ -710,7 +710,7 @@ namespace Obfuscar
 			}
 
 			if (type.BaseType != null && type.BaseType.Name.EndsWith ("Attribute") && prop.SetMethod != null &&
-			          (prop.SetMethod.Attributes & MethodAttributes.Public) != 0) {
+			    (prop.SetMethod.Attributes & MethodAttributes.Public) != 0) {
 				// do not rename properties of custom attribute types which have a public setter method
 				m.Update (ObfuscationStatus.Skipped, "public setter of a custom attribute");
 				// no problem when the getter or setter methods are renamed by RenameMethods()
@@ -791,7 +791,7 @@ namespace Obfuscar
 			string skip;
 			// skip filtered events
 			if (info.ShouldSkip (evtKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi,
-				          Project.Settings.MarkedOnly, out skip)) {
+				    Project.Settings.MarkedOnly, out skip)) {
 				m.Update (ObfuscationStatus.Skipped, skip);
 
 				// make sure add/remove get skipped too
@@ -896,7 +896,7 @@ namespace Obfuscar
 			// skip filtered methods
 			string skiprename;
 			var toDo = info.ShouldSkip (methodKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-				                 Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skiprename);
+				           Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skiprename);
 			if (!toDo)
 				skiprename = null;
 			// update status for skipped non-virtual methods immediately...status for
@@ -911,7 +911,7 @@ namespace Obfuscar
 
 			// if we need to skip the method or we don't yet have a name planned for a method, rename it
 			if ((skiprename != null && m.Status != ObfuscationStatus.Skipped) ||
-			          m.Status == ObfuscationStatus.Unknown) {
+			    m.Status == ObfuscationStatus.Unknown) {
 				RenameVirtualMethod (baseSigNames, methodKey, method, skiprename);
 			}
 		}
@@ -1309,8 +1309,8 @@ namespace Obfuscar
 			}
 
 			public void ProcessStrings (MethodDefinition method,
-			                                   AssemblyInfo info,
-			                                   Project project)
+			                            AssemblyInfo info,
+			                            Project project)
 			{
 				if (!info.ShouldSkipStringHiding (new MethodKey (method), project.InheritMap, project.Settings.HidePrivateApi) && method.Body != null) {
 					for (int i = 0; i < method.Body.Instructions.Count; i++) {

@@ -21,22 +21,26 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-using Mono.Cecil;
+
 using System.Collections.Generic;
 using System.IO;
-using System;
+using Mono.Cecil;
 using Obfuscar.Helpers;
 
 namespace Obfuscar
 {
 	class AssemblyCache : DefaultAssemblyResolver
 	{
-		readonly Project project;
 		private List<string> paths = new List<string> ();
 
 		public AssemblyCache (Project project)
 		{
-			this.project = project;
+			AddSearchDirectory (project.Settings.InPath);
+			foreach (var path in project.ExtraPaths)
+				AddSearchDirectory (path);
+
+			foreach (AssemblyInfo info in project)
+				AddSearchDirectory (Path.GetDirectoryName (info.Filename));
 		}
 
 		public TypeDefinition GetTypeDefinition (TypeReference type)

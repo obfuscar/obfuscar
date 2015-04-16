@@ -74,24 +74,13 @@ namespace Obfuscar
 		private readonly Dictionary<MethodKey, MethodGroup> methodGroups = new Dictionary<MethodKey, MethodGroup> ();
 		private readonly Dictionary<TypeKey, TypeKey[]> baseTypes = new Dictionary<TypeKey, TypeKey[]> ();
 
-		internal AssemblyCache Cache {
-			get {
-				return project.Cache;
-			}
-		}
-
-		public InheritMap (Project project)
+	    public InheritMap (Project project)
 		{
 			this.project = project;
 
 			// cache for assemblies not in the project
-			AssemblyCache cache = new AssemblyCache (project);
-
-			foreach (var path in project.ExtraPaths)
-				cache.AddSearchDirectory (path);
-
+			project.Cache = new AssemblyCache (project);
 			foreach (AssemblyInfo info in project) {
-				cache.AddSearchDirectory (System.IO.Path.GetDirectoryName (info.Filename));
 				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
 					if (type.FullName == "<Module>")
 						continue;
@@ -103,7 +92,7 @@ namespace Obfuscar
 					int i = 0;
 					int j;
 
-					MethodKey[] methods = GetVirtualMethods (cache, type);
+					MethodKey[] methods = GetVirtualMethods (project.Cache, type);
 					while (i < methods.Length) {
 						MethodGroup group;
 						if (!methodGroups.TryGetValue (methods [i], out group))
@@ -265,7 +254,7 @@ namespace Obfuscar
 
 
 			if (type.BaseType != null) {
-				var typeDef = Cache.GetTypeDefinition (type.BaseType);
+				var typeDef = project.Cache.GetTypeDefinition (type.BaseType);
 
 				return Inherits (typeDef, interfaceFullName);
 			}

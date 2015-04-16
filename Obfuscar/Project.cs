@@ -122,6 +122,7 @@ namespace Obfuscar
 
 				return m_cache;
 			}
+			set { m_cache = value; }
 		}
 
 		public static Project FromXml (XmlReader reader, string projectFileDirectory)
