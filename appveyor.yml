@@ -1,0 +1,6 @@
+version: 1.0.{build}
+os: Windows Server 2012 R2
+install:
+- git submodule update --init --recursive
+build_script:
+- pack.bat
