@@ -24,11 +24,8 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Text;
 using Mono.Cecil;
-using Mono.Collections.Generic;
 
 namespace Obfuscar
 {
@@ -138,56 +135,85 @@ namespace Obfuscar
 
 		static bool MethodsMatch (MethodKey[] methods, int i, int j)
 		{
-			var left = methods [i];
-			var right = methods [j]; 
-			if (!ContainsGeneric (left.Method) && !ContainsGeneric (right.Method))
-				return left.Equals ((NameParamSig)right);
-
-			if (left.Name != right.Name)
-				return false;
-
-			if (left.Method.Parameters.Count != right.Method.Parameters.Count)
-				return false;
-
-			for (int index = 0; index < left.Method.Parameters.Count; index++) {
-				var left1 = ExtractGeneric (left.Method.Parameters [index]);
-				var right1 = ExtractGeneric (right.Method.Parameters [index]);
-				if (left1 == null && right1 == null)
-					continue;
-
-				if (left1 == null || right1 == null)
-					continue;
-
-				for (int paraIndex = 0; paraIndex < left1.Count; paraIndex++) {
-					var leftPara = left1 [paraIndex];
-					var rightPara = right1 [paraIndex];
-					if (leftPara is GenericParameter || rightPara is GenericParameter)
-						continue;
-					if (leftPara.FullName != rightPara.FullName)
-						return false;
-				}
-			}
-
-			return true;
+		    return MethodMatch(methods [i].Method, methods [j].Method);
 		}
 
-		private static bool ContainsGeneric (MethodDefinition method)
-		{
-			return method.Parameters.Any (parameter => {
-				var paraType = parameter.ParameterType as ByReferenceType;
-				var element = paraType == null ? parameter.ParameterType as GenericInstanceType : paraType.ElementType as GenericInstanceType;
-				return element != null && element.HasGenericArguments;
-			});
-		}
+        // taken from https://github.com/mono/mono/blob/master/mcs/tools/linker/Mono.Linker.Steps/TypeMapStep.cs
+        static bool MethodMatch(MethodDefinition candidate, MethodDefinition method)
+        {
+            if (!candidate.IsVirtual)
+                return false;
 
-		private static Collection<TypeReference> ExtractGeneric (ParameterDefinition parameter)
-		{
-			var paraType = parameter.ParameterType as ByReferenceType;
-			var element = paraType == null ? parameter.ParameterType as GenericInstanceType : paraType.ElementType as GenericInstanceType;
-			return element == null ? null : element.GenericArguments;
-		}
+            if (candidate.Name != method.Name)
+                return false;
 
-		void GetBaseTypes (HashSet<TypeKey> baseTypes, TypeDefinition type)
+            if (!TypeMatch(candidate.ReturnType, method.ReturnType))
+                return false;
+
+            if (candidate.Parameters.Count != method.Parameters.Count)
+                return false;
+
+            for (int i = 0; i < candidate.Parameters.Count; i++)
+                if (!TypeMatch(candidate.Parameters[i].ParameterType, method.Parameters[i].ParameterType))
+                    return false;
+
+            return true;
+        }
+
+        static bool TypeMatch(IModifierType a, IModifierType b)
+        {
+            if (!TypeMatch(a.ModifierType, b.ModifierType))
+                return false;
+
+            return TypeMatch(a.ElementType, b.ElementType);
+        }
+
+        static bool TypeMatch(TypeSpecification a, TypeSpecification b)
+        {
+            if (a is GenericInstanceType)
+                return TypeMatch((GenericInstanceType)a, (GenericInstanceType)b);
+
+            if (a is IModifierType)
+                return TypeMatch((IModifierType)a, (IModifierType)b);
+
+            return TypeMatch(a.ElementType, b.ElementType);
+        }
+
+        static bool TypeMatch(GenericInstanceType a, GenericInstanceType b)
+        {
+            if (!TypeMatch(a.ElementType, b.ElementType))
+                return false;
+
+            if (a.GenericArguments.Count != b.GenericArguments.Count)
+                return false;
+
+            if (a.GenericArguments.Count == 0)
+                return true;
+
+            for (int i = 0; i < a.GenericArguments.Count; i++)
+                if (!TypeMatch(a.GenericArguments[i], b.GenericArguments[i]))
+                    return false;
+
+            return true;
+        }
+
+        static bool TypeMatch(TypeReference a, TypeReference b)
+        {
+            if (a is GenericParameter)
+                return true;
+
+            if (a is TypeSpecification || b is TypeSpecification)
+            {
+                if (a.GetType() != b.GetType())
+                    return false;
+
+                return TypeMatch((TypeSpecification)a, (TypeSpecification)b);
+            }
+
+            return a.FullName == b.FullName;
+        }
+
+	    void GetBaseTypes (HashSet<TypeKey> baseTypes, TypeDefinition type)
 		{
 			// check the interfaces
 			foreach (TypeReference ifaceRef in type.Interfaces) {
