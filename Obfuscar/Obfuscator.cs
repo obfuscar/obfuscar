@@ -35,10 +35,14 @@ using System.Resources;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+#if !__MonoCS__
 using ILSpy.BamlDecompiler;
+#endif
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+#if !__MonoCS__
 using Ricciolo.StylesExplorer.MarkupReflection;
+#endif
 
 namespace Obfuscar
 {
@@ -587,8 +591,10 @@ namespace Obfuscar
 							continue;
 
 						try {
+#if !__MonoCS__
 							using (var bamlReader = new XmlBamlReader (stream, new CecilTypeResolver (project.Cache, library)))
 								result.Add (XDocument.Load (bamlReader));
+#endif
 						} catch (ArgumentException) {
 						} catch (FileNotFoundException) {
 						}
