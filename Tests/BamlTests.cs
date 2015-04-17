@@ -24,12 +24,8 @@
 
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Text;
-using System.CodeDom.Compiler;
-
-using NUnit.Framework;
 using Mono.Cecil;
+using NUnit.Framework;
 using Obfuscar;
 
 namespace ObfuscarTests
