@@ -135,85 +135,10 @@ namespace Obfuscar
 
 		static bool MethodsMatch (MethodKey[] methods, int i, int j)
 		{
-		    return MethodMatch(methods [i].Method, methods [j].Method);
+			return MethodKey.MethodMatch (methods [i].Method, methods [j].Method);
 		}
 
-        // taken from https://github.com/mono/mono/blob/master/mcs/tools/linker/Mono.Linker.Steps/TypeMapStep.cs
-        static bool MethodMatch(MethodDefinition candidate, MethodDefinition method)
-        {
-            if (!candidate.IsVirtual)
-                return false;
-
-            if (candidate.Name != method.Name)
-                return false;
-
-            if (!TypeMatch(candidate.ReturnType, method.ReturnType))
-                return false;
-
-            if (candidate.Parameters.Count != method.Parameters.Count)
-                return false;
-
-            for (int i = 0; i < candidate.Parameters.Count; i++)
-                if (!TypeMatch(candidate.Parameters[i].ParameterType, method.Parameters[i].ParameterType))
-                    return false;
-
-            return true;
-        }
-
-        static bool TypeMatch(IModifierType a, IModifierType b)
-        {
-            if (!TypeMatch(a.ModifierType, b.ModifierType))
-                return false;
-
-            return TypeMatch(a.ElementType, b.ElementType);
-        }
-
-        static bool TypeMatch(TypeSpecification a, TypeSpecification b)
-        {
-            if (a is GenericInstanceType)
-                return TypeMatch((GenericInstanceType)a, (GenericInstanceType)b);
-
-            if (a is IModifierType)
-                return TypeMatch((IModifierType)a, (IModifierType)b);
-
-            return TypeMatch(a.ElementType, b.ElementType);
-        }
-
-        static bool TypeMatch(GenericInstanceType a, GenericInstanceType b)
-        {
-            if (!TypeMatch(a.ElementType, b.ElementType))
-                return false;
-
-            if (a.GenericArguments.Count != b.GenericArguments.Count)
-                return false;
-
-            if (a.GenericArguments.Count == 0)
-                return true;
-
-            for (int i = 0; i < a.GenericArguments.Count; i++)
-                if (!TypeMatch(a.GenericArguments[i], b.GenericArguments[i]))
-                    return false;
-
-            return true;
-        }
-
-        static bool TypeMatch(TypeReference a, TypeReference b)
-        {
-            if (a is GenericParameter)
-                return true;
-
-            if (a is TypeSpecification || b is TypeSpecification)
-            {
-                if (a.GetType() != b.GetType())
-                    return false;
-
-                return TypeMatch((TypeSpecification)a, (TypeSpecification)b);
-            }
-
-            return a.FullName == b.FullName;
-        }
-
-	    void GetBaseTypes (HashSet<TypeKey> baseTypes, TypeDefinition type)
+		void GetBaseTypes (HashSet<TypeKey> baseTypes, TypeDefinition type)
 		{
 			// check the interfaces
 			foreach (TypeReference ifaceRef in type.Interfaces) {

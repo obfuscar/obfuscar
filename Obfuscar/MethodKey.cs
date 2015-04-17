@@ -21,11 +21,9 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
+
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Mono.Cecil;
-using Mono.Cecil.Metadata;
 
 namespace Obfuscar
 {
@@ -35,12 +33,12 @@ namespace Obfuscar
 		readonly int hashCode;
 		readonly MethodDefinition methodDefinition;
 
-		public MethodKey (MethodDefinition method) : this(new TypeKey((TypeDefinition)method.DeclaringType), method)
+		public MethodKey (MethodDefinition method) : this (new TypeKey ((TypeDefinition)method.DeclaringType), method)
 		{
 		}
 
 		public MethodKey (TypeKey typeKey, MethodDefinition method)
-			: base(method)
+			: base (method)
 		{
 			this.typeKey = typeKey;
 			this.methodDefinition = method;
@@ -74,7 +72,7 @@ namespace Obfuscar
 			MethodReference methodRef = member as MethodReference;
 			if (methodRef != null) {
 				if (typeKey.Matches (methodRef.DeclaringType))
-					return base.Matches (member);
+					return MethodMatch (Method, methodRef);
 			}
 
 			return false;
@@ -129,6 +127,80 @@ namespace Obfuscar
 			if (cmp == 0)
 				cmp = typeKey.CompareTo (other.typeKey);
 			return cmp;
+		}
+
+		// taken from https://github.com/mono/mono/blob/master/mcs/tools/linker/Mono.Linker.Steps/TypeMapStep.cs
+		internal static bool MethodMatch (MethodDefinition candidate, MethodReference method)
+		{
+			//if (!candidate.IsVirtual)
+			//    return false;
+
+			if (candidate.Name != method.Name)
+				return false;
+
+			if (!TypeMatch (candidate.ReturnType, method.ReturnType))
+				return false;
+
+			if (candidate.Parameters.Count != method.Parameters.Count)
+				return false;
+
+			for (int i = 0; i < candidate.Parameters.Count; i++)
+				if (!TypeMatch (candidate.Parameters [i].ParameterType, method.Parameters [i].ParameterType))
+					return false;
+
+			return true;
+		}
+
+		private static bool TypeMatch (IModifierType a, IModifierType b)
+		{
+			if (!TypeMatch (a.ModifierType, b.ModifierType))
+				return false;
+
+			return TypeMatch (a.ElementType, b.ElementType);
+		}
+
+		private static bool TypeMatch (TypeSpecification a, TypeSpecification b)
+		{
+			if (a is GenericInstanceType)
+				return TypeMatch ((GenericInstanceType)a, (GenericInstanceType)b);
+
+			if (a is IModifierType)
+				return TypeMatch ((IModifierType)a, (IModifierType)b);
+
+			return TypeMatch (a.ElementType, b.ElementType);
+		}
+
+		private static bool TypeMatch (GenericInstanceType a, GenericInstanceType b)
+		{
+			if (!TypeMatch (a.ElementType, b.ElementType))
+				return false;
+
+			if (a.GenericArguments.Count != b.GenericArguments.Count)
+				return false;
+
+			if (a.GenericArguments.Count == 0)
+				return true;
+
+			for (int i = 0; i < a.GenericArguments.Count; i++)
+				if (!TypeMatch (a.GenericArguments [i], b.GenericArguments [i]))
+					return false;
+
+			return true;
+		}
+
+		private static bool TypeMatch (TypeReference a, TypeReference b)
+		{
+			if (a is GenericParameter)
+				return true;
+
+			if (a is TypeSpecification || b is TypeSpecification) {
+				if (a.GetType () != b.GetType ())
+					return false;
+
+				return TypeMatch ((TypeSpecification)a, (TypeSpecification)b);
+			}
+
+			return a.FullName == b.FullName;
 		}
 	}
 }
