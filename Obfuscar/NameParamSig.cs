@@ -71,23 +71,6 @@ namespace Obfuscar
 			get { return name; }
 		}
 
-		public virtual bool Matches (MemberReference member)
-		{
-			MethodReference methodRef = member as MethodReference;
-			if (methodRef != null) {
-				if (methodRef.Name == Name && methodRef.Parameters.Count == ParamTypes.Length) {
-					for (int i = 0; i < ParamTypes.Length; i++) {
-						if (Helper.GetParameterTypeName (methodRef.Parameters [i]) != ParamTypes [i])
-							return false;
-					}
-
-					return true;
-				}
-			}
-
-			return false;
-		}
-
 		public bool Equals (NameParamSig other)
 		{
 			return other != null &&

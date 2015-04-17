@@ -67,7 +67,7 @@ namespace Obfuscar
 			get { return methodDefinition; }
 		}
 
-		public override bool Matches (MemberReference member)
+		public bool Matches (MemberReference member)
 		{
 			MethodReference methodRef = member as MethodReference;
 			if (methodRef != null) {
