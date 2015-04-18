@@ -22,47 +22,86 @@
 /// </copyright>
 #endregion
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using Mono.Options;
 
 namespace Obfuscar
 {
 	[SuppressMessage ("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
 	internal static class Program
 	{
-		private static void ShowHelp ()
+		private static void ShowHelp (OptionSet optionSet)
 		{
-			Console.WriteLine ("Usage:  obfuscar [projectfile]");
+			Console.WriteLine ("Obfuscar is available at https://obfuscar.codeplex.com");
+			Console.WriteLine ("(C) 2007-2015, Ryan Williams and other contributors.");
+			Console.WriteLine ();
+			Console.WriteLine ("obfuscar [Options] [project_file] [project_file]");
+			Console.WriteLine ("Options:");
+			optionSet.WriteOptionDescriptions (Console.Out);
 		}
 
 		[SuppressMessage ("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification = "Reviewed. Suppression is OK here.")]
 		private static int Main (string[] args)
 		{
-			Console.WriteLine ("Obfuscar is available at http://obfuscar.codeplex.com.");
-			Console.WriteLine ("(C) 2007-2014, Ryan Williams and other contributors.");
-			Console.WriteLine ();
+			bool showHelp = false;
+			bool showVersion = false;
 
-			if (args.Length != 1) {
-				ShowHelp ();
+			OptionSet p = new OptionSet ()
+		        .Add ("h|?|help", "Print this help information.", delegate(string v) {
+				showHelp = v != null;
+			})
+		        .Add ("V", "Display version number of this application.", delegate(string v) {
+				showVersion = v != null;
+			});
+
+			if (args.Length == 0) {
+				ShowHelp (p);
+				return 0;
+			}
+
+			List<string> extra;
+			try {
+				extra = p.Parse (args);
+			} catch (OptionException ex) {
+				Console.WriteLine (ex.Message);
+				return 1;
+			}
+
+			if (showHelp) {
+				ShowHelp (p);
+				return 0;
+			}
+
+			if (showVersion) {
+				Console.WriteLine (Assembly.GetExecutingAssembly ().GetName ().Version);
+				return 0;
+			}
+
+			if (extra.Count < 1) {
+				ShowHelp (p);
 				return 1;
 			}
 
 			int start = Environment.TickCount;
+			foreach (var project in extra) {
+				try {			    
+					Console.Write ("Loading project {0}...", project);
+					Obfuscator obfuscator = new Obfuscator (project);
+					Console.WriteLine ("Done.");
 
-			try {
-				Console.Write ("Loading project...");
-				Obfuscator obfuscator = new Obfuscator (args [0]);
-				Console.WriteLine ("Done.");
+					obfuscator.RunRules ();
 
-				obfuscator.RunRules ();
-				
-				Console.WriteLine ("Completed, {0:f2} secs.", (Environment.TickCount - start) / 1000.0);
-			} catch (ObfuscarException e) {
-				Console.WriteLine ();
-				Console.Error.WriteLine ("An error occurred during processing:");
-				Console.Error.WriteLine (e.Message);
-				if (e.InnerException != null)
-					Console.Error.WriteLine (e.InnerException.Message);
-				return 1;
+					Console.WriteLine ("Completed, {0:f2} secs.", (Environment.TickCount - start) / 1000.0);			    
+				} catch (ObfuscarException e) {
+					Console.WriteLine ();
+					Console.Error.WriteLine ("An error occurred during processing:");
+					Console.Error.WriteLine (e.Message);
+					if (e.InnerException != null)
+						Console.Error.WriteLine (e.InnerException.Message);
+					return 1;
+				}
 			}
 
 			return 0;
