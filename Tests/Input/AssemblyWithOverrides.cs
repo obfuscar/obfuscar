@@ -86,4 +86,10 @@ namespace TestClasses
 			return 1;
 		}
 	}
+
+    public interface IA { string PropA { get; } }
+    public interface IB : IA { string PropB { get; } }
+
+    public class CA : IA { public string PropA { get { return "A"; } } }
+    public class CB : CA, IB { public string PropB { get { return "B"; } } }
 }

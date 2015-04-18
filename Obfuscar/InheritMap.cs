@@ -138,13 +138,13 @@ namespace Obfuscar
 			return MethodKey.MethodMatch (methods [i].Method, methods [j].Method);
 		}
 
-		void GetBaseTypes (HashSet<TypeKey> baseTypes, TypeDefinition type)
+		public static void GetBaseTypes (Project project, HashSet<TypeKey> baseTypes, TypeDefinition type)
 		{
 			// check the interfaces
 			foreach (TypeReference ifaceRef in type.Interfaces) {
 				TypeDefinition iface = project.GetTypeDefinition (ifaceRef);
 				if (iface != null) {
-					GetBaseTypes (baseTypes, iface);
+					GetBaseTypes (project, baseTypes, iface);
 					baseTypes.Add (new TypeKey (iface));
 				}
 			}
@@ -152,7 +152,7 @@ namespace Obfuscar
 			// check the base type unless it isn't in the project, or we don't have one
 			TypeDefinition baseType = project.GetTypeDefinition (type.BaseType);
 			if (baseType != null && baseType.FullName != "System.Object") {
-				GetBaseTypes (baseTypes, baseType);
+				GetBaseTypes (project, baseTypes, baseType);
 				baseTypes.Add (new TypeKey (baseType));
 			}
 		}
@@ -160,7 +160,7 @@ namespace Obfuscar
 		TypeKey[] GetBaseTypes (TypeDefinition type)
 		{
 			HashSet<TypeKey> baseTypes = new HashSet<TypeKey> ();
-			GetBaseTypes (baseTypes, type);
+			GetBaseTypes (project, baseTypes, type);
 			return new List<TypeKey> (baseTypes).ToArray ();
 		}
 

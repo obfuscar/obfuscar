@@ -39,14 +39,14 @@ namespace ObfuscarTests
 		Obfuscar.ObfuscationMap BuildAndObfuscateAssemblies ()
 		{
 			string xml = String.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Var name='KeepPublicApi' value='false' />" +
+				             @"<?xml version='1.0'?>" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='KeepPublicApi' value='false' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithOverrides.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<Module file='$(InPath)\AssemblyWithOverrides.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithOverrides", String.Empty, xml);
 
@@ -71,61 +71,103 @@ namespace ObfuscarTests
 			string assmName = "AssemblyWithOverrides.dll";
 
 			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
-				Path.Combine (TestHelper.InputPath, assmName));
+				                               Path.Combine (TestHelper.InputPath, assmName));
 
 			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly (
-				Path.Combine (TestHelper.OutputPath, assmName));
+				                                Path.Combine (TestHelper.OutputPath, assmName));
+			{
+				TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.ClassA");
+				MethodDefinition classAmethod2 = FindByName (classAType, "Method2");
+				MethodDefinition classAcompare = FindByName (classAType, "CompareTo");
 
-			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.ClassA");
-			MethodDefinition classAmethod2 = FindByName (classAType, "Method2");
-			MethodDefinition classAcompare = FindByName (classAType, "CompareTo");
+				TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.ClassB");
+				MethodDefinition classBmethod2 = FindByName (classBType, "Method2");
+				MethodDefinition classBcompare = FindByName (classBType, "CompareTo");
 
-			TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.ClassB");
-			MethodDefinition classBmethod2 = FindByName (classBType, "Method2");
-			MethodDefinition classBcompare = FindByName (classBType, "CompareTo");
+				TypeDefinition classCType = inAssmDef.MainModule.GetType ("TestClasses.ClassC");
+				MethodDefinition classCmethod1 = FindByName (classCType, "Method1");
 
-			TypeDefinition classCType = inAssmDef.MainModule.GetType ("TestClasses.ClassC");
-			MethodDefinition classCmethod1 = FindByName (classCType, "Method1");
+				TypeDefinition classDType = inAssmDef.MainModule.GetType ("TestClasses.ClassD");
+				MethodDefinition classDmethod1 = FindByName (classDType, "Method1");
 
-			TypeDefinition classDType = inAssmDef.MainModule.GetType ("TestClasses.ClassD");
-			MethodDefinition classDmethod1 = FindByName (classDType, "Method1");
+				Obfuscar.ObfuscatedThing classAEntry = map.GetMethod (new Obfuscar.MethodKey (classAmethod2));
+				ObfuscatedThing classACompareEntry = map.GetMethod (new MethodKey (classAcompare));
+				Obfuscar.ObfuscatedThing classBEntry = map.GetMethod (new Obfuscar.MethodKey (classBmethod2));
+				Obfuscar.ObfuscatedThing classBCompareEntry = map.GetMethod (new Obfuscar.MethodKey (classBcompare));
+				ObfuscatedThing classCEntry = map.GetMethod (new MethodKey (classCmethod1));
+				ObfuscatedThing classDEntry = map.GetMethod (new MethodKey (classDmethod1));
 
-			Obfuscar.ObfuscatedThing classAEntry = map.GetMethod (new Obfuscar.MethodKey (classAmethod2));
-			ObfuscatedThing classACompareEntry = map.GetMethod (new MethodKey (classAcompare));
-			Obfuscar.ObfuscatedThing classBEntry = map.GetMethod (new Obfuscar.MethodKey (classBmethod2));
-			Obfuscar.ObfuscatedThing classBCompareEntry = map.GetMethod (new Obfuscar.MethodKey (classBcompare));
-			ObfuscatedThing classCEntry = map.GetMethod (new MethodKey (classCmethod1));
-			ObfuscatedThing classDEntry = map.GetMethod (new MethodKey (classDmethod1));
+				var classFType = inAssmDef.MainModule.GetType ("TestClasses.ClassF");
+				var classFmethod = FindByName (classFType, "Test");
 
-		    var classFType = inAssmDef.MainModule.GetType("TestClasses.ClassF");
-		    var classFmethod = FindByName(classFType, "Test");
+				var classGType = inAssmDef.MainModule.GetType ("TestClasses.ClassG");
+				var classGmethod = FindByName (classGType, "Test");
 
-		    var classGType = inAssmDef.MainModule.GetType("TestClasses.ClassG");
-		    var classGmethod = FindByName(classGType, "Test");
+				var classFEntry = map.GetMethod (new MethodKey (classFmethod));
+				var classGEntry = map.GetMethod (new MethodKey (classGmethod));
 
-		    var classFEntry = map.GetMethod(new MethodKey(classFmethod));
-		    var classGEntry = map.GetMethod(new MethodKey(classGmethod));
+				Assert.IsTrue (
+					classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
+					classBEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
+					"Both methods should have been renamed.");
 
-			Assert.IsTrue (
-				classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
-				classBEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
-				"Both methods should have been renamed.");
-			
-			Assert.IsTrue (
-				classAEntry.StatusText == classBEntry.StatusText,
-				"Both methods should have been renamed to the same thing.");
+				Assert.IsTrue (
+					classAEntry.StatusText == classBEntry.StatusText,
+					"Both methods should have been renamed to the same thing.");
 
-			Assert.IsTrue (classACompareEntry.Status == ObfuscationStatus.Skipped);
+				Assert.IsTrue (classACompareEntry.Status == ObfuscationStatus.Skipped);
 
-			Assert.IsTrue (classBCompareEntry.Status == ObfuscationStatus.Skipped);
+				Assert.IsTrue (classBCompareEntry.Status == ObfuscationStatus.Skipped);
 
-			Assert.IsTrue (classCEntry.Status == ObfuscationStatus.Renamed);
+				Assert.IsTrue (classCEntry.Status == ObfuscationStatus.Renamed);
 
-			Assert.IsTrue (classDEntry.Status == ObfuscationStatus.Renamed);
+				Assert.IsTrue (classDEntry.Status == ObfuscationStatus.Renamed);
 
-            Assert.IsTrue(classFEntry.Status == ObfuscationStatus.Renamed && classGEntry.Status == ObfuscationStatus.Renamed, "Both methods should have been renamed.");
+				Assert.IsTrue (
+					classFEntry.Status == ObfuscationStatus.Renamed && classGEntry.Status == ObfuscationStatus.Renamed,
+					"Both methods should have been renamed.");
 
-            Assert.IsTrue(classFEntry.StatusText == classGEntry.StatusText, "Both methods should have been renamed to the same thing.");
+				Assert.IsTrue (classFEntry.StatusText == classGEntry.StatusText,
+					"Both methods should have been renamed to the same thing.");
+			}
+
+			{
+				TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.CA");
+				MethodDefinition classAmethod2 = FindByName (classAType, "get_PropA");
+
+				TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.CB");
+				MethodDefinition classBmethod2 = FindByName (classBType, "get_PropB");
+
+				TypeDefinition classCType = inAssmDef.MainModule.GetType ("TestClasses.IA");
+				MethodDefinition classCmethod1 = FindByName (classCType, "get_PropA");
+
+				TypeDefinition classDType = inAssmDef.MainModule.GetType ("TestClasses.IB");
+				MethodDefinition classDmethod1 = FindByName (classDType, "get_PropB");
+
+				Obfuscar.ObfuscatedThing classAEntry = map.GetMethod (new Obfuscar.MethodKey (classAmethod2));
+				Obfuscar.ObfuscatedThing classBEntry = map.GetMethod (new Obfuscar.MethodKey (classBmethod2));
+				ObfuscatedThing classCEntry = map.GetMethod (new MethodKey (classCmethod1));
+				ObfuscatedThing classDEntry = map.GetMethod (new MethodKey (classDmethod1));
+
+				Assert.IsTrue (
+					classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
+					classCEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
+					"Both methods should have been renamed.");
+
+				Assert.IsTrue (
+					classAEntry.StatusText == classCEntry.StatusText,
+					"Both methods should have been renamed to the same thing.");
+
+				Assert.IsTrue (
+					classBEntry.Status == ObfuscationStatus.Renamed && classDEntry.Status == ObfuscationStatus.Renamed,
+					"Both methods should have been renamed.");
+
+				Assert.IsTrue (classBEntry.StatusText == classDEntry.StatusText,
+					"Both methods should have been renamed to the same thing.");
+
+				Assert.IsTrue (classAEntry.StatusText != classBEntry.StatusText,
+					"Both methods shouldn't have been renamed to the same thing.");
+			}
 		}
 	}
 }

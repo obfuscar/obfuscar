@@ -1000,6 +1000,12 @@ namespace Obfuscar
 			foreach (MethodKey methodKey in methodKeys)
 				typeKeys.Add (methodKey.TypeKey);
 
+			HashSet<TypeKey> parentTypes = new HashSet<TypeKey> ();
+			foreach (TypeKey type in typeKeys)
+				InheritMap.GetBaseTypes (Project, parentTypes, type.TypeDefinition);
+
+			typeKeys.UnionWith (parentTypes);
+
 			// build list of namegroups
 			NameGroup[] nameGroups = new NameGroup[typeKeys.Count];
 
