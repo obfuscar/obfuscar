@@ -26,7 +26,8 @@
 
 	<!-- obfuscator bits -->
 	<PropertyGroup>
-		<ObfuscatorExe>..\..\Bin\Release\obfuscar.Console.exe</ObfuscatorExe>
+		<ObfuscatorExe Condition=" '$(OS)' == 'Windows_NT' ">..\..\bin\Release\Obfuscar.Console.exe</ObfuscatorExe>
+		<ObfuscatorExe Condition=" '$(OS)' != 'Windows_NT' ">mono ..\..\bin\Release\Obfuscar.Console.exe</ObfuscatorExe>
 		<ObfuscatorProject>$(BasePath)\obfuscar.xml</ObfuscatorProject>
 		<ObfuscatorInput>$(BasePath)\Obfuscator_Input</ObfuscatorInput>
 		<ObfuscatorOutput>$(BasePath)\Obfuscator_Output</ObfuscatorOutput>
@@ -59,15 +60,16 @@
 
 	<!-- prepare -->
 	<Target Name="Prepare">
-	    <Exec Command='..\..\.nuget\nuget.exe restore @(CompileObfuscar)' />
+	    <Exec Command='..\..\.nuget\NuGet.exe restore @(CompileObfuscar)' Condition=" '$(OS)' == 'Windows_NT' " />
+	    <Exec Command='mono ..\..\.nuget\NuGet.exe restore @(CompileObfuscar)' Condition=" '$(OS)' != 'Windows_NT' " />
 		<MSBuild Projects="@(CompileObfuscar)"
-			Properties="Configuration=$(Configuration);BuildType=$(BuildType)" />
+			Properties="Configuration=$(Configuration)" />
 	</Target>
 	
 	<!-- compile -->
 	<Target Name="Compile">
 		<MSBuild Projects="@(CompileSolution)"
-			Properties="Configuration=$(Configuration);BuildType=$(BuildType)" />
+			Properties="Configuration=$(Configuration)" />
 	</Target>
 
 	<!-- copies files that are to be obfuscated -->
@@ -84,7 +86,7 @@
 	<Target Name="Obfuscate"
 		DependsOnTargets="CopyObfuscatedFiles">
 		<MakeDir Directories="$(ObfuscatorOutput)" />
-		<Exec Command='"$(ObfuscatorExe)" "$(ObfuscatorProject)"' />
+		<Exec Command='$(ObfuscatorExe) "$(ObfuscatorProject)"' />
 		<Copy SourceFiles="@(ObfuscatedFile->'$(ObfuscatorOutput)\%(filename)%(extension)')"
 			DestinationFolder="Final" />
 		<Copy SourceFiles="$(ObfuscatorOutput)\Mapping.txt"
