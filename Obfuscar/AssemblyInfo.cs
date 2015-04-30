@@ -503,7 +503,7 @@ namespace Obfuscar
 				bool readSymbols = project.Settings.RegenerateDebugInfo && System.IO.File.Exists (System.IO.Path.ChangeExtension (filename, "pdb"));
 				try {
 					definition = AssemblyDefinition.ReadAssembly (filename, new ReaderParameters {
-						ReadingMode = Mono.Cecil.ReadingMode.Immediate,
+						ReadingMode = ReadingMode.Deferred,
 						ReadSymbols = readSymbols,
 						AssemblyResolver = project.Cache
 					});
@@ -511,13 +511,31 @@ namespace Obfuscar
 					if (!readSymbols)
 						throw;
 					definition = AssemblyDefinition.ReadAssembly (filename, new ReaderParameters {
-						ReadingMode = Mono.Cecil.ReadingMode.Immediate,
+						ReadingMode = ReadingMode.Deferred,
 						ReadSymbols = false,
 						AssemblyResolver = project.Cache
 					});
 				}
 
 				project.Cache.RegisterAssembly (definition);
+
+				// IMPORTANT: read again but with full mode.
+				try {
+					definition = AssemblyDefinition.ReadAssembly (filename, new ReaderParameters {
+						ReadingMode = ReadingMode.Immediate,
+						ReadSymbols = readSymbols,
+						AssemblyResolver = project.Cache
+					});
+				} catch { // If there's a non-matching pdb next to it, this fails, else just try again
+					if (!readSymbols)
+						throw;
+					definition = AssemblyDefinition.ReadAssembly (filename, new ReaderParameters {
+						ReadingMode = ReadingMode.Immediate,
+						ReadSymbols = false,
+						AssemblyResolver = project.Cache
+					});
+				}
+
 				name = definition.Name.Name;
 			} catch (System.IO.IOException e) {
 				throw new ObfuscarException ("Unable to find assembly:  " + filename, e);
