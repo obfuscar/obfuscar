@@ -15,7 +15,7 @@ namespace Obfuscar
 			return false;
 		}
 
-		public static bool? MarkedToRename (this IMemberDefinition type, bool member = false)
+		public static bool? MarkedToRename (this IMemberDefinition type, bool fromMember = false)
 		{
 			var obfuscarObfuscate = typeof(ObfuscateAttribute).FullName;
 			var reflectionObfuscate = typeof(System.Reflection.ObfuscationAttribute).FullName;
@@ -29,14 +29,14 @@ namespace Obfuscar
 					var applyToMembers = (bool)(Helper.GetAttributePropertyByName (attr, "ApplyToMembers") ?? true);
 					var rename = !(bool)(Helper.GetAttributePropertyByName (attr, "Exclude") ?? true);
 
-					if (member && !applyToMembers)
+					if (fromMember && !applyToMembers)
 						return !rename;
 
 					return rename;
 				}
 			}
 
-			return type.DeclaringType == null ? null : MarkedToRename (type.DeclaringType);
+			return type.DeclaringType == null ? null : MarkedToRename (type.DeclaringType, true);
 		}
 	}
 }

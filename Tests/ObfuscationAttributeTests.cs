@@ -22,7 +22,6 @@ namespace ObfuscarTests
 			cp.GenerateExecutable = false;
 			cp.GenerateInMemory = false;
 			cp.TreatWarningsAsErrors = true;
-			;
 
 			string assemblyAPath = Path.Combine (TestHelper.InputPath, "AssemblyA.dll");
 			cp.OutputAssembly = assemblyAPath;
@@ -67,21 +66,39 @@ namespace ObfuscarTests
 
 			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
 				                               Path.Combine (TestHelper.InputPath, assmName));
+			{
+				TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.InternalClass");
+				ObfuscatedThing classA = map.GetClass (new TypeKey (classAType));
+				var classAmethod1 = FindByName (classAType, "PublicMethod");
+				var method = map.GetMethod (new MethodKey (classAmethod1));
 
-			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.InternalClass");
-			ObfuscatedThing classA = map.GetClass (new TypeKey (classAType));
-			var classAmethod1 = FindByName (classAType, "PublicMethod");
-			var method = map.GetMethod (new MethodKey (classAmethod1));
+				TypeDefinition nestedClassAType = classAType.NestedTypes [0];
+				ObfuscatedThing nestedClassA = map.GetClass (new TypeKey (nestedClassAType));
+				TypeDefinition nestedClassAType2 = nestedClassAType.NestedTypes [0];
+				ObfuscatedThing nestedClassA2 = map.GetClass (new TypeKey (nestedClassAType2));
 
-			TypeDefinition nestedClassAType = classAType.NestedTypes [0];
-			ObfuscatedThing nestedClassA = map.GetClass (new TypeKey (nestedClassAType));
-			TypeDefinition nestedClassAType2 = nestedClassAType.NestedTypes [0];
-			ObfuscatedThing nestedClassA2 = map.GetClass (new TypeKey (nestedClassAType2));     
+				Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "InternalClass shouldn't have been obfuscated.");
+				Assert.IsTrue (method.Status == ObfuscationStatus.Skipped, "PublicMethod shouldn't have been obfuscated");
+				Assert.IsTrue (nestedClassA.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
+				Assert.IsTrue (nestedClassA2.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
+			}
 
-			Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "InternalClass shouldn't have been obfuscated.");
-			Assert.IsTrue (method.Status == ObfuscationStatus.Skipped, "PublicMethod shouldn't have been obfuscated");
-			Assert.IsTrue (nestedClassA.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
-			Assert.IsTrue (nestedClassA2.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
+			{
+				TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.InternalClass3");
+				ObfuscatedThing classA = map.GetClass (new TypeKey (classAType));
+				var classAmethod1 = FindByName (classAType, "PublicMethod");
+				var method = map.GetMethod (new MethodKey (classAmethod1));
+
+				TypeDefinition nestedClassAType = classAType.NestedTypes [0];
+				ObfuscatedThing nestedClassA = map.GetClass (new TypeKey (nestedClassAType));
+				TypeDefinition nestedClassAType2 = nestedClassAType.NestedTypes [0];
+				ObfuscatedThing nestedClassA2 = map.GetClass (new TypeKey (nestedClassAType2));
+
+				Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "InternalClass shouldn't have been obfuscated.");
+				Assert.IsTrue (method.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated");
+				Assert.IsTrue (nestedClassA.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
+				Assert.IsTrue (nestedClassA2.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
+			}
 
 			TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass");
 			ObfuscatedThing classB = map.GetClass (new TypeKey (classBType));
@@ -161,16 +178,16 @@ namespace ObfuscarTests
 		public void CheckMakedOnly ()
 		{
 			string xml = String.Format (
-				                      @"<?xml version='1.0'?>" +
-				                      @"				<Obfuscator>" +
-				                      @"				<Var name='InPath' value='{0}' />" +
-				                      @"				<Var name='OutPath' value='{1}' />" +
-				                      @"             <Var name='KeepPublicApi' value='false' />" +
-				                      @"             <Var name='HidePrivateApi' value='true' />" +
-				                      @"             <Var name='MarkedOnly' value='true' />" +
-				                      @"				<Module file='$(InPath)\AssemblyWithTypesAttrs3.dll'>" +
-				                      @"				</Module>" +
-				                      @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"				<Obfuscator>" +
+				             @"				<Var name='InPath' value='{0}' />" +
+				             @"				<Var name='OutPath' value='{1}' />" +
+				             @"             <Var name='KeepPublicApi' value='false' />" +
+				             @"             <Var name='HidePrivateApi' value='true' />" +
+				             @"             <Var name='MarkedOnly' value='true' />" +
+				             @"				<Module file='$(InPath)\AssemblyWithTypesAttrs3.dll'>" +
+				             @"				</Module>" +
+				             @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			var obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypesAttrs3", string.Empty, xml);
 			var map = obfuscator.Mapping;
@@ -178,7 +195,7 @@ namespace ObfuscarTests
 			const string assmName = "AssemblyWithTypesAttrs3.dll";
 
 			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
-				                                        Path.Combine (TestHelper.InputPath, assmName));
+				                               Path.Combine (TestHelper.InputPath, assmName));
 
 			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.TestEnum");
 			ObfuscatedThing classA = map.GetClass (new TypeKey (classAType));
@@ -203,16 +220,16 @@ namespace ObfuscarTests
 		public void CheckMarkedOnly2 ()
 		{
 			string xml = String.Format (
-				                      @"<?xml version='1.0'?>" +
-				                      @"				<Obfuscator>" +
-				                      @"				<Var name='InPath' value='{0}' />" +
-				                      @"				<Var name='OutPath' value='{1}' />" +
-				                      @"                <Var name='KeepPublicApi' value='false' />" +
-				                      @"                <Var name='HidePrivateApi' value='true' />" +
-				                      @"                <Var name='MarkedOnly' value='true' />" +
-				                      @"				<Module file='$(InPath)\AssemblyWithTypesAttrs.dll'>" +
-				                      @"				</Module>" +
-				                      @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<?xml version='1.0'?>" +
+				             @"				<Obfuscator>" +
+				             @"				<Var name='InPath' value='{0}' />" +
+				             @"				<Var name='OutPath' value='{1}' />" +
+				             @"                <Var name='KeepPublicApi' value='false' />" +
+				             @"                <Var name='HidePrivateApi' value='true' />" +
+				             @"                <Var name='MarkedOnly' value='true' />" +
+				             @"				<Module file='$(InPath)\AssemblyWithTypesAttrs.dll'>" +
+				             @"				</Module>" +
+				             @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			var obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypesAttrs", string.Empty, xml);
 			var map = obfuscator.Mapping;
@@ -220,7 +237,7 @@ namespace ObfuscarTests
 			const string assmName = "AssemblyWithTypesAttrs.dll";
 
 			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
-				                                        Path.Combine (TestHelper.InputPath, assmName));
+				                               Path.Combine (TestHelper.InputPath, assmName));
 
 			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.InternalClass");
 			ObfuscatedThing classA = map.GetClass (new TypeKey (classAType));
