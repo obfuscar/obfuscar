@@ -15,7 +15,7 @@ namespace Obfuscar
 			return false;
 		}
 
-		public static bool? MarkedToRename (this ICustomAttributeProvider type, bool member = false)
+		public static bool? MarkedToRename (this IMemberDefinition type, bool member = false)
 		{
 			var obfuscarObfuscate = typeof(ObfuscateAttribute).FullName;
 			var reflectionObfuscate = typeof(System.Reflection.ObfuscationAttribute).FullName;
@@ -27,7 +27,7 @@ namespace Obfuscar
 
 				if (attrFullName == reflectionObfuscate) {
 					var applyToMembers = (bool)(Helper.GetAttributePropertyByName (attr, "ApplyToMembers") ?? true);
-					var rename = !(bool)(Helper.GetAttributePropertyByName (attr, "Exclude") ?? false);
+					var rename = !(bool)(Helper.GetAttributePropertyByName (attr, "Exclude") ?? true);
 
 					if (member && !applyToMembers)
 						return !rename;
@@ -36,8 +36,7 @@ namespace Obfuscar
 				}
 			}
 
-			// no attribute found.
-			return null;
+			return type.DeclaringType == null ? null : MarkedToRename (type.DeclaringType);
 		}
 	}
 }

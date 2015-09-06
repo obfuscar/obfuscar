@@ -80,8 +80,8 @@ namespace ObfuscarTests
 
 			Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "InternalClass shouldn't have been obfuscated.");
 			Assert.IsTrue (method.Status == ObfuscationStatus.Skipped, "PublicMethod shouldn't have been obfuscated");
-			Assert.IsTrue (nestedClassA.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
-			Assert.IsTrue (nestedClassA2.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
+			Assert.IsTrue (nestedClassA.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
+			Assert.IsTrue (nestedClassA2.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
 
 			TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass");
 			ObfuscatedThing classB = map.GetClass (new TypeKey (classBType));
@@ -269,6 +269,5 @@ namespace ObfuscarTests
 			Assert.IsTrue (classD.Status == ObfuscationStatus.Skipped, "PublicClass2 shouldn't have been obfuscated.");
 			Assert.IsTrue (method3.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
 		}
-
 	}
 }

@@ -42,15 +42,15 @@ namespace TestClasses
 		}
 	}
 
-    [System.Reflection.ObfuscationAttribute(Exclude = true)]
+    [System.Reflection.Obfuscation]
     internal class InternalClass // no
     {
         public void PublicMethod() // no
         { }
 
-        public class PublicNestedClass // yes
+        public class PublicNestedClass // no
         {
-			public class PublicNestedClass2 // yes
+			public class PublicNestedClass2 // no
 			{
 			}
         }
