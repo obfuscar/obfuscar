@@ -237,7 +237,7 @@ namespace Obfuscar
 		private void SaveMapping ()
 		{
 			string filename = Project.Settings.XmlMapping ?
-                "Mapping.xml" : "Mapping.txt";
+				"Mapping.xml" : "Mapping.txt";
 
 			string logPath = Path.Combine (Project.Settings.OutPath, filename);
 			if (!String.IsNullOrEmpty (Project.Settings.LogFilePath))
@@ -257,7 +257,7 @@ namespace Obfuscar
 		private void SaveMapping (TextWriter writer)
 		{
 			IMapWriter mapWriter = Project.Settings.XmlMapping ?
-                new XmlMapWriter (writer) : (IMapWriter)new TextMapWriter (writer);
+				new XmlMapWriter (writer) : (IMapWriter)new TextMapWriter (writer);
 
 			mapWriter.WriteMap (Mapping);
 		}
@@ -315,7 +315,7 @@ namespace Obfuscar
 			// skip filtered fields
 			string skip;
 			if (info.ShouldSkip (fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi,
-				    Project.Settings.MarkedOnly, out skip)) {
+					Project.Settings.MarkedOnly, out skip)) {
 				Mapping.UpdateField (fieldKey, ObfuscationStatus.Skipped, skip);
 				nameGroup.Add (fieldKey.Name);
 				return;
@@ -507,7 +507,7 @@ namespace Obfuscar
 
 								foreach (Instruction instruction in method.Body.Instructions) {
 									if (instruction.OpCode == OpCodes.Ldstr &&
-									          (string)instruction.Operand == fullName)
+											  (string)instruction.Operand == fullName)
 										instruction.Operand = newTypeKey.Fullname;
 								}
 							}
@@ -685,7 +685,7 @@ namespace Obfuscar
 		}
 
 		private int ProcessProperty (TypeKey typeKey, PropertyDefinition prop, AssemblyInfo info, TypeDefinition type, int index,
-		                             List<PropertyDefinition> propsToDrop)
+									 List<PropertyDefinition> propsToDrop)
 		{
 			PropertyKey propKey = new PropertyKey (typeKey, prop);
 			ObfuscatedThing m = Mapping.GetProperty (propKey);
@@ -693,7 +693,7 @@ namespace Obfuscar
 			string skip;
 			// skip filtered props
 			if (info.ShouldSkip (propKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi,
-				    Project.Settings.MarkedOnly, out skip)) {
+					Project.Settings.MarkedOnly, out skip)) {
 				m.Update (ObfuscationStatus.Skipped, skip);
 
 				// make sure get/set get skipped too
@@ -709,7 +709,7 @@ namespace Obfuscar
 			}
 
 			if (type.BaseType != null && type.BaseType.Name.EndsWith ("Attribute") && prop.SetMethod != null &&
-			    (prop.SetMethod.Attributes & MethodAttributes.Public) != 0) {
+				(prop.SetMethod.Attributes & MethodAttributes.Public) != 0) {
 				// do not rename properties of custom attribute types which have a public setter method
 				m.Update (ObfuscationStatus.Skipped, "public setter of a custom attribute");
 				// no problem when the getter or setter methods are renamed by RenameMethods()
@@ -786,7 +786,7 @@ namespace Obfuscar
 			string skip;
 			// skip filtered events
 			if (info.ShouldSkip (evtKey, Project.InheritMap, Project.Settings.KeepPublicApi, Project.Settings.HidePrivateApi,
-				    Project.Settings.MarkedOnly, out skip)) {
+					Project.Settings.MarkedOnly, out skip)) {
 				m.Update (ObfuscationStatus.Skipped, skip);
 
 				// make sure add/remove get skipped too
@@ -891,7 +891,7 @@ namespace Obfuscar
 			// skip filtered methods
 			string skiprename;
 			var toDo = info.ShouldSkip (methodKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-				           Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skiprename);
+						   Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skiprename);
 			if (!toDo)
 				skiprename = null;
 			// update status for skipped non-virtual methods immediately...status for
@@ -906,7 +906,7 @@ namespace Obfuscar
 
 			// if we need to skip the method or we don't yet have a name planned for a method, rename it
 			if ((skiprename != null && m.Status != ObfuscationStatus.Skipped) ||
-			    m.Status == ObfuscationStatus.Unknown) {
+				m.Status == ObfuscationStatus.Unknown) {
 				RenameVirtualMethod (baseSigNames, methodKey, method, skiprename);
 			}
 		}
@@ -970,7 +970,7 @@ namespace Obfuscar
 				Mapping.UpdateMethod (methodKey, ObfuscationStatus.Skipped, skipRename);
 
 				var message = new StringBuilder ("Inconsistent virtual method obfuscation state detected. Abort. Please review the following methods,")
-                .AppendLine ();
+				.AppendLine ();
 				foreach (var item in @group.Methods) {
 					var state = Mapping.GetMethod (item);
 					message.AppendFormat ("{0}->{1}:{2}", item, state.Status, state.StatusText).AppendLine ();
@@ -989,7 +989,7 @@ namespace Obfuscar
 		}
 
 		NameGroup[] GetNameGroups (Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-		                           IEnumerable<MethodKey> methodKeys, ParamSig sig)
+								   IEnumerable<MethodKey> methodKeys, ParamSig sig)
 		{
 			// build unique set of classes in group
 			HashSet<TypeKey> typeKeys = new HashSet<TypeKey> ();
@@ -1021,7 +1021,7 @@ namespace Obfuscar
 
 			// if it already has a name, return it
 			if (t.Status == ObfuscationStatus.Renamed ||
-			    t.Status == ObfuscationStatus.WillRename)
+				t.Status == ObfuscationStatus.WillRename)
 				return t.StatusText;
 
 			// don't mess with methods we decided to skip
@@ -1140,7 +1140,7 @@ namespace Obfuscar
 					}
 				}
 
-				if (!Project.Settings.SupressIldasm)
+				if (!Project.Settings.SuppressIldasm)
 					continue;
 
 				var module = info.Definition.MainModule;
@@ -1314,8 +1314,8 @@ namespace Obfuscar
 			}
 
 			public void ProcessStrings (MethodDefinition method,
-			                            AssemblyInfo info,
-			                            Project project)
+										AssemblyInfo info,
+										Project project)
 			{
 				if (!info.ShouldSkipStringHiding (new MethodKey (method), project.InheritMap, project.Settings.HidePrivateApi) && method.Body != null) {
 					// IMPORTANT: cannot convert to foreach due to modification on method body.
@@ -1347,8 +1347,8 @@ namespace Obfuscar
 								worker4.Emit (OpCodes.Ldelem_Ref);
 								worker4.Emit (OpCodes.Dup);
 								Instruction label20 = worker4.Create (
-									                                  OpCodes.Brtrue_S,
-									                                  StringGetterMethodDefinition.Body.Instructions [0]);
+																	  OpCodes.Brtrue_S,
+																	  StringGetterMethodDefinition.Body.Instructions [0]);
 								worker4.Append (label20);
 								worker4.Emit (OpCodes.Pop);
 								worker4.Emit (OpCodes.Ldc_I4, _stringIndex);
@@ -1380,9 +1380,9 @@ namespace Obfuscar
 			private static extern bool StrongNameSignatureGeneration (
 				[/*In, */System.Runtime.InteropServices.MarshalAs (System.Runtime.InteropServices.UnmanagedType.LPWStr)]string wzFilePath,
 				[/*In, */System.Runtime.InteropServices.MarshalAs (System.Runtime.InteropServices.UnmanagedType.LPWStr)]string wzKeyContainer,
-                /*[In]*/byte[] pbKeyBlob,
-                /*[In]*/uint cbKeyBlob,
-                /*[In]*/IntPtr ppbSignatureBlob, // not supported, always pass 0.
+				/*[In]*/byte[] pbKeyBlob,
+				/*[In]*/uint cbKeyBlob,
+				/*[In]*/IntPtr ppbSignatureBlob, // not supported, always pass 0.
 				[System.Runtime.InteropServices.Out]out uint pcbSignatureBlob
 			);
 
