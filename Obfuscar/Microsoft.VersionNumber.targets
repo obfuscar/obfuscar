@@ -15,7 +15,7 @@
         <AssemblyRevision>
         </AssemblyRevision>
         <AssemblyBuildNumberType>DateString</AssemblyBuildNumberType>
-        <AssemblyBuildNumberFormat>01MMdd</AssemblyBuildNumberFormat>
+        <AssemblyBuildNumberFormat>02MMdd</AssemblyBuildNumberFormat>
         <AssemblyRevisionType>AutoIncrement</AssemblyRevisionType>
         <AssemblyRevisionFormat>00</AssemblyRevisionFormat>
     </PropertyGroup>
@@ -28,7 +28,7 @@
         <AssemblyFileRevision>
         </AssemblyFileRevision>
         <AssemblyFileBuildNumberType>DateString</AssemblyFileBuildNumberType>
-        <AssemblyFileBuildNumberFormat>01MMdd</AssemblyFileBuildNumberFormat>
+        <AssemblyFileBuildNumberFormat>02MMdd</AssemblyFileBuildNumberFormat>
         <AssemblyFileRevisionType>AutoIncrement</AssemblyFileRevisionType>
         <AssemblyFileRevisionFormat>00</AssemblyFileRevisionFormat>
     </PropertyGroup>

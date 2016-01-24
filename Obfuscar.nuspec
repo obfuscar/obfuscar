@@ -1,19 +1,24 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
-  <metadata>
-    <version>2.0.2-beta1</version>
-    <authors>Ryan Williams, and other contributors.</authors>
-    <owners>Lex Li</owners>
-    <licenseUrl>https://obfuscar.codeplex.com/license</licenseUrl>
-    <projectUrl>https://obfuscar.codeplex.com</projectUrl>
-    <id>Obfuscar</id>
-    <title>Obfuscar</title>	
-	<iconUrl>http://lextudio.com/images/obfuscar32.png</iconUrl>
-    <requireLicenseAcceptance>true</requireLicenseAcceptance>
-    <description>Obfuscar is a basic obfuscator for .NET assemblies. It uses massive overloading to rename metadata in .NET assemblies (including the names of methods, properties, events, fields, types and namespaces) to a minimal set, distinguishable in most cases only by signature.</description>
-    <summary>Open source obfuscar for .NET and Mono.</summary>
-    <releaseNotes>Version 2.0.2 Beta
+	<metadata>
+		<version>2.0.2</version>
+		<authors>Ryan Williams, and other contributors.</authors>
+		<owners>Lex Li</owners>
+		<licenseUrl>https://obfuscar.codeplex.com/license</licenseUrl>
+		<projectUrl>https://obfuscar.codeplex.com</projectUrl>
+		<id>Obfuscar</id>
+		<title>Obfuscar</title>
+		<iconUrl>http://lextudio.com/images/obfuscar32.png</iconUrl>
+		<requireLicenseAcceptance>true</requireLicenseAcceptance>
+		<description>Obfuscar is a basic obfuscator for .NET assemblies. It uses massive overloading to rename metadata in .NET assemblies (including the names of methods, properties, events, fields, types and namespaces) to a minimal set, distinguishable in most cases only by signature.</description>
+		<summary>Open source obfuscar for .NET and Mono.</summary>
+		<releaseNotes>
+Version 2.0.2
 * Fixed GitHub#47 F# compiler can now be obfuscated.
+* Fixed GitHub#55 The default value for the ObfuscatorAttribute is different.
+* Fixed GitHub#56 SuppressIldasm setting is spelled as SupressIldasm in config.
+* Fixed CodePlex#7 Avoid creating invalid overriding methods during obfuscation.
+* Fixed CodePlex#9 Added command line options (help and version). Multiple project files can also be processed now.
 
 Version 2.0.1
 * Fixed CodePlex#12 BAML reader error.
@@ -34,12 +39,13 @@ The changes since last commit on Google Code include,
 * Add an option to automatic exclude of public types and members so that public API is kept.
 * Add an option to automatic include all non-public types and members so that private API is obfuscated.
 * Add Force* rules to supplement Skip* rules.
-* Various bug fixes.</releaseNotes>
-    <copyright>(C) 2007-2014 Ryan Williams and other contributors.</copyright>
-    <language>en-US</language>
-    <tags>obfuscation,obfuscator,open source</tags>
-  </metadata>
-  <files>
-    <file src="bin\release\obfuscar.console.exe" target="tools" />
-  </files>
+* Various bug fixes.
+		</releaseNotes>
+		<copyright>(C) 2007-2014 Ryan Williams and other contributors.</copyright>
+		<language>en-US</language>
+		<tags>obfuscation,obfuscator,open source</tags>
+	</metadata>
+	<files>
+		<file src="bin\release\obfuscar.console.exe" target="tools" />
+	</files>
 </package>
