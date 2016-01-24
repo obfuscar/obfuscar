@@ -95,11 +95,11 @@
   <PropertyGroup>
     <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT' " >
 rename Obfuscar.Console.exe Obfuscar.exe
-"$(MSBuildProjectDirectory)\..\packages\ILRepack.1.25.0\tools\ilrepack" /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Baml.dll Obfuscar.dll
+"$(MSBuildProjectDirectory)\..\packages\ILRepack.2.0.10\tools\ilrepack" /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Baml.dll Obfuscar.dll
 del Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Baml.dll Obfuscar.dll Obfuscar.exe</PostBuildEvent>
     <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' != 'Windows_NT' " >
 mv Obfuscar.Console.exe Obfuscar.exe
-mono "$(MSBuildProjectDirectory)\..\packages\ILRepack.1.25.0\tools\ILRepack.exe" /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Obfuscar.dll
+mono "$(MSBuildProjectDirectory)\..\packages\ILRepack.2.0.10\tools\ILRepack.exe" /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Obfuscar.dll
 rm Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Obfuscar.dll Obfuscar.exe</PostBuildEvent>
   </PropertyGroup>
 </Project>
