@@ -22,18 +22,12 @@
 /// </copyright>
 #endregion
 using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.CodeDom.Compiler;
-
-using NUnit.Framework;
 using Mono.Cecil;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class SkipPropertyTests
 	{
 		protected void CheckProperties (string name, int expectedTypes, string[] expected, string[] notExpected)
@@ -58,22 +52,22 @@ namespace ObfuscarTests
 				return true;
 			},
 				delegate( TypeDefinition typeDef ) {
-				Assert.AreEqual (expected.Length, typeDef.Properties.Count,
-						expected.Length == 1 ? "Type should have 1 property (others dropped by default)." :
-						String.Format ("Type should have {0} properties (others dropped by default).", expected.Length));
+				Assert.Equal (expected.Length, typeDef.Properties.Count);
+				// expected.Length == 1 ? "Type should have 1 property (others dropped by default)." :
+				// String.Format ("Type should have {0} properties (others dropped by default).", expected.Length));
 
 				foreach (PropertyDefinition prop in typeDef.Properties) {
-					Assert.IsFalse (propsNotToFind.Contains (prop.Name), String.Format (
+					Assert.False (propsNotToFind.Contains (prop.Name), String.Format (
 							"Did not expect to find property '{0}'.", prop.Name));
 
 					propsToFind.Remove (prop.Name);
 				}
 
-				Assert.IsFalse (propsToFind.Count > 0, "Failed to find all expected properties.");
+				Assert.False (propsToFind.Count > 0, "Failed to find all expected properties.");
 			});
 		}
 
-		[Test]
+		[Fact]
 		public void CheckDropsProperties ()
 		{
 			string xml = String.Format (
@@ -81,7 +75,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='HidePrivateApi' value='true' />" +
+				@"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithProperties.dll' />" +
 				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
@@ -98,7 +92,7 @@ namespace ObfuscarTests
 			CheckProperties ("AssemblyWithProperties", 1, expected, notExpected);
 		}
 
-		[Test]
+		[Fact]
 		public void CheckSkipPropertyByName ()
 		{
 			string xml = String.Format (
@@ -106,7 +100,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-				             @"<Var name='HidePrivateApi' value='true' />" +
+							 @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithProperties.dll'>" +
 				@"<SkipProperty type='TestClasses.ClassA' name='Property2' />" +
 				@"</Module>" +
@@ -126,7 +120,7 @@ namespace ObfuscarTests
 			CheckProperties ("AssemblyWithProperties", 1, expected, notExpected);
 		}
 
-		[Test]
+		[Fact]
 		public void CheckSkipPropertyByRx ()
 		{
 			string xml = String.Format (
@@ -134,7 +128,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-				             @"<Var name='HidePrivateApi' value='true' />" +
+							 @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithProperties.dll'>" +
 				@"<SkipProperty type='TestClasses.ClassA' rx='Property\d' />" +
 				@"</Module>" +

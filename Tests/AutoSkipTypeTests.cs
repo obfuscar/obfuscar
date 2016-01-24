@@ -1,13 +1,11 @@
 ﻿using Mono.Cecil;
-using NUnit.Framework;
 using Obfuscar;
 using System;
-using System.Collections.Generic;
 using System.IO;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class AutoSkipTypeTests
 	{
 		MethodDefinition FindByName (TypeDefinition typeDef, string name)
@@ -16,11 +14,11 @@ namespace ObfuscarTests
 				if (method.Name == name)
 					return method;
 
-			Assert.Fail (String.Format ("Expected to find method: {0}", name));
+			Assert.True (false, String.Format ("Expected to find method: {0}", name));
 			return null; // never here
 		}
 
-		[Test]
+		[Fact]
 		public void CheckHidePrivateApiFalse ()
 		{
 			string xml = String.Format (
@@ -44,11 +42,11 @@ namespace ObfuscarTests
 			var classBType = inAssmDef.MainModule.GetType ("TestClasses.InternalClass");
 			var classB = map.GetClass (new TypeKey (classBType));
 
-			Assert.IsTrue (classB.Status == ObfuscationStatus.Skipped, "Internal class is obfuscated");
+			Assert.True (classB.Status == ObfuscationStatus.Skipped, "Internal class is obfuscated");
 
 			var enumType = inAssmDef.MainModule.GetType ("TestClasses.TestEnum");
 			var enum1 = map.GetClass (new TypeKey (enumType));
-			Assert.IsTrue (enum1.Status == ObfuscationStatus.Skipped, "Internal enum is obfuscated");
+			Assert.True (enum1.Status == ObfuscationStatus.Skipped, "Internal enum is obfuscated");
 
 			var classAType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass");
 			var classA = map.GetClass (new TypeKey (classAType));
@@ -58,12 +56,12 @@ namespace ObfuscarTests
 			var classAMethod1 = map.GetMethod (new MethodKey (classAmethod1));
 			var classAMethod2 = map.GetMethod (new MethodKey (classAmethod2));
 
-			Assert.IsTrue (classA.Status == ObfuscationStatus.Renamed, "Public class is not obfuscated");
-			Assert.IsTrue (classAMethod1.Status == ObfuscationStatus.Skipped, "private method is obfuscated.");
-			Assert.IsTrue (classAMethod2.Status == ObfuscationStatus.Renamed, "pubilc method is not obfuscated.");
+			Assert.True (classA.Status == ObfuscationStatus.Renamed, "Public class is not obfuscated");
+			Assert.True (classAMethod1.Status == ObfuscationStatus.Skipped, "private method is obfuscated.");
+			Assert.True (classAMethod2.Status == ObfuscationStatus.Renamed, "pubilc method is not obfuscated.");
 		}
 
-		[Test]
+		[Fact]
 		public void CheckHidePrivateApiTrue ()
 		{
 			string xml = String.Format (
@@ -86,14 +84,14 @@ namespace ObfuscarTests
 			var classBType = inAssmDef.MainModule.GetType ("TestClasses.InternalClass");
 			var classB = map.GetClass (new TypeKey (classBType));
 
-			Assert.IsTrue (classB.Status == ObfuscationStatus.Renamed, "Internal class should have been obfuscated");
+			Assert.True (classB.Status == ObfuscationStatus.Renamed, "Internal class should have been obfuscated");
 
 			var enumType = inAssmDef.MainModule.GetType ("TestClasses.TestEnum");
 			var enum1 = map.GetClass (new TypeKey (enumType));
-			Assert.IsTrue (enum1.Status == ObfuscationStatus.Renamed, "Internal enum should have been obfuscated");
+			Assert.True (enum1.Status == ObfuscationStatus.Renamed, "Internal enum should have been obfuscated");
 		}
 
-		[Test]
+		[Fact]
 		public void CheckKeepPublicApiFalse ()
 		{
 			string xml = String.Format (
@@ -122,16 +120,16 @@ namespace ObfuscarTests
 			ObfuscatedThing classAMethod2 = map.GetMethod (new MethodKey (classAmethod2));
 
 			var classA = map.GetClass (new TypeKey (classAType));
-			Assert.IsTrue (classA.Status == ObfuscationStatus.Renamed, "Public class should have been obfuscated");
-			Assert.IsTrue (classAMethod1.Status == ObfuscationStatus.Renamed, "private method is not obfuscated.");
-			Assert.IsTrue (classAMethod2.Status == ObfuscationStatus.Renamed, "pubilc method is not obfuscated.");
+			Assert.True (classA.Status == ObfuscationStatus.Renamed, "Public class should have been obfuscated");
+			Assert.True (classAMethod1.Status == ObfuscationStatus.Renamed, "private method is not obfuscated.");
+			Assert.True (classAMethod2.Status == ObfuscationStatus.Renamed, "pubilc method is not obfuscated.");
 
 			var protectedMethod = FindByName (classAType, "ProtectedMethod");
 			var protectedAfter = map.GetMethod (new MethodKey (protectedMethod));
-			Assert.IsTrue (protectedAfter.Status == ObfuscationStatus.Renamed, "protected method is not obfuscated.");
+			Assert.True (protectedAfter.Status == ObfuscationStatus.Renamed, "protected method is not obfuscated.");
 		}
 
-		[Test]
+		[Fact]
 		public void CheckKeepPublicApiTrue ()
 		{
 			string xml = String.Format (
@@ -160,16 +158,16 @@ namespace ObfuscarTests
 			ObfuscatedThing classAMethod1 = map.GetMethod (new MethodKey (classAmethod1));
 			ObfuscatedThing classAMethod2 = map.GetMethod (new MethodKey (classAmethod2));
 			var classA = map.GetClass (new TypeKey (classAType));
-			Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "Public class shouldn't have been obfuscated");
-			Assert.IsTrue (classAMethod1.Status == ObfuscationStatus.Renamed, "private method is not obfuscated.");
-			Assert.IsTrue (classAMethod2.Status == ObfuscationStatus.Skipped, "pubilc method is obfuscated.");
+			Assert.True (classA.Status == ObfuscationStatus.Skipped, "Public class shouldn't have been obfuscated");
+			Assert.True (classAMethod1.Status == ObfuscationStatus.Renamed, "private method is not obfuscated.");
+			Assert.True (classAMethod2.Status == ObfuscationStatus.Skipped, "pubilc method is obfuscated.");
 
 			var protectedMethod = FindByName (classAType, "ProtectedMethod");
 			var protectedAfter = map.GetMethod (new MethodKey (protectedMethod));
-			Assert.IsTrue (protectedAfter.Status == ObfuscationStatus.Skipped, "protected method is obfuscated.");
+			Assert.True (protectedAfter.Status == ObfuscationStatus.Skipped, "protected method is obfuscated.");
 		}
 
-		[Test]
+		[Fact]
 		public void CheckSkipNamespace ()
 		{
 			string xml = String.Format (
@@ -194,10 +192,10 @@ namespace ObfuscarTests
 
 			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses1.PublicClass");
 			var classA = map.GetClass (new TypeKey (classAType));
-			Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "Public class shouldn't have been obfuscated");
+			Assert.True (classA.Status == ObfuscationStatus.Skipped, "Public class shouldn't have been obfuscated");
 		}
 
-		[Test]
+		[Fact]
 		public void CheckSkipEnum ()
 		{
 			string xml = String.Format (
@@ -222,7 +220,7 @@ namespace ObfuscarTests
 
 			var enumType = inAssmDef.MainModule.GetType ("TestClasses.TestEnum");
 			var enum1 = map.GetClass (new TypeKey (enumType));
-			Assert.IsTrue (enum1.Status == ObfuscationStatus.Skipped, "Internal enum is obfuscated");
+			Assert.True (enum1.Status == ObfuscationStatus.Skipped, "Internal enum is obfuscated");
 		}
 	}
 }

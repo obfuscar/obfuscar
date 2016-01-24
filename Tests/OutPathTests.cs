@@ -24,29 +24,28 @@
 
 using System;
 using System.IO;
-using NUnit.Framework;
 using Obfuscar;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class OutPathTests
 	{
 		private void CheckOutPath (string testPath)
 		{
 			var full = Environment.ExpandEnvironmentVariables (testPath);
-			Assert.IsFalse (Directory.Exists (full), "Need a writeable temp path...wanted to create " + testPath);
+			Assert.False (Directory.Exists (full), "Need a writeable temp path...wanted to create " + testPath);
 
 			try {
 				string xml = string.Format (
-					             @"<?xml version='1.0'?>" +
-					             @"<Obfuscator>" +
-					             @"<Var name='OutPath' value='{0}' />" +
-					             @"</Obfuscator>", testPath);
+								 @"<?xml version='1.0'?>" +
+								 @"<Obfuscator>" +
+								 @"<Var name='OutPath' value='{0}' />" +
+								 @"</Obfuscator>", testPath);
 
 				Obfuscar.Obfuscator.CreateFromXml (xml);
 
-				Assert.IsTrue (Directory.Exists (full), "Obfuscator should have created its missing OutPath.");
+				Assert.True (Directory.Exists (full), "Obfuscator should have created its missing OutPath.");
 			} finally {
 				// clean up...
 				if (Directory.Exists (full))
@@ -54,7 +53,7 @@ namespace ObfuscarTests
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void CheckCanCreateOutPath ()
 		{
 			string testPath = Path.Combine (Path.GetTempPath (), "ObfuscarTestOutPath");
@@ -62,7 +61,7 @@ namespace ObfuscarTests
 			CheckOutPath (testPath);
 		}
 
-		[Test]
+		[Fact]
 		public void CheckCanCreateOutPathWithEnvironmentVariables ()
 		{
 			string testPath = "%temp%\\ObfuscarTestOutPath";
@@ -70,12 +69,12 @@ namespace ObfuscarTests
 			CheckOutPath (testPath);
 		}
 
-		[Test]
+		[Fact]
 		public void CheckInvalidOutPath ()
 		{
 			string testPath = Path.Combine (PathFailureTests.BadPath, "ObfuscarTestOutPath");
-            var exception = Assert.Throws<ObfuscarException>(() => { CheckOutPath (testPath); });
-            Assert.AreEqual("Could not create path specified by OutPath:  Q:\\Does\\Not\\Exist\\ObfuscarTestOutPath", exception.Message);
+			var exception = Assert.Throws<ObfuscarException>(() => { CheckOutPath (testPath); });
+			Assert.Equal("Could not create path specified by OutPath:  Q:\\Does\\Not\\Exist\\ObfuscarTestOutPath", exception.Message);
 		}
 	}
 }

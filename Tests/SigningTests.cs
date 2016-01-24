@@ -23,47 +23,41 @@
 #endregion
 
 using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Text;
-using System.CodeDom.Compiler;
-using NUnit.Framework;
-using Mono.Cecil;
 using Obfuscar;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class SigningTests
 	{
-		[Test]
+		[Fact]
 		public void CheckCannotObfuscateSigned ()
 		{
 			string xml = String.Format (
-				             @"<?xml version='1.0'?>" +
-				             @"<Obfuscator>" +
-				             @"<Var name='InPath' value='{0}' />" +
-				             @"<Var name='OutPath' value='{1}' />" +
-				             @"<Module file='$(InPath)\AssemblyForSigning.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+							 @"<?xml version='1.0'?>" +
+							 @"<Obfuscator>" +
+							 @"<Var name='InPath' value='{0}' />" +
+							 @"<Var name='OutPath' value='{1}' />" +
+							 @"<Module file='$(InPath)\AssemblyForSigning.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			TestHelper.CleanInput ();
 
 			// build it with the keyfile option (embeds the public key, and signs the assembly)
 			TestHelper.BuildAssembly ("AssemblyForSigning", String.Empty, "/keyfile:" + TestHelper.InputPath + @"\SigningKey.snk");
-            var exception = Assert.Throws<ObfuscarException>(() => { TestHelper.Obfuscate(xml); });
-            Assert.AreEqual("Obfuscating a signed assembly would result in an invalid assembly:  AssemblyForSigning; use the KeyFile property to set a key to use", exception.Message);
+			var exception = Assert.Throws<ObfuscarException>(() => { TestHelper.Obfuscate(xml); });
+			Assert.Equal("Obfuscating a signed assembly would result in an invalid assembly:  AssemblyForSigning; use the KeyFile property to set a key to use", exception.Message);
 		}
-		// [Test] no longer valid due to Cecil changes
+		// [Fact] no longer valid due to Cecil changes
 		public void CheckCanObfuscateDelaySigned ()
 		{
 			string xml = String.Format (
-				             @"<?xml version='1.0'?>" +
-				             @"<Obfuscator>" +
-				             @"<Var name='InPath' value='{0}' />" +
-				             @"<Var name='OutPath' value='{1}' />" +
-				             @"<Module file='$(InPath)\AssemblyForSigning.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+							 @"<?xml version='1.0'?>" +
+							 @"<Obfuscator>" +
+							 @"<Var name='InPath' value='{0}' />" +
+							 @"<Var name='OutPath' value='{1}' />" +
+							 @"<Module file='$(InPath)\AssemblyForSigning.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			TestHelper.CleanInput ();
 

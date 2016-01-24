@@ -23,54 +23,51 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
 using Obfuscar;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class PathFailureTests
 	{
 		internal const string BadPath = "Q:\\Does\\Not\\Exist";
 
-		[Test]
+		[Fact]
 		public void CheckBadPathIsBad ()
 		{
 			// if badPath exists, the other tests here are no good
-			Assert.IsFalse (System.IO.Directory.Exists (BadPath), "Didn't expect BadPath to exist.");
+			Assert.False (System.IO.Directory.Exists (BadPath), "Didn't expect BadPath to exist.");
 		}
 
-		[Test]
+		[Fact]
 		public void CheckBadProjectPath ()
 		{
-            var exception = Assert.Throws<ObfuscarException>(() => { new Obfuscator(BadPath); });
-            Assert.AreEqual("Unable to read specified project file:  Q:\\Does\\Not\\Exist", exception.Message);
+			var exception = Assert.Throws<ObfuscarException>(() => { new Obfuscator(BadPath); });
+			Assert.Equal("Unable to read specified project file:  Q:\\Does\\Not\\Exist", exception.Message);
 		}
 
-		[Test]
+		[Fact]
 		public void CheckBadModuleFile ()
 		{
 			string xml = String.Format (
-				             @"<?xml version='1.0'?>" +
-				             @"<Obfuscator>" +
-				             @"<Module file='{0}\ObfuscarTests.dll' />" +
-				             @"</Obfuscator>", BadPath);
-            var exception = Assert.Throws<ObfuscarException>(() => { Obfuscator.CreateFromXml(xml); });
-            Assert.AreEqual("Unable to find assembly:  Q:\\Does\\Not\\Exist\\ObfuscarTests.dll", exception.Message);
+							 @"<?xml version='1.0'?>" +
+							 @"<Obfuscator>" +
+							 @"<Module file='{0}\ObfuscarTests.dll' />" +
+							 @"</Obfuscator>", BadPath);
+			var exception = Assert.Throws<ObfuscarException>(() => { Obfuscator.CreateFromXml(xml); });
+			Assert.Equal("Unable to find assembly:  Q:\\Does\\Not\\Exist\\ObfuscarTests.dll", exception.Message);
 		}
 
-		[Test]
+		[Fact]
 		public void CheckBadInPath ()
 		{
 			string xml = String.Format (
-				             @"<?xml version='1.0'?>" +
-				             @"<Obfuscator>" +
-				             @"<Var name='InPath' value='{0}' />" +
-				             @"</Obfuscator>", BadPath);
-            var exception = Assert.Throws<ObfuscarException>(() => { Obfuscator.CreateFromXml(xml); });
-            Assert.AreEqual("Path specified by InPath variable must exist:Q:\\Does\\Not\\Exist", exception.Message);
+							 @"<?xml version='1.0'?>" +
+							 @"<Obfuscator>" +
+							 @"<Var name='InPath' value='{0}' />" +
+							 @"</Obfuscator>", BadPath);
+			var exception = Assert.Throws<ObfuscarException>(() => { Obfuscator.CreateFromXml(xml); });
+			Assert.Equal("Path specified by InPath variable must exist:Q:\\Does\\Not\\Exist", exception.Message);
 		}
 	}
 }

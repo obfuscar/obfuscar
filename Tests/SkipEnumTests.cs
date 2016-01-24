@@ -23,17 +23,12 @@
 #endregion
 
 using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Text;
-using System.CodeDom.Compiler;
-
-using NUnit.Framework;
 using Mono.Cecil;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class SkipEnumTests
 	{
 		protected void CheckEnums( string name, int expectedTypes, string[] expected, string[] notExpected )
@@ -47,22 +42,22 @@ namespace ObfuscarTests
 				{
 					// num expected + num unexpected + field storage
 					int totalValues = expected.Length + notExpected.Length + 1;
-					Assert.AreEqual( totalValues, typeDef.Fields.Count,
-						String.Format( "Type should have {0} values.", totalValues ) );
+				Assert.Equal (totalValues, typeDef.Fields.Count);
+				// String.Format( "Type should have {0} values.", totalValues ) );
 
 					foreach ( FieldDefinition field in typeDef.Fields )
 					{
-						Assert.IsFalse( valsNotToFind.Contains( field.Name ), String.Format(
+						Assert.False( valsNotToFind.Contains( field.Name ), String.Format(
 							"Did not expect to find event '{0}'.", field.Name ) );
 
 						valsToFind.Remove( field.Name );
 					}
 
-					Assert.IsFalse( valsToFind.Count > 0, "Failed to find all expected values." );
+					Assert.False( valsToFind.Count > 0, "Failed to find all expected values." );
 				} );
 		}
 
-		[Test]
+		[Fact]
 		public void CheckRenamesEnumValues( )
 		{
 			string xml = String.Format(
@@ -70,7 +65,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='HidePrivateApi' value='true' />" +
+				@"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithEnums.dll' />" +
 				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
 
@@ -87,7 +82,7 @@ namespace ObfuscarTests
 			CheckEnums( "AssemblyWithEnums", 1, expected, notExpected );
 		}
 
-		[Test]
+		[Fact]
 		public void CheckSkipEnumsByName( )
 		{
 			string xml = String.Format(
@@ -95,7 +90,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='HidePrivateApi' value='true' />" +
+				@"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithEnums.dll'>" +
 				@"<SkipField type='TestClasses.Enum1' name='Value2' />" +
 				@"</Module>" +
@@ -115,7 +110,7 @@ namespace ObfuscarTests
 			CheckEnums( "AssemblyWithEnums", 1, expected, notExpected );
 		}
 
-		[Test]
+		[Fact]
 		public void CheckSkipEnumsByRx( )
 		{
 			string xml = String.Format(
@@ -123,7 +118,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='HidePrivateApi' value='true' />" +
+				@"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithEnums.dll'>" +
 				@"<SkipField type='TestClasses.Enum1' rx='Value\d' />" +
 				@"</Module>" +
@@ -143,7 +138,7 @@ namespace ObfuscarTests
 			CheckEnums( "AssemblyWithEnums", 1, expected, notExpected );
 		}
 
-		[Test]
+		[Fact]
 		public void CheckSkipEnums( )
 		{
 			string xml = String.Format(

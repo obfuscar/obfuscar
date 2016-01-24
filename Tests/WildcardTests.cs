@@ -1,4 +1,9 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+#endregion
+
+
+
+using Xunit;
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,123 +25,114 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
-#endregion
-
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-using NUnit.Framework;
-
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class WildcardTests
 	{
-		[Test]
+		[Fact]
 		public void TestEmptyString( )
 		{
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "", "pattern" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "", "pattern" ) );
 		}
 
-		[Test]
+		[Fact]
 		public void TestEmptyPattern( )
 		{
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "test", "" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "test", "" ) );
 		}
 
-		[Test]
+		[Fact]
 		public void BasicTests( )
 		{
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "*", "*" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "?", "?" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "*", "*" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "?", "?" ) );
 
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "testo", "test" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "test", "testo" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "testo", "test" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "test", "testo" ) );
 		}
 
-		[Test]
+		[Fact]
 		public void TestOneQuestionMark( )
 		{
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "something", "som?thing" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "somthing", "som?thing" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "someething", "som?thing" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "something", "som?thing" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "somthing", "som?thing" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "someething", "som?thing" ) );
 
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "s", "?" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "so", "?" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "s", "?" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "so", "?" ) );
 
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "so", "?o" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "s", "?o" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "o", "?o" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "os", "?o" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "so", "?o" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "s", "?o" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "o", "?o" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "os", "?o" ) );
 
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "so", "s?" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "s", "s?" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "o", "s?" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "os", "s?" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "so", "s?" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "s", "s?" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "o", "s?" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "os", "s?" ) );
 		}
 
-		[Test]
+		[Fact]
 		public void TestTwoQuestionMarks( )
 		{
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "something", "som??hing" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "somhing", "som??hing" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "something", "som??hing" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "somhing", "som??hing" ) );
 		}
 
-		[Test]
+		[Fact]
 		public void TestSpacedQuestionMarks( )
 		{
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "something", "som?t?ing" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "somting", "som?t?ing" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "something", "som?t?ing" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "somting", "som?t?ing" ) );
 		}
 
-		[Test]
+		[Fact]
 		public void TestOneStar( )
 		{
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "something", "som*thing" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "somthing", "som*thing" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "someething", "som*thing" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "something", "som*thing" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "somthing", "som*thing" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "someething", "som*thing" ) );
 
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "", "*" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "s", "*" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "so", "*" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "", "*" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "s", "*" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "so", "*" ) );
 
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "so", "*o" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "s", "*o" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "o", "*o" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "os", "*o" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "so", "*o" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "s", "*o" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "o", "*o" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "os", "*o" ) );
 
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "so", "s*" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "s", "s*" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "o", "s*" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "os", "s*" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "so", "s*" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "s", "s*" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "o", "s*" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "os", "s*" ) );
 		}
 
-		[Test]
+		[Fact]
 		public void TestTwoStars( )
 		{
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "something", "som**hing" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "somhing", "som**hing" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "something", "som**hing" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "somhing", "som**hing" ) );
 		}
 
-		[Test]
+		[Fact]
 		public void TestSpacedStars( )
 		{
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "something", "som*t*ing" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "somting", "som*t*ing" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "someethhing", "som*t*ing" ) );
-			Assert.IsFalse( Obfuscar.Helper.MatchWithWildCards( "samething", "som*t*ing" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "something", "som*t*ing" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "somting", "som*t*ing" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "someethhing", "som*t*ing" ) );
+			Assert.False( Obfuscar.Helper.MatchWithWildCards( "samething", "som*t*ing" ) );
 
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "a", "*a*" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "an", "*a*" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "na", "*a*" ) );
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "nan", "*a*" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "a", "*a*" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "an", "*a*" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "na", "*a*" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "nan", "*a*" ) );
 		}
 
-		[Test]
+		[Fact]
 		public void TestBasicMixed( )
 		{
-			Assert.IsTrue( Obfuscar.Helper.MatchWithWildCards( "something", "som?t*g" ) );
+			Assert.True( Obfuscar.Helper.MatchWithWildCards( "something", "som?t*g" ) );
 		}
 	}
 }

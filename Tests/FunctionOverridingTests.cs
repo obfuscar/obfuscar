@@ -23,17 +23,12 @@
 #endregion
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Text;
-using System.CodeDom.Compiler;
-
-using NUnit.Framework;
 using Mono.Cecil;
 using Obfuscar;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class FunctionOverridingTests
 	{
 		Obfuscar.ObfuscationMap BuildAndObfuscateAssemblies ()
@@ -59,11 +54,11 @@ namespace ObfuscarTests
 				if (method.Name == name)
 					return method;
 
-			Assert.Fail (String.Format ("Expected to find method: {0}", name));
+			Assert.True (false, String.Format ("Expected to find method: {0}", name));
 			return null; // never here
 		}
 
-		[Test]
+		[Fact]
 		public void CheckClassHasAttribute ()
 		{
 			Obfuscar.ObfuscationMap map = BuildAndObfuscateAssemblies ();
@@ -106,28 +101,28 @@ namespace ObfuscarTests
 				var classFEntry = map.GetMethod (new MethodKey (classFmethod));
 				var classGEntry = map.GetMethod (new MethodKey (classGmethod));
 
-				Assert.IsTrue (
+				Assert.True (
 					classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
 					classBEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
 					"Both methods should have been renamed.");
 
-				Assert.IsTrue (
+				Assert.True (
 					classAEntry.StatusText == classBEntry.StatusText,
 					"Both methods should have been renamed to the same thing.");
 
-				Assert.IsTrue (classACompareEntry.Status == ObfuscationStatus.Skipped);
+				Assert.True (classACompareEntry.Status == ObfuscationStatus.Skipped);
 
-				Assert.IsTrue (classBCompareEntry.Status == ObfuscationStatus.Skipped);
+				Assert.True (classBCompareEntry.Status == ObfuscationStatus.Skipped);
 
-				Assert.IsTrue (classCEntry.Status == ObfuscationStatus.Renamed);
+				Assert.True (classCEntry.Status == ObfuscationStatus.Renamed);
 
-				Assert.IsTrue (classDEntry.Status == ObfuscationStatus.Renamed);
+				Assert.True (classDEntry.Status == ObfuscationStatus.Renamed);
 
-				Assert.IsTrue (
+				Assert.True (
 					classFEntry.Status == ObfuscationStatus.Renamed && classGEntry.Status == ObfuscationStatus.Renamed,
 					"Both methods should have been renamed.");
 
-				Assert.IsTrue (classFEntry.StatusText == classGEntry.StatusText,
+				Assert.True (classFEntry.StatusText == classGEntry.StatusText,
 					"Both methods should have been renamed to the same thing.");
 			}
 
@@ -149,23 +144,23 @@ namespace ObfuscarTests
 				ObfuscatedThing classCEntry = map.GetMethod (new MethodKey (classCmethod1));
 				ObfuscatedThing classDEntry = map.GetMethod (new MethodKey (classDmethod1));
 
-				Assert.IsTrue (
+				Assert.True (
 					classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
 					classCEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
 					"Both methods should have been renamed.");
 
-				Assert.IsTrue (
+				Assert.True (
 					classAEntry.StatusText == classCEntry.StatusText,
 					"Both methods should have been renamed to the same thing.");
 
-				Assert.IsTrue (
+				Assert.True (
 					classBEntry.Status == ObfuscationStatus.Renamed && classDEntry.Status == ObfuscationStatus.Renamed,
 					"Both methods should have been renamed.");
 
-				Assert.IsTrue (classBEntry.StatusText == classDEntry.StatusText,
+				Assert.True (classBEntry.StatusText == classDEntry.StatusText,
 					"Both methods should have been renamed to the same thing.");
 
-				Assert.IsTrue (classAEntry.StatusText != classBEntry.StatusText,
+				Assert.True (classAEntry.StatusText != classBEntry.StatusText,
 					"Both methods shouldn't have been renamed to the same thing.");
 			}
 		}

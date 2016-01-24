@@ -25,15 +25,14 @@
 using System;
 using System.IO;
 using Mono.Cecil;
-using NUnit.Framework;
 using Obfuscar;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class BamlTests
 	{
-		[Test]
+		[Fact]
 		public void CheckCannotObfuscateSigned( )
 		{
 			string xml = String.Format(
@@ -47,7 +46,7 @@ namespace ObfuscarTests
 			TestHelper.CleanInput( );
 
 			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy(Path.Combine(TestHelper.InputPath, @"..\WpfApplication1.dll"), Path.Combine(TestHelper.InputPath, "WpfApplication1.dll"));
+			File.Copy(Path.Combine(TestHelper.InputPath, @"..\WpfApplication1.dll"), Path.Combine(TestHelper.InputPath, "WpfApplication1.dll"), true);
 
 			var map = TestHelper.Obfuscate( xml ).Mapping;
 
@@ -59,7 +58,7 @@ namespace ObfuscarTests
 
 			TypeDefinition classAType = inAssmDef.MainModule.GetType("WpfApplication1.MainWindow");
 			var obfuscated = map.GetClass(new TypeKey(classAType));
-			Assert.IsTrue(obfuscated.Status == ObfuscationStatus.Skipped);
+			Assert.True(obfuscated.Status == ObfuscationStatus.Skipped);
 		}
 	}
 }

@@ -22,20 +22,16 @@
 /// </copyright>
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 using System.Reflection;
-
-using NUnit.Framework;
 using Mono.Cecil;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class SkipVirtualMethodTest
 	{
-		[Test]
+		[Fact]
 		public void CheckSkipsVirtualMethodFromInterface ()
 		{
 			string xml = String.Format (
@@ -43,7 +39,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='HidePrivateApi' value='true' />" +
+				@"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\SkipVirtualMethodTest1.dll'>" +
 				@"<SkipMethod type='SkipVirtualMethodTest.Interface1' name='Method1' />" +
 				@"</Module>" +
@@ -66,7 +62,7 @@ namespace ObfuscarTests
 				CheckType);
 		}
 
-		[Test]
+		[Fact]
 		public void CheckSkipsVirtualMethodFromClass ()
 		{
 			string xml = String.Format (
@@ -74,8 +70,8 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-				             @"<Var name='KeepPublicApi' value='true' />" +
-                @"<Var name='HidePrivateApi' value='true' />" +
+							 @"<Var name='KeepPublicApi' value='true' />" +
+				@"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\SkipVirtualMethodTest2.dll'>" +
 				@"<SkipMethod type='SkipVirtualMethodTest.Class1' name='Method1' />" +
 				@"</Module>" +
@@ -106,9 +102,9 @@ namespace ObfuscarTests
 			object obj = Activator.CreateInstance (type);
 
 			object result = type.InvokeMember ("Method1", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, obj, null);
-			Assert.IsInstanceOf<string>(result, "Method1 returns a string.");
+			Assert.IsType<string> (result); // "Method1 returns a string.");
 
-			Assert.AreEqual ("Method1 result", result, "Method1 is expected to return a specific string.");
+			Assert.Equal ("Method1 result", result); // "Method1 is expected to return a specific string.");
 		}
 	}
 }

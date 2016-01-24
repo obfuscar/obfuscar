@@ -23,20 +23,15 @@
 #endregion
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Text;
-using System.CodeDom.Compiler;
 
-using NUnit.Framework;
 using Mono.Cecil;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class AttributeTests
 	{
-		[SetUp]
-		public void BuildAndObfuscateAssemblies ()
+		public void BuildAndObfuscateAssemblies()
 		{
 			string xml = String.Format (
 				@"<?xml version='1.0'?>" +
@@ -49,13 +44,14 @@ namespace ObfuscarTests
 			TestHelper.BuildAndObfuscate ("AssemblyWithAttrs", String.Empty, xml);
 		}
 
-		[Test]
+		[Fact]
 		public void CheckClassHasAttribute ()
 		{
+			BuildAndObfuscateAssemblies ();
 			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
 				Path.Combine (TestHelper.OutputPath, "AssemblyWithAttrs.dll"));
 
-			Assert.AreEqual (2, assmDef.MainModule.Types.Count, "Should contain only one type, and <Module>.");
+			Assert.Equal (2, assmDef.MainModule.Types.Count); // "Should contain only one type, and <Module>.");
 
 			bool found = false;
 			foreach (TypeDefinition typeDef in assmDef.MainModule.Types) {
@@ -64,23 +60,24 @@ namespace ObfuscarTests
 				else
 					found = true;
 
-				Assert.AreEqual (1, typeDef.CustomAttributes.Count, "Type should have an attribute.");
+				Assert.Equal (1, typeDef.CustomAttributes.Count); // "Type should have an attribute.");
 
 				CustomAttribute attr = typeDef.CustomAttributes [0];
-				Assert.AreEqual ("System.Void System.ObsoleteAttribute::.ctor(System.String)", attr.Constructor.ToString (),
-					"Type should have ObsoleteAttribute on it.");
+				Assert.Equal ("System.Void System.ObsoleteAttribute::.ctor(System.String)", attr.Constructor.ToString());
+				// "Type should have ObsoleteAttribute on it.");
 
-				Assert.AreEqual (1, attr.ConstructorArguments.Count, "ObsoleteAttribute should have one parameter.");
-				Assert.AreEqual ("Reason Text", attr.ConstructorArguments [0].Value, 
-					"ObsoleteAttribute param should have appropriate value.");
+				Assert.Equal (1, attr.ConstructorArguments.Count); // "ObsoleteAttribute should have one parameter.");
+				Assert.Equal ("Reason Text", attr.ConstructorArguments[0].Value);
+				// "ObsoleteAttribute param should have appropriate value.");
 			}
 
-			Assert.IsTrue (found, "Should have found non-<Module> type.");
+			Assert.True (found, "Should have found non-<Module> type.");
 		}
 
-		[Test]
+		[Fact]
 		public void CheckMethodHasAttribute ()
 		{
+			BuildAndObfuscateAssemblies();
 			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
 				Path.Combine (TestHelper.OutputPath, "AssemblyWithAttrs.dll"));
 
@@ -91,20 +88,20 @@ namespace ObfuscarTests
 				else
 					found = true;
 
-				Assert.AreEqual (2, typeDef.Methods.Count, "Type is expected to have a single member.");
+				Assert.Equal (2, typeDef.Methods.Count); // "Type is expected to have a single member.");
 			
 				MethodDefinition methodDef = typeDef.Methods [0];
 
 				CustomAttribute attr = methodDef.CustomAttributes [0];
-				Assert.AreEqual ("System.Void System.ObsoleteAttribute::.ctor(System.String)", attr.Constructor.ToString (),
-					"Type should have ObsoleteAttribute on it.");
+				Assert.Equal ("System.Void System.ObsoleteAttribute::.ctor(System.String)", attr.Constructor.ToString());
+				// "Type should have ObsoleteAttribute on it.");
 
-				Assert.AreEqual (1, attr.ConstructorArguments.Count, "ObsoleteAttribute should have one parameter.");
-				Assert.AreEqual ("Message Text", attr.ConstructorArguments [0].Value,
-					"ObsoleteAttribute param should have appropriate value.");
+				Assert.Equal (1, attr.ConstructorArguments.Count); // "ObsoleteAttribute should have one parameter.");
+				Assert.Equal ("Message Text", attr.ConstructorArguments[0].Value);
+				// "ObsoleteAttribute param should have appropriate value.");
 			}
 
-			Assert.IsTrue (found, "Should have found non-<Module> type.");
+			Assert.True (found, "Should have found non-<Module> type.");
 		}
 	}
 }

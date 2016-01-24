@@ -1,18 +1,16 @@
 using Mono.Cecil;
-using NUnit.Framework;
 using Obfuscar;
 using System;
 using System.CodeDom.Compiler;
 using System.IO;
 using System.Linq;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class ObfuscationAttributeTests
 	{
-		[SetUp]
-		public void BuildTestAssemblies ()
+		public ObfuscationAttributeTests ()
 		{
 			TestHelper.CleanInput ();
 
@@ -27,13 +25,13 @@ namespace ObfuscarTests
 			cp.OutputAssembly = assemblyAPath;
 			CompilerResults cr = provider.CompileAssemblyFromFile (cp, Path.Combine (TestHelper.InputPath, "AssemblyA.cs"));
 			if (cr.Errors.Count > 0)
-				Assert.Fail ("Unable to compile test assembly:  AssemblyA");
+				Assert.True (false, "Unable to compile test assembly:  AssemblyA");
 
 			cp.ReferencedAssemblies.Add (assemblyAPath);
 			cp.OutputAssembly = Path.Combine (TestHelper.InputPath, "AssemblyB.dll");
 			cr = provider.CompileAssemblyFromFile (cp, Path.Combine (TestHelper.InputPath, "AssemblyB.cs"));
 			if (cr.Errors.Count > 0)
-				Assert.Fail ("Unable to compile test assembly:  AssemblyB");
+				Assert.True (false, "Unable to compile test assembly:  AssemblyB");
 		}
 
 		static MethodDefinition FindByName (TypeDefinition typeDef, string name)
@@ -42,11 +40,11 @@ namespace ObfuscarTests
 				if (method.Name == name)
 					return method;
 
-			Assert.Fail (String.Format ("Expected to find method: {0}", name));
+			Assert.True (false, String.Format ("Expected to find method: {0}", name));
 			return null; // never here
 		}
 
-		[Test]
+		[Fact]
 		public void CheckExclusion ()
 		{
 			string xml = String.Format (
@@ -77,10 +75,10 @@ namespace ObfuscarTests
 				TypeDefinition nestedClassAType2 = nestedClassAType.NestedTypes [0];
 				ObfuscatedThing nestedClassA2 = map.GetClass (new TypeKey (nestedClassAType2));
 
-				Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "InternalClass shouldn't have been obfuscated.");
-				Assert.IsTrue (method.Status == ObfuscationStatus.Skipped, "PublicMethod shouldn't have been obfuscated");
-				Assert.IsTrue (nestedClassA.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
-				Assert.IsTrue (nestedClassA2.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
+				Assert.True (classA.Status == ObfuscationStatus.Skipped, "InternalClass shouldn't have been obfuscated.");
+				Assert.True (method.Status == ObfuscationStatus.Skipped, "PublicMethod shouldn't have been obfuscated");
+				Assert.True (nestedClassA.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
+				Assert.True (nestedClassA2.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
 			}
 
 			{
@@ -94,10 +92,10 @@ namespace ObfuscarTests
 				TypeDefinition nestedClassAType2 = nestedClassAType.NestedTypes [0];
 				ObfuscatedThing nestedClassA2 = map.GetClass (new TypeKey (nestedClassAType2));
 
-				Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "InternalClass shouldn't have been obfuscated.");
-				Assert.IsTrue (method.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated");
-				Assert.IsTrue (nestedClassA.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
-				Assert.IsTrue (nestedClassA2.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
+				Assert.True (classA.Status == ObfuscationStatus.Skipped, "InternalClass shouldn't have been obfuscated.");
+				Assert.True (method.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated");
+				Assert.True (nestedClassA.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
+				Assert.True (nestedClassA2.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
 			}
 
 			TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass");
@@ -105,8 +103,8 @@ namespace ObfuscarTests
 			var classBmethod1 = FindByName (classBType, "PublicMethod");
 			var method2 = map.GetMethod (new MethodKey (classBmethod1));
 
-			Assert.IsTrue (classB.Status == ObfuscationStatus.Renamed, "PublicClass should have been obfuscated.");
-			Assert.IsTrue (method2.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
+			Assert.True (classB.Status == ObfuscationStatus.Renamed, "PublicClass should have been obfuscated.");
+			Assert.True (method2.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
 
 			TypeDefinition classCType = inAssmDef.MainModule.GetType ("TestClasses.InternalClass2");
 			ObfuscatedThing classC = map.GetClass (new TypeKey (classCType));
@@ -119,21 +117,21 @@ namespace ObfuscarTests
 			TypeDefinition nestedClassBType2 = nestedClassBType.NestedTypes [0];
 			ObfuscatedThing nestedClassB2 = map.GetClass (new TypeKey (nestedClassBType2));            
 
-			Assert.IsTrue (classC.Status == ObfuscationStatus.Renamed, "InternalClass2 should have been obfuscated.");
-			Assert.IsTrue (method1.Status == ObfuscationStatus.Skipped, "PublicMethod shouldn't have been obfuscated.");
-			Assert.IsTrue (nestedClassB.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
-			Assert.IsTrue (nestedClassB2.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
+			Assert.True (classC.Status == ObfuscationStatus.Renamed, "InternalClass2 should have been obfuscated.");
+			Assert.True (method1.Status == ObfuscationStatus.Skipped, "PublicMethod shouldn't have been obfuscated.");
+			Assert.True (nestedClassB.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
+			Assert.True (nestedClassB2.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
 
 			TypeDefinition classDType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass2");
 			ObfuscatedThing classD = map.GetClass (new TypeKey (classDType));
 			var classDmethod1 = FindByName (classDType, "PublicMethod");
 			var method3 = map.GetMethod (new MethodKey (classDmethod1));
 
-			Assert.IsTrue (classD.Status == ObfuscationStatus.Skipped, "PublicClass2 shouldn't have been obfuscated.");
-			Assert.IsTrue (method3.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
+			Assert.True (classD.Status == ObfuscationStatus.Skipped, "PublicClass2 shouldn't have been obfuscated.");
+			Assert.True (method3.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
 		}
 
-		[Test]
+		[Fact]
 		public void CheckException ()
 		{
 			string xml = String.Format (
@@ -147,10 +145,10 @@ namespace ObfuscarTests
 				             @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			var exception = Assert.Throws<ObfuscarException> (() => TestHelper.BuildAndObfuscate ("AssemblyWithTypesAttrs2", string.Empty, xml));
-			Assert.IsTrue (exception.Message.StartsWith ("Inconsistent virtual method obfuscation"));
+			Assert.True (exception.Message.StartsWith ("Inconsistent virtual method obfuscation"));
 		}
 
-		[Test]
+		[Fact]
 		public void CheckCrossAssembly ()
 		{
 			string xml = String.Format (
@@ -163,18 +161,18 @@ namespace ObfuscarTests
 				             @"								</Module>" +
 				             @"								<Module file='$(InPath)\AssemblyG.dll' />" +
 				             @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
-			Directory.Delete (TestHelper.OutputPath, true);
+			// Directory.Delete (TestHelper.OutputPath, true);
 			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyG.dll"), Path.Combine (TestHelper.InputPath, "AssemblyG.dll"), true);
 			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyF.dll"), Path.Combine (TestHelper.InputPath, "AssemblyF.dll"), true);
 
 			var exception = Assert.Throws<ObfuscarException> (() => TestHelper.Obfuscate (xml));
-			Assert.IsTrue (exception.Message.StartsWith ("Inconsistent virtual method obfuscation"));
+			Assert.True (exception.Message.StartsWith ("Inconsistent virtual method obfuscation"));
 
-			Assert.IsFalse (File.Exists (Path.Combine (TestHelper.OutputPath, @"AssemblyG.dll")));
-			Assert.IsFalse (File.Exists (Path.Combine (TestHelper.OutputPath, @"AssemblyF.dll")));
+			Assert.False (File.Exists (Path.Combine (TestHelper.OutputPath, @"AssemblyG.dll")));
+			Assert.False (File.Exists (Path.Combine (TestHelper.OutputPath, @"AssemblyF.dll")));
 		}
 
-		[Test]
+		[Fact]
 		public void CheckMakedOnly ()
 		{
 			string xml = String.Format (
@@ -203,20 +201,20 @@ namespace ObfuscarTests
 			var f1 = map.GetField (new FieldKey (field));
 			var field2 = classAType.Fields.FirstOrDefault (item => item.Name == "Test");
 			var f2 = map.GetField (new FieldKey (field2));
-			Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "Public enum shouldn't have been obfuscated.");
-			Assert.IsTrue (f1.Status == ObfuscationStatus.Skipped, "Public enum field should not be obfuscated");
-			Assert.IsTrue (f2.Status == ObfuscationStatus.Skipped, "Public enum field should not be obfuscated");
+			Assert.True (classA.Status == ObfuscationStatus.Skipped, "Public enum shouldn't have been obfuscated.");
+			Assert.True (f1.Status == ObfuscationStatus.Skipped, "Public enum field should not be obfuscated");
+			Assert.True (f2.Status == ObfuscationStatus.Skipped, "Public enum field should not be obfuscated");
 
 			TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass");
 			ObfuscatedThing classB = map.GetClass (new TypeKey (classBType));
 			var classBmethod1 = FindByName (classBType, "PublicMethod");
 			var method2 = map.GetMethod (new MethodKey (classBmethod1));
 
-			Assert.IsTrue (classB.Status == ObfuscationStatus.Renamed, "PublicClass should have been obfuscated.");
-			Assert.IsTrue (method2.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
+			Assert.True (classB.Status == ObfuscationStatus.Renamed, "PublicClass should have been obfuscated.");
+			Assert.True (method2.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
 		}
 
-		[Test]
+		[Fact]
 		public void CheckMarkedOnly2 ()
 		{
 			string xml = String.Format (
@@ -249,18 +247,18 @@ namespace ObfuscarTests
 			TypeDefinition nestedClassAType2 = nestedClassAType.NestedTypes [0];
 			ObfuscatedThing nestedClassA2 = map.GetClass (new TypeKey (nestedClassAType2));
 
-			Assert.IsTrue (classA.Status == ObfuscationStatus.Skipped, "InternalClass shouldn't have been obfuscated.");
-			Assert.IsTrue (method.Status == ObfuscationStatus.Skipped, "PublicMethod shouldn't have been obfuscated");
-			Assert.IsTrue (nestedClassA.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
-			Assert.IsTrue (nestedClassA2.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
+			Assert.True (classA.Status == ObfuscationStatus.Skipped, "InternalClass shouldn't have been obfuscated.");
+			Assert.True (method.Status == ObfuscationStatus.Skipped, "PublicMethod shouldn't have been obfuscated");
+			Assert.True (nestedClassA.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
+			Assert.True (nestedClassA2.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
 
 			TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass");
 			ObfuscatedThing classB = map.GetClass (new TypeKey (classBType));
 			var classBmethod1 = FindByName (classBType, "PublicMethod");
 			var method2 = map.GetMethod (new MethodKey (classBmethod1));
 
-			Assert.IsTrue (classB.Status == ObfuscationStatus.Renamed, "PublicClass should have been obfuscated.");
-			Assert.IsTrue (method2.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
+			Assert.True (classB.Status == ObfuscationStatus.Renamed, "PublicClass should have been obfuscated.");
+			Assert.True (method2.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
 
 			TypeDefinition classCType = inAssmDef.MainModule.GetType ("TestClasses.InternalClass2");
 			ObfuscatedThing classC = map.GetClass (new TypeKey (classCType));
@@ -273,18 +271,18 @@ namespace ObfuscarTests
 			TypeDefinition nestedClassBType2 = nestedClassBType.NestedTypes [0];
 			ObfuscatedThing nestedClassB2 = map.GetClass (new TypeKey (nestedClassBType2));
 
-			Assert.IsTrue (classC.Status == ObfuscationStatus.Skipped, "InternalClass2 shouldn't have been obfuscated.");
-			Assert.IsTrue (method1.Status == ObfuscationStatus.Skipped, "PublicMethod shouldn't have been obfuscated.");
-			Assert.IsTrue (nestedClassB.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
-			Assert.IsTrue (nestedClassB2.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
+			Assert.True (classC.Status == ObfuscationStatus.Skipped, "InternalClass2 shouldn't have been obfuscated.");
+			Assert.True (method1.Status == ObfuscationStatus.Skipped, "PublicMethod shouldn't have been obfuscated.");
+			Assert.True (nestedClassB.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
+			Assert.True (nestedClassB2.Status == ObfuscationStatus.Skipped, "Nested class shouldn't have been obfuscated");
 
 			TypeDefinition classDType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass2");
 			ObfuscatedThing classD = map.GetClass (new TypeKey (classDType));
 			var classDmethod1 = FindByName (classDType, "PublicMethod");
 			var method3 = map.GetMethod (new MethodKey (classDmethod1));
 
-			Assert.IsTrue (classD.Status == ObfuscationStatus.Skipped, "PublicClass2 shouldn't have been obfuscated.");
-			Assert.IsTrue (method3.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
+			Assert.True (classD.Status == ObfuscationStatus.Skipped, "PublicClass2 shouldn't have been obfuscated.");
+			Assert.True (method3.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
 		}
 	}
 }

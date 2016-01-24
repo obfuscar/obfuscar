@@ -23,12 +23,9 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 using System.CodeDom.Compiler;
-
-using NUnit.Framework;
+using Xunit;
 
 namespace ObfuscarTests
 {
@@ -37,19 +34,19 @@ namespace ObfuscarTests
 		public const string InputPath = "..\\..\\Input";
 		public const string OutputPath = "..\\..\\Output";
 
-		public static void CleanInput( )
+		public static void CleanInput()
 		{
 			// clean out inputPath
-			foreach ( string file in Directory.GetFiles( InputPath, "*.dll" ) )
-				File.Delete( file );
+			//foreach (string file in Directory.GetFiles (InputPath, "*.dll" ))
+			//	File.Delete (file);
 		}
 
-		public static void BuildAssembly( string name, string suffix )
+		public static void BuildAssembly(string name, string suffix )
 		{
-			BuildAssembly( name, suffix, null );
+			BuildAssembly (name, suffix, null);
 		}
 
-		public static void BuildAssembly( string name, string suffix, string options )
+		public static void BuildAssembly(string name, string suffix, string options )
 		{
 			Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider( );
 
@@ -67,7 +64,7 @@ namespace ObfuscarTests
 			cp.OutputAssembly = assemblyPath;
 			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( InputPath, name + ".cs" ) );
 			if ( cr.Errors.HasErrors )
-				Assert.Fail( "Unable to compile test assembly:  " + dllName );
+				Assert.True (false, "Unable to compile test assembly:  " + dllName );
 		}
 
 		public static Obfuscar.Obfuscator Obfuscate( string xml )
@@ -86,10 +83,10 @@ namespace ObfuscarTests
 			return obfuscator;
 		}
 
-		public static Obfuscar.Obfuscator BuildAndObfuscate( string name, string suffix, string xml )
+		public static Obfuscar.Obfuscator BuildAndObfuscate(string name, string suffix, string xml )
 		{
-			CleanInput( );
-			BuildAssembly( name, suffix );
+			CleanInput ();
+			BuildAssembly (name, suffix);
 			return Obfuscate( xml );
 		}
 	}

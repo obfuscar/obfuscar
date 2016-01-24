@@ -23,19 +23,15 @@
 #endregion
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Text;
 using System.CodeDom.Compiler;
-using NUnit.Framework;
 using Obfuscar;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class DependencyTests
 	{
-		[SetUp]
-		public void BuildTestAssemblies ()
+		public DependencyTests ()
 		{
 			TestHelper.CleanInput ();
 
@@ -45,63 +41,62 @@ namespace ObfuscarTests
 			cp.GenerateExecutable = false;
 			cp.GenerateInMemory = false;
 			cp.TreatWarningsAsErrors = true;
-			;
 
 			string assemblyAPath = Path.Combine (TestHelper.InputPath, "AssemblyA.dll");
 			cp.OutputAssembly = assemblyAPath;
 			CompilerResults cr = provider.CompileAssemblyFromFile (cp, Path.Combine (TestHelper.InputPath, "AssemblyA.cs"));
 			if (cr.Errors.Count > 0)
-				Assert.Fail ("Unable to compile test assembly:  AssemblyA");
+				Assert.True (false, "Unable to compile test assembly:  AssemblyA");
 
 			cp.ReferencedAssemblies.Add (assemblyAPath);
 			cp.OutputAssembly = Path.Combine (TestHelper.InputPath, "AssemblyB.dll");
 			cr = provider.CompileAssemblyFromFile (cp, Path.Combine (TestHelper.InputPath, "AssemblyB.cs"));
 			if (cr.Errors.Count > 0)
-				Assert.Fail ("Unable to compile test assembly:  AssemblyB");
+				Assert.True (false, "Unable to compile test assembly:  AssemblyB");
 		}
 
-		[Test]
+		[Fact]
 		public void CheckGoodDependency ()
 		{
 			string xml = String.Format (
-				             @"<?xml version='1.0'?>" +
-				             @"<Obfuscator>" +
-				             @"<Var name='InPath' value='{0}' />" +
-				             @"<Module file='$(InPath)\AssemblyB.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath);
+							 @"<?xml version='1.0'?>" +
+							 @"<Obfuscator>" +
+							 @"<Var name='InPath' value='{0}' />" +
+							 @"<Module file='$(InPath)\AssemblyB.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath);
 
-			Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml (xml);
+			Obfuscator obfuscator = Obfuscator.CreateFromXml (xml);
 		}
 
-		[Test]
+		[Fact]
 		public void CheckDeletedDependency ()
 		{
 			string xml = String.Format (
-				             @"<?xml version='1.0'?>" +
-				             @"<Obfuscator>" +
-				             @"<Var name='InPath' value='{0}' />" +
-				             @"<Module file='$(InPath)\AssemblyB.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath);
+							 @"<?xml version='1.0'?>" +
+							 @"<Obfuscator>" +
+							 @"<Var name='InPath' value='{0}' />" +
+							 @"<Module file='$(InPath)\AssemblyB.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath);
 
 			// explicitly delete AssemblyA
 			File.Delete (Path.Combine (TestHelper.InputPath, "AssemblyA.dll"));
-            var exception = Assert.Throws<ObfuscarException>(() => { Obfuscator.CreateFromXml(xml); });
-            Assert.AreEqual("Unable to resolve dependency:  AssemblyA", exception.Message);
+			var exception = Assert.Throws<ObfuscarException>(() => { Obfuscator.CreateFromXml(xml); });
+			Assert.Equal("Unable to resolve dependency:  AssemblyA", exception.Message);
 		}
 
-		[Test]
+		[Fact]
 		public void CheckMissingDependency ()
 		{
 			string xml = String.Format (
-				             @"<?xml version='1.0'?>" +
-				             @"<Obfuscator>" +
-				             @"<Module file='{0}\AssemblyD.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath);
+							 @"<?xml version='1.0'?>" +
+							 @"<Obfuscator>" +
+							 @"<Module file='{0}\AssemblyD.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath);
 
 			// InPath defaults to '.', which doesn't contain AssemblyA
-			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyD.dll"), Path.Combine (TestHelper.InputPath, "AssemblyD.dll"));
-            var exception = Assert.Throws<ObfuscarException> (() => { Obfuscator.CreateFromXml (xml); });
-            Assert.AreEqual ("Unable to resolve dependency:  AssemblyC", exception.Message);
+			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyD.dll"), Path.Combine (TestHelper.InputPath, "AssemblyD.dll"), true);
+			var exception = Assert.Throws<ObfuscarException> (() => { Obfuscator.CreateFromXml (xml); });
+			Assert.Equal ("Unable to resolve dependency:  AssemblyC", exception.Message);
 		}
 	}
 }

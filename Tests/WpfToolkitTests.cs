@@ -23,14 +23,13 @@
 #endregion
 
 using Mono.Cecil;
-using NUnit.Framework;
 using Obfuscar;
 using System;
 using System.IO;
+using Xunit;
 
 namespace ObfuscarTests
 {
-    [TestFixture]
     public class WpfToolkitTests
     {
         static MethodDefinition FindByFullName(TypeDefinition typeDef, string name)
@@ -39,11 +38,11 @@ namespace ObfuscarTests
                 if (method.FullName == name)
                     return method;
 
-            Assert.Fail(String.Format("Expected to find method: {0}", name));
+            Assert.True(false, String.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 
-        [Test]
+        [Fact]
         public void CheckGeneric()
         {
             string xml = String.Format(
@@ -59,8 +58,8 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..\System.Windows.Controls.DataVisualization.Toolkit.dll"), Path.Combine(TestHelper.InputPath, "System.Windows.Controls.DataVisualization.Toolkit.dll"));
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..\WPFToolkit.dll"), Path.Combine(TestHelper.InputPath, "WPFToolkit.dll"));
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..\System.Windows.Controls.DataVisualization.Toolkit.dll"), Path.Combine(TestHelper.InputPath, "System.Windows.Controls.DataVisualization.Toolkit.dll"), true);
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..\WPFToolkit.dll"), Path.Combine(TestHelper.InputPath, "WPFToolkit.dll"), true);
 
             var map = TestHelper.Obfuscate(xml).Mapping;
 
@@ -69,7 +68,7 @@ namespace ObfuscarTests
 
             TypeDefinition classAType = inAssmDef.MainModule.GetType("System.Windows.Controls.DataVisualization.Charting.NullableConverter`1");
             var type = map.GetClass(new TypeKey(classAType));
-            Assert.IsTrue(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
+            Assert.True(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
         }
     }
 }

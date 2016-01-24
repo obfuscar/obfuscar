@@ -24,15 +24,11 @@
 
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Text;
-using System.CodeDom.Compiler;
-using NUnit.Framework;
 using Mono.Cecil;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class SpecializedGenericsTests
 	{
 		Obfuscar.ObfuscationMap BuildAndObfuscateAssemblies ()
@@ -58,11 +54,11 @@ namespace ObfuscarTests
 				if (method.Name == name)
 					return method;
 
-			Assert.Fail (String.Format ("Expected to find method: {0}", name));
+			Assert.True (false, String.Format ("Expected to find method: {0}", name));
 			return null; // never here
 		}
 
-		[Test]
+		[Fact]
 		public void CheckClassHasAttribute ()
 		{
 			Obfuscar.ObfuscationMap map = BuildAndObfuscateAssemblies ();
@@ -85,12 +81,12 @@ namespace ObfuscarTests
 				Obfuscar.ObfuscatedThing classAEntry = map.GetMethod (new Obfuscar.MethodKey (classAmethod2));
 				Obfuscar.ObfuscatedThing classBEntry = map.GetMethod (new Obfuscar.MethodKey (classBmethod2));
 
-				Assert.IsTrue (
+				Assert.True (
 					classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
 					classBEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
 					"Both methods should have been renamed.");
 
-				Assert.IsTrue (
+				Assert.True (
 					classAEntry.StatusText == classBEntry.StatusText,
 					"Both methods should have been renamed to the same thing.");
 			}
@@ -105,12 +101,12 @@ namespace ObfuscarTests
 				Obfuscar.ObfuscatedThing classAEntry = map.GetMethod (new Obfuscar.MethodKey (classAmethod2));
 				Obfuscar.ObfuscatedThing classBEntry = map.GetMethod (new Obfuscar.MethodKey (classBmethod2));
 
-				Assert.IsTrue (
+				Assert.True (
 					classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
 					classBEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
 					"Both methods should have been renamed.");
 
-				Assert.IsTrue (
+				Assert.True (
 					classAEntry.StatusText == classBEntry.StatusText,
 					"Both methods should have been renamed to the same thing.");
 			}

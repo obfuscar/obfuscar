@@ -23,16 +23,14 @@
 #endregion
 using System;
 using System.Collections.Generic;
-
-using NUnit.Framework;
 using Mono.Cecil;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class SkipNestedTypeTests
 	{
-		[Test]
+		[Fact]
 		public void CheckNestedTypes ()
 		{
 			string xml = String.Format (
@@ -59,13 +57,13 @@ namespace ObfuscarTests
 				return true;
 			},
 				delegate( TypeDefinition typeDef ) {
-				Assert.IsTrue (typesToFind.Contains (typeDef.ToString ()), "Type {0} not expected.", typeDef.ToString ());
+				Assert.True (typesToFind.Contains (typeDef.ToString ()), string.Format("Type {0} not expected.", typeDef.ToString ()));
 				typesToFind.Remove (typeDef.ToString ());
 			});
-			Assert.IsTrue (typesToFind.Count == 0, "Not all types found.");
+			Assert.True (typesToFind.Count == 0, "Not all types found.");
 		}
 
-		[Test]
+		[Fact]
 		public void CheckDefault ()
 		{
 			string xml = String.Format (
@@ -92,10 +90,10 @@ namespace ObfuscarTests
 					return true;
 				},
 				delegate( TypeDefinition typeDef) {
-					Assert.IsTrue (typesToFind.Contains (typeDef.ToString ()), "Type {0} not expected.", typeDef.ToString ());
+					Assert.True (typesToFind.Contains (typeDef.ToString ()), string.Format("Type {0} not expected.", typeDef.ToString ()));
 					typesToFind.Remove (typeDef.ToString ());
 				});
-			Assert.IsTrue (typesToFind.Count == 0, "Not all types found.");
+			Assert.True (typesToFind.Count == 0, "Not all types found.");
 		}
 	}
 }

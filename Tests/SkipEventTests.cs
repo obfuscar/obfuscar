@@ -22,17 +22,12 @@
 /// </copyright>
 #endregion
 using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Text;
-using System.CodeDom.Compiler;
-
-using NUnit.Framework;
 using Mono.Cecil;
+using Xunit;
 
 namespace ObfuscarTests
 {
-	[TestFixture]
 	public class SkipEventTests
 	{
 		protected void CheckEvents (string name, int expectedTypes, string[] expected, string[] notExpected)
@@ -65,35 +60,35 @@ namespace ObfuscarTests
 				delegate( TypeDefinition typeDef ) {
 				// make sure we have enough methods...
 				// 2 methods / event + a method to fire them
-				Assert.AreEqual (methodsToFind.Count + methodsNotToFind.Count + 2, typeDef.Methods.Count,
-						"Some of the methods for the type are missing.");
+				Assert.Equal (methodsToFind.Count + methodsNotToFind.Count + 2, typeDef.Methods.Count);
+				// "Some of the methods for the type are missing.");
 
 				foreach (MethodDefinition method in typeDef.Methods) {
-					Assert.IsFalse (methodsNotToFind.Contains (method.Name), String.Format (
+					Assert.False (methodsNotToFind.Contains (method.Name), String.Format (
 							"Did not expect to find method '{0}'.", method.Name));
 
 					methodsToFind.Remove (method.Name);
 				}
 
-				Assert.AreEqual (expected.Length, typeDef.Events.Count,
-						expected.Length == 1 ? "Type should have 1 event (others dropped by default)." :
-						String.Format ("Type should have {0} events (others dropped by default).", expected.Length));
+				Assert.Equal(expected.Length, typeDef.Events.Count);
+				// expected.Length == 1 ? "Type should have 1 event (others dropped by default)." :
+				// String.Format ("Type should have {0} events (others dropped by default).", expected.Length));
 
 				foreach (EventDefinition evt in typeDef.Events) {
-					Assert.IsFalse (eventsNotToFind.Contains (evt.Name), String.Format (
+					Assert.False (eventsNotToFind.Contains (evt.Name), String.Format (
 							"Did not expect to find event '{0}'.", evt.Name));
 
 					eventsToFind.Remove (evt.Name);
 				}
 
-				Assert.IsFalse (methodsToFind.Count > 0, "Failed to find all expected methods.");
-				Assert.IsFalse (eventsToFind.Count > 0, "Failed to find all expected events.");
+				Assert.False (methodsToFind.Count > 0, "Failed to find all expected methods.");
+				Assert.False (eventsToFind.Count > 0, "Failed to find all expected events.");
 			});
 
-			Assert.IsTrue (foundDelType, "Should have found the delegate type.");
+			Assert.True (foundDelType, "Should have found the delegate type.");
 		}
 
-		[Test]
+		[Fact]
 		public void CheckDropsEvents ()
 		{
 			string xml = String.Format (
@@ -101,7 +96,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='HidePrivateApi' value='true' />" +
+				@"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithEvents.dll' />" +
 				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
@@ -118,7 +113,7 @@ namespace ObfuscarTests
 			CheckEvents ("AssemblyWithEvents", 1, expected, notExpected);
 		}
 
-		[Test]
+		[Fact]
 		public void CheckSkipEventsByName ()
 		{
 			string xml = String.Format (
@@ -126,7 +121,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-				             @"<Var name='HidePrivateApi' value='true' />" +
+							 @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithEvents.dll'>" +
 				@"<SkipEvent type='TestClasses.ClassA' name='Event2' attrib='public' />" +
 				@"</Module>" +
@@ -146,7 +141,7 @@ namespace ObfuscarTests
 			CheckEvents ("AssemblyWithEvents", 1, expected, notExpected);
 		}
 
-		[Test]
+		[Fact]
 		public void CheckSkipEventsByRx ()
 		{
 			string xml = String.Format (
@@ -154,7 +149,7 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-				             @"<Var name='HidePrivateApi' value='true' />" +
+							 @"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath)\AssemblyWithEvents.dll'>" +
 				@"<SkipEvent type='TestClasses.ClassA' rx='Event\d' />" +
 				@"</Module>" +
