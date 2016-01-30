@@ -56,6 +56,13 @@ namespace Obfuscar
 		private string filename;
 		private AssemblyDefinition definition;
 		private string name;
+		private string tagname;
+
+		public string TagName {
+			get { return tagname; }
+			set { tagname = value; }
+		}
+
 		private bool exclude = false;
 
 		public bool Exclude {
@@ -65,9 +72,10 @@ namespace Obfuscar
 
 		bool initialized = false;
 		// to create, use FromXml
-		private AssemblyInfo (Project project)
+		private AssemblyInfo (Project project, string tagname)
 		{
 			this.project = project;
+			this.tagname = tagname;
 		}
 
 		private static bool AssemblyIsSigned (AssemblyDefinition def)
@@ -77,9 +85,9 @@ namespace Obfuscar
 
 		public static AssemblyInfo FromXml (Project project, XmlReader reader, Variables vars)
 		{
-			Debug.Assert (reader.NodeType == XmlNodeType.Element && reader.Name == "Module");
+			Debug.Assert (reader.NodeType == XmlNodeType.Element && (reader.Name == "Module" || reader.Name == "Assembly"));
 
-			AssemblyInfo info = new AssemblyInfo (project);
+			AssemblyInfo info = new AssemblyInfo (project, reader.Name);
 
 			// pull out the file attribute, but don't process anything empty
 			string val = Helper.GetAttribute (reader, "file", vars);

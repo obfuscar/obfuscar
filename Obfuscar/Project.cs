@@ -147,6 +147,7 @@ namespace Obfuscar
 							break;
 						}
 					case "Module":
+					case "Assembly":
 						AssemblyInfo info = AssemblyInfo.FromXml (project, reader, project.vars);
 						if (info.Exclude) {
 							project.copyAssemblyList.Add (info);

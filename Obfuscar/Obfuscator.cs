@@ -1158,7 +1158,8 @@ namespace Obfuscar
 				var add = module.Import (attribute.GetConstructors ().FirstOrDefault (item => !item.HasParameters));
 				MethodReference constructor = module.Import (add);
 				CustomAttribute attr = new CustomAttribute (constructor);
-				module.CustomAttributes.Add (attr);
+				if (info.TagName == "Module") module.CustomAttributes.Add(attr);
+				else if (info.TagName == "Assembly") module.Assembly.CustomAttributes.Add (attr);
 			}
 		}
 
