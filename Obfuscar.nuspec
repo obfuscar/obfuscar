@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
 	<metadata>
-		<version>2.0.2</version>
+		<version>2.0.3</version>
 		<authors>Ryan Williams, and other contributors.</authors>
 		<owners>Lex Li</owners>
 		<licenseUrl>https://obfuscar.codeplex.com/license</licenseUrl>
@@ -13,6 +13,10 @@
 		<description>Obfuscar is a basic obfuscator for .NET assemblies. It uses massive overloading to rename metadata in .NET assemblies (including the names of methods, properties, events, fields, types and namespaces) to a minimal set, distinguishable in most cases only by signature.</description>
 		<summary>Open source obfuscar for .NET and Mono.</summary>
 		<releaseNotes>
+Version 2.0.3
+* Fixed GitHub#58 "protected internal" property/method is not treated as public API.
+* Fixed GitHub#59 Special enumerator leads to InvalidOperationException in TypeKey class.
+
 Version 2.0.2
 * Fixed GitHub#47 F# compiler can now be obfuscated.
 * Fixed GitHub#55 The default value for the ObfuscatorAttribute is different.
