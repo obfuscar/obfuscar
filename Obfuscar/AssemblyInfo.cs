@@ -23,13 +23,13 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Diagnostics;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using Obfuscar.Helpers;
 
 namespace Obfuscar
 {
@@ -731,7 +731,7 @@ namespace Obfuscar
 				return true;
 			}
 
-			if (method.DeclaringType.IsTypePublic () && (method.Method.IsPublic || method.Method.IsFamily)) {
+			if (method.DeclaringType.IsTypePublic () && method.Method.IsPublic ()) {
 				message = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
@@ -846,7 +846,7 @@ namespace Obfuscar
 				return true;
 			}
 
-			if (prop.DeclaringType.IsTypePublic () && (IsGetterPublic (prop.Property) || IsSetterPublic (prop.Property))) {
+			if (prop.DeclaringType.IsTypePublic () && prop.Property.IsPublic ()) {
 				message = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
@@ -901,33 +901,13 @@ namespace Obfuscar
 				return true;
 			}
 
-			if (evt.DeclaringType.IsTypePublic () && (IsAddPublic (evt.Event) || IsRemovePublic (evt.Event))) {
+			if (evt.DeclaringType.IsTypePublic () && evt.Event.IsPublic ()) {
 				message = "KeepPublicApi option in configuration";
 				return keepPublicApi;
 			}
 
 			message = "HidePrivateApi option in configuration";
 			return !hidePrivateApi;
-		}
-
-		private bool IsAddPublic (EventDefinition eventDefinition)
-		{
-			return eventDefinition.AddMethod != null && (eventDefinition.AddMethod.IsPublic || eventDefinition.AddMethod.IsFamily);
-		}
-
-		private bool IsRemovePublic (EventDefinition eventDefinition)
-		{
-			return eventDefinition.RemoveMethod != null && (eventDefinition.RemoveMethod.IsPublic || eventDefinition.RemoveMethod.IsFamily);
-		}
-
-		private bool IsGetterPublic (PropertyDefinition propertyDefinition)
-		{
-			return propertyDefinition.GetMethod != null && (propertyDefinition.GetMethod.IsPublic || propertyDefinition.GetMethod.IsFamily);
-		}
-
-		private bool IsSetterPublic (PropertyDefinition propertyDefinition)
-		{
-			return propertyDefinition.SetMethod != null && (propertyDefinition.SetMethod.IsPublic || propertyDefinition.SetMethod.IsFamily);
 		}
 
 		/// <summary>

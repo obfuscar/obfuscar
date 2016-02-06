@@ -1,11 +1,9 @@
 ﻿using Mono.Cecil;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
-namespace Obfuscar
+namespace Obfuscar.Helpers
 {
 	public static class AssemblyDefinitionExtensions
 	{
@@ -13,14 +11,14 @@ namespace Obfuscar
 		{
 			foreach (var custom in assembly.CustomAttributes) {
 				if (custom.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute") {
-                    var framework = custom.Properties.First(property => property.Name == "FrameworkDisplayName");
-                    var content = framework.Argument.Value.ToString ();
-                    if (!string.Equals (content, ".NET Portable Subset")) {
+					var framework = custom.Properties.First(property => property.Name == "FrameworkDisplayName");
+					var content = framework.Argument.Value.ToString ();
+					if (!string.Equals (content, ".NET Portable Subset")) {
 						return null;
 					}
 
 					var parts = custom.ConstructorArguments [0].Value.ToString ().Split (',');
-                    var root = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+					var root = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
 					return Environment.ExpandEnvironmentVariables (
 						Path.Combine (
 							root,
