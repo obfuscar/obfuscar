@@ -36,7 +36,7 @@ namespace Obfuscar
 		AffectProperty = 0x02,
 		AffectField = 0x04,
 		AffectMethod = 0x08,
-		SkipStringHiding = 0x10,
+		AffectString = 0x10
 	}
 
 	class TypeTester : IPredicate<TypeKey>

@@ -31,6 +31,34 @@ namespace ObfuscarTests
 	public class HideStringsTests
 	{
 		[Fact]
+		public void CheckHideStringsClassDoesNotExist ()
+		{
+			string xml = string.Format (
+				@"<?xml version='1.0'?>" +
+				@"<Obfuscator>" +
+				@"<Var name='InPath' value='{0}' />" +
+				@"<Var name='OutPath' value='{1}' />" +
+				@"<Var name='HideStrings' value='false' />" +
+				@"<Module file='$(InPath)\AssemblyWithStrings.dll' />" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+
+			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
+			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
+				Path.Combine (TestHelper.OutputPath, "AssemblyWithStrings.dll"));
+
+			Assert.Equal (3, assmDef.MainModule.Types.Count);
+
+			TypeDefinition expected = null;
+			foreach (var type in assmDef.MainModule.Types) {
+				if (type.FullName.Contains ("PrivateImplementation")) {
+					expected = type;
+				}
+			}
+
+			Assert.Null (expected);
+		}
+
+		[Fact]
 		public void CheckHideStringsClassExists ()
 		{
 			string xml = string.Format (
@@ -46,7 +74,7 @@ namespace ObfuscarTests
 			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
 				Path.Combine (TestHelper.OutputPath, "AssemblyWithStrings.dll"));
 
-			Assert.Equal (4, assmDef.MainModule.Types.Count); // "Should contain only one type, and <Module>.");
+			Assert.Equal (4, assmDef.MainModule.Types.Count);
 
 			TypeDefinition expected = null;
 			foreach (var type in assmDef.MainModule.Types) {
@@ -80,7 +108,75 @@ namespace ObfuscarTests
 			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
 				Path.Combine (TestHelper.OutputPath, "AssemblyWithStrings.dll"));
 
-			Assert.Equal (4, assmDef.MainModule.Types.Count); // "Should contain only one type, and <Module>.");
+			Assert.Equal (4, assmDef.MainModule.Types.Count);
+
+			TypeDefinition expected = null;
+			foreach (var type in assmDef.MainModule.Types) {
+				if (type.FullName.Contains ("PrivateImplementation")) {
+					expected = type;
+				}
+			}
+
+			Assert.NotNull (expected);
+
+			Assert.Equal (3, expected.Fields.Count);
+
+			Assert.Equal (4, expected.Methods.Count);
+		}
+
+		[Fact]
+		public void CheckHideStringsClassForce ()
+		{
+			string xml = string.Format (
+				@"<?xml version='1.0'?>" +
+				@"<Obfuscator>" +
+				@"<Var name='InPath' value='{0}' />" +
+				@"<Var name='OutPath' value='{1}' />" +
+				@"<Var name='HideStrings' value='false' />" +
+				@"<Module file='$(InPath)\AssemblyWithStrings.dll'>" +
+				@"  <ForceStringHiding type='TestClasses.PublicClass1' name='*' />" +
+				@"</Module>" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+
+			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
+			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
+				Path.Combine (TestHelper.OutputPath, "AssemblyWithStrings.dll"));
+
+			Assert.Equal (4, assmDef.MainModule.Types.Count);
+
+			TypeDefinition expected = null;
+			foreach (var type in assmDef.MainModule.Types) {
+				if (type.FullName.Contains ("PrivateImplementation")) {
+					expected = type;
+				}
+			}
+
+			Assert.NotNull (expected);
+
+			Assert.Equal (3, expected.Fields.Count);
+
+			Assert.Equal (4, expected.Methods.Count);
+		}
+
+		[Fact]
+		public void CheckHideStringsClassForce2 ()
+		{
+			string xml = string.Format (
+				@"<?xml version='1.0'?>" +
+				@"<Obfuscator>" +
+				@"<Var name='InPath' value='{0}' />" +
+				@"<Var name='OutPath' value='{1}' />" +
+				@"<Var name='HideStrings' value='false' />" +
+				@"<Module file='$(InPath)\AssemblyWithStrings.dll'>" +
+				@"  <ForceType name='TestClasses.PublicClass1' forceStringHiding='true' />" +
+				@"</Module>" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+
+			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
+			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
+				Path.Combine (TestHelper.OutputPath, "AssemblyWithStrings.dll"));
+
+			Assert.Equal (4, assmDef.MainModule.Types.Count);
 
 			TypeDefinition expected = null;
 			foreach (var type in assmDef.MainModule.Types) {

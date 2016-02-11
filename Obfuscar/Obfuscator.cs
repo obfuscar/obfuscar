@@ -1101,12 +1101,7 @@ namespace Obfuscar
 		/// </summary>
 		internal void HideStrings ()
 		{
-			if (!Project.Settings.HideStrings) {
-				return;
-			}
-
-			foreach (AssemblyInfo info in Project)
-			{
+			foreach (AssemblyInfo info in Project) {
 				AssemblyDefinition library = info.Definition;
 				StringSqueeze container = new StringSqueeze (library);
 
@@ -1123,7 +1118,6 @@ namespace Obfuscar
 				}
 
 				container.Squeeze();
-				library.MainModule.Types.Add(container.NewType);
 			}
 		}
 
@@ -1190,15 +1184,29 @@ namespace Obfuscar
 
 			private int _stringIndex;
 
-			private readonly Dictionary<string, MethodDefinition> _methodByString = new Dictionary<string, MethodDefinition> ();
+			private readonly Dictionary<string, MethodDefinition> _methodByString = new Dictionary<string, MethodDefinition>();
 
 			private int _nameIndex;
 
 			// Array of bytes receiving the obfuscated strings in UTF8 format.
-			private readonly List<byte> _dataBytes = new List<byte> ();
+			private readonly List<byte> _dataBytes = new List<byte>();
+
+			private AssemblyDefinition _library;
+			private bool _initialized;
 
 			public StringSqueeze (AssemblyDefinition library)
 			{
+				_library = library;
+			}
+
+			private void Initialize ()
+			{
+				if (_initialized)
+					return;
+
+				_initialized = true;
+				var library = _library;
+
 				// We get the most used type references
 				var systemObjectTypeReference = library.MainModule.TypeSystem.Object;
 				SystemVoidTypeReference = library.MainModule.TypeSystem.Void;
@@ -1259,6 +1267,9 @@ namespace Obfuscar
 
 			public void Squeeze ()
 			{
+				if (!_initialized)
+					return;
+
 				// Now that we know the total size of the byte array, we can update the struct size and store it in the constant field
 				StructType.ClassSize = _dataBytes.Count;
 				for (int i = 0; i < _dataBytes.Count; i++)
@@ -1313,13 +1324,17 @@ namespace Obfuscar
 				worker2.Emit (OpCodes.Clt);
 				worker2.Emit (OpCodes.Brtrue, label2);
 				worker2.Emit (OpCodes.Ret);
+
+				_library.MainModule.Types.Add (NewType);
 			}
 
 			public void ProcessStrings (MethodDefinition method,
 										AssemblyInfo info,
 										Project project)
 			{
-				if (!info.ShouldSkipStringHiding (new MethodKey (method), project.InheritMap, project.Settings.HidePrivateApi) && method.Body != null) {
+				if (!info.ShouldSkipStringHiding (new MethodKey (method), project.InheritMap, project.Settings.HideStrings) && method.Body != null) {
+					Initialize ();
+					
 					// IMPORTANT: cannot convert to foreach due to modification on method body.
 					// ReSharper disable once ForCanBeConvertedToForeach
 					for (int index = 0; index < method.Body.Instructions.Count; index++) {

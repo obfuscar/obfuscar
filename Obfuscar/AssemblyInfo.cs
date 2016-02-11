@@ -49,6 +49,7 @@ namespace Obfuscar
 		private readonly PredicateCollection<PropertyKey> forceProperties = new PredicateCollection<PropertyKey> ();
 		private readonly PredicateCollection<EventKey> forceEvents = new PredicateCollection<EventKey> ();
 		private readonly PredicateCollection<MethodKey> skipStringHiding = new PredicateCollection<MethodKey> ();
+		private readonly PredicateCollection<MethodKey> forceStringHiding = new PredicateCollection<MethodKey> ();
 		private readonly List<AssemblyInfo> references = new List<AssemblyInfo> ();
 		private readonly List<AssemblyInfo> referencedBy = new List<AssemblyInfo> ();
 		private List<TypeReference> unrenamedTypeReferences;
@@ -148,7 +149,7 @@ namespace Obfuscar
 
 							val = Helper.GetAttribute (reader, "skipStringHiding", vars);
 							if (val.Length > 0 && XmlConvert.ToBoolean (val))
-								skipFlags |= TypeAffectFlags.SkipStringHiding;
+								skipFlags |= TypeAffectFlags.AffectString;
 
 							val = Helper.GetAttribute (reader, "skipFields", vars);
 							if (val.Length > 0 && XmlConvert.ToBoolean (val))
@@ -174,6 +175,10 @@ namespace Obfuscar
 							val = Helper.GetAttribute (reader, "forceMethods", vars);
 							if (val.Length > 0 && XmlConvert.ToBoolean (val))
 								forceFlags |= TypeAffectFlags.AffectMethod;
+
+							val = Helper.GetAttribute (reader, "forceStringHiding", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+								forceFlags |= TypeAffectFlags.AffectString;
 
 							val = Helper.GetAttribute (reader, "forceFields", vars);
 							if (val.Length > 0 && XmlConvert.ToBoolean (val))
@@ -212,6 +217,13 @@ namespace Obfuscar
 								info.skipStringHiding.Add (new MethodTester (rx, type, attrib, typeattrib));
 							} else {
 								info.skipStringHiding.Add (new MethodTester (name, type, attrib, typeattrib));
+							}
+							break;
+						case "ForceStringHiding":
+							if (rx != null) {
+								info.forceStringHiding.Add (new MethodTester (rx, type, attrib, typeattrib));
+							} else {
+								info.forceStringHiding.Add (new MethodTester (name, type, attrib, typeattrib));
 							}
 							break;
 						case "SkipField":
@@ -740,12 +752,21 @@ namespace Obfuscar
 			return !hidePrivateApi;
 		}
 
-		public bool ShouldSkipStringHiding (MethodKey method, InheritMap map, bool hidePrivateApi)
+		public bool ShouldSkipStringHiding (MethodKey method, InheritMap map, bool projectHideStrings)
 		{
-			if (ShouldSkip (method.TypeKey, TypeAffectFlags.SkipStringHiding, map))
+			if (ShouldForce (method.TypeKey, TypeAffectFlags.AffectString, map))
+				return false;
+
+			if (forceStringHiding.IsMatch (method, map))
+				return false;
+
+			if (ShouldSkip (method.TypeKey, TypeAffectFlags.AffectString, map))
 				return true;
 
-			return skipStringHiding.IsMatch (method, map);
+			if (skipStringHiding.IsMatch (method, map))
+				return true;
+
+			return !projectHideStrings;
 		}
 
 		public bool ShouldSkip (FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly, out string message)
