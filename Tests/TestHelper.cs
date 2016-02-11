@@ -71,14 +71,14 @@ namespace ObfuscarTests
 		{
 			Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml( xml );
 
+			if (hideStrings)
+				obfuscator.HideStrings ();
 			obfuscator.RenameFields ();
 			obfuscator.RenameParams ();
 			obfuscator.RenameProperties ();
 			obfuscator.RenameEvents ();
 			obfuscator.RenameMethods ();
 			obfuscator.RenameTypes ();
-			if (hideStrings)
-				obfuscator.HideStrings ();
 			obfuscator.PostProcessing ();
 			obfuscator.SaveAssemblies ();
 

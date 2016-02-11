@@ -21,7 +21,6 @@
 /// THE SOFTWARE.
 /// </copyright>
 #endregion
-using System;
 using System.IO;
 
 using Mono.Cecil;
@@ -31,9 +30,10 @@ namespace ObfuscarTests
 {
 	public class HideStringsTests
 	{
-		public void BuildAndObfuscateAssemblies()
+		[Fact]
+		public void CheckHideStringsClassExists ()
 		{
-			string xml = String.Format(
+			string xml = string.Format (
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
@@ -42,48 +42,58 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath)\AssemblyWithStrings.dll' />" +
 				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
-			TestHelper.BuildAndObfuscate("AssemblyWithStrings", String.Empty, xml, true);
-		}
+			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
+			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
+				Path.Combine (TestHelper.OutputPath, "AssemblyWithStrings.dll"));
 
-		[Fact]
-		public void CheckHideStringsClassExists()
-		{
-			BuildAndObfuscateAssemblies();
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
-				Path.Combine(TestHelper.OutputPath, "AssemblyWithStrings.dll"));
+			Assert.Equal (4, assmDef.MainModule.Types.Count); // "Should contain only one type, and <Module>.");
 
-			Assert.Equal(4, assmDef.MainModule.Types.Count); // "Should contain only one type, and <Module>.");
-		}
-
-		[Fact]
-		public void CheckMethodHasAttribute()
-		{
-			BuildAndObfuscateAssemblies();
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
-				Path.Combine(TestHelper.OutputPath, "AssemblyWithAttrs.dll"));
-
-			bool found = false;
-			foreach (TypeDefinition typeDef in assmDef.MainModule.Types)
-			{
-				if (typeDef.Name == "<Module>")
-					continue;
-				else
-					found = true;
-
-				Assert.Equal(2, typeDef.Methods.Count); // "Type is expected to have a single member.");
-
-				MethodDefinition methodDef = typeDef.Methods[0];
-
-				CustomAttribute attr = methodDef.CustomAttributes[0];
-				Assert.Equal("System.Void System.ObsoleteAttribute::.ctor(System.String)", attr.Constructor.ToString());
-				// "Type should have ObsoleteAttribute on it.");
-
-				Assert.Equal(1, attr.ConstructorArguments.Count); // "ObsoleteAttribute should have one parameter.");
-				Assert.Equal("Message Text", attr.ConstructorArguments[0].Value);
-				// "ObsoleteAttribute param should have appropriate value.");
+			TypeDefinition expected = null;
+			foreach (var type in assmDef.MainModule.Types) {
+				if (type.FullName.Contains ("PrivateImplementation")) {
+					expected = type;
+				}
 			}
 
-			Assert.True(found, "Should have found non-<Module> type.");
+			Assert.NotNull (expected);
+
+			Assert.Equal (3, expected.Fields.Count);
+
+			Assert.Equal (6, expected.Methods.Count);
+		}
+
+		[Fact]
+		public void CheckHideStringsClassSkip ()
+		{
+			string xml = string.Format (
+				@"<?xml version='1.0'?>" +
+				@"<Obfuscator>" +
+				@"<Var name='InPath' value='{0}' />" +
+				@"<Var name='OutPath' value='{1}' />" +
+				@"<Var name='HideStrings' value='true' />" +
+				@"<Module file='$(InPath)\AssemblyWithStrings.dll'>" +
+				@"  <SkipStringHiding type='TestClasses.PublicClass1' name='*' />" +
+				@"</Module>" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+
+			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
+			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
+				Path.Combine (TestHelper.OutputPath, "AssemblyWithStrings.dll"));
+
+			Assert.Equal (4, assmDef.MainModule.Types.Count); // "Should contain only one type, and <Module>.");
+
+			TypeDefinition expected = null;
+			foreach (var type in assmDef.MainModule.Types) {
+				if (type.FullName.Contains ("PrivateImplementation")) {
+					expected = type;
+				}
+			}
+
+			Assert.NotNull (expected);
+
+			Assert.Equal (3, expected.Fields.Count);
+
+			Assert.Equal (4, expected.Methods.Count);
 		}
 	}
 }

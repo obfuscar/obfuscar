@@ -102,6 +102,9 @@ namespace Obfuscar
 			// The SemanticAttributes of MethodDefinitions have to be loaded before any fields,properties or events are removed
 			LoadMethodSemantics ();
 
+			LogOutput("hiding strings...\n");
+			HideStrings ();
+
 			LogOutput ("Renaming:  fields...");
 			RenameFields ();
 
@@ -119,9 +122,6 @@ namespace Obfuscar
 
 			LogOutput ("types...");
 			RenameTypes ();
-
-			LogOutput ("hiding strings...\n");
-			HideStrings ();
 
 			PostProcessing ();
 
@@ -419,6 +419,10 @@ namespace Obfuscar
 				int typeIndex = 0;
 				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
 					if (type.FullName == "<Module>") {
+						continue;
+					}
+
+					if (type.FullName.StartsWith ("<PrivateImplementationDetails>{", StringComparison.Ordinal)) {
 						continue;
 					}
 
