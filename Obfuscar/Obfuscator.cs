@@ -1095,33 +1095,31 @@ namespace Obfuscar
 		/// <summary>
 		/// Encoded strings using an auto-generated class.
 		/// </summary>
-		private void HideStrings ()
+		internal void HideStrings ()
 		{
-			foreach (AssemblyInfo info in Project) {
+			if (!Project.Settings.HideStrings) {
+				return;
+			}
+
+			foreach (AssemblyInfo info in Project)
+			{
 				AssemblyDefinition library = info.Definition;
-				StringSqueeze container = null;
-				if (!Project.Settings.HideStrings) {
-					container = new StringSqueeze (library);
-				}
+				StringSqueeze container = new StringSqueeze (library);
 
 				// Look for all string load operations and replace them with calls to indiviual methods in our new class
-				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions ()) {
 					if (type.FullName == "<Module>")
 						continue;
 
 					// FIXME: Figure out why this exists if it is never used.
 					// TypeKey typeKey = new TypeKey(type);
 					foreach (MethodDefinition method in type.Methods) {
-						if (container != null) {
-							container.ProcessStrings (method, info, Project);
-						}
+						container.ProcessStrings (method, info, Project);
 					}
 				}
 
-				if (container != null) {
-					container.Squeeze ();
-					library.MainModule.Types.Add (container.NewType);
-				}
+				container.Squeeze();
+				library.MainModule.Types.Add(container.NewType);
 			}
 		}
 

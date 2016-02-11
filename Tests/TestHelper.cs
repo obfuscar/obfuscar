@@ -67,27 +67,29 @@ namespace ObfuscarTests
 				Assert.True (false, "Unable to compile test assembly:  " + dllName );
 		}
 
-		public static Obfuscar.Obfuscator Obfuscate( string xml )
+		public static Obfuscar.Obfuscator Obfuscate (string xml, bool hideStrings = false)
 		{
 			Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml( xml );
 
-			obfuscator.RenameFields( );
-			obfuscator.RenameParams( );
-			obfuscator.RenameProperties( );
-			obfuscator.RenameEvents( );
-			obfuscator.RenameMethods( );
-			obfuscator.RenameTypes( );
+			obfuscator.RenameFields ();
+			obfuscator.RenameParams ();
+			obfuscator.RenameProperties ();
+			obfuscator.RenameEvents ();
+			obfuscator.RenameMethods ();
+			obfuscator.RenameTypes ();
+			if (hideStrings)
+				obfuscator.HideStrings ();
 			obfuscator.PostProcessing ();
-			obfuscator.SaveAssemblies( );
+			obfuscator.SaveAssemblies ();
 
 			return obfuscator;
 		}
 
-		public static Obfuscar.Obfuscator BuildAndObfuscate(string name, string suffix, string xml )
+		public static Obfuscar.Obfuscator BuildAndObfuscate (string name, string suffix, string xml, bool hideStrings = false)
 		{
 			CleanInput ();
 			BuildAssembly (name, suffix);
-			return Obfuscate( xml );
+			return Obfuscate (xml, hideStrings);
 		}
 	}
 }

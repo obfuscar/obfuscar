@@ -104,6 +104,7 @@
     <Compile Include="FSharpTests.cs" />
     <Compile Include="CustomAttributeTests.cs" />
     <Compile Include="FunctionOverridingTests.cs" />
+    <Compile Include="HideStringsTests.cs" />
     <Compile Include="PortableTests.cs" />
     <Compile Include="SigningTests.cs" />
     <Compile Include="SkipNestedTypeTests.cs" />
@@ -147,7 +148,9 @@
   <ItemGroup>
     <None Include="default.runsettings" />
     <None Include="packages.config" />
-    <None Include="xunit.runner.json" />
+    <None Include="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
