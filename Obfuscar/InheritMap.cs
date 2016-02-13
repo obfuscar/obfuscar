@@ -95,35 +95,37 @@ namespace Obfuscar
 					MethodKey[] methods = GetVirtualMethods (project.Cache, type);
 					while (i < methods.Length) {
 						MethodGroup group;
-						if (!methodGroups.TryGetValue (methods [i], out group))
+						var left = methods [i];
+						if (!methodGroups.TryGetValue (left, out group))
 							group = null;
 
 						for (j = i + 1; j < methods.Length; j++) {
-							if (!MethodsMatch (methods, i, j))
+							var right = methods [j];
+							if (!MethodsMatch (left, right))
 								continue;
 
 							// found an override
 
 							// see if either method is already in a group
 							if (group != null)
-								group = AddToGroup (group, methods [j]);
-							else if (methodGroups.TryGetValue (methods [j], out group))
-								group = AddToGroup (group, methods [i]);
+								group = AddToGroup (group, right);
+							else if (methodGroups.TryGetValue (right, out group))
+								group = AddToGroup (group, left);
 							else {
 								group = new MethodGroup ();
 
-								group = AddToGroup (group, methods [i]);
-								group = AddToGroup (group, methods [j]);
+								group = AddToGroup (group, left);
+								group = AddToGroup (group, right);
 							}
 
 							// if the group isn't already external, see if it should be
 							Debug.Assert (group != null, "should have a group by now");
-							if (!group.External && !project.Contains (methods [j].TypeKey))
+							if (!group.External && !project.Contains (right.TypeKey))
 								group.External = true;
 						}
 
 						// if the group isn't already external, see if it should be
-						if (group != null && !group.External && !project.Contains (methods [i].TypeKey))
+						if (group != null && !group.External && !project.Contains (left.TypeKey))
 							group.External = true;
 
 						// move on to the next thing that doesn't match
@@ -133,9 +135,9 @@ namespace Obfuscar
 			}
 		}
 
-		static bool MethodsMatch (MethodKey[] methods, int i, int j)
+		static bool MethodsMatch (MethodKey left, MethodKey right)
 		{
-			return MethodKey.MethodMatch (methods [i].Method, methods [j].Method);
+			return MethodKey.MethodMatch (left.Method, right.Method);
 		}
 
 		public static void GetBaseTypes (Project project, HashSet<TypeKey> baseTypes, TypeDefinition type)
