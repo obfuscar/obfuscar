@@ -9,26 +9,26 @@
     <!-- Properties for controlling the Assembly Version -->
     <PropertyGroup>
         <AssemblyMajorVersion>2</AssemblyMajorVersion>
-        <AssemblyMinorVersion>0</AssemblyMinorVersion>
+        <AssemblyMinorVersion>1</AssemblyMinorVersion>
         <AssemblyBuildNumber>
         </AssemblyBuildNumber>
         <AssemblyRevision>
         </AssemblyRevision>
         <AssemblyBuildNumberType>DateString</AssemblyBuildNumberType>
-        <AssemblyBuildNumberFormat>04MMdd</AssemblyBuildNumberFormat>
+        <AssemblyBuildNumberFormat>00MMdd</AssemblyBuildNumberFormat>
         <AssemblyRevisionType>AutoIncrement</AssemblyRevisionType>
         <AssemblyRevisionFormat>00</AssemblyRevisionFormat>
     </PropertyGroup>
     <!-- Properties for controlling the Assembly File Version -->
     <PropertyGroup>
         <AssemblyFileMajorVersion>2</AssemblyFileMajorVersion>
-        <AssemblyFileMinorVersion>0</AssemblyFileMinorVersion>
+        <AssemblyFileMinorVersion>1</AssemblyFileMinorVersion>
         <AssemblyFileBuildNumber>
         </AssemblyFileBuildNumber>
         <AssemblyFileRevision>
         </AssemblyFileRevision>
         <AssemblyFileBuildNumberType>DateString</AssemblyFileBuildNumberType>
-        <AssemblyFileBuildNumberFormat>04MMdd</AssemblyFileBuildNumberFormat>
+        <AssemblyFileBuildNumberFormat>00MMdd</AssemblyFileBuildNumberFormat>
         <AssemblyFileRevisionType>AutoIncrement</AssemblyFileRevisionType>
         <AssemblyFileRevisionFormat>00</AssemblyFileRevisionFormat>
     </PropertyGroup>
@@ -51,7 +51,7 @@
         </AssemblyCulture>
         <AssemblyDescription>
         </AssemblyDescription>
-        <AssemblyProduct>Obfuscar 2.0.2 Beta</AssemblyProduct>
+        <AssemblyProduct>Obfuscar 2.1</AssemblyProduct>
         <AssemblyTitle>
         </AssemblyTitle>
     </PropertyGroup>
