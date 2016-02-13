@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using System.Linq;
 
 namespace Obfuscar.Helpers
 {
@@ -37,6 +38,16 @@ namespace Obfuscar.Helpers
 			}
 
 			return type.DeclaringType == null ? null : MarkedToRename (type.DeclaringType, true);
+		}
+
+		public static bool IsResourcesType (this TypeDefinition type)
+		{
+			var generated = type.CustomAttributes.FirstOrDefault (attribute => attribute.AttributeType.FullName == "System.CodeDom.Compiler.GeneratedCodeAttribute");
+			if (generated == null)
+				return false;
+
+			var name = generated.ConstructorArguments [0].Value.ToString ();
+			return name == "System.Resources.Tools.StronglyTypedResourceBuilder";
 		}
 	}
 }

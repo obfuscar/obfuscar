@@ -41,6 +41,7 @@ using ILSpy.BamlDecompiler;
 #endif
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Obfuscar.Helpers;
 
 #if !__MonoCS__
 using Ricciolo.StylesExplorer.MarkupReflection;
@@ -417,14 +418,12 @@ namespace Obfuscar
 
 				// loop through the types
 				int typeIndex = 0;
-				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
-					if (type.FullName == "<Module>") {
+				foreach (TypeDefinition type in info.GetAllTypeDefinitions ()) {
+					if (type.FullName == "<Module>")
 						continue;
-					}
 
-					if (type.FullName.StartsWith ("<PrivateImplementationDetails>{", StringComparison.Ordinal)) {
+					if (type.FullName.IndexOf ("<PrivateImplementationDetails>{", StringComparison.Ordinal) >= 0)
 						continue;
-					}
 
 					TypeKey oldTypeKey = new TypeKey (type);
 					TypeKey unrenamedTypeKey = unrenamedTypeKeys [type];
@@ -484,59 +483,62 @@ namespace Obfuscar
 						}
 					}
 
-					if (type.GenericParameters.Count > 0) {
+					if (type.GenericParameters.Count > 0)
 						name += '`' + type.GenericParameters.Count.ToString ();
-					}
 
-					if (type.DeclaringType != null) {
-						// Nested types do not have namespaces
-						ns = "";
-					}
+					if (type.DeclaringType != null)
+						ns = ""; // Nested types do not have namespaces
 
 					TypeKey newTypeKey = new TypeKey (info.Name, ns, name);
 					typeIndex++;
 
-					// go through the list of renamed types and try to rename resources
-					for (int i = 0; i < resources.Count;) {
-						Resource res = resources [i];
-						string resName = res.Name;
-
-						if (Path.GetFileNameWithoutExtension (resName) == fullName) {
-							// If one of the type's methods return a ResourceManager and contains a string with the full type name,
-							// we replace the type string with the obfuscated one.
-							// This is for the Visual Studio generated resource designer code.
-							foreach (MethodDefinition method in type.Methods) {
-								if (method.ReturnType.FullName != "System.Resources.ResourceManager")
-									continue;
-
-								foreach (Instruction instruction in method.Body.Instructions) {
-									if (instruction.OpCode == OpCodes.Ldstr &&
-											  (string)instruction.Operand == fullName)
-										instruction.Operand = newTypeKey.Fullname;
-								}
-							}
-
-							// ReSharper disable once InvocationIsSkipped
-							Debug.Assert (fullName != null, "fullName != null");
-							// ReSharper disable once PossibleNullReferenceException
-							string suffix = resName.Substring (fullName.Length);
-							string newName = newTypeKey.Fullname + suffix;
-							res.Name = newName;
-							resources.RemoveAt (i);
-							Mapping.AddResource (resName, ObfuscationStatus.Renamed, newName);
-						} else {
-							i++;
-						}
-					}
+					FixResouceManager (resources, type, fullName, newTypeKey);
 
 					RenameType (info, type, oldTypeKey, newTypeKey, unrenamedTypeKey);
-					//typerenamemap.Add (unrenamedTypeKey.Fullname.Replace ('/', '+'), type.FullName.Replace ('/', '+'));
 				}
 
 				foreach (Resource res in resources)
 					Mapping.AddResource (res.Name, ObfuscationStatus.Skipped, "no clear new name");
 
 				info.InvalidateCache ();
+			}
+		}
+
+		private void FixResouceManager (List<Resource> resources, TypeDefinition type, string fullName, TypeKey newTypeKey)
+		{
+			if (!type.IsResourcesType ())
+				return;
+
+			// go through the list of renamed types and try to rename resources
+			for (int i = 0; i < resources.Count;) {
+				Resource res = resources[i];
+				string resName = res.Name;
+
+				if (Path.GetFileNameWithoutExtension (resName) == fullName) {
+					// If one of the type's methods return a ResourceManager and contains a string with the full type name,
+					// we replace the type string with the obfuscated one.
+					// This is for the Visual Studio generated resource designer code.
+					foreach (MethodDefinition method in type.Methods) {
+						if (method.ReturnType.FullName != "System.Resources.ResourceManager")
+							continue;
+
+						foreach (Instruction instruction in method.Body.Instructions) {
+							if (instruction.OpCode == OpCodes.Ldstr && (string)instruction.Operand == fullName)
+								instruction.Operand = newTypeKey.Fullname;
+						}
+					}
+
+					// ReSharper disable once InvocationIsSkipped
+					Debug.Assert (fullName != null, "fullName != null");
+					// ReSharper disable once PossibleNullReferenceException
+					string suffix = resName.Substring (fullName.Length);
+					string newName = newTypeKey.Fullname + suffix;
+					res.Name = newName;
+					resources.RemoveAt (i);
+					Mapping.AddResource (resName, ObfuscationStatus.Renamed, newName);
+				} else {
+					i++;
+				}
 			}
 		}
 

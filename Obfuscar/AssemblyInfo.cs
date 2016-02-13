@@ -754,6 +754,9 @@ namespace Obfuscar
 
 		public bool ShouldSkipStringHiding (MethodKey method, InheritMap map, bool projectHideStrings)
 		{
+			if (method.DeclaringType.IsResourcesType () && method.Method.ReturnType.FullName == "System.Resources.ResourceManager")
+				return true; // IMPORTANT: avoid hiding resource type name, as it might be renamed later.
+
 			if (ShouldForce (method.TypeKey, TypeAffectFlags.AffectString, map))
 				return false;
 
