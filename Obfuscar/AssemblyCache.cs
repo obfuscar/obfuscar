@@ -67,7 +67,19 @@ namespace Obfuscar
 
 			string fullName = type.GetFullName ();
 			typeDef = assmDef.MainModule.GetType (fullName);
-			return typeDef;
+			if (typeDef != null)
+				return typeDef;
+
+			// IMPORTANT: handle type forwarding
+			if (!assmDef.MainModule.HasExportedTypes)
+				return null;
+
+			foreach (var exported in assmDef.MainModule.ExportedTypes) {
+				if (exported.FullName == fullName)
+					return exported.Resolve ();
+			}
+
+			return null;
 		}
 
 		public new void RegisterAssembly (AssemblyDefinition assembly)

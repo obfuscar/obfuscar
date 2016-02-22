@@ -41,7 +41,7 @@ namespace Obfuscar
 			this.typeReference = type;
 			this.scope = type.GetScopeName ();
 
-			this.name = type.Name;
+			this.name = string.IsNullOrEmpty (type.Namespace) ? type.Name : type.Namespace + "." + type.Name;
 			TypeReference declaringType = type;
 			// Build path to nested type
 			while (declaringType.DeclaringType != null) {
@@ -50,7 +50,7 @@ namespace Obfuscar
 			}
 			this.ns = declaringType.Namespace;
 
-			this.fullname = !string.IsNullOrEmpty (this.ns) ? this.ns + "." + name : name;
+			this.fullname = !string.IsNullOrEmpty (this.ns) && ns != type.Namespace ? this.ns + "." + name : name;
 
 			// Our name should be the same as the Cecil's name. This is important to the Match method.
 			GenericInstanceType gi = type as GenericInstanceType;

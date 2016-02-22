@@ -28,50 +28,23 @@ using System.Text;
 
 namespace TestClasses
 {
-	internal enum TestEnum
+	public class PublicClass1
 	{
-		Default = 0,
-		Test = 1
-	}
+		private string test = "test1";
 
-	internal class InternalClass
-	{
-		public void PublicMethod()
-		{ }
-
-		public class PublicNestedClass
+		public string PublicMethod()
 		{
+			return "class1" + test;
 		}
 	}
 
-	public class PublicClass
+	public class PublicClass2
 	{
-		private void PrivateMethod()
-		{ }
+		private string test = "test2";
 
-		public void PublicMethod()
-		{ }
-
-		protected void ProtectedMethod()
-		{ }
-
-		internal protected void InternalProtectedMethod()
-		{ }
-
-		protected internal void ProtectedInternalMethod()
-		{ }
-	}
-}
-
-namespace TestClasses1
-{
-	public class PublicClass
-	{
-		public void PublicMethod()
-		{ }
-
-		public class PublicNestedClass
+		public string Test()
 		{
+			return "class2" + test;
 		}
 	}
 }

@@ -22,11 +22,9 @@
 /// </copyright>
 #endregion
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
+using Obfuscar.Helpers;
 
 namespace Obfuscar
 {
@@ -38,7 +36,7 @@ namespace Obfuscar
 		AffectProperty = 0x02,
 		AffectField = 0x04,
 		AffectMethod = 0x08,
-		SkipStringHiding = 0x10,
+		AffectString = 0x10
 	}
 
 	class TypeTester : IPredicate<TypeKey>
@@ -108,7 +106,7 @@ namespace Obfuscar
 			if (nameRx != null && !nameRx.IsMatch (type.Fullname)) {
 				return false;
 			}
-            
+
 			// type's name matches
 			if (!string.IsNullOrEmpty (name) && !Helper.CompareOptionalRegex (type.Fullname, name)) {
 				return false;

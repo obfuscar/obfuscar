@@ -154,13 +154,16 @@ namespace ObfuscarTests
 			TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.PublicClass");
 			MethodDefinition classAmethod1 = FindByName (classAType, "PrivateMethod");
 			MethodDefinition classAmethod2 = FindByName (classAType, "PublicMethod");
+			MethodDefinition classAmethod3 = FindByName (classAType, "InternalProtectedMethod");
 
 			ObfuscatedThing classAMethod1 = map.GetMethod (new MethodKey (classAmethod1));
 			ObfuscatedThing classAMethod2 = map.GetMethod (new MethodKey (classAmethod2));
+			ObfuscatedThing classAMethod3 = map.GetMethod (new MethodKey (classAmethod3));
 			var classA = map.GetClass (new TypeKey (classAType));
 			Assert.True (classA.Status == ObfuscationStatus.Skipped, "Public class shouldn't have been obfuscated");
 			Assert.True (classAMethod1.Status == ObfuscationStatus.Renamed, "private method is not obfuscated.");
 			Assert.True (classAMethod2.Status == ObfuscationStatus.Skipped, "pubilc method is obfuscated.");
+			Assert.True (classAMethod3.Status == ObfuscationStatus.Skipped, "internal protected method is obfuscated.");
 
 			var protectedMethod = FindByName (classAType, "ProtectedMethod");
 			var protectedAfter = map.GetMethod (new MethodKey (protectedMethod));
