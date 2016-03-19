@@ -52,6 +52,7 @@ namespace ObfuscarTests
                              @"<Var name='OutPath' value='{1}' />" +
                              @"<Var name='KeyFile' value='$(InPath)\..\dockpanelsuite.snk' />" +
                              @"<Var name='HidePrivateApi' value='true' />" +
+                             @"<Var name='KeepPublicApi' value='false' />" +
                              @"<Module file='$(InPath)\System.Windows.Controls.DataVisualization.Toolkit.dll' />" +
                              @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 

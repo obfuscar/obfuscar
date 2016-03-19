@@ -153,15 +153,15 @@ namespace ObfuscarTests
 		{
 			string xml = String.Format (
 				             @"<?xml version='1.0'?>" +
-				             @"								<Obfuscator>" +
-				             @"								<Var name='InPath' value='{0}' />" +
-				             @"								<Var name='OutPath' value='{1}' />" +
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
-				             @"								<Module file='$(InPath)\AssemblyF.dll'>" +
-				             @"								</Module>" +
-				             @"								<Module file='$(InPath)\AssemblyG.dll' />" +
-				             @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
-			// Directory.Delete (TestHelper.OutputPath, true);
+				             @"<Var name='KeepPublicApi' value='false' />" +
+				             @"<Module file='$(InPath)\AssemblyF.dll'>" +
+				             @"</Module>" +
+				             @"<Module file='$(InPath)\AssemblyG.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyG.dll"), Path.Combine (TestHelper.InputPath, "AssemblyG.dll"), true);
 			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyF.dll"), Path.Combine (TestHelper.InputPath, "AssemblyF.dll"), true);
 
@@ -177,15 +177,15 @@ namespace ObfuscarTests
 		{
 			string xml = String.Format (
 				             @"<?xml version='1.0'?>" +
-				             @"				<Obfuscator>" +
-				             @"				<Var name='InPath' value='{0}' />" +
-				             @"				<Var name='OutPath' value='{1}' />" +
-				             @"             <Var name='KeepPublicApi' value='false' />" +
-				             @"             <Var name='HidePrivateApi' value='true' />" +
-				             @"             <Var name='MarkedOnly' value='true' />" +
-				             @"				<Module file='$(InPath)\AssemblyWithTypesAttrs3.dll'>" +
-				             @"				</Module>" +
-				             @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<Obfuscator>" +
+				             @"<Var name='InPath' value='{0}' />" +
+				             @"<Var name='OutPath' value='{1}' />" +
+				             @"<Var name='KeepPublicApi' value='false' />" +
+				             @"<Var name='HidePrivateApi' value='true' />" +
+				             @"<Var name='MarkedOnly' value='true' />" +
+				             @"<Module file='$(InPath)\AssemblyWithTypesAttrs3.dll'>" +
+				             @"</Module>" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
 			var obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypesAttrs3", string.Empty, xml);
 			var map = obfuscator.Mapping;
