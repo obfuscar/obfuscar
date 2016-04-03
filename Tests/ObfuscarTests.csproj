@@ -100,6 +100,7 @@
     </Compile>
     <Compile Include="AutoSkipTypeTests.cs" />
     <Compile Include="BamlTests.cs" />
+    <Compile Include="DelaySignedTests.cs" />
     <Compile Include="DockPanelSuiteTests.cs" />
     <Compile Include="FSharpTests.cs" />
     <Compile Include="CustomAttributeTests.cs" />
