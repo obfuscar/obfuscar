@@ -4,6 +4,9 @@
 #Homepage
 Please visit https://obfuscar.codeplex.com/ for further information on this project.
 
+#Contribution
+Pull requests are welcome, but make sure you <a href="https://www.clahub.com/agreements/lextm/obfuscar">sign the Contributor License Agreement</a>.
+
 #Donation
 If you want to donate to my efforts on this project, please use the following link,
 
