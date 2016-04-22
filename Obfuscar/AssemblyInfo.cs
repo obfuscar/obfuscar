@@ -57,14 +57,14 @@ namespace Obfuscar
 		private string filename;
 		private AssemblyDefinition definition;
 		private string name;
-		private bool exclude = false;
+		private bool exclude;
 
-		public bool Exclude {
+        public bool Exclude {
 			get { return exclude; }
 			set { exclude = value; }
 		}
 
-		bool initialized = false;
+		bool initialized;
 		// to create, use FromXml
 		private AssemblyInfo (Project project)
 		{
@@ -441,30 +441,30 @@ namespace Obfuscar
 
 		private IEnumerable<MemberReference> getMemberReferences ()
 		{
-			HashSet<MemberReference> memberreferences = new HashSet<MemberReference> ();
-			foreach (TypeDefinition type in this.GetAllTypeDefinitions()) {
+			HashSet<MemberReference> memberReferences = new HashSet<MemberReference> ();
+			foreach (TypeDefinition type in this.GetAllTypeDefinitions ()) {
 				foreach (MethodDefinition method in type.Methods) {
 
-					foreach (MethodReference memberref in method.Overrides) {
-						if (IsOnlyReference (memberref)) {
-							memberreferences.Add (memberref);
+					foreach (MethodReference memberRef in method.Overrides) {
+						if (IsOnlyReference (memberRef)) {
+							memberReferences.Add (memberRef);
 						}
 					}
 					if (method.Body != null) {
 						foreach (Instruction inst in method.Body.Instructions) {
-							MemberReference memberref = inst.Operand as MemberReference;
-							if (memberref != null) {
-								if (IsOnlyReference (memberref) || memberref is FieldReference && !(memberref is FieldDefinition)) {
+							MemberReference memberRef = inst.Operand as MemberReference;
+							if (memberRef != null) {
+								if (IsOnlyReference (memberRef) || memberRef is FieldReference && !(memberRef is FieldDefinition)) {
 									// FIXME: Figure out why this exists if it is never used.
 									// int c = memberreferences.Count;
-									memberreferences.Add (memberref);
+									memberReferences.Add (memberRef);
 								}
 							}
 						}
 					}
 				}
 			}
-			return memberreferences;
+			return memberReferences;
 		}
 
 		private bool IsOnlyReference (MemberReference memberref)
@@ -486,25 +486,6 @@ namespace Obfuscar
 			}
 
 			return false;
-		}
-
-		IEnumerable<TypeReference> getTypeReferences ()
-		{
-			List<TypeReference> typereferences = new List<TypeReference> ();
-			foreach (TypeDefinition type in this.GetAllTypeDefinitions()) {
-				foreach (MethodDefinition method in type.Methods) {
-					if (method.Body != null) {
-						foreach (Instruction inst in method.Body.Instructions) {
-							TypeReference typeref = inst.Operand as TypeReference;
-							if (typeref != null) {
-								if (!(typeref is TypeDefinition) && !(typeref is TypeSpecification))
-									typereferences.Add (typeref);
-							}
-						}
-					}
-				}
-			}
-			return typereferences;
 		}
 
 		private void LoadAssembly (string filename)
