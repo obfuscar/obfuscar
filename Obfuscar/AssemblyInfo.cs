@@ -58,6 +58,7 @@ namespace Obfuscar
 		private AssemblyDefinition definition;
 		private string name;
 		private bool exclude;
+        private bool skipEnums;
 
         public bool Exclude {
 			get { return exclude; }
@@ -272,6 +273,10 @@ namespace Obfuscar
 								info.forceEvents.Add (new EventTester (name, type, attrib, typeattrib));
 							}
 							break;
+                        case "SkipEnums":
+                            var skipEnumsValue = Helper.GetAttribute (reader, "value");
+                            info.skipEnums = skipEnumsValue.Length > 0 && XmlConvert.ToBoolean (skipEnumsValue);
+                            break;
 						}                    
 					} else if (reader.NodeType == XmlNodeType.EndElement && reader.Name == "Module") {
 						// hit end of module element...stop reading
@@ -649,6 +654,11 @@ namespace Obfuscar
 				return true;
 			}
 
+            if (type.TypeDefinition.IsEnum && skipEnums) {
+                message = "enum rule in configuration";
+                return true;
+            }
+
 			if (type.TypeDefinition.IsTypePublic ()) {
 				message = "KeepPublicApi option in configuration";
 				return keepPublicApi;
@@ -797,6 +807,11 @@ namespace Obfuscar
 				message = "field rule in configuration";
 				return true;
 			}
+
+            if (skipEnums) {
+                message = "enum rule in configuration";
+                return true;
+            }
 
 			if (field.DeclaringType.IsTypePublic () && (field.Field.IsPublic || field.Field.IsFamily)) {
 				message = "KeepPublicApi option in configuration";
