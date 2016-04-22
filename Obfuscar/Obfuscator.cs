@@ -20,9 +20,6 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
-using Mono.Cecil.Rocks;
-
-
 #endregion
 using System;
 using System.Collections;
@@ -33,6 +30,7 @@ using System.IO;
 using System.Linq;
 using System.Resources;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -41,6 +39,7 @@ using ILSpy.BamlDecompiler;
 #endif
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 using Obfuscar.Helpers;
 
 #if !__MonoCS__
@@ -206,31 +205,50 @@ namespace Obfuscar
 			// save the modified assemblies
 			foreach (AssemblyInfo info in Project) {
 				var fileName = Path.GetFileName (info.Filename);
-				// ReSharper disable once InvocationIsSkipped
-				Debug.Assert (fileName != null, "fileName != null");
-				// ReSharper disable once AssignNullToNotNullAttribute
-				string outName = Path.Combine (outPath, fileName);
-				var parameters = new WriterParameters ();
-				if (Project.Settings.RegenerateDebugInfo)
-					parameters.SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider ();
+                try {
+				    // ReSharper disable once InvocationIsSkipped
+				    Debug.Assert (fileName != null, "fileName != null");
+				    // ReSharper disable once AssignNullToNotNullAttribute
+				    string outName = Path.Combine (outPath, fileName);
+				    var parameters = new WriterParameters ();
+				    if (Project.Settings.RegenerateDebugInfo)
+					    parameters.SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider ();
 
-				if (info.Definition.Name.HasPublicKey) {
-					if (Project.KeyContainerName != null) {
-						info.Definition.Write (outName, parameters);
-						MsNetSigner.SignAssemblyFromKeyContainer (outName, Project.KeyContainerName);
-					}
+				    if (info.Definition.Name.HasPublicKey) {
+					    if (Project.KeyContainerName != null) {
+						    info.Definition.Write (outName, parameters);
+						    MsNetSigner.SignAssemblyFromKeyContainer (outName, Project.KeyContainerName);
+					    }
 
-					if (Project.KeyPair != null) {
-						parameters.StrongNameKeyPair = new System.Reflection.StrongNameKeyPair (Project.KeyPair);
-						info.Definition.Write (outName, parameters);
-					}
-				} else {
-					info.Definition.Write (outName, parameters);
-				}
+					    if (Project.KeyPair != null) {
+						    parameters.StrongNameKeyPair = new System.Reflection.StrongNameKeyPair (Project.KeyPair);
+						    info.Definition.Write (outName, parameters);
+					    }
+				    } else {
+					    info.Definition.Write (outName, parameters);
+				    }
+                } catch (Exception e) { 
+                    LogOutput (String.Format ("\nFailed to save {0}", fileName));
+                    LogOutput (String.Format ("\n{0}: {1}", e.GetType ().Name, e.Message));
+                    var match = Regex.Match (e.Message, @"Failed to resolve\s+(?<name>[^\s]+)");
+                    if (match.Success) {
+                        var name = match.Groups["name"].Value;
+                        LogOutput (String.Format ("\n{0} might be one of:", name));
+                        LogMappings (name);
+                        LogOutput ("\nHint: you might need to add a SkipType for an enum above.");
+                    }
+                }
 			}
 
 			TypeNameCache.nameCache.Clear ();
 		}
+
+        private void LogMappings (string name)
+        {
+            foreach (var tuple in Mapping.FindClasses (name)) {
+                LogOutput (String.Format ("\n{0} => {1}", tuple.Item1.Fullname, tuple.Item2));
+            }
+        }
 
 		/// <summary>
 		/// Saves the name mapping to the output path.
