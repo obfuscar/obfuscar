@@ -23,6 +23,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Diagnostics;
@@ -349,8 +350,8 @@ namespace Obfuscar
 
 		private class Graph
 		{
-			public List<Node<TypeDefinition>> Root = new List<Node<TypeDefinition>> ();
-			public Dictionary<string, Node<TypeDefinition>> _map = new Dictionary<string, Node<TypeDefinition>> ();
+			public readonly List<Node<TypeDefinition>> Root = new List<Node<TypeDefinition>> ();
+			public readonly Dictionary<string, Node<TypeDefinition>> _map = new Dictionary<string, Node<TypeDefinition>> ();
 
 			public Graph (IEnumerable<TypeDefinition> items)
 			{
@@ -360,36 +361,36 @@ namespace Obfuscar
 					_map.Add (item.FullName, node);
 				}
 
-				AddParents (Root, _map);
+				AddParents (Root);
 			}
 
-			private static void AddParents (List<Node<TypeDefinition>> nodes, Dictionary<string, Node<TypeDefinition>> map)
+			private void AddParents (List<Node<TypeDefinition>> nodes)
 			{
 				foreach (var node in nodes) {
 					var baseType = node.Item.BaseType;
 					if (baseType != null) {
-						var parent = SearchNode (baseType, map);
+						var parent = SearchNode (baseType);
 						node.AppendTo (parent);
 					}
 
 					if (node.Item.HasInterfaces)
 						foreach (var inter in node.Item.Interfaces) {
-							var parent = SearchNode (inter, map);
+							var parent = SearchNode (inter);
 							node.AppendTo (parent);
 						}
 
 					var nestedParent = node.Item.DeclaringType;
 					if (nestedParent != null) {
-						var parent = SearchNode (nestedParent, map);
+						var parent = SearchNode (nestedParent);
 						node.AppendTo (parent);                        
 					}
 				}
 			}
 
-			private static Node<TypeDefinition> SearchNode (TypeReference baseType, Dictionary<string, Node<TypeDefinition>> map)
+			private Node<TypeDefinition> SearchNode (TypeReference baseType)
 			{
 				var key = baseType.FullName;
-				return map.ContainsKey (key) ? map [key] : null;
+				return _map.ContainsKey (key) ? _map [key] : null;
 			}
 
 			internal IEnumerable<TypeDefinition> GetOrderedList ()
@@ -402,10 +403,10 @@ namespace Obfuscar
 			private void CleanPool (List<Node<TypeDefinition>> pool, List<TypeDefinition> result)
 			{
 				while (pool.Count > 0) {
-					var toRemoved = new List<Node<TypeDefinition>> ();
+					var toRemove = new List<Node<TypeDefinition>> ();
 					foreach (var node in pool) {
 						if (node.Parents.Count == 0) {
-							toRemoved.Add (node);
+							toRemove.Add (node);
 							if (result.Contains (node.Item))
 								continue;
 
@@ -413,7 +414,16 @@ namespace Obfuscar
 						}
 					}
 
-					foreach (var remove in toRemoved) {
+                    if (toRemove.Count == 0) {
+                        Console.Error.WriteLine ("Still in pool:");
+                        foreach (var node in pool) {
+                            var parents = String.Join (", ", node.Parents.Select(p => p.Item.FullName + " " + p.Item.Scope.Name));
+                            Console.Error.WriteLine ("{0} {1} : [{2}]", node.Item.FullName, node.Item.Scope.Name, parents);
+                        }
+				        throw new ObfuscarException ("Cannot clean pool");
+                    }
+
+					foreach (var remove in toRemove) {
 						pool.Remove (remove);
 						foreach (var child in remove.Children) {
 							if (result.Contains (child.Item))
@@ -434,9 +444,13 @@ namespace Obfuscar
 				return _cached;
 			}
 
-			var result = definition.MainModule.GetAllTypes ();
-			var graph = new Graph (result);
-			return _cached = graph.GetOrderedList ();
+            try {
+			    var result = definition.MainModule.GetAllTypes ();
+			    var graph = new Graph (result);
+			    return _cached = graph.GetOrderedList ();
+            } catch (Exception e) {
+                throw new ObfuscarException (string.Format ("Failed to get type definitions for {0}", definition.Name), e);
+            }
 		}
 
 		public void InvalidateCache ()
