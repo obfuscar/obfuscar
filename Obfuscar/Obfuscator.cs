@@ -1092,6 +1092,8 @@ namespace Obfuscar
 				references.Add (info);
 			}
 
+            var generics = new List<GenericInstanceMethod> ();
+
 			foreach (AssemblyInfo reference in references) {
 				for (int i = 0; i < reference.UnrenamedReferences.Count;) {
 					MethodReference member = reference.UnrenamedReferences [i] as MethodReference;
@@ -1101,7 +1103,7 @@ namespace Obfuscar
 							if (generic == null) {
 								member.Name = newName;
 							} else {
-								generic.ElementMethod.Name = newName;
+                                generics.Add (generic);
 							}
 
 							reference.UnrenamedReferences.RemoveAt (i);
@@ -1114,6 +1116,10 @@ namespace Obfuscar
 					i++;
 				}
 			}
+
+            foreach (var generic in generics) {
+                generic.ElementMethod.Name = newName;
+            }
 
 			method.Name = newName;
 
