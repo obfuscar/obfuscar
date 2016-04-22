@@ -34,6 +34,7 @@ namespace Obfuscar
 		string outPath;
 		string logFilePath;
 		bool markedOnly;
+	    bool renameFields;
 		bool renameProperties;
 		bool renameEvents;
 		bool keepPublicApi;
@@ -55,6 +56,7 @@ namespace Obfuscar
 			logFilePath = Environment.ExpandEnvironmentVariables (vars.GetValue ("LogFile", ""));
 			markedOnly = XmlConvert.ToBoolean (vars.GetValue ("MarkedOnly", "false"));
 
+            renameFields = XmlConvert.ToBoolean (vars.GetValue("RenameFields", "true"));
 			renameProperties = XmlConvert.ToBoolean (vars.GetValue ("RenameProperties", "true"));
 			renameEvents = XmlConvert.ToBoolean (vars.GetValue ("RenameEvents", "true"));
 			keepPublicApi = XmlConvert.ToBoolean (vars.GetValue ("KeepPublicApi", "true"));
@@ -90,6 +92,10 @@ namespace Obfuscar
 
 		public string LogFilePath {
 			get { return logFilePath; }
+		}
+
+        public bool RenameFields {
+			get { return renameFields; }
 		}
 
 		public bool RenameProperties {

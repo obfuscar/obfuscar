@@ -288,7 +288,11 @@ namespace Obfuscar
 		/// </summary>
 		public void RenameFields ()
 		{
-			foreach (var info in Project) {
+            if (!Project.Settings.RenameFields) {
+                return;
+            }
+
+            foreach (var info in Project) {
 				// loop through the types
 				foreach (var type in info.GetAllTypeDefinitions()) {
 					if (type.FullName == "<Module>") {
