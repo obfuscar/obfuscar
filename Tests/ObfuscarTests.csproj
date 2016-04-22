@@ -95,6 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyHelper.cs" />
+    <Compile Include="CleanPoolTests.cs" />
     <Compile Include="AttributeTests.cs">
       <SubType>Code</SubType>
     </Compile>

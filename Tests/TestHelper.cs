@@ -26,6 +26,7 @@ using System;
 using System.IO;
 using System.CodeDom.Compiler;
 using Xunit;
+using System.Text;
 
 namespace ObfuscarTests
 {
@@ -41,12 +42,12 @@ namespace ObfuscarTests
 			//	File.Delete (file);
 		}
 
-		public static void BuildAssembly(string name, string suffix )
+		public static void BuildAssembly(string name, string suffix = null )
 		{
 			BuildAssembly (name, suffix, null);
 		}
 
-		public static void BuildAssembly(string name, string suffix, string options )
+		public static void BuildAssembly(string name, string suffix = null, string options = null )
 		{
 			Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider( );
 
@@ -60,12 +61,21 @@ namespace ObfuscarTests
 
 			string dllName = String.IsNullOrEmpty( suffix ) ? name : name + suffix;
 
-			string assemblyPath = Path.Combine( InputPath, dllName + ".dll" );
-			cp.OutputAssembly = assemblyPath;
+			cp.OutputAssembly = GetAssemblyPath (dllName);
 			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( InputPath, name + ".cs" ) );
-			if ( cr.Errors.HasErrors )
-				Assert.True (false, "Unable to compile test assembly:  " + dllName );
-		}
+			if ( cr.Errors.HasErrors ) {
+                Assert.True(false, "Unable to compile test assembly:  " + dllName);
+            }
+        }
+
+        public static void BuildAssemblies (params string[] names)
+        {
+            var options = new StringBuilder();
+            foreach (var name in names) {
+                BuildAssembly (name, options: options.ToString ());
+                options.Append(string.Format(" /reference:{0}", GetAssemblyPath (name)));
+            }
+        }
 
 		public static Obfuscar.Obfuscator Obfuscate (string xml, bool hideStrings = false)
 		{
@@ -91,5 +101,17 @@ namespace ObfuscarTests
 			BuildAssembly (name, suffix);
 			return Obfuscate (xml, hideStrings);
 		}
+
+        public static Obfuscar.Obfuscator BuildAndObfuscate (string[] names, string xml)
+        {
+            CleanInput();
+            BuildAssemblies (names);
+            return Obfuscate (xml);
+        }
+
+        private static string GetAssemblyPath (string name)
+        {
+            return Path.Combine(InputPath, name + ".dll");
+        }
 	}
 }

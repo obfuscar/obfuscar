@@ -367,30 +367,42 @@ namespace Obfuscar
 			private void AddParents (List<Node<TypeDefinition>> nodes)
 			{
 				foreach (var node in nodes) {
+                    Node<TypeDefinition> parent;
 					var baseType = node.Item.BaseType;
 					if (baseType != null) {
-						var parent = SearchNode (baseType);
-						node.AppendTo (parent);
+						if (TrySearchNode (baseType, out parent)) {
+						    node.AppendTo (parent);
+                        }
 					}
 
-					if (node.Item.HasInterfaces)
+					if (node.Item.HasInterfaces) {
 						foreach (var inter in node.Item.Interfaces) {
-							var parent = SearchNode (inter);
-							node.AppendTo (parent);
+						    if (TrySearchNode (inter, out parent)) {
+						        node.AppendTo (parent);
+                            }
 						}
+                    }
 
 					var nestedParent = node.Item.DeclaringType;
 					if (nestedParent != null) {
-						var parent = SearchNode (nestedParent);
-						node.AppendTo (parent);                        
+						if (TrySearchNode (nestedParent, out parent)) {
+						    node.AppendTo (parent);
+                        }
 					}
 				}
 			}
 
-			private Node<TypeDefinition> SearchNode (TypeReference baseType)
+			private bool TrySearchNode (TypeReference baseType, out Node<TypeDefinition> parent)
 			{
 				var key = baseType.FullName;
-				return _map.ContainsKey (key) ? _map [key] : null;
+                parent = null;
+                if (_map.ContainsKey (key)) {
+			        parent = _map [key];
+			        if (parent.Item.Scope.Name != baseType.Scope.Name) {
+			            parent = null;
+			        }
+			    }
+			    return parent != null;
 			}
 
 			internal IEnumerable<TypeDefinition> GetOrderedList ()
