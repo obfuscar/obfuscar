@@ -23,6 +23,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Diagnostics;
@@ -57,14 +58,15 @@ namespace Obfuscar
 		private string filename;
 		private AssemblyDefinition definition;
 		private string name;
-		private bool exclude = false;
+		private bool exclude;
+        private bool skipEnums;
 
-		public bool Exclude {
+        public bool Exclude {
 			get { return exclude; }
 			set { exclude = value; }
 		}
 
-		bool initialized = false;
+		bool initialized;
 		// to create, use FromXml
 		private AssemblyInfo (Project project)
 		{
@@ -272,6 +274,10 @@ namespace Obfuscar
 								info.forceEvents.Add (new EventTester (name, type, attrib, typeattrib));
 							}
 							break;
+                        case "SkipEnums":
+                            var skipEnumsValue = Helper.GetAttribute (reader, "value");
+                            info.skipEnums = skipEnumsValue.Length > 0 && XmlConvert.ToBoolean (skipEnumsValue);
+                            break;
 						}                    
 					} else if (reader.NodeType == XmlNodeType.EndElement && reader.Name == "Module") {
 						// hit end of module element...stop reading
@@ -344,8 +350,8 @@ namespace Obfuscar
 
 		private class Graph
 		{
-			public List<Node<TypeDefinition>> Root = new List<Node<TypeDefinition>> ();
-			public Dictionary<string, Node<TypeDefinition>> _map = new Dictionary<string, Node<TypeDefinition>> ();
+			public readonly List<Node<TypeDefinition>> Root = new List<Node<TypeDefinition>> ();
+			public readonly Dictionary<string, Node<TypeDefinition>> _map = new Dictionary<string, Node<TypeDefinition>> ();
 
 			public Graph (IEnumerable<TypeDefinition> items)
 			{
@@ -355,36 +361,48 @@ namespace Obfuscar
 					_map.Add (item.FullName, node);
 				}
 
-				AddParents (Root, _map);
+				AddParents (Root);
 			}
 
-			private static void AddParents (List<Node<TypeDefinition>> nodes, Dictionary<string, Node<TypeDefinition>> map)
+			private void AddParents (List<Node<TypeDefinition>> nodes)
 			{
 				foreach (var node in nodes) {
+                    Node<TypeDefinition> parent;
 					var baseType = node.Item.BaseType;
 					if (baseType != null) {
-						var parent = SearchNode (baseType, map);
-						node.AppendTo (parent);
+						if (TrySearchNode (baseType, out parent)) {
+						    node.AppendTo (parent);
+                        }
 					}
 
-					if (node.Item.HasInterfaces)
+					if (node.Item.HasInterfaces) {
 						foreach (var inter in node.Item.Interfaces) {
-							var parent = SearchNode (inter, map);
-							node.AppendTo (parent);
+						    if (TrySearchNode (inter, out parent)) {
+						        node.AppendTo (parent);
+                            }
 						}
+                    }
 
 					var nestedParent = node.Item.DeclaringType;
 					if (nestedParent != null) {
-						var parent = SearchNode (nestedParent, map);
-						node.AppendTo (parent);                        
+						if (TrySearchNode (nestedParent, out parent)) {
+						    node.AppendTo (parent);
+                        }
 					}
 				}
 			}
 
-			private static Node<TypeDefinition> SearchNode (TypeReference baseType, Dictionary<string, Node<TypeDefinition>> map)
+			private bool TrySearchNode (TypeReference baseType, out Node<TypeDefinition> parent)
 			{
 				var key = baseType.FullName;
-				return map.ContainsKey (key) ? map [key] : null;
+                parent = null;
+                if (_map.ContainsKey (key)) {
+			        parent = _map [key];
+			        if (parent.Item.Scope.Name != baseType.Scope.Name) {
+			            parent = null;
+			        }
+			    }
+			    return parent != null;
 			}
 
 			internal IEnumerable<TypeDefinition> GetOrderedList ()
@@ -397,10 +415,10 @@ namespace Obfuscar
 			private void CleanPool (List<Node<TypeDefinition>> pool, List<TypeDefinition> result)
 			{
 				while (pool.Count > 0) {
-					var toRemoved = new List<Node<TypeDefinition>> ();
+					var toRemove = new List<Node<TypeDefinition>> ();
 					foreach (var node in pool) {
 						if (node.Parents.Count == 0) {
-							toRemoved.Add (node);
+							toRemove.Add (node);
 							if (result.Contains (node.Item))
 								continue;
 
@@ -408,7 +426,16 @@ namespace Obfuscar
 						}
 					}
 
-					foreach (var remove in toRemoved) {
+                    if (toRemove.Count == 0) {
+                        Console.Error.WriteLine ("Still in pool:");
+                        foreach (var node in pool) {
+                            var parents = String.Join (", ", node.Parents.Select(p => p.Item.FullName + " " + p.Item.Scope.Name));
+                            Console.Error.WriteLine ("{0} {1} : [{2}]", node.Item.FullName, node.Item.Scope.Name, parents);
+                        }
+				        throw new ObfuscarException ("Cannot clean pool");
+                    }
+
+					foreach (var remove in toRemove) {
 						pool.Remove (remove);
 						foreach (var child in remove.Children) {
 							if (result.Contains (child.Item))
@@ -429,9 +456,13 @@ namespace Obfuscar
 				return _cached;
 			}
 
-			var result = definition.MainModule.GetAllTypes ();
-			var graph = new Graph (result);
-			return _cached = graph.GetOrderedList ();
+            try {
+			    var result = definition.MainModule.GetAllTypes ();
+			    var graph = new Graph (result);
+			    return _cached = graph.GetOrderedList ();
+            } catch (Exception e) {
+                throw new ObfuscarException (string.Format ("Failed to get type definitions for {0}", definition.Name), e);
+            }
 		}
 
 		public void InvalidateCache ()
@@ -441,30 +472,30 @@ namespace Obfuscar
 
 		private IEnumerable<MemberReference> getMemberReferences ()
 		{
-			HashSet<MemberReference> memberreferences = new HashSet<MemberReference> ();
-			foreach (TypeDefinition type in this.GetAllTypeDefinitions()) {
+			HashSet<MemberReference> memberReferences = new HashSet<MemberReference> ();
+			foreach (TypeDefinition type in this.GetAllTypeDefinitions ()) {
 				foreach (MethodDefinition method in type.Methods) {
 
-					foreach (MethodReference memberref in method.Overrides) {
-						if (IsOnlyReference (memberref)) {
-							memberreferences.Add (memberref);
+					foreach (MethodReference memberRef in method.Overrides) {
+						if (IsOnlyReference (memberRef)) {
+							memberReferences.Add (memberRef);
 						}
 					}
 					if (method.Body != null) {
 						foreach (Instruction inst in method.Body.Instructions) {
-							MemberReference memberref = inst.Operand as MemberReference;
-							if (memberref != null) {
-								if (IsOnlyReference (memberref) || memberref is FieldReference && !(memberref is FieldDefinition)) {
+							MemberReference memberRef = inst.Operand as MemberReference;
+							if (memberRef != null) {
+								if (IsOnlyReference (memberRef) || memberRef is FieldReference && !(memberRef is FieldDefinition)) {
 									// FIXME: Figure out why this exists if it is never used.
 									// int c = memberreferences.Count;
-									memberreferences.Add (memberref);
+									memberReferences.Add (memberRef);
 								}
 							}
 						}
 					}
 				}
 			}
-			return memberreferences;
+			return memberReferences;
 		}
 
 		private bool IsOnlyReference (MemberReference memberref)
@@ -486,25 +517,6 @@ namespace Obfuscar
 			}
 
 			return false;
-		}
-
-		IEnumerable<TypeReference> getTypeReferences ()
-		{
-			List<TypeReference> typereferences = new List<TypeReference> ();
-			foreach (TypeDefinition type in this.GetAllTypeDefinitions()) {
-				foreach (MethodDefinition method in type.Methods) {
-					if (method.Body != null) {
-						foreach (Instruction inst in method.Body.Instructions) {
-							TypeReference typeref = inst.Operand as TypeReference;
-							if (typeref != null) {
-								if (!(typeref is TypeDefinition) && !(typeref is TypeSpecification))
-									typereferences.Add (typeref);
-							}
-						}
-					}
-				}
-			}
-			return typereferences;
 		}
 
 		private void LoadAssembly (string filename)
@@ -668,6 +680,11 @@ namespace Obfuscar
 				return true;
 			}
 
+            if (type.TypeDefinition.IsEnum && skipEnums) {
+                message = "enum rule in configuration";
+                return true;
+            }
+
 			if (type.TypeDefinition.IsTypePublic ()) {
 				message = "KeepPublicApi option in configuration";
 				return keepPublicApi;
@@ -816,6 +833,11 @@ namespace Obfuscar
 				message = "field rule in configuration";
 				return true;
 			}
+
+            if (skipEnums) {
+                message = "enum rule in configuration";
+                return true;
+            }
 
 			if (field.DeclaringType.IsTypePublic () && (field.Field.IsPublic || field.Field.IsFamily)) {
 				message = "KeepPublicApi option in configuration";

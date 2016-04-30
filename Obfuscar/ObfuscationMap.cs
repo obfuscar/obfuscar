@@ -198,5 +198,16 @@ namespace Obfuscar
 
 			resources.Add (r);
 		}
+
+        public IEnumerable<Tuple<TypeKey, string>> FindClasses (string name)
+        {
+            foreach (var kvp in classMap) {
+                if (kvp.Value.Status == ObfuscationStatus.Renamed) {
+                    if (kvp.Value.StatusText.EndsWith(name, StringComparison.Ordinal)) {
+                        yield return new Tuple<TypeKey, string> (kvp.Key, kvp.Value.StatusText);
+                    }
+                }
+            }
+        }
 	}
 }

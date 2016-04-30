@@ -26,6 +26,7 @@ using System.IO;
 using Mono.Cecil;
 using Obfuscar;
 using Xunit;
+using System.Reflection;
 
 namespace ObfuscarTests
 {
@@ -164,5 +165,47 @@ namespace ObfuscarTests
 					"Both methods shouldn't have been renamed to the same thing.");
 			}
 		}
-	}
+
+        [Fact]
+        public void CheckGenericMethodRenaming ()
+        {
+            string xml = String.Format(
+                             @"<?xml version='1.0'?>" +
+                             @"<Obfuscator>" +
+                             @"<Var name='InPath' value='{0}' />" +
+                             @"<Var name='OutPath' value='{1}' />" +
+                             @"<Var name='KeepPublicApi' value='false' />" +
+                             @"<Var name='HidePrivateApi' value='true' />" +
+                             @"<Module file='$(InPath)\AssemblyWithGenericOverrides.dll' />" +
+                             @"<Module file='$(InPath)\AssemblyWithGenericOverrides2.dll'>" +
+                             @"<SkipNamespace name='*' />" +
+                             @"</Module>" +
+                             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+
+            Obfuscator obfuscator = TestHelper.BuildAndObfuscate(new[] { "AssemblyWithGenericOverrides", "AssemblyWithGenericOverrides2" }, xml);
+
+            var assembly2Path = Path.Combine (Directory.GetCurrentDirectory (), TestHelper.OutputPath, "AssemblyWithGenericOverrides2.dll");
+            var assembly2 = Assembly.LoadFile (assembly2Path);
+            var type = assembly2.GetType ("TestClasses.Test");
+            var ctor = type.GetConstructor(new Type[0]);
+            var instance = ctor.Invoke (new object[0]);
+            try {
+                AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
+                Assert.True(instance.ToString () == "Empty<string, string>=A<B<String, String>>",
+                    "Generic override should have been updated");
+            }
+            finally {
+                AppDomain.CurrentDomain.AssemblyResolve -= AssemblyResolve;
+            }
+        }
+
+        private Assembly AssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            var assemblyPath = Path.Combine(Directory.GetCurrentDirectory (), TestHelper.OutputPath, args.Name.Split (',')[0] + ".dll");
+            if (File.Exists (assemblyPath)) {
+                return Assembly.LoadFile (assemblyPath);
+            }
+            return null;
+        }
+    }
 }
