@@ -182,7 +182,7 @@ namespace ObfuscarTests
                              @"</Module>" +
                              @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
 
-            Obfuscator obfuscator = TestHelper.BuildAndObfuscate(new[] { "AssemblyWithGenericOverrides", "AssemblyWithGenericOverrides2" }, xml);
+            TestHelper.BuildAndObfuscate(new[] { "AssemblyWithGenericOverrides", "AssemblyWithGenericOverrides2" }, xml);
 
             var assembly2Path = Path.Combine (Directory.GetCurrentDirectory (), TestHelper.OutputPath, "AssemblyWithGenericOverrides2.dll");
             var assembly2 = Assembly.LoadFile (assembly2Path);
@@ -199,13 +199,33 @@ namespace ObfuscarTests
             }
         }
 
-        private Assembly AssemblyResolve(object sender, ResolveEventArgs args)
+        private static Assembly AssemblyResolve(object sender, ResolveEventArgs args)
         {
             var assemblyPath = Path.Combine(Directory.GetCurrentDirectory (), TestHelper.OutputPath, args.Name.Split (',')[0] + ".dll");
             if (File.Exists (assemblyPath)) {
                 return Assembly.LoadFile (assemblyPath);
             }
             return null;
+        }
+
+        [Fact]
+        public void CheckClosedMethodOverrideGenericMethod ()
+        {
+            string xml = String.Format(
+                             @"<?xml version='1.0'?>" +
+                             @"<Obfuscator>" +
+                             @"<Var name='InPath' value='{0}' />" +
+                             @"<Var name='OutPath' value='{1}' />" +
+                             @"<Var name='KeepPublicApi' value='false' />" +
+                             @"<Var name='HidePrivateApi' value='true' />" +
+                             @"<Module file='$(InPath)\AssemblyWithClosedOverrideGeneric.dll' />" +
+                             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+
+            TestHelper.BuildAndObfuscate ("AssemblyWithClosedOverrideGeneric", string.Empty, xml);
+
+            var assemblyPath = Path.Combine (Directory.GetCurrentDirectory (), TestHelper.OutputPath, "AssemblyWithClosedOverrideGeneric.dll");
+            var assembly = Assembly.LoadFile (assemblyPath);
+            Assert.Equal (5, assembly.GetTypes ().Length);
         }
     }
 }
