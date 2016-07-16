@@ -59,9 +59,9 @@ namespace Obfuscar
 		private AssemblyDefinition definition;
 		private string name;
 		private bool exclude;
-        private bool skipEnums;
+		private bool skipEnums;
 
-        public bool Exclude {
+		public bool Exclude {
 			get { return exclude; }
 			set { exclude = value; }
 		}
@@ -274,10 +274,10 @@ namespace Obfuscar
 								info.forceEvents.Add (new EventTester (name, type, attrib, typeattrib));
 							}
 							break;
-                        case "SkipEnums":
-                            var skipEnumsValue = Helper.GetAttribute (reader, "value");
-                            info.skipEnums = skipEnumsValue.Length > 0 && XmlConvert.ToBoolean (skipEnumsValue);
-                            break;
+						case "SkipEnums":
+							var skipEnumsValue = Helper.GetAttribute (reader, "value");
+							info.skipEnums = skipEnumsValue.Length > 0 && XmlConvert.ToBoolean (skipEnumsValue);
+							break;
 						}                    
 					} else if (reader.NodeType == XmlNodeType.EndElement && reader.Name == "Module") {
 						// hit end of module element...stop reading
@@ -367,27 +367,27 @@ namespace Obfuscar
 			private void AddParents (List<Node<TypeDefinition>> nodes)
 			{
 				foreach (var node in nodes) {
-                    Node<TypeDefinition> parent;
+					Node<TypeDefinition> parent;
 					var baseType = node.Item.BaseType;
 					if (baseType != null) {
 						if (TrySearchNode (baseType, out parent)) {
-						    node.AppendTo (parent);
-                        }
+							node.AppendTo (parent);
+						}
 					}
 
 					if (node.Item.HasInterfaces) {
 						foreach (var inter in node.Item.Interfaces) {
-						    if (TrySearchNode (inter, out parent)) {
-						        node.AppendTo (parent);
-                            }
+							if (TrySearchNode (inter, out parent)) {
+								node.AppendTo (parent);
+							}
 						}
-                    }
+					}
 
 					var nestedParent = node.Item.DeclaringType;
 					if (nestedParent != null) {
 						if (TrySearchNode (nestedParent, out parent)) {
-						    node.AppendTo (parent);
-                        }
+							node.AppendTo (parent);
+						}
 					}
 				}
 			}
@@ -395,14 +395,14 @@ namespace Obfuscar
 			private bool TrySearchNode (TypeReference baseType, out Node<TypeDefinition> parent)
 			{
 				var key = baseType.FullName;
-                parent = null;
-                if (_map.ContainsKey (key)) {
-			        parent = _map [key];
-			        if (parent.Item.Scope.Name != baseType.Scope.Name) {
-			            parent = null;
-			        }
-			    }
-			    return parent != null;
+				parent = null;
+				if (_map.ContainsKey (key)) {
+					parent = _map [key];
+					if (parent.Item.Scope.Name != baseType.Scope.Name) {
+						parent = null;
+					}
+				}
+				return parent != null;
 			}
 
 			internal IEnumerable<TypeDefinition> GetOrderedList ()
@@ -426,14 +426,14 @@ namespace Obfuscar
 						}
 					}
 
-                    if (toRemove.Count == 0) {
-                        Console.Error.WriteLine ("Still in pool:");
-                        foreach (var node in pool) {
-                            var parents = String.Join (", ", node.Parents.Select(p => p.Item.FullName + " " + p.Item.Scope.Name));
-                            Console.Error.WriteLine ("{0} {1} : [{2}]", node.Item.FullName, node.Item.Scope.Name, parents);
-                        }
-				        throw new ObfuscarException ("Cannot clean pool");
-                    }
+					if (toRemove.Count == 0) {
+						Console.Error.WriteLine ("Still in pool:");
+						foreach (var node in pool) {
+							var parents = String.Join (", ", node.Parents.Select(p => p.Item.FullName + " " + p.Item.Scope.Name));
+							Console.Error.WriteLine ("{0} {1} : [{2}]", node.Item.FullName, node.Item.Scope.Name, parents);
+						}
+						throw new ObfuscarException ("Cannot clean pool");
+					}
 
 					foreach (var remove in toRemove) {
 						pool.Remove (remove);
@@ -456,13 +456,13 @@ namespace Obfuscar
 				return _cached;
 			}
 
-            try {
-			    var result = definition.MainModule.GetAllTypes ();
-			    var graph = new Graph (result);
-			    return _cached = graph.GetOrderedList ();
-            } catch (Exception e) {
-                throw new ObfuscarException (string.Format ("Failed to get type definitions for {0}", definition.Name), e);
-            }
+			try {
+				var result = definition.MainModule.GetAllTypes ();
+				var graph = new Graph (result);
+				return _cached = graph.GetOrderedList ();
+			} catch (Exception e) {
+				throw new ObfuscarException (string.Format ("Failed to get type definitions for {0}", definition.Name), e);
+			}
 		}
 
 		public void InvalidateCache ()
@@ -680,10 +680,10 @@ namespace Obfuscar
 				return true;
 			}
 
-            if (type.TypeDefinition.IsEnum && skipEnums) {
-                message = "enum rule in configuration";
-                return true;
-            }
+			if (type.TypeDefinition.IsEnum && skipEnums) {
+				message = "enum rule in configuration";
+				return true;
+			}
 
 			if (type.TypeDefinition.IsTypePublic ()) {
 				message = "KeepPublicApi option in configuration";
@@ -834,10 +834,10 @@ namespace Obfuscar
 				return true;
 			}
 
-            if (skipEnums) {
-                message = "enum rule in configuration";
-                return true;
-            }
+			if (skipEnums) {
+				message = "enum rule in configuration";
+				return true;
+			}
 
 			if (field.DeclaringType.IsTypePublic () && (field.Field.IsPublic || field.Field.IsFamily)) {
 				message = "KeepPublicApi option in configuration";

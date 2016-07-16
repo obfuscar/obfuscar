@@ -15,7 +15,8 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -93,11 +94,11 @@
     </BootstrapperPackage>
   </ItemGroup>
   <PropertyGroup>
-    <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT' " >
+    <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT' ">
 rename Obfuscar.Console.exe Obfuscar.exe
 "$(MSBuildProjectDirectory)\..\packages\ILRepack.2.0.10\tools\ilrepack" /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Baml.dll Obfuscar.dll
 del Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Baml.dll Obfuscar.dll Obfuscar.exe</PostBuildEvent>
-    <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' != 'Windows_NT' " >
+    <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' != 'Windows_NT' ">
 mv Obfuscar.Console.exe Obfuscar.exe
 mono "$(MSBuildProjectDirectory)\..\packages\ILRepack.2.0.10\tools\ILRepack.exe" /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Obfuscar.dll
 rm Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Obfuscar.dll Obfuscar.exe</PostBuildEvent>

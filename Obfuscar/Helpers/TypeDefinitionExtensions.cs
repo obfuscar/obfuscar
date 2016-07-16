@@ -1,5 +1,7 @@
 ﻿using Mono.Cecil;
+using System;
 using System.Linq;
+using System.Runtime.Caching;
 
 namespace Obfuscar.Helpers
 {
@@ -40,14 +42,38 @@ namespace Obfuscar.Helpers
 			return type.DeclaringType == null ? null : MarkedToRename (type.DeclaringType, true);
 		}
 
-		public static bool IsResourcesType (this TypeDefinition type)
+		private static CacheItemPolicy policy = new CacheItemPolicy { SlidingExpiration = TimeSpan.FromMinutes (5) };
+
+		public static bool IsResourcesType(this TypeDefinition type)
 		{
-			var generated = type.CustomAttributes.FirstOrDefault (attribute => attribute.AttributeType.FullName == "System.CodeDom.Compiler.GeneratedCodeAttribute");
-			if (generated == null)
+			if (MemoryCache.Default.Contains (type.FullName))
+				return (bool)MemoryCache.Default [type.FullName];
+
+			var generated = type.CustomAttributes.FirstOrDefault(attribute => attribute.AttributeType.FullName == "System.CodeDom.Compiler.GeneratedCodeAttribute");
+			var result = false;
+			if (generated == null) {
+				result = type.IsFormOrUserControl ();
+			} else {
+				var name = generated.ConstructorArguments [0].Value.ToString ();
+				result = name == "System.Resources.Tools.StronglyTypedResourceBuilder";
+			}
+
+			MemoryCache.Default.Add (type.FullName, result, policy);
+			return result;
+		}
+
+		private static bool IsFormOrUserControl (this TypeDefinition type)
+		{
+			if (type == null)
 				return false;
 
-			var name = generated.ConstructorArguments [0].Value.ToString ();
-			return name == "System.Resources.Tools.StronglyTypedResourceBuilder";
+			if (type.FullName == "System.Windows.Forms.Form" || type.FullName == "System.Windows.Forms.UserControl")
+				return true;
+
+			if (type.BaseType != null)
+				return type.BaseType.Resolve().IsFormOrUserControl ();
+
+			return false;
 		}
 	}
 }

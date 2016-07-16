@@ -138,7 +138,7 @@ namespace Obfuscar
 		static bool MethodsMatch (MethodKey left, MethodKey right)
 		{
 			return MethodKey.MethodMatch (left.Method, right.Method)
-                || MethodKey.MethodMatch (right.Method, left.Method);
+				|| MethodKey.MethodMatch (right.Method, left.Method);
 		}
 
 		public static void GetBaseTypes (Project project, HashSet<TypeKey> baseTypes, TypeDefinition type)
