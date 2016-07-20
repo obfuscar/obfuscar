@@ -1,5 +1,6 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/4y3enjufejbn94hd)](https://ci.appveyor.com/project/lextm/obfuscar) 
 [![NuGet Version](https://img.shields.io/nuget/v/Obfuscar.svg?style=flat)](https://www.nuget.org/packages/Obfuscar/)
+[![Stories in Ready](https://badge.waffle.io/lextm/obfuscar.svg?label=ready&title=Ready)](http://waffle.io/lextm/obfuscar) 
 
 #Homepage
 Please visit https://obfuscar.codeplex.com/ for further information on this project.
