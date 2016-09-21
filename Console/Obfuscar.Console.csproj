@@ -59,6 +59,10 @@
     <StartupObject>Obfuscar.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Mono.Options, Version=4.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Options.4.4.0.0\lib\net4-client\Mono.Options.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -66,7 +70,6 @@
     <Compile Include="..\ThirdParty\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="Mono.Options\Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
   </ItemGroup>
@@ -96,11 +99,11 @@
   <PropertyGroup>
     <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT' ">
 rename Obfuscar.Console.exe Obfuscar.exe
-"$(MSBuildProjectDirectory)\..\packages\ILRepack.2.0.10\tools\ilrepack" /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Baml.dll Obfuscar.dll
-del Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Baml.dll Obfuscar.dll Obfuscar.exe</PostBuildEvent>
+"$(MSBuildProjectDirectory)\..\packages\ILRepack.2.0.11\tools\ilrepack" /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Baml.dll Mono.Options.dll Obfuscar.dll
+del Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Baml.dll Obfuscar.dll Obfuscar.exe</PostBuildEvent>
     <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' != 'Windows_NT' ">
 mv Obfuscar.Console.exe Obfuscar.exe
-mono "$(MSBuildProjectDirectory)\..\packages\ILRepack.2.0.10\tools\ILRepack.exe" /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Obfuscar.dll
-rm Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Obfuscar.dll Obfuscar.exe</PostBuildEvent>
+mono "$(MSBuildProjectDirectory)\..\packages\ILRepack.2.0.11\tools\ILRepack.exe" /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll
+rm Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Obfuscar.exe</PostBuildEvent>
   </PropertyGroup>
 </Project>
