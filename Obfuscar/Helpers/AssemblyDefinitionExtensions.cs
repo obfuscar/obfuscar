@@ -11,7 +11,7 @@ namespace Obfuscar.Helpers
 		{
 			foreach (var custom in assembly.CustomAttributes) {
 				if (custom.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute") {
-					if (custom.Properties.Count==0) 
+					if (!custom.HasProperties) 
 						continue;
 					var framework = custom.Properties.First(property => property.Name == "FrameworkDisplayName");
 					var content = framework.Argument.Value.ToString ();
