@@ -16,6 +16,7 @@
 		<releaseNotes>
 Version 2.2.2
 * Updated Mono.Cecil.
+* Fixed GitHub#85 Initial patch for .NET Core assembly obfuscation.
 
 Version 2.2.1
 * Fixed GitHub#83 Some resources files are not renamed.
