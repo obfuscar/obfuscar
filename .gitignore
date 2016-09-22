@@ -34,3 +34,4 @@ T4MVC.cs
 /Examples/BasicExample/Final
 /Examples/BasicExample/Obfuscator_Input
 /Examples/BasicExample/Obfuscator_Output
+*.nupkg
