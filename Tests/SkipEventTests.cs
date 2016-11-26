@@ -23,6 +23,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Mono.Cecil;
 using Xunit;
 
@@ -97,8 +98,8 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithEvents.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"<Module file='$(InPath){2}AssemblyWithEvents.dll' />" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithEvents", String.Empty, xml);
 
@@ -122,10 +123,10 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 							 @"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithEvents.dll'>" +
+				@"<Module file='$(InPath){2}AssemblyWithEvents.dll'>" +
 				@"<SkipEvent type='TestClasses.ClassA' name='Event2' attrib='public' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithEvents", String.Empty, xml);
 
@@ -150,10 +151,10 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 							 @"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithEvents.dll'>" +
+				@"<Module file='$(InPath){2}AssemblyWithEvents.dll'>" +
 				@"<SkipEvent type='TestClasses.ClassA' rx='Event\d' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithEvents", String.Empty, xml);
 

@@ -62,8 +62,8 @@ namespace ObfuscarTests
 							 @"<?xml version='1.0'?>" +
 							 @"<Obfuscator>" +
 							 @"<Var name='InPath' value='{0}' />" +
-							 @"<Module file='$(InPath)\AssemblyB.dll' />" +
-							 @"</Obfuscator>", TestHelper.InputPath);
+							 @"<Module file='$(InPath){1}AssemblyB.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath, Path.DirectorySeparatorChar);
 
 			Obfuscator obfuscator = Obfuscator.CreateFromXml (xml);
 		}
@@ -75,8 +75,8 @@ namespace ObfuscarTests
 							 @"<?xml version='1.0'?>" +
 							 @"<Obfuscator>" +
 							 @"<Var name='InPath' value='{0}' />" +
-							 @"<Module file='$(InPath)\AssemblyB.dll' />" +
-							 @"</Obfuscator>", TestHelper.InputPath);
+							 @"<Module file='$(InPath){1}AssemblyB.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath, Path.DirectorySeparatorChar);
 
 			// explicitly delete AssemblyA
 			File.Delete (Path.Combine (TestHelper.InputPath, "AssemblyA.dll"));
@@ -90,11 +90,11 @@ namespace ObfuscarTests
 			string xml = String.Format (
 							 @"<?xml version='1.0'?>" +
 							 @"<Obfuscator>" +
-							 @"<Module file='{0}\AssemblyD.dll' />" +
-							 @"</Obfuscator>", TestHelper.InputPath);
+							 @"<Module file='{0}{1}AssemblyD.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath, Path.DirectorySeparatorChar);
 
 			// InPath defaults to '.', which doesn't contain AssemblyA
-			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyD.dll"), Path.Combine (TestHelper.InputPath, "AssemblyD.dll"), true);
+			File.Copy (Path.Combine (TestHelper.InputPath, @"..", "AssemblyD.dll"), Path.Combine (TestHelper.InputPath, "AssemblyD.dll"), true);
 			var exception = Assert.Throws<ObfuscarException> (() => { Obfuscator.CreateFromXml (xml); });
 			Assert.Equal ("Unable to resolve dependency:  AssemblyC", exception.Message);
 		}

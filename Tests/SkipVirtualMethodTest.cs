@@ -40,10 +40,10 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\SkipVirtualMethodTest1.dll'>" +
+				@"<Module file='$(InPath){2}SkipVirtualMethodTest1.dll'>" +
 				@"<SkipMethod type='SkipVirtualMethodTest.Interface1' name='Method1' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("SkipVirtualMethodTest", "1", xml);
 
@@ -72,10 +72,10 @@ namespace ObfuscarTests
 				@"<Var name='OutPath' value='{1}' />" +
 							 @"<Var name='KeepPublicApi' value='true' />" +
 				@"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\SkipVirtualMethodTest2.dll'>" +
+				@"<Module file='$(InPath){2}SkipVirtualMethodTest2.dll'>" +
 				@"<SkipMethod type='SkipVirtualMethodTest.Class1' name='Method1' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("SkipVirtualMethodTest", "2", xml);
 

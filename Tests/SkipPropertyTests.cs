@@ -23,6 +23,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Mono.Cecil;
 using Xunit;
 
@@ -76,8 +77,8 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithProperties.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"<Module file='$(InPath){2}AssemblyWithProperties.dll' />" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithProperties", String.Empty, xml);
 
@@ -101,10 +102,10 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 							 @"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithProperties.dll'>" +
+				@"<Module file='$(InPath){2}AssemblyWithProperties.dll'>" +
 				@"<SkipProperty type='TestClasses.ClassA' name='Property2' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithProperties", String.Empty, xml);
 
@@ -129,10 +130,10 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 							 @"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithProperties.dll'>" +
+				@"<Module file='$(InPath){2}AssemblyWithProperties.dll'>" +
 				@"<SkipProperty type='TestClasses.ClassA' rx='Property\d' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithProperties", String.Empty, xml);
 

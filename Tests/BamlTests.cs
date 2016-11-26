@@ -40,13 +40,13 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath)\WpfApplication1.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
+				@"<Module file='$(InPath){2}WpfApplication1.dll' />" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput( );
 
 			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy(Path.Combine(TestHelper.InputPath, @"..\WpfApplication1.dll"), Path.Combine(TestHelper.InputPath, "WpfApplication1.dll"), true);
+			File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WpfApplication1.dll"), Path.Combine(TestHelper.InputPath, "WpfApplication1.dll"), true);
 
 			var map = TestHelper.Obfuscate( xml ).Mapping;
 

@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Mono.Cecil;
 using Xunit;
 
@@ -66,8 +67,8 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithEnums.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
+				@"<Module file='$(InPath){2}AssemblyWithEnums.dll' />" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar );
 
 			TestHelper.BuildAndObfuscate( "AssemblyWithEnums", String.Empty, xml );
 
@@ -91,10 +92,10 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithEnums.dll'>" +
+				@"<Module file='$(InPath){2}AssemblyWithEnums.dll'>" +
 				@"<SkipField type='TestClasses.Enum1' name='Value2' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar );
 
 			TestHelper.BuildAndObfuscate( "AssemblyWithEnums", String.Empty, xml );
 
@@ -119,10 +120,10 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithEnums.dll'>" +
+				@"<Module file='$(InPath){2}AssemblyWithEnums.dll'>" +
 				@"<SkipField type='TestClasses.Enum1' rx='Value\d' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar );
 
 			TestHelper.BuildAndObfuscate( "AssemblyWithEnums", String.Empty, xml );
 
@@ -146,10 +147,10 @@ namespace ObfuscarTests
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath)\AssemblyWithEnums.dll'>" +
+				@"<Module file='$(InPath){2}AssemblyWithEnums.dll'>" +
 				@"<SkipField type='TestClasses.Enum1' name='*' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath );
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar );
 
 			TestHelper.BuildAndObfuscate( "AssemblyWithEnums", String.Empty, xml );
 
@@ -174,8 +175,8 @@ namespace ObfuscarTests
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='RenameFields' value='false' />" +
-                @"<Module file='$(InPath)\AssemblyWithEnums.dll' />" +
-                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+                @"<Module file='$(InPath){2}AssemblyWithEnums.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
             TestHelper.BuildAndObfuscate ("AssemblyWithEnums", String.Empty, xml);
 
@@ -199,10 +200,10 @@ namespace ObfuscarTests
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
-                @"<Module file='$(InPath)\AssemblyWithEnums.dll'>" +
+                @"<Module file='$(InPath){2}AssemblyWithEnums.dll'>" +
                 @"<SkipEnums value='true' />" +
                 @"</Module>" +
-                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
             TestHelper.BuildAndObfuscate ("AssemblyWithEnums", String.Empty, xml);
 

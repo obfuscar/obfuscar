@@ -41,8 +41,8 @@ namespace ObfuscarTests
 				             @"<Var name='OutPath' value='{1}' />" +
 				             @"<Var name='KeepPublicApi' value='false' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
-				             @"<Module file='$(InPath)\AssemblyWithOverrides.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<Module file='$(InPath){2}AssemblyWithOverrides.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithOverrides", String.Empty, xml);
 
@@ -176,13 +176,13 @@ namespace ObfuscarTests
                              @"<Var name='OutPath' value='{1}' />" +
                              @"<Var name='KeepPublicApi' value='false' />" +
                              @"<Var name='HidePrivateApi' value='true' />" +
-                             @"<Module file='$(InPath)\AssemblyWithGenericOverrides.dll' />" +
-                             @"<Module file='$(InPath)\AssemblyWithGenericOverrides2.dll'>" +
+                             @"<Module file='$(InPath){2}AssemblyWithGenericOverrides.dll' />" +
+                             @"<Module file='$(InPath){2}AssemblyWithGenericOverrides2.dll'>" +
                              @"<SkipNamespace name='*' />" +
                              @"</Module>" +
-                             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+                             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate(new[] { "AssemblyWithGenericOverrides", "AssemblyWithGenericOverrides2" }, xml);
+            Obfuscator obfuscator = TestHelper.BuildAndObfuscate(new[] { "AssemblyWithGenericOverrides", "AssemblyWithGenericOverrides2" }, xml);
 
             var assembly2Path = Path.Combine (Directory.GetCurrentDirectory (), TestHelper.OutputPath, "AssemblyWithGenericOverrides2.dll");
             var assembly2 = Assembly.LoadFile (assembly2Path);
@@ -218,8 +218,8 @@ namespace ObfuscarTests
                              @"<Var name='OutPath' value='{1}' />" +
                              @"<Var name='KeepPublicApi' value='false' />" +
                              @"<Var name='HidePrivateApi' value='true' />" +
-                             @"<Module file='$(InPath)\AssemblyWithClosedOverrideGeneric.dll' />" +
-                             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+                             @"<Module file='$(InPath){2}AssemblyWithClosedOverrideGeneric.dll' />" +
+                             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
             TestHelper.BuildAndObfuscate ("AssemblyWithClosedOverrideGeneric", string.Empty, xml);
 

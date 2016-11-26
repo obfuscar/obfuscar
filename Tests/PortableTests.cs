@@ -40,14 +40,14 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HideStrings' value='false' />" +
-				@"<Var name='KeyFile' value='$(InPath)\..\dockpanelsuite.snk' />" +
-				@"<Module file='$(InPath)\SharpSnmpLib.Portable.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
+				@"<Module file='$(InPath){2}SharpSnmpLib.Portable.dll' />" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput();
 
 			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy(Path.Combine(TestHelper.InputPath, @"..\SharpSnmpLib.Portable.dll"), Path.Combine(TestHelper.InputPath, "SharpSnmpLib.Portable.dll"), true);
+			File.Copy(Path.Combine(TestHelper.InputPath, @"..", "SharpSnmpLib.Portable.dll"), Path.Combine(TestHelper.InputPath, "SharpSnmpLib.Portable.dll"), true);
 
 			var map = TestHelper.Obfuscate(xml).Mapping;
 

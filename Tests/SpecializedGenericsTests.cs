@@ -40,8 +40,8 @@ namespace ObfuscarTests
 				             @"<Var name='OutPath' value='{1}' />" +
 				             @"<Var name='ReuseNames' value='false' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
-				             @"<Module file='$(InPath)\AssemblyWithSpecializedGenerics.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<Module file='$(InPath){2}AssemblyWithSpecializedGenerics.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithSpecializedGenerics", String.Empty, xml);
 

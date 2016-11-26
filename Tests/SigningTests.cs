@@ -23,6 +23,7 @@
 #endregion
 
 using System;
+using System.IO;
 using Obfuscar;
 using Xunit;
 
@@ -38,13 +39,13 @@ namespace ObfuscarTests
 							 @"<Obfuscator>" +
 							 @"<Var name='InPath' value='{0}' />" +
 							 @"<Var name='OutPath' value='{1}' />" +
-							 @"<Module file='$(InPath)\AssemblyForSigning.dll' />" +
-							 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+							 @"<Module file='$(InPath){2}AssemblyForSigning.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput ();
 
 			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			TestHelper.BuildAssembly ("AssemblyForSigning", String.Empty, "/keyfile:" + TestHelper.InputPath + @"\SigningKey.snk");
+			TestHelper.BuildAssembly ("AssemblyForSigning", String.Empty, "/keyfile:" + Path.Combine(TestHelper.InputPath, @"SigningKey.snk"));
 			var exception = Assert.Throws<ObfuscarException>(() => { TestHelper.Obfuscate(xml); });
 			Assert.Equal("Obfuscating a signed assembly would result in an invalid assembly:  AssemblyForSigning; use the KeyFile property to set a key to use", exception.Message);
 		}
@@ -56,13 +57,13 @@ namespace ObfuscarTests
 							 @"<Obfuscator>" +
 							 @"<Var name='InPath' value='{0}' />" +
 							 @"<Var name='OutPath' value='{1}' />" +
-							 @"<Module file='$(InPath)\AssemblyForSigning.dll' />" +
-							 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+							 @"<Module file='$(InPath){2}AssemblyForSigning.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput ();
 
 			// build it with the delaysign option (embeds the public key, reserves space for the signature, but does not sign)
-			TestHelper.BuildAssembly ("AssemblyForSigning", String.Empty, "/delaysign /keyfile:" + TestHelper.InputPath + @"\SigningKey.snk");
+			TestHelper.BuildAssembly ("AssemblyForSigning", String.Empty, "/delaysign /keyfile:" + Path.Combine(TestHelper.InputPath, @"SigningKey.snk"));
 
 			// this should not throw
 			TestHelper.Obfuscate (xml);

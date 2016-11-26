@@ -53,9 +53,9 @@ namespace ObfuscarTests
 				             @"				<Var name='InPath' value='{0}' />" +
 				             @"				<Var name='OutPath' value='{1}' />" +
 				             @"             <Var name='HidePrivateApi' value='true' />" +
-				             @"				<Module file='$(InPath)\AssemblyWithTypesAttrs.dll'>" +
+				             @"				<Module file='$(InPath){2}AssemblyWithTypesAttrs.dll'>" +
 				             @"				</Module>" +
-				             @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			var obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypesAttrs", string.Empty, xml);
 			var map = obfuscator.Mapping;
@@ -140,9 +140,9 @@ namespace ObfuscarTests
 				             @"								<Var name='InPath' value='{0}' />" +
 				             @"								<Var name='OutPath' value='{1}' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
-				             @"								<Module file='$(InPath)\AssemblyWithTypesAttrs2.dll'>" +
+				             @"								<Module file='$(InPath){2}AssemblyWithTypesAttrs2.dll'>" +
 				             @"								</Module>" +
-				             @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			var exception = Assert.Throws<ObfuscarException> (() => TestHelper.BuildAndObfuscate ("AssemblyWithTypesAttrs2", string.Empty, xml));
 			Assert.True (exception.Message.StartsWith ("Inconsistent virtual method obfuscation"));
@@ -158,12 +158,13 @@ namespace ObfuscarTests
 				             @"<Var name='OutPath' value='{1}' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
 				             @"<Var name='KeepPublicApi' value='false' />" +
-				             @"<Module file='$(InPath)\AssemblyF.dll'>" +
-				             @"</Module>" +
-				             @"<Module file='$(InPath)\AssemblyG.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
-			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyG.dll"), Path.Combine (TestHelper.InputPath, "AssemblyG.dll"), true);
-			File.Copy (Path.Combine (TestHelper.InputPath, @"..\AssemblyF.dll"), Path.Combine (TestHelper.InputPath, "AssemblyF.dll"), true);
+				             @"								<Module file='$(InPath){2}AssemblyF.dll'>" +
+				             @"								</Module>" +
+				             @"								<Module file='$(InPath){2}AssemblyG.dll' />" +
+				             @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+			// Directory.Delete (TestHelper.OutputPath, true);
+			File.Copy (Path.Combine (TestHelper.InputPath, @"..", "AssemblyG.dll"), Path.Combine (TestHelper.InputPath, "AssemblyG.dll"), true);
+			File.Copy (Path.Combine (TestHelper.InputPath, @"..", "AssemblyF.dll"), Path.Combine (TestHelper.InputPath, "AssemblyF.dll"), true);
 
 			var exception = Assert.Throws<ObfuscarException> (() => TestHelper.Obfuscate (xml));
 			Assert.True (exception.Message.StartsWith ("Inconsistent virtual method obfuscation"));
@@ -177,15 +178,15 @@ namespace ObfuscarTests
 		{
 			string xml = String.Format (
 				             @"<?xml version='1.0'?>" +
-				             @"<Obfuscator>" +
-				             @"<Var name='InPath' value='{0}' />" +
-				             @"<Var name='OutPath' value='{1}' />" +
-				             @"<Var name='KeepPublicApi' value='false' />" +
-				             @"<Var name='HidePrivateApi' value='true' />" +
-				             @"<Var name='MarkedOnly' value='true' />" +
-				             @"<Module file='$(InPath)\AssemblyWithTypesAttrs3.dll'>" +
-				             @"</Module>" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"				<Obfuscator>" +
+				             @"				<Var name='InPath' value='{0}' />" +
+				             @"				<Var name='OutPath' value='{1}' />" +
+				             @"             <Var name='KeepPublicApi' value='false' />" +
+				             @"             <Var name='HidePrivateApi' value='true' />" +
+				             @"             <Var name='MarkedOnly' value='true' />" +
+				             @"				<Module file='$(InPath){2}AssemblyWithTypesAttrs3.dll'>" +
+				             @"				</Module>" +
+				             @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			var obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypesAttrs3", string.Empty, xml);
 			var map = obfuscator.Mapping;
@@ -225,9 +226,9 @@ namespace ObfuscarTests
 				             @"                <Var name='KeepPublicApi' value='false' />" +
 				             @"                <Var name='HidePrivateApi' value='true' />" +
 				             @"                <Var name='MarkedOnly' value='true' />" +
-				             @"				<Module file='$(InPath)\AssemblyWithTypesAttrs.dll'>" +
+				             @"				<Module file='$(InPath){2}AssemblyWithTypesAttrs.dll'>" +
 				             @"				</Module>" +
-				             @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			var obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypesAttrs", string.Empty, xml);
 			var map = obfuscator.Mapping;

@@ -39,8 +39,8 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HideStrings' value='false' />" +
-				@"<Module file='$(InPath)\AssemblyWithStrings.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"<Module file='$(InPath){2}AssemblyWithStrings.dll' />" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
 			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
@@ -67,8 +67,8 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HideStrings' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithStrings.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"<Module file='$(InPath){2}AssemblyWithStrings.dll' />" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
 			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
@@ -99,10 +99,10 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HideStrings' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithStrings.dll'>" +
+				@"<Module file='$(InPath){2}AssemblyWithStrings.dll'>" +
 				@"  <SkipStringHiding type='TestClasses.PublicClass1' name='*' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
 			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
@@ -133,10 +133,10 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HideStrings' value='false' />" +
-				@"<Module file='$(InPath)\AssemblyWithStrings.dll'>" +
+				@"<Module file='$(InPath){2}AssemblyWithStrings.dll'>" +
 				@"  <ForceStringHiding type='TestClasses.PublicClass1' name='*' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
 			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
@@ -167,10 +167,10 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HideStrings' value='false' />" +
-				@"<Module file='$(InPath)\AssemblyWithStrings.dll'>" +
+				@"<Module file='$(InPath){2}AssemblyWithStrings.dll'>" +
 				@"  <ForceType name='TestClasses.PublicClass1' forceStringHiding='true' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
 			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (

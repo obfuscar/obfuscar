@@ -64,7 +64,7 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckCanCreateOutPathWithEnvironmentVariables ()
 		{
-			string testPath = "%temp%\\ObfuscarTestOutPath";
+			string testPath = Path.Combine("%temp%", "ObfuscarTestOutPath");
 
 			CheckOutPath (testPath);
 		}
@@ -73,7 +73,11 @@ namespace ObfuscarTests
 		public void CheckInvalidOutPath ()
 		{
 			string testPath = Path.Combine (PathFailureTests.BadPath, "ObfuscarTestOutPath");
-			var exception = Assert.Throws<ObfuscarException>(() => { CheckOutPath (testPath); });
+		    Type t = Type.GetType ("Mono.Runtime");
+		    if (t != null)
+		        return;
+
+		    var exception = Assert.Throws<ObfuscarException>(() => { CheckOutPath (testPath); });
 			Assert.Equal("Could not create path specified by OutPath:  Q:\\Does\\Not\\Exist\\ObfuscarTestOutPath", exception.Message);
 		}
 	}

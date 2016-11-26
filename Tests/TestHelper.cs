@@ -32,8 +32,8 @@ namespace ObfuscarTests
 {
 	static class TestHelper
 	{
-		public const string InputPath = "..\\..\\Input";
-		public const string OutputPath = "..\\..\\Output";
+		public static string InputPath = Path.Combine("..", "..", "Input");
+		public static string OutputPath = Path.Combine("..", "..", "Output");
 
 		public static void CleanInput()
 		{

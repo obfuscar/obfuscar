@@ -23,6 +23,7 @@
 #endregion
 using System;
 using System.IO;
+using System.Linq;
 using Mono.Cecil;
 using Xunit;
 
@@ -38,9 +39,9 @@ namespace ObfuscarTests
 				             @"<Var name='InPath' value='{0}' />" +
 				             @"<Var name='OutPath' value='{1}' />" +
 							 @"<Var name='KeepPublicApi' value='false' />" +
-							 @"<Var name='HidePrivateApi' value='true' />" +
-				             @"<Module file='$(InPath)\AssemblyWithCustomAttr.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"<Var name='HidePrivateApi' value='true' />" +
+				             @"<Module file='$(InPath){2}AssemblyWithCustomAttr.dll' />" +
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithCustomAttr", String.Empty, xml);
 		}
@@ -89,7 +90,7 @@ namespace ObfuscarTests
 
 				Assert.Equal (2, typeDef.Methods.Count); // "Type is expected to have a single member.");
 			
-				MethodDefinition methodDef = typeDef.Methods [0];
+				MethodDefinition methodDef = typeDef.Methods.First(item => item.Name != ".ctor");
 
 				CustomAttribute attr = methodDef.CustomAttributes [0];
 				Assert.Equal ("System.Void A.a::.ctor(System.String)", attr.Constructor.ToString());

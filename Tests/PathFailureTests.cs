@@ -23,6 +23,7 @@
 #endregion
 
 using System;
+using Mono.CompilerServices.SymbolWriter;
 using Obfuscar;
 using Xunit;
 
@@ -35,14 +36,22 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckBadPathIsBad ()
 		{
-			// if badPath exists, the other tests here are no good
+		    Type t = Type.GetType ("Mono.Runtime");
+		    if (t != null)
+		        return;
+
+		    // if badPath exists, the other tests here are no good
 			Assert.False (System.IO.Directory.Exists (BadPath), "Didn't expect BadPath to exist.");
 		}
 
 		[Fact]
 		public void CheckBadProjectPath ()
 		{
-			var exception = Assert.Throws<ObfuscarException>(() => { new Obfuscator(BadPath); });
+		    Type t = Type.GetType ("Mono.Runtime");
+		    if (t != null)
+		        return;
+
+		    var exception = Assert.Throws<ObfuscarException>(() => { new Obfuscator(BadPath); });
 			Assert.Equal("Unable to read specified project file:  Q:\\Does\\Not\\Exist", exception.Message);
 		}
 
@@ -61,7 +70,11 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckBadInPath ()
 		{
-			string xml = String.Format (
+		    Type t = Type.GetType ("Mono.Runtime");
+		    if (t != null)
+		        return;
+
+		    string xml = String.Format (
 							 @"<?xml version='1.0'?>" +
 							 @"<Obfuscator>" +
 							 @"<Var name='InPath' value='{0}' />" +

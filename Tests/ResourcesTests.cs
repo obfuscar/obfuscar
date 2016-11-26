@@ -51,16 +51,16 @@ namespace ObfuscarTests
 									  @"<Obfuscator>" +
 									  @"<Var name='InPath' value='{0}' />" +
 									  @"<Var name='OutPath' value='{1}' />" +
-									  @"<Var name='KeyFile' value='$(InPath)\..\dockpanelsuite.snk' />" +
+									  @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
 									  @"<Var name='HidePrivateApi' value='true' />" +
 									  @"<Var name='KeepPublicApi' value='false' />" +
-									  @"<Module file='$(InPath)\WindowsFormsApplication1.exe' />" +
-									  @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+									  @"<Module file='$(InPath){2}WindowsFormsApplication1.exe' />" +
+									  @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput();
 
 			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy(Path.Combine(TestHelper.InputPath, @"..\WindowsFormsApplication1.exe"),
+			File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WindowsFormsApplication1.exe"),
 				Path.Combine(TestHelper.InputPath, "WindowsFormsApplication1.exe"), true);
 
 			var map = TestHelper.Obfuscate(xml).Mapping;

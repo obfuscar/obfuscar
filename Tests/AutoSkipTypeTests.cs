@@ -28,9 +28,9 @@ namespace ObfuscarTests
 				             @"<Var name='OutPath' value='{1}' />" +
 				             @"<Var name='KeepPublicApi' value='false' />" +
 				             @"<Var name='HidePrivateApi' value='false' />" +
-				             @"<Module file='$(InPath)\AssemblyWithTypes.dll'>" +
+				             @"<Module file='$(InPath){2}AssemblyWithTypes.dll'>" +
 				             @"</Module>" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			var obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
 			var map = obfuscator.Mapping;
@@ -71,9 +71,9 @@ namespace ObfuscarTests
 				             @"<Var name='InPath' value='{0}' />" +
 				             @"<Var name='OutPath' value='{1}' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
-				             @"<Module file='$(InPath)\AssemblyWithTypes.dll'>" +
+				             @"<Module file='$(InPath){2}AssemblyWithTypes.dll'>" +
 				             @"</Module>" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			var obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
 			var map = obfuscator.Mapping;
@@ -102,9 +102,9 @@ namespace ObfuscarTests
 				             @"<Var name='OutPath' value='{1}' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
 							 @"<Var name='KeepPublicApi' value='false' />" +
-							 @"<Module file='$(InPath)\AssemblyWithTypes.dll'>" +
+				             @"<Module file='$(InPath){2}AssemblyWithTypes.dll'>" +
 				             @"</Module>" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			var obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
 			var map = obfuscator.Mapping;
@@ -141,9 +141,9 @@ namespace ObfuscarTests
 				             @"<Var name='OutPath' value='{1}' />" +
 				             @"<Var name='KeepPublicApi' value='true' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
-				             @"<Module file='$(InPath)\AssemblyWithTypes.dll'>" +
+				             @"<Module file='$(InPath){2}AssemblyWithTypes.dll'>" +
 				             @"</Module>" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
 			var map = obfuscator.Mapping;
@@ -182,10 +182,10 @@ namespace ObfuscarTests
 				             @"<Var name='OutPath' value='{1}' />" +
 				             @"<Var name='KeepPublicApi' value='false' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
-				             @"<Module file='$(InPath)\AssemblyWithTypes.dll'>" +
+				             @"<Module file='$(InPath){2}AssemblyWithTypes.dll'>" +
 				             @"<SkipNamespace name='TestClasses1' />" +
 				             @"</Module>" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
 			var map = obfuscator.Mapping;
@@ -210,10 +210,10 @@ namespace ObfuscarTests
 				                      @"<Var name='OutPath' value='{1}' />" +
 				                      @"<Var name='KeepPublicApi' value='false' />" +
 				                      @"<Var name='HidePrivateApi' value='true' />" +
-				                      @"<Module file='$(InPath)\AssemblyWithTypes.dll'>" +
+				                      @"<Module file='$(InPath){2}AssemblyWithTypes.dll'>" +
 				                      @"<SkipType name='TestClasses.TestEnum' />" +
 				                      @"</Module>" +
-				                      @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				                      @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
 			var map = obfuscator.Mapping;
@@ -238,10 +238,10 @@ namespace ObfuscarTests
                                       @"<Var name='OutPath' value='{1}' />" +
                                       @"<Var name='KeepPublicApi' value='false' />" +
                                       @"<Var name='HidePrivateApi' value='true' />" +
-                                      @"<Module file='$(InPath)\AssemblyWithTypes.dll'>" +
+                                      @"<Module file='$(InPath){2}AssemblyWithTypes.dll'>" +
                                       @"<SkipEnums value='true' />" +
                                       @"</Module>" +
-                                      @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+                                      @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
             Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithTypes", string.Empty, xml);
             var map = obfuscator.Mapping;

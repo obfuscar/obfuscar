@@ -23,6 +23,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Mono.Cecil;
 using Xunit;
 
@@ -39,10 +40,10 @@ namespace ObfuscarTests
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath)\AssemblyWithNestedTypes.dll'>" +
+				@"<Module file='$(InPath){2}AssemblyWithNestedTypes.dll'>" +
 				@"<SkipType name='TestClasses.ClassA/NestedClassA' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithNestedTypes", string.Empty, xml);
 
@@ -73,9 +74,9 @@ namespace ObfuscarTests
 				             @"<Var name='OutPath' value='{1}' />" +
 				             @"<Var name='HidePrivateApi' value='true' />" +
 				             @"<Var name='KeepPublicApi' value='true' />" +
-				             @"<Module file='$(InPath)\AssemblyWithNestedTypes2.dll'>" +
+				             @"<Module file='$(InPath){2}AssemblyWithNestedTypes2.dll'>" +
 				             @"</Module>" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithNestedTypes2", string.Empty, xml);
 

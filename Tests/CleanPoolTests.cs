@@ -22,6 +22,7 @@
 /// </copyright>
 #endregion
 using System;
+using System.IO;
 using Xunit;
 
 namespace ObfuscarTests
@@ -37,9 +38,9 @@ namespace ObfuscarTests
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='ReuseNames' value='true' />" +
                 @"<Var name='KeepPublicApi' value='false' />" +
-                @"<Module file='$(InPath)\AssemblyForCleanPoolClass.dll' />" +
-                @"<Module file='$(InPath)\AssemblyForCleanPoolInterface.dll' />" +
-                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+                @"<Module file='$(InPath){2}AssemblyForCleanPoolClass.dll' />" +
+                @"<Module file='$(InPath){2}AssemblyForCleanPoolInterface.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate (new[] { "AssemblyForCleanPoolInterface", "AssemblyForCleanPoolClass" }, xml);
         }

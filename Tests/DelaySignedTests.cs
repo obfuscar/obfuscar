@@ -49,17 +49,17 @@ namespace ObfuscarTests
 							 @"<Obfuscator>" +
 							 @"<Var name='InPath' value='{0}' />" +
 							 @"<Var name='OutPath' value='{1}' />" +
-							 @"<Var name='KeyFile' value='$(InPath)\..\dockpanelsuite.snk' />" +
+							 @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
 							 @"<Var name='HidePrivateApi' value='true' />" +
 							 @"<Var name='KeepPublicApi' value='false' />" +
-							 @"<Module file='$(InPath)\DelaySigned.dll' />" +
-							 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+							 @"<Module file='$(InPath){2}DelaySigned.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput();
 			var assembly = Path.Combine(TestHelper.InputPath, "DelaySigned.dll");
 
 			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy(Path.Combine(TestHelper.InputPath, @"..\DelaySigned.dll"), assembly, true);
+			File.Copy(Path.Combine(TestHelper.InputPath, @"..", "DelaySigned.dll"), assembly, true);
 
 			var map = TestHelper.Obfuscate(xml).Mapping;
 

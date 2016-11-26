@@ -53,13 +53,13 @@ namespace ObfuscarTests
 							 @"<Var name='KeyFile' value='$(InPath)\..\dockpanelsuite.snk' />" +
 							 @"<Var name='HidePrivateApi' value='true' />" +
 							 @"<Var name='KeepPublicApi' value='false' />" +
-							 @"<Module file='$(InPath)\WeifenLuo.WinFormsUI.Docking.dll' />" +
-							 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath);
+							 @"<Module file='$(InPath){2}WeifenLuo.WinFormsUI.Docking.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput();
 
 			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy(Path.Combine(TestHelper.InputPath, @"..\WeifenLuo.WinFormsUI.Docking.dll"), Path.Combine(TestHelper.InputPath, "WeifenLuo.WinFormsUI.Docking.dll"), true);
+			File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WeifenLuo.WinFormsUI.Docking.dll"), Path.Combine(TestHelper.InputPath, "WeifenLuo.WinFormsUI.Docking.dll"), true);
 
 			var map = TestHelper.Obfuscate(xml).Mapping;
 
