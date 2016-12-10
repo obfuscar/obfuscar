@@ -1131,6 +1131,7 @@ namespace Obfuscar
 		/// </summary>
 		internal void HideStrings ()
 		{
+			return;
 			foreach (AssemblyInfo info in Project) {
 				AssemblyDefinition library = info.Definition;
 				StringSqueeze container = new StringSqueeze (library);
