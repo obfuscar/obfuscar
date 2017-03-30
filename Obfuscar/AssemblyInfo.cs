@@ -377,7 +377,7 @@ namespace Obfuscar
 
 					if (node.Item.HasInterfaces) {
 						foreach (var inter in node.Item.Interfaces) {
-							if (TrySearchNode (inter, out parent)) {
+							if (TrySearchNode (inter.InterfaceType, out parent)) {
 								node.AppendTo (parent);
 							}
 						}

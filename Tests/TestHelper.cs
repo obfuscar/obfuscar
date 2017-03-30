@@ -64,18 +64,18 @@ namespace ObfuscarTests
 			cp.OutputAssembly = GetAssemblyPath (dllName);
 			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( InputPath, name + ".cs" ) );
 			if ( cr.Errors.HasErrors ) {
-                Assert.True(false, "Unable to compile test assembly:  " + dllName);
-            }
-        }
+				Assert.True(false, "Unable to compile test assembly:  " + dllName + ":" + cr.Errors[0].ErrorText);
+			}
+		}
 
-        public static void BuildAssemblies (params string[] names)
-        {
-            var options = new StringBuilder();
-            foreach (var name in names) {
-                BuildAssembly (name, options: options.ToString ());
-                options.Append(string.Format(" /reference:{0}", GetAssemblyPath (name)));
-            }
-        }
+		public static void BuildAssemblies (params string[] names)
+		{
+			var options = new StringBuilder();
+			foreach (var name in names) {
+				BuildAssembly (name, options: options.ToString ());
+				options.Append(string.Format(" /reference:{0}", GetAssemblyPath (name)));
+			}
+		}
 
 		public static Obfuscar.Obfuscator Obfuscate (string xml, bool hideStrings = false)
 		{

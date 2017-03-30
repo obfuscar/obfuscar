@@ -144,8 +144,8 @@ namespace Obfuscar
 		public static void GetBaseTypes (Project project, HashSet<TypeKey> baseTypes, TypeDefinition type)
 		{
 			// check the interfaces
-			foreach (TypeReference ifaceRef in type.Interfaces) {
-				TypeDefinition iface = project.GetTypeDefinition (ifaceRef);
+			foreach (var ifaceRef in type.Interfaces) {
+				TypeDefinition iface = project.GetTypeDefinition (ifaceRef.InterfaceType);
 				if (iface != null) {
 					GetBaseTypes (project, baseTypes, iface);
 					baseTypes.Add (new TypeKey (iface));
@@ -170,12 +170,12 @@ namespace Obfuscar
 		void GetVirtualMethods (AssemblyCache cache, HashSet<MethodKey> methods, TypeDefinition type)
 		{
 			// check the interfaces
-			foreach (TypeReference ifaceRef in type.Interfaces) {
-				TypeDefinition iface = project.GetTypeDefinition (ifaceRef);
+			foreach (var ifaceRef in type.Interfaces) {
+				TypeDefinition iface = project.GetTypeDefinition (ifaceRef.InterfaceType);
 
 				// if it's not in the project, try to get it via the cache
 				if (iface == null)
-					iface = cache.GetTypeDefinition (ifaceRef);
+					iface = cache.GetTypeDefinition (ifaceRef.InterfaceType);
 
 				// search interface
 				if (iface != null)
