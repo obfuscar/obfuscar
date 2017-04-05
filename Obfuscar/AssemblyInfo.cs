@@ -336,7 +336,7 @@ namespace Obfuscar
 						customattributearguments.Add (namedargument.Argument);
 
 					foreach (CustomAttributeArgument ca in customattributearguments) {
-						if (ca.Type.FullName == "System.Type")
+						if (ca.Type.FullName == "System.Type" && ca.Value != null)
 							typerefs.Add ((TypeReference)ca.Value);
 					}
 				}
