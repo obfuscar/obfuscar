@@ -2,7 +2,7 @@ Obfuscar
 ========
 
 [![NuGet Version](https://img.shields.io/nuget/v/Obfuscar.svg?style=flat-square)](https://www.nuget.org/packages/Obfuscar/)
-[![Build status](https://img.shields.io/appveyor/ci/lextm/obfuscar/master.svg?label=apvejor&style=flat-square)](https://ci.appveyor.com/project/lextm/obfuscar)
+[![Build status](https://img.shields.io/appveyor/ci/lextm/obfuscar/master.svg?label=appvejor&style=flat-square)](https://ci.appveyor.com/project/lextm/obfuscar)
 [![Stories in Progress](https://img.shields.io/waffle/label/lextm/obfuscar/in%20progress.svg?style=flat-square)](http://waffle.io/lextm/obfuscar) 
 
 [![Throughput Graph](https://graphs.waffle.io/lextm/obfuscar/throughput.svg?style=flat-square)](https://waffle.io/lextm/obfuscar/metrics/throughput) 
