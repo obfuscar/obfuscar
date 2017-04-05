@@ -3,6 +3,7 @@ skip_tags: true
 os: Windows Server 2012 R2
 before_build:
 - git submodule update --init --recursive
+- .\.nuget\nuget.exe update /self
 - .\.nuget\nuget.exe restore Obfuscar.sln
 build:
   project: Obfuscar.sln
