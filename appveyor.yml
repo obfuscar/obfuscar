@@ -2,8 +2,5 @@ version: 1.0.{build}
 image: Visual Studio 2017
 before_build:
 - git submodule update --init --recursive
-- .\.nuget\nuget.exe update /self
-- .\.nuget\nuget.exe restore Obfuscar.sln
-build:
-  project: Obfuscar.sln
-  verbosity: minimal
+build_script:
+- pack.bat
