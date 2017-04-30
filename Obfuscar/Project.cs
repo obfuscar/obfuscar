@@ -47,6 +47,7 @@ namespace Obfuscar
 		private readonly List<AssemblyInfo> copyAssemblyList = new List<AssemblyInfo> ();
 		private readonly Dictionary<string, AssemblyInfo> assemblyMap = new Dictionary<string, AssemblyInfo> ();
 		private readonly Variables vars = new Variables ();
+		private readonly List<string> assemblySearchPaths = new List<string>();
 		InheritMap inheritMap;
 		Settings settings;
 		// FIXME: Figure out why this exists if it is never used.
@@ -56,9 +57,13 @@ namespace Obfuscar
 		{
 		}
 
-		public string [] ExtraPaths {
+		public IEnumerable<string> ExtraPaths {
 			get {
-				return vars.GetValue ("ExtraFrameworkFolders", "").Split (new char [] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+				return
+					vars
+					.GetValue ("ExtraFrameworkFolders", "")
+					.Split (new char [] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries)
+					.Concat(assemblySearchPaths);
 			}
 		}
 
@@ -155,6 +160,10 @@ namespace Obfuscar
 						Console.WriteLine ("Processing assembly: " + info.Definition.Name.FullName);
 						project.assemblyList.Add (info);
 						project.assemblyMap [info.Name] = info;
+						break;
+					case "AssemblySearchPath":
+						string path = project.vars.Replace(Helper.GetAttribute(reader, "path"));
+						project.assemblySearchPaths.Add(path);
 						break;
 					}
 				}
