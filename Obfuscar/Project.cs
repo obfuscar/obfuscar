@@ -59,11 +59,16 @@ namespace Obfuscar
 
 		public IEnumerable<string> ExtraPaths {
 			get {
+				return vars.GetValue ("ExtraFrameworkFolders", "").Split (new char [] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+			}
+		}
+
+		public IEnumerable<string> AssemblySearchPaths {
+			get {
 				return
-					vars
-					.GetValue ("ExtraFrameworkFolders", "")
-					.Split (new char [] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries)
-					.Concat(assemblySearchPaths);
+					ExtraPaths
+						.Concat(assemblySearchPaths)
+						.Concat(new[] { Settings.InPath });
 			}
 		}
 
@@ -110,8 +115,8 @@ namespace Obfuscar
 					KeyContainerName = vars.GetValue ("KeyContainer", null);
 					if (Type.GetType ("System.MonoType") != null)
 						throw new ObfuscarException ("Key containers are not supported for Mono.");
-				} 
-   				
+				}
+
 				return null;
 				//return keyvalue;
 			}
@@ -246,6 +251,12 @@ namespace Obfuscar
 		/// </summary>
 		public void CheckSettings ()
 		{
+			foreach (string assemblySearchPath in assemblySearchPaths)
+			{
+				if (!Directory.Exists (assemblySearchPath))
+					throw new ObfuscarException ("Path specified by AssemblySearchPath must exist:" + assemblySearchPath);
+			}
+
 			if (!Directory.Exists (Settings.InPath))
 				throw new ObfuscarException ("Path specified by InPath variable must exist:" + Settings.InPath);
 
