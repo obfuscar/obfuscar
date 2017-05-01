@@ -9,7 +9,7 @@ if exist "%InstallDir%\MSBuild\15.0\Bin\MSBuild.exe" (
 )
 @echo on
 
-set EnableNuGetPackageRestore=true
-CALL .\.nuget\nuget.exe restore obfuscar.sln
+call %msBuildExe% obfuscar.sln /t:restore
+call %msBuildExe% obfuscar.sln /t:clean /p:Configuration=Release
 call %msBuildExe% obfuscar.sln /p:Configuration=Release
-CALL .\.nuget\nuget.exe pack 
+call .\.nuget\nuget.exe pack 
