@@ -1,17 +1,17 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -227,7 +227,7 @@ namespace Obfuscar
 					} else {
 						info.Definition.Write (outName, parameters);
 					}
-				} catch (Exception e) { 
+				} catch (Exception e) {
 					LogOutput (String.Format ("\nFailed to save {0}", fileName));
 					LogOutput (String.Format ("\n{0}: {1}", e.GetType ().Name, e.Message));
 					var match = Regex.Match (e.Message, @"Failed to resolve\s+(?<name>[^\s]+)");
@@ -967,7 +967,7 @@ namespace Obfuscar
 
 				// ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
 				if (skipRename != null) {
-					// for an external group, we can't rename.  just use the method 
+					// for an external group, we can't rename.  just use the method
 					// name as group name
 					groupName = method.Name;
 				} else {
@@ -1131,7 +1131,6 @@ namespace Obfuscar
 		/// </summary>
 		internal void HideStrings ()
 		{
-			return;
 			foreach (AssemblyInfo info in Project) {
 				AssemblyDefinition library = info.Definition;
 				StringSqueeze container = new StringSqueeze (library);
@@ -1366,7 +1365,12 @@ namespace Obfuscar
 			{
 				if (!info.ShouldSkipStringHiding (new MethodKey (method), project.InheritMap, project.Settings.HideStrings) && method.Body != null) {
 					Initialize ();
-					
+
+					// Unroll short form instructions so they can be auto-fixed by Cecil
+					// automatically when instructions are inserted/replaced
+					method.Body.SimplifyMacros();
+					ILProcessor worker = method.Body.GetILProcessor ();
+
 					// IMPORTANT: cannot convert to foreach due to modification on method body.
 					// ReSharper disable once ForCanBeConvertedToForeach
 					for (int index = 0; index < method.Body.Instructions.Count; index++) {
@@ -1414,11 +1418,13 @@ namespace Obfuscar
 								_stringIndex++;
 							}
 							// Replace Ldstr with Call
-							ILProcessor worker = method.Body.GetILProcessor ();
+
 							Instruction newinstruction = worker.Create (OpCodes.Call, individualStringMethodDefinition);
-							worker.Replace (instruction, newinstruction);
+							worker.ReplaceAndFixReferences(instruction, newinstruction);
 						}
 					}
+					// Optimize method back
+					method.Body.Optimize();
 				}
 			}
 		}
