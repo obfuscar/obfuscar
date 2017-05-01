@@ -63,7 +63,7 @@ namespace Obfuscar
 			}
 		}
 
-		public IEnumerable<string> AssemblySearchPaths {
+		public IEnumerable<string> AllAssemblySearchPaths {
 			get {
 				return
 					ExtraPaths
