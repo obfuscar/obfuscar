@@ -1,17 +1,17 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -47,6 +47,7 @@ namespace Obfuscar
 		private readonly List<AssemblyInfo> copyAssemblyList = new List<AssemblyInfo> ();
 		private readonly Dictionary<string, AssemblyInfo> assemblyMap = new Dictionary<string, AssemblyInfo> ();
 		private readonly Variables vars = new Variables ();
+		private readonly List<string> assemblySearchPaths = new List<string>();
 		InheritMap inheritMap;
 		Settings settings;
 		// FIXME: Figure out why this exists if it is never used.
@@ -56,9 +57,18 @@ namespace Obfuscar
 		{
 		}
 
-		public string [] ExtraPaths {
+		public IEnumerable<string> ExtraPaths {
 			get {
 				return vars.GetValue ("ExtraFrameworkFolders", "").Split (new char [] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+			}
+		}
+
+		public IEnumerable<string> AllAssemblySearchPaths {
+			get {
+				return
+					ExtraPaths
+						.Concat(assemblySearchPaths)
+						.Concat(new[] { Settings.InPath });
 			}
 		}
 
@@ -105,8 +115,8 @@ namespace Obfuscar
 					KeyContainerName = vars.GetValue ("KeyContainer", null);
 					if (Type.GetType ("System.MonoType") != null)
 						throw new ObfuscarException ("Key containers are not supported for Mono.");
-				} 
-   				
+				}
+
 				return null;
 				//return keyvalue;
 			}
@@ -155,6 +165,10 @@ namespace Obfuscar
 						Console.WriteLine ("Processing assembly: " + info.Definition.Name.FullName);
 						project.assemblyList.Add (info);
 						project.assemblyMap [info.Name] = info;
+						break;
+					case "AssemblySearchPath":
+						string path = Environment.ExpandEnvironmentVariables(project.vars.Replace(Helper.GetAttribute(reader, "path")));
+						project.assemblySearchPaths.Add(path);
 						break;
 					}
 				}
@@ -237,6 +251,12 @@ namespace Obfuscar
 		/// </summary>
 		public void CheckSettings ()
 		{
+			foreach (string assemblySearchPath in assemblySearchPaths)
+			{
+				if (!Directory.Exists (assemblySearchPath))
+					throw new ObfuscarException ("Path specified by AssemblySearchPath must exist:" + assemblySearchPath);
+			}
+
 			if (!Directory.Exists (Settings.InPath))
 				throw new ObfuscarException ("Path specified by InPath variable must exist:" + Settings.InPath);
 
