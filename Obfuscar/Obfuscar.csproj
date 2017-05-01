@@ -70,6 +70,7 @@
     <Compile Include="Helpers\EventDefinitionExtensions.cs" />
     <Compile Include="Helpers\MethodDefinitionExtensions.cs" />
     <Compile Include="Helpers\PropertyDefinitionExtensions.cs" />
+    <Compile Include="Helpers\ILProcessorExtensions.cs" />
     <Compile Include="Helpers\TypeReferenceExtensions.cs" />
     <Compile Include="NamespaceTester.cs" />
     <Compile Include="ObfuscarException.cs" />
