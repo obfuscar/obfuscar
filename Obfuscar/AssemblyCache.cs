@@ -35,7 +35,7 @@ namespace Obfuscar
 
 		public AssemblyCache (Project project)
 		{
-			foreach (var path in project.AssemblySearchPaths)
+			foreach (var path in project.AllAssemblySearchPaths)
 				AddSearchDirectory (path);
 
 			foreach (AssemblyInfo info in project)
