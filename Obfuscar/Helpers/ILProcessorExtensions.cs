@@ -63,8 +63,21 @@ namespace Obfuscar.Helpers
 			if (bodyInstruction == null)
 				return;
 
-			if (bodyInstruction.Operand == oldInstruction) {
+			Instruction instructionOperand = bodyInstruction.Operand as Instruction;
+			if (instructionOperand != null && instructionOperand == oldInstruction) {
 				bodyInstruction.Operand = newInstruction;
+				return;
+			}
+
+			Instruction[] instructionArrayOperand = bodyInstruction.Operand as Instruction[];
+			if (instructionArrayOperand != null) {
+				for (int i = 0; i < instructionArrayOperand.Length; i++) {
+					if (instructionArrayOperand[i] == oldInstruction) {
+						instructionArrayOperand[i] = newInstruction;
+					}
+				}
+
+				bodyInstruction.Operand = instructionArrayOperand;
 			}
 		}
 	}
