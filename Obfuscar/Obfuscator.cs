@@ -1,17 +1,17 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -1365,14 +1365,14 @@ namespace Obfuscar
 			{
 				if (!info.ShouldSkipStringHiding (new MethodKey (method), project.InheritMap, project.Settings.HideStrings) && method.Body != null) {
 					Initialize ();
-					
-					// IMPORTANT: cannot convert to foreach due to modification on method body.
-					// ReSharper disable once ForCanBeConvertedToForeach
 
 					// Unroll short form instructions so they can be auto-fixed by Cecil
-					// automatically when new instructions are inserted/replaced
+					// automatically when instructions are inserted/replaced
 					method.Body.SimplifyMacros();
 					ILProcessor worker = method.Body.GetILProcessor ();
+
+					// IMPORTANT: cannot convert to foreach due to modification on method body.
+					// ReSharper disable once ForCanBeConvertedToForeach
 					for (int index = 0; index < method.Body.Instructions.Count; index++) {
 						Instruction instruction = method.Body.Instructions [index];
 						if (instruction.OpCode == OpCodes.Ldstr) {
