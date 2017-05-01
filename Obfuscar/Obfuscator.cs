@@ -227,7 +227,7 @@ namespace Obfuscar
 					} else {
 						info.Definition.Write (outName, parameters);
 					}
-				} catch (Exception e) { 
+				} catch (Exception e) {
 					LogOutput (String.Format ("\nFailed to save {0}", fileName));
 					LogOutput (String.Format ("\n{0}: {1}", e.GetType ().Name, e.Message));
 					var match = Regex.Match (e.Message, @"Failed to resolve\s+(?<name>[^\s]+)");
@@ -967,7 +967,7 @@ namespace Obfuscar
 
 				// ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
 				if (skipRename != null) {
-					// for an external group, we can't rename.  just use the method 
+					// for an external group, we can't rename.  just use the method
 					// name as group name
 					groupName = method.Name;
 				} else {
@@ -1131,7 +1131,6 @@ namespace Obfuscar
 		/// </summary>
 		internal void HideStrings ()
 		{
-			return;
 			foreach (AssemblyInfo info in Project) {
 				AssemblyDefinition library = info.Definition;
 				StringSqueeze container = new StringSqueeze (library);
@@ -1369,6 +1368,11 @@ namespace Obfuscar
 					
 					// IMPORTANT: cannot convert to foreach due to modification on method body.
 					// ReSharper disable once ForCanBeConvertedToForeach
+
+					// Unroll short form instructions so they can be auto-fixed by Cecil
+					// automatically when new instructions are inserted/replaced
+					method.Body.SimplifyMacros();
+					ILProcessor worker = method.Body.GetILProcessor ();
 					for (int index = 0; index < method.Body.Instructions.Count; index++) {
 						Instruction instruction = method.Body.Instructions [index];
 						if (instruction.OpCode == OpCodes.Ldstr) {
@@ -1414,11 +1418,13 @@ namespace Obfuscar
 								_stringIndex++;
 							}
 							// Replace Ldstr with Call
-							ILProcessor worker = method.Body.GetILProcessor ();
+
 							Instruction newinstruction = worker.Create (OpCodes.Call, individualStringMethodDefinition);
-							worker.Replace (instruction, newinstruction);
+							worker.ReplaceAndFixReferences(instruction, newinstruction);
 						}
 					}
+					// Optimize method back
+					method.Body.Optimize();
 				}
 			}
 		}
