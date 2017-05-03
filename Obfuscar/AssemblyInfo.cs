@@ -152,7 +152,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.skipNamespaces.Add(new NamespaceTester(rx));
-							} else
+							}
+							else
 							{
 								info.skipNamespaces.Add(new NamespaceTester(name));
 							}
@@ -161,7 +162,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.forceNamespaces.Add(new NamespaceTester(rx));
-							} else
+							}
+							else
 							{
 								info.forceNamespaces.Add(new NamespaceTester(name));
 							}
@@ -192,7 +194,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.skipTypes.Add(new TypeTester(rx, skipFlags, attrib, inherits, isStatic, isSerializable));
-							} else
+							}
+							else
 							{
 								info.skipTypes.Add(new TypeTester(name, skipFlags, attrib, inherits, isStatic, isSerializable));
 							}
@@ -223,7 +226,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.forceTypes.Add(new TypeTester(rx, forceFlags, attrib, inherits, isStatic, isSerializable));
-							} else
+							}
+							else
 							{
 								info.forceTypes.Add(new TypeTester(name, forceFlags, attrib, inherits, isStatic, isSerializable));
 							}
@@ -232,7 +236,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.skipMethods.Add(new MethodTester(rx, type, attrib, typeattrib, inherits, isStatic));
-							} else
+							}
+							else
 							{
 								info.skipMethods.Add(new MethodTester(name, type, attrib, typeattrib, inherits, isStatic));
 							}
@@ -241,7 +246,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.forceMethods.Add(new MethodTester(rx, type, attrib, typeattrib, inherits, isStatic));
-							} else
+							}
+							else
 							{
 								info.forceMethods.Add(new MethodTester(name, type, attrib, typeattrib, inherits, isStatic));
 							}
@@ -250,7 +256,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.skipStringHiding.Add(new MethodTester(rx, type, attrib, typeattrib));
-							} else
+							}
+							else
 							{
 								info.skipStringHiding.Add(new MethodTester(name, type, attrib, typeattrib));
 							}
@@ -259,7 +266,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.forceStringHiding.Add(new MethodTester(rx, type, attrib, typeattrib));
-							} else
+							}
+							else
 							{
 								info.forceStringHiding.Add(new MethodTester(name, type, attrib, typeattrib));
 							}
@@ -270,7 +278,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.skipFields.Add(new FieldTester(rx, type, attrib, typeattrib, inherits, decorator, isStatic, isSerializable));
-							} else
+							}
+							else
 							{
 								info.skipFields.Add(new FieldTester(name, type, attrib, typeattrib, inherits, decorator, isStatic, isSerializable));
 							}
@@ -281,7 +290,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.forceFields.Add(new FieldTester(rx, type, attrib, typeattrib, inherits, decorator1, isStatic, isSerializable));
-							} else
+							}
+							else
 							{
 								info.forceFields.Add(new FieldTester(name, type, attrib, typeattrib, inherits, decorator1, isStatic, isSerializable));
 							}
@@ -290,7 +300,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.skipProperties.Add(new PropertyTester(rx, type, attrib, typeattrib));
-							} else
+							}
+							else
 							{
 								info.skipProperties.Add(new PropertyTester(name, type, attrib, typeattrib));
 							}
@@ -299,7 +310,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.forceProperties.Add(new PropertyTester(rx, type, attrib, typeattrib));
-							} else
+							}
+							else
 							{
 								info.forceProperties.Add(new PropertyTester(name, type, attrib, typeattrib));
 							}
@@ -308,7 +320,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.skipEvents.Add(new EventTester(rx, type, attrib, typeattrib));
-							} else
+							}
+							else
 							{
 								info.skipEvents.Add(new EventTester(name, type, attrib, typeattrib));
 							}
@@ -317,7 +330,8 @@ namespace Obfuscar
 							if (rx != null)
 							{
 								info.forceEvents.Add(new EventTester(rx, type, attrib, typeattrib));
-							} else
+							}
+							else
 							{
 								info.forceEvents.Add(new EventTester(name, type, attrib, typeattrib));
 							}
@@ -327,7 +341,8 @@ namespace Obfuscar
 							info.skipEnums = skipEnumsValue.Length > 0 && XmlConvert.ToBoolean(skipEnumsValue);
 							break;
 					}
-				} else if (reader.NodeType == XmlNodeType.EndElement && reader.Name == "Module")
+				}
+				else if (reader.NodeType == XmlNodeType.EndElement && reader.Name == "Module")
 				{
 					// hit end of module element...stop reading
 					break;

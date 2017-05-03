@@ -25,6 +25,7 @@ using Mono.Cecil;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -188,7 +189,8 @@ namespace Obfuscar
 			}
 		}
 
-		internal static void ReadIncludeTag(XmlReader parentReader, Project project, Action<XmlReader, Project> readAction) {
+		internal static void ReadIncludeTag(XmlReader parentReader, Project project, Action<XmlReader, Project> readAction)
+		{
 			if (parentReader == null)
 				throw new ArgumentNullException("parentReader");
 
@@ -197,14 +199,18 @@ namespace Obfuscar
 
 			string path = Environment.ExpandEnvironmentVariables(project.vars.Replace(Helper.GetAttribute(parentReader, "path")));
 			XmlReaderSettings includeReaderSettings = Obfuscator.GetReaderSettings();
-			using (XmlReader includeReader = XmlReader.Create(File.OpenRead(path), includeReaderSettings)) {
+			using (XmlReader includeReader = XmlReader.Create(File.OpenRead(path), includeReaderSettings))
+			{
 				// Start reading
 				includeReader.Read();
 
 				// Skip declaration, if present
-				if (includeReader.NodeType == XmlNodeType.XmlDeclaration) {
+				if (includeReader.NodeType == XmlNodeType.XmlDeclaration)
+				{
 					includeReader.Read();
 				}
+
+				Debug.Assert(includeReader.NodeType == XmlNodeType.Element && includeReader.Name == "Include");
 
 				readAction(includeReader, project);
 			}
