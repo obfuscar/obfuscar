@@ -146,7 +146,7 @@ namespace Obfuscar
 			}
 		}
 
-		private static XmlReaderSettings GetReaderSettings ()
+		internal static XmlReaderSettings GetReaderSettings ()
 		{
 			var settings = new XmlReaderSettings {
 				IgnoreProcessingInstructions = true,

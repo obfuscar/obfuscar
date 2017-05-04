@@ -100,193 +100,254 @@ namespace Obfuscar
 			}
 
 			if (!reader.IsEmptyElement) {
-				while (reader.Read ()) {
-					if (reader.NodeType == XmlNodeType.Element) {
-						string name = Helper.GetAttribute (reader, "name", vars);
+				FromXmlReadNode(reader, project, vars, info);
+			}
 
-						string rxStr = Helper.GetAttribute (reader, "rx");
-						Regex rx = null;
-						if (!string.IsNullOrEmpty (rxStr)) {
-							rx = new Regex (rxStr);
+			return info;
+		}
+
+		private static void FromXmlReadNode(XmlReader reader, Project project, Variables vars, AssemblyInfo info)
+		{
+			string val;
+			while (reader.Read())
+			{
+				if (reader.NodeType == XmlNodeType.Element)
+				{
+					string name = Helper.GetAttribute(reader, "name", vars);
+
+					string rxStr = Helper.GetAttribute(reader, "rx");
+					Regex rx = null;
+					if (!string.IsNullOrEmpty(rxStr))
+					{
+						rx = new Regex(rxStr);
+					}
+
+					string isStaticStr = Helper.GetAttribute(reader, "static", vars);
+					bool? isStatic = null;
+					if (!string.IsNullOrEmpty(isStaticStr))
+					{
+						isStatic = XmlConvert.ToBoolean(isStaticStr);
+					}
+
+					string isSerializableStr = Helper.GetAttribute(reader, "serializable", vars);
+					bool? isSerializable = null;
+					if (!string.IsNullOrEmpty(isSerializableStr))
+					{
+						isSerializable = XmlConvert.ToBoolean(isSerializableStr);
+					}
+
+					string attrib = Helper.GetAttribute(reader, "attrib", vars);
+					string inherits = Helper.GetAttribute(reader, "typeinherits", vars);
+					string type = Helper.GetAttribute(reader, "type", vars);
+					string typeattrib = Helper.GetAttribute(reader, "typeattrib", vars);
+
+					switch (reader.Name)
+					{
+						case "Include":
+						{
+							Project.ReadIncludeTag(reader, project, (includeReader, proj) => FromXmlReadNode(includeReader, proj, vars, info));
+							break;
 						}
-
-						string isStaticStr = Helper.GetAttribute (reader, "static", vars);
-						bool? isStatic = null;
-						if (!string.IsNullOrEmpty (isStaticStr)) {
-							isStatic = XmlConvert.ToBoolean (isStaticStr);
-						}
-
-						string isSerializableStr = Helper.GetAttribute (reader, "serializable", vars);
-						bool? isSerializable = null;
-						if (!string.IsNullOrEmpty (isSerializableStr)) {
-							isSerializable = XmlConvert.ToBoolean (isSerializableStr);
-						}
-
-						string attrib = Helper.GetAttribute (reader, "attrib", vars);
-						string inherits = Helper.GetAttribute (reader, "typeinherits", vars);
-						string type = Helper.GetAttribute (reader, "type", vars);
-						string typeattrib = Helper.GetAttribute (reader, "typeattrib", vars);
-
-						switch (reader.Name) {
 						case "SkipNamespace":
-							if (rx != null) {
-								info.skipNamespaces.Add (new NamespaceTester (rx));
-							} else {
-								info.skipNamespaces.Add (new NamespaceTester (name));
+							if (rx != null)
+							{
+								info.skipNamespaces.Add(new NamespaceTester(rx));
+							}
+							else
+							{
+								info.skipNamespaces.Add(new NamespaceTester(name));
 							}
 							break;
 						case "ForceNamespace":
-							if (rx != null) {
-								info.forceNamespaces.Add (new NamespaceTester (rx));
-							} else {
-								info.forceNamespaces.Add (new NamespaceTester (name));
+							if (rx != null)
+							{
+								info.forceNamespaces.Add(new NamespaceTester(rx));
+							}
+							else
+							{
+								info.forceNamespaces.Add(new NamespaceTester(name));
 							}
 							break;
 						case "SkipType":
 							TypeAffectFlags skipFlags = TypeAffectFlags.SkipNone;
 
-							val = Helper.GetAttribute (reader, "skipMethods", vars);
-							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+							val = Helper.GetAttribute(reader, "skipMethods", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean(val))
 								skipFlags |= TypeAffectFlags.AffectMethod;
 
-							val = Helper.GetAttribute (reader, "skipStringHiding", vars);
-							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+							val = Helper.GetAttribute(reader, "skipStringHiding", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean(val))
 								skipFlags |= TypeAffectFlags.AffectString;
 
-							val = Helper.GetAttribute (reader, "skipFields", vars);
-							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+							val = Helper.GetAttribute(reader, "skipFields", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean(val))
 								skipFlags |= TypeAffectFlags.AffectField;
 
-							val = Helper.GetAttribute (reader, "skipProperties", vars);
-							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+							val = Helper.GetAttribute(reader, "skipProperties", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean(val))
 								skipFlags |= TypeAffectFlags.AffectProperty;
 
-							val = Helper.GetAttribute (reader, "skipEvents", vars);
-							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+							val = Helper.GetAttribute(reader, "skipEvents", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean(val))
 								skipFlags |= TypeAffectFlags.AffectEvent;
 
-							if (rx != null) {
-								info.skipTypes.Add (new TypeTester (rx, skipFlags, attrib, inherits, isStatic, isSerializable));
-							} else {
-								info.skipTypes.Add (new TypeTester (name, skipFlags, attrib, inherits, isStatic, isSerializable));
+							if (rx != null)
+							{
+								info.skipTypes.Add(new TypeTester(rx, skipFlags, attrib, inherits, isStatic, isSerializable));
+							}
+							else
+							{
+								info.skipTypes.Add(new TypeTester(name, skipFlags, attrib, inherits, isStatic, isSerializable));
 							}
 							break;
 						case "ForceType":
 							TypeAffectFlags forceFlags = TypeAffectFlags.SkipNone;
 
-							val = Helper.GetAttribute (reader, "forceMethods", vars);
-							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+							val = Helper.GetAttribute(reader, "forceMethods", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean(val))
 								forceFlags |= TypeAffectFlags.AffectMethod;
 
-							val = Helper.GetAttribute (reader, "forceStringHiding", vars);
-							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+							val = Helper.GetAttribute(reader, "forceStringHiding", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean(val))
 								forceFlags |= TypeAffectFlags.AffectString;
 
-							val = Helper.GetAttribute (reader, "forceFields", vars);
-							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+							val = Helper.GetAttribute(reader, "forceFields", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean(val))
 								forceFlags |= TypeAffectFlags.AffectField;
 
-							val = Helper.GetAttribute (reader, "forceProperties", vars);
-							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+							val = Helper.GetAttribute(reader, "forceProperties", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean(val))
 								forceFlags |= TypeAffectFlags.AffectProperty;
 
-							val = Helper.GetAttribute (reader, "forceEvents", vars);
-							if (val.Length > 0 && XmlConvert.ToBoolean (val))
+							val = Helper.GetAttribute(reader, "forceEvents", vars);
+							if (val.Length > 0 && XmlConvert.ToBoolean(val))
 								forceFlags |= TypeAffectFlags.AffectEvent;
 
-							if (rx != null) {
-								info.forceTypes.Add (new TypeTester (rx, forceFlags, attrib, inherits, isStatic, isSerializable));
-							} else {
-								info.forceTypes.Add (new TypeTester (name, forceFlags, attrib, inherits, isStatic, isSerializable));
+							if (rx != null)
+							{
+								info.forceTypes.Add(new TypeTester(rx, forceFlags, attrib, inherits, isStatic, isSerializable));
+							}
+							else
+							{
+								info.forceTypes.Add(new TypeTester(name, forceFlags, attrib, inherits, isStatic, isSerializable));
 							}
 							break;
 						case "SkipMethod":
-							if (rx != null) {
-								info.skipMethods.Add (new MethodTester (rx, type, attrib, typeattrib, inherits, isStatic));
-							} else {
-								info.skipMethods.Add (new MethodTester (name, type, attrib, typeattrib, inherits, isStatic));
+							if (rx != null)
+							{
+								info.skipMethods.Add(new MethodTester(rx, type, attrib, typeattrib, inherits, isStatic));
+							}
+							else
+							{
+								info.skipMethods.Add(new MethodTester(name, type, attrib, typeattrib, inherits, isStatic));
 							}
 							break;
 						case "ForceMethod":
-							if (rx != null) {
-								info.forceMethods.Add (new MethodTester (rx, type, attrib, typeattrib, inherits, isStatic));
-							} else {
-								info.forceMethods.Add (new MethodTester (name, type, attrib, typeattrib, inherits, isStatic));
+							if (rx != null)
+							{
+								info.forceMethods.Add(new MethodTester(rx, type, attrib, typeattrib, inherits, isStatic));
+							}
+							else
+							{
+								info.forceMethods.Add(new MethodTester(name, type, attrib, typeattrib, inherits, isStatic));
 							}
 							break;
 						case "SkipStringHiding":
-							if (rx != null) {
-								info.skipStringHiding.Add (new MethodTester (rx, type, attrib, typeattrib));
-							} else {
-								info.skipStringHiding.Add (new MethodTester (name, type, attrib, typeattrib));
+							if (rx != null)
+							{
+								info.skipStringHiding.Add(new MethodTester(rx, type, attrib, typeattrib));
+							}
+							else
+							{
+								info.skipStringHiding.Add(new MethodTester(name, type, attrib, typeattrib));
 							}
 							break;
 						case "ForceStringHiding":
-							if (rx != null) {
-								info.forceStringHiding.Add (new MethodTester (rx, type, attrib, typeattrib));
-							} else {
-								info.forceStringHiding.Add (new MethodTester (name, type, attrib, typeattrib));
+							if (rx != null)
+							{
+								info.forceStringHiding.Add(new MethodTester(rx, type, attrib, typeattrib));
+							}
+							else
+							{
+								info.forceStringHiding.Add(new MethodTester(name, type, attrib, typeattrib));
 							}
 							break;
 						case "SkipField":
-							string decorator = Helper.GetAttribute (reader, "decorator", vars);
+							string decorator = Helper.GetAttribute(reader, "decorator", vars);
 
-							if (rx != null) {
-								info.skipFields.Add (new FieldTester (rx, type, attrib, typeattrib, inherits, decorator, isStatic, isSerializable));
-							} else {
-								info.skipFields.Add (new FieldTester (name, type, attrib, typeattrib, inherits, decorator, isStatic, isSerializable));
+							if (rx != null)
+							{
+								info.skipFields.Add(new FieldTester(rx, type, attrib, typeattrib, inherits, decorator, isStatic, isSerializable));
+							}
+							else
+							{
+								info.skipFields.Add(new FieldTester(name, type, attrib, typeattrib, inherits, decorator, isStatic, isSerializable));
 							}
 							break;
 						case "ForceField":
-							string decorator1 = Helper.GetAttribute (reader, "decorator", vars);
+							string decorator1 = Helper.GetAttribute(reader, "decorator", vars);
 
-							if (rx != null) {
-								info.forceFields.Add (new FieldTester (rx, type, attrib, typeattrib, inherits, decorator1, isStatic, isSerializable));
-							} else {
-								info.forceFields.Add (new FieldTester (name, type, attrib, typeattrib, inherits, decorator1, isStatic, isSerializable));
+							if (rx != null)
+							{
+								info.forceFields.Add(new FieldTester(rx, type, attrib, typeattrib, inherits, decorator1, isStatic, isSerializable));
+							}
+							else
+							{
+								info.forceFields.Add(new FieldTester(name, type, attrib, typeattrib, inherits, decorator1, isStatic, isSerializable));
 							}
 							break;
 						case "SkipProperty":
-							if (rx != null) {
-								info.skipProperties.Add (new PropertyTester (rx, type, attrib, typeattrib));
-							} else {
-								info.skipProperties.Add (new PropertyTester (name, type, attrib, typeattrib));
+							if (rx != null)
+							{
+								info.skipProperties.Add(new PropertyTester(rx, type, attrib, typeattrib));
+							}
+							else
+							{
+								info.skipProperties.Add(new PropertyTester(name, type, attrib, typeattrib));
 							}
 							break;
 						case "ForceProperty":
-							if (rx != null) {
-								info.forceProperties.Add (new PropertyTester (rx, type, attrib, typeattrib));
-							} else {
-								info.forceProperties.Add (new PropertyTester (name, type, attrib, typeattrib));
+							if (rx != null)
+							{
+								info.forceProperties.Add(new PropertyTester(rx, type, attrib, typeattrib));
+							}
+							else
+							{
+								info.forceProperties.Add(new PropertyTester(name, type, attrib, typeattrib));
 							}
 							break;
 						case "SkipEvent":
-							if (rx != null) {
-								info.skipEvents.Add (new EventTester (rx, type, attrib, typeattrib));
-							} else {
-								info.skipEvents.Add (new EventTester (name, type, attrib, typeattrib));
+							if (rx != null)
+							{
+								info.skipEvents.Add(new EventTester(rx, type, attrib, typeattrib));
+							}
+							else
+							{
+								info.skipEvents.Add(new EventTester(name, type, attrib, typeattrib));
 							}
 							break;
 						case "ForceEvent":
-							if (rx != null) {
-								info.forceEvents.Add (new EventTester (rx, type, attrib, typeattrib));
-							} else {
-								info.forceEvents.Add (new EventTester (name, type, attrib, typeattrib));
+							if (rx != null)
+							{
+								info.forceEvents.Add(new EventTester(rx, type, attrib, typeattrib));
+							}
+							else
+							{
+								info.forceEvents.Add(new EventTester(name, type, attrib, typeattrib));
 							}
 							break;
 						case "SkipEnums":
-							var skipEnumsValue = Helper.GetAttribute (reader, "value");
-							info.skipEnums = skipEnumsValue.Length > 0 && XmlConvert.ToBoolean (skipEnumsValue);
+							var skipEnumsValue = Helper.GetAttribute(reader, "value");
+							info.skipEnums = skipEnumsValue.Length > 0 && XmlConvert.ToBoolean(skipEnumsValue);
 							break;
-						}                    
-					} else if (reader.NodeType == XmlNodeType.EndElement && reader.Name == "Module") {
-						// hit end of module element...stop reading
-						break;
 					}
 				}
+				else if (reader.NodeType == XmlNodeType.EndElement && reader.Name == "Module")
+				{
+					// hit end of module element...stop reading
+					break;
+				}
 			}
-
-			return info;
 		}
 
 		/// <summary>
@@ -621,7 +682,7 @@ namespace Obfuscar
 
 		private bool ShouldSkip (TypeKey type, TypeAffectFlags flag, InheritMap map)
 		{
-			if (ShouldSkip (type.Namespace, map)) {				
+			if (ShouldSkip (type.Namespace, map)) {
 				return true;
 			}
 

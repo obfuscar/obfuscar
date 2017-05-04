@@ -25,6 +25,7 @@ using Mono.Cecil;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -141,40 +142,78 @@ namespace Obfuscar
 
 			project.vars.Add (SPECIALVAR_PROJECTFILEDIRECTORY, string.IsNullOrEmpty (projectFileDirectory) ? "." : projectFileDirectory);
 
-			while (reader.Read ()) {
-				if (reader.NodeType == XmlNodeType.Element) {
+			FromXmlReadNode(reader, project);
+
+			return project;
+		}
+
+		private static void FromXmlReadNode(XmlReader reader, Project project)
+		{
+			while (reader.Read())
+			{
+				if (reader.NodeType == XmlNodeType.Element)
+				{
 					switch (reader.Name) {
-					case "Var":
-						{
-							string name = Helper.GetAttribute (reader, "name");
+						case "Var": {
+							string name = Helper.GetAttribute(reader, "name");
 							if (name.Length > 0) {
-								string value = Helper.GetAttribute (reader, "value");
+								string value = Helper.GetAttribute(reader, "value");
 								if (value.Length > 0)
-									project.vars.Add (name, value);
+									project.vars.Add(name, value);
 								else
-									project.vars.Remove (name);
+									project.vars.Remove(name);
 							}
 							break;
 						}
-					case "Module":
-						AssemblyInfo info = AssemblyInfo.FromXml (project, reader, project.vars);
-						if (info.Exclude) {
-							project.copyAssemblyList.Add (info);
+						case "Module":
+							AssemblyInfo info = AssemblyInfo.FromXml(project, reader, project.vars);
+							if (info.Exclude) {
+								project.copyAssemblyList.Add(info);
+								break;
+							}
+							Console.WriteLine("Processing assembly: " + info.Definition.Name.FullName);
+							project.assemblyList.Add(info);
+							project.assemblyMap[info.Name] = info;
+							break;
+						case "AssemblySearchPath": {
+							string path = Environment.ExpandEnvironmentVariables(project.vars.Replace(Helper.GetAttribute(reader, "path")));
+							project.assemblySearchPaths.Add(path);
 							break;
 						}
-						Console.WriteLine ("Processing assembly: " + info.Definition.Name.FullName);
-						project.assemblyList.Add (info);
-						project.assemblyMap [info.Name] = info;
-						break;
-					case "AssemblySearchPath":
-						string path = Environment.ExpandEnvironmentVariables(project.vars.Replace(Helper.GetAttribute(reader, "path")));
-						project.assemblySearchPaths.Add(path);
-						break;
+						case "Include": {
+							ReadIncludeTag(reader, project, FromXmlReadNode);
+							break;
+						}
 					}
 				}
 			}
+		}
 
-			return project;
+		internal static void ReadIncludeTag(XmlReader parentReader, Project project, Action<XmlReader, Project> readAction)
+		{
+			if (parentReader == null)
+				throw new ArgumentNullException("parentReader");
+
+			if (readAction == null)
+				throw new ArgumentNullException("readAction");
+
+			string path = Environment.ExpandEnvironmentVariables(project.vars.Replace(Helper.GetAttribute(parentReader, "path")));
+			XmlReaderSettings includeReaderSettings = Obfuscator.GetReaderSettings();
+			using (XmlReader includeReader = XmlReader.Create(File.OpenRead(path), includeReaderSettings))
+			{
+				// Start reading
+				includeReader.Read();
+
+				// Skip declaration, if present
+				if (includeReader.NodeType == XmlNodeType.XmlDeclaration)
+				{
+					includeReader.Read();
+				}
+
+				Debug.Assert(includeReader.NodeType == XmlNodeType.Element && includeReader.Name == "Include");
+
+				readAction(includeReader, project);
+			}
 		}
 
 		private class Graph
