@@ -16,9 +16,9 @@
 		<releaseNotes>
 Version 2.2.5
 * Enabled string hiding.
-* Fixed GitHub#10 Added <Include> tag in configuration.
+* Fixed GitHub#10 Added Include" tag in configuration.
 * Fixed GitHub#99 Fixed a possible null reference exception.
-* Fixed GitHub#102 Added <AssemblySearchPath> tag in configuration.
+* Fixed GitHub#102 Added "AssemblySearchPath" tag in configuration.
 
 Version 2.2.4
 * Updated Mono.Cecil.
