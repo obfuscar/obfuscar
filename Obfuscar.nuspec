@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
 	<metadata>
-		<version>2.2.4</version>
+		<version>2.2.5</version>
 		<authors>Ryan Williams, and other contributors.</authors>
 		<owners>Lex Li</owners>
 		<licenseUrl>https://obfuscar.codeplex.com/license</licenseUrl>
@@ -14,6 +14,11 @@
 		<summary>Open source obfuscar for .NET and Mono.</summary>
 		<developmentDependency>true</developmentDependency>
 		<releaseNotes>
+Version 2.2.5
+* Enabled string hiding.
+* Fixed GitHub#10 Added <Include> tag in configuration.
+* Fixed GitHub#99 Fixed a possible null reference exception.
+* Fixed GitHub#102 Added <AssemblySearchPath> tag in configuration.
 
 Version 2.2.4
 * Updated Mono.Cecil.
