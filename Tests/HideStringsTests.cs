@@ -30,7 +30,7 @@ namespace ObfuscarTests
 {
 	public class HideStringsTests
 	{
-		//[Fact]
+		[Fact]
 		public void CheckHideStringsClassDoesNotExist ()
 		{
 			string xml = string.Format (
@@ -58,7 +58,7 @@ namespace ObfuscarTests
 			Assert.Null (expected);
 		}
 
-		//[Fact]
+		[Fact]
 		public void CheckHideStringsClassExists ()
 		{
 			string xml = string.Format (
@@ -90,7 +90,7 @@ namespace ObfuscarTests
 			Assert.Equal (6, expected.Methods.Count);
 		}
 
-		//[Fact]
+		[Fact]
 		public void CheckHideStringsClassSkip ()
 		{
 			string xml = string.Format (
@@ -124,7 +124,7 @@ namespace ObfuscarTests
 			Assert.Equal (4, expected.Methods.Count);
 		}
 
-		//[Fact]
+		[Fact]
 		public void CheckHideStringsClassForce ()
 		{
 			string xml = string.Format (
@@ -158,7 +158,7 @@ namespace ObfuscarTests
 			Assert.Equal (4, expected.Methods.Count);
 		}
 
-		//[Fact]
+		[Fact]
 		public void CheckHideStringsClassForce2 ()
 		{
 			string xml = string.Format (
