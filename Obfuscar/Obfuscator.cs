@@ -1252,7 +1252,7 @@ namespace Obfuscar
 				Method3 = library.MainModule.Import (runtimeHelpers.Methods.FirstOrDefault (method => method.Name == "InitializeArray"));
 
 				// New static class with a method for each unique string we substitute.
-				NewType = new TypeDefinition ("<PrivateImplementationDetails>{" + Guid.NewGuid ().ToString ().ToUpper () + "}", null, TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, systemObjectTypeReference);
+				NewType = new TypeDefinition ("<PrivateImplementationDetails>{" + Guid.NewGuid ().ToString ().ToUpper () + "}", Guid.NewGuid ().ToString ().ToUpper (), TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, systemObjectTypeReference);
 
 				// Add struct for constant byte array data
 				StructType = new TypeDefinition ("\0", "", TypeAttributes.ExplicitLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.NestedPrivate, systemValueTypeTypeReference);
