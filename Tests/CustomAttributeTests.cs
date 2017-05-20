@@ -26,6 +26,7 @@ using System.IO;
 using System.Linq;
 using Mono.Cecil;
 using Xunit;
+using Obfuscar;
 
 namespace ObfuscarTests
 {
@@ -102,6 +103,25 @@ namespace ObfuscarTests
 			}
 
 			Assert.True (found, "Should have found non-<Module> type.");
+		}
+
+		[Fact]
+		public void TestInclude()
+		{
+			string xml = String.Format(
+				@"<?xml version='1.0'?>" +
+				@"<Obfuscator>" +
+				@"<Var name='InPath' value='{0}' />" +
+				@"<Var name='OutPath' value='{1}' />" +
+				@"<Var name='KeepPublicApi' value='false' />" +
+				@"<Var name='HidePrivateApi' value='true' />" +
+				@"<Include path='$(InPath){2}TestInclude.xml' />" +
+				@"<Module file='$(InPath){2}AssemblyWithCustomAttr.dll'>" +
+				@"<Include path='$(InPath){2}TestIncludeModule.xml' />" +
+				@"</Module>" +
+				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+
+			Obfuscator obfuscator = Obfuscator.CreateFromXml(xml);
 		}
 	}
 }

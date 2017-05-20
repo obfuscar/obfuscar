@@ -72,7 +72,6 @@
     <Compile Include="HideStringsTests.cs" />
     <Compile Include="PortableTests.cs" />
     <Compile Include="ResourcesTests.cs" />
-    <Compile Include="IncludeTests.cs" />
     <Compile Include="SigningTests.cs" />
     <Compile Include="SkipNestedTypeTests.cs" />
     <Compile Include="SkipVirtualMethodTest.cs" />

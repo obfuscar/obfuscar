@@ -38,8 +38,13 @@ namespace ObfuscarTests
 		public static void CleanInput()
 		{
 			// clean out inputPath
-			//foreach (string file in Directory.GetFiles (InputPath, "*.dll" ))
-			//	File.Delete (file);
+			try
+			{
+				//foreach (string file in Directory.GetFiles(InputPath, "*.dll"))
+					//File.Delete(file);
+			}
+			catch
+			{ }
 		}
 
 		public static void BuildAssembly(string name, string suffix = null )
@@ -61,7 +66,13 @@ namespace ObfuscarTests
 
 			string dllName = String.IsNullOrEmpty( suffix ) ? name : name + suffix;
 
-			cp.OutputAssembly = GetAssemblyPath (dllName);
+			string fileName = GetAssemblyPath(dllName);
+			if (File.Exists(fileName))
+			{
+				return;
+			}
+
+			cp.OutputAssembly = fileName;
 			CompilerResults cr = provider.CompileAssemblyFromFile( cp, Path.Combine( InputPath, name + ".cs" ) );
 			if ( cr.Errors.HasErrors ) {
 				Assert.True(false, "Unable to compile test assembly:  " + dllName + ":" + cr.Errors[0].ErrorText);
