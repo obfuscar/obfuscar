@@ -46,7 +46,8 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckGeneric()
 		{
-			string xml = String.Format(
+			string outputPath = TestHelper.OutputPath;
+			string xml = string.Format(
 									  @"<?xml version='1.0'?>" +
 									  @"<Obfuscator>" +
 									  @"<Var name='InPath' value='{0}' />" +
@@ -55,7 +56,7 @@ namespace ObfuscarTests
 									  @"<Var name='HidePrivateApi' value='true' />" +
 									  @"<Var name='KeepPublicApi' value='false' />" +
 									  @"<Module file='$(InPath){2}WindowsFormsApplication1.exe' />" +
-									  @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+									  @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput();
 
@@ -66,7 +67,7 @@ namespace ObfuscarTests
 			var map = TestHelper.Obfuscate(xml).Mapping;
 
 			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
-														Path.Combine(TestHelper.OutputPath, "WindowsFormsApplication1.exe"));
+														Path.Combine(outputPath, "WindowsFormsApplication1.exe"));
 			Assert.False (outAssmDef.MainModule.Resources.Any(item => item.Name == "WindowsFormsApplication1.Properties.Resources.resources"));
 			Assert.False (outAssmDef.MainModule.Resources.Any(item => item.Name == "WindowsFormsApplication1.CustomForm.resources"));
 			Assert.False (outAssmDef.MainModule.Resources.Any(item => item.Name == "WindowsFormsApplication1.CustomForm1.resources"));

@@ -157,7 +157,7 @@ namespace Obfuscar
 			return settings;
 		}
 
-		private Project Project { get; set; }
+		internal Project Project { get; set; }
 
 		private void LoadFromReader (XmlReader reader, string projectFileDirectory)
 		{

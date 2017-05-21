@@ -31,25 +31,27 @@ namespace ObfuscarTests
 {
 	public class AttributeTests
 	{
-		public void BuildAndObfuscateAssemblies()
+		public string BuildAndObfuscateAssemblies()
 		{
-			string xml = String.Format (
+			var output = TestHelper.OutputPath;
+			var name = "AssemblyWithAttrs";
+			string xml = string.Format (
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath){2}AssemblyWithAttrs.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				@"<Module file='$(InPath){2}{3}.dll' />" +
+				@"</Obfuscator>", TestHelper.InputPath, output, Path.DirectorySeparatorChar, name);
 
-			TestHelper.BuildAndObfuscate ("AssemblyWithAttrs", String.Empty, xml);
+			TestHelper.BuildAndObfuscate (name, String.Empty, xml);
+			return Path.Combine(output, $"{name}.dll");
 		}
 
 		[Fact]
 		public void CheckClassHasAttribute ()
 		{
-			BuildAndObfuscateAssemblies ();
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
-				Path.Combine (TestHelper.OutputPath, "AssemblyWithAttrs.dll"));
+			var output = BuildAndObfuscateAssemblies ();
+			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (output);
 
 			Assert.Equal (2, assmDef.MainModule.Types.Count); // "Should contain only one type, and <Module>.");
 
@@ -77,9 +79,8 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckMethodHasAttribute ()
 		{
-			BuildAndObfuscateAssemblies();
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
-				Path.Combine (TestHelper.OutputPath, "AssemblyWithAttrs.dll"));
+			var output = BuildAndObfuscateAssemblies();
+			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (output);
 
 			bool found = false;
 			foreach (TypeDefinition typeDef in assmDef.MainModule.Types) {

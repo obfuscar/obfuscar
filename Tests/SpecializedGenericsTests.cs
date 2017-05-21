@@ -26,12 +26,13 @@ using System;
 using System.IO;
 using Mono.Cecil;
 using Xunit;
+using Obfuscar;
 
 namespace ObfuscarTests
 {
 	public class SpecializedGenericsTests
 	{
-		Obfuscar.ObfuscationMap BuildAndObfuscateAssemblies ()
+		Obfuscator BuildAndObfuscateAssemblies ()
 		{
 			string xml = String.Format (
 				             @"<?xml version='1.0'?>" +
@@ -43,9 +44,7 @@ namespace ObfuscarTests
 				             @"<Module file='$(InPath){2}AssemblyWithSpecializedGenerics.dll' />" +
 				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
-			Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate ("AssemblyWithSpecializedGenerics", String.Empty, xml);
-
-			return obfuscator.Mapping;
+			return TestHelper.BuildAndObfuscate ("AssemblyWithSpecializedGenerics", String.Empty, xml);
 		}
 
 		MethodDefinition FindByName (TypeDefinition typeDef, string name)
@@ -61,7 +60,8 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckClassHasAttribute ()
 		{
-			Obfuscar.ObfuscationMap map = BuildAndObfuscateAssemblies ();
+			Obfuscator item = BuildAndObfuscateAssemblies ();
+			ObfuscationMap map = item.Mapping;
 
 			string assmName = "AssemblyWithSpecializedGenerics.dll";
 
@@ -69,7 +69,7 @@ namespace ObfuscarTests
 				                               Path.Combine (TestHelper.InputPath, assmName));
 
 			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly (
-				                                Path.Combine (TestHelper.OutputPath, assmName));
+				                                Path.Combine (item.Project.Settings.OutPath, assmName));
 
 			{
 				TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.ClassA`1");
@@ -78,12 +78,12 @@ namespace ObfuscarTests
 				TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.ClassB");
 				MethodDefinition classBmethod2 = FindByName (classBType, "Method2");
 
-				Obfuscar.ObfuscatedThing classAEntry = map.GetMethod (new Obfuscar.MethodKey (classAmethod2));
-				Obfuscar.ObfuscatedThing classBEntry = map.GetMethod (new Obfuscar.MethodKey (classBmethod2));
+				ObfuscatedThing classAEntry = map.GetMethod (new MethodKey(classAmethod2));
+				ObfuscatedThing classBEntry = map.GetMethod (new MethodKey(classBmethod2));
 
 				Assert.True (
-					classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
-					classBEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
+					classAEntry.Status == ObfuscationStatus.Renamed &&
+					classBEntry.Status == ObfuscationStatus.Renamed,
 					"Both methods should have been renamed.");
 
 				Assert.True (
@@ -98,12 +98,12 @@ namespace ObfuscarTests
 				TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.ClassB");
 				MethodDefinition classBmethod2 = FindByName (classBType, "Method3");
 
-				Obfuscar.ObfuscatedThing classAEntry = map.GetMethod (new Obfuscar.MethodKey (classAmethod2));
-				Obfuscar.ObfuscatedThing classBEntry = map.GetMethod (new Obfuscar.MethodKey (classBmethod2));
+				ObfuscatedThing classAEntry = map.GetMethod (new MethodKey(classAmethod2));
+				ObfuscatedThing classBEntry = map.GetMethod (new MethodKey(classBmethod2));
 
 				Assert.True (
-					classAEntry.Status == Obfuscar.ObfuscationStatus.Renamed &&
-					classBEntry.Status == Obfuscar.ObfuscationStatus.Renamed,
+					classAEntry.Status == ObfuscationStatus.Renamed &&
+					classBEntry.Status == ObfuscationStatus.Renamed,
 					"Both methods should have been renamed.");
 
 				Assert.True (

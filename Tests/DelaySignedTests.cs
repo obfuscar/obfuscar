@@ -44,7 +44,8 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckGeneric()
 		{
-			string xml = String.Format(
+			string outputPath = TestHelper.OutputPath;
+			string xml = string.Format(
 							 @"<?xml version='1.0'?>" +
 							 @"<Obfuscator>" +
 							 @"<Var name='InPath' value='{0}' />" +
@@ -53,7 +54,7 @@ namespace ObfuscarTests
 							 @"<Var name='HidePrivateApi' value='true' />" +
 							 @"<Var name='KeepPublicApi' value='false' />" +
 							 @"<Module file='$(InPath){2}DelaySigned.dll' />" +
-							 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+							 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput();
 			var assembly = Path.Combine(TestHelper.InputPath, "DelaySigned.dll");
@@ -66,7 +67,7 @@ namespace ObfuscarTests
 			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(assembly);
 			Assert.False(inAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
 
-			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.OutputPath, "DelaySigned.dll"));
+			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(Path.Combine(outputPath, "DelaySigned.dll"));
 			Assert.True(outAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
 		}
 	}

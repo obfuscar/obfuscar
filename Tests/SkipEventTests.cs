@@ -92,14 +92,15 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckDropsEvents ()
 		{
-			string xml = String.Format (
+			string outputPath = TestHelper.OutputPath;
+			string xml = string.Format (
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath){2}AssemblyWithEvents.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithEvents", String.Empty, xml);
 
@@ -111,22 +112,23 @@ namespace ObfuscarTests
 				"EventA"
 			};
 
-			CheckEvents ("AssemblyWithEvents", 1, expected, notExpected);
+			CheckEvents (Path.Combine(outputPath, "AssemblyWithEvents.dll"), 1, expected, notExpected);
 		}
 
 		[Fact]
 		public void CheckSkipEventsByName ()
 		{
-			string xml = String.Format (
+			string outputPath = TestHelper.OutputPath;
+			string xml = string.Format (
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
-							 @"<Var name='HidePrivateApi' value='true' />" +
+				@"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath){2}AssemblyWithEvents.dll'>" +
 				@"<SkipEvent type='TestClasses.ClassA' name='Event2' attrib='public' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithEvents", String.Empty, xml);
 
@@ -139,13 +141,14 @@ namespace ObfuscarTests
 				"EventA"
 			};
 
-			CheckEvents ("AssemblyWithEvents", 1, expected, notExpected);
+			CheckEvents (Path.Combine(outputPath, "AssemblyWithEvents.dll"), 1, expected, notExpected);
 		}
 
 		[Fact]
 		public void CheckSkipEventsByRx ()
 		{
-			string xml = String.Format (
+			string outputPath = TestHelper.OutputPath;
+			string xml = string.Format (
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
@@ -154,7 +157,7 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath){2}AssemblyWithEvents.dll'>" +
 				@"<SkipEvent type='TestClasses.ClassA' rx='Event\d' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithEvents", String.Empty, xml);
 
@@ -167,7 +170,7 @@ namespace ObfuscarTests
 				"EventA"
 			};
 
-			CheckEvents ("AssemblyWithEvents", 1, expected, notExpected);
+			CheckEvents (Path.Combine(outputPath, "AssemblyWithEvents.dll"), 1, expected, notExpected);
 		}
 	}
 }

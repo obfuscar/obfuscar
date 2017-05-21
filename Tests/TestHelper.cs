@@ -33,7 +33,13 @@ namespace ObfuscarTests
 	static class TestHelper
 	{
 		public static string InputPath = Path.Combine("..", "..", "Input");
-		public static string OutputPath = Path.Combine("..", "..", "Output");
+
+		private static int count;
+
+		public static string OutputPath
+		{
+			get { return Path.Combine("..", "..", "Output", (count++).ToString()); }
+		}
 
 		public static void CleanInput()
 		{

@@ -35,13 +35,14 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckCannotObfuscateSigned( )
 		{
-			string xml = String.Format(
+			string outputPath = TestHelper.OutputPath;
+			string xml = string.Format(
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Module file='$(InPath){2}WpfApplication1.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput( );
 
@@ -54,7 +55,7 @@ namespace ObfuscarTests
 				Path.Combine(TestHelper.InputPath, "WpfApplication1.dll"));
 
 			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
-				Path.Combine(TestHelper.OutputPath, "WpfApplication1.dll"));
+				Path.Combine(outputPath, "WpfApplication1.dll"));
 
 			TypeDefinition classAType = inAssmDef.MainModule.GetType("WpfApplication1.MainWindow");
 			var obfuscated = map.GetClass(new TypeKey(classAType));

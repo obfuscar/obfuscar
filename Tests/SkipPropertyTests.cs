@@ -71,14 +71,15 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckDropsProperties ()
 		{
-			string xml = String.Format (
+			string outputPath = TestHelper.OutputPath;
+			string xml = string.Format (
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
 				@"<Var name='OutPath' value='{1}' />" +
 				@"<Var name='HidePrivateApi' value='true' />" +
 				@"<Module file='$(InPath){2}AssemblyWithProperties.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithProperties", String.Empty, xml);
 
@@ -90,13 +91,14 @@ namespace ObfuscarTests
 				"PropertyA"
 			};
 
-			CheckProperties ("AssemblyWithProperties", 1, expected, notExpected);
+			CheckProperties (Path.Combine(outputPath, "AssemblyWithProperties.dll"), 1, expected, notExpected);
 		}
 
 		[Fact]
 		public void CheckSkipPropertyByName ()
 		{
-			string xml = String.Format (
+			string outputPath = TestHelper.OutputPath;
+			string xml = string.Format (
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
@@ -105,7 +107,7 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath){2}AssemblyWithProperties.dll'>" +
 				@"<SkipProperty type='TestClasses.ClassA' name='Property2' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithProperties", String.Empty, xml);
 
@@ -118,13 +120,14 @@ namespace ObfuscarTests
 				"PropertyA"
 			};
 
-			CheckProperties ("AssemblyWithProperties", 1, expected, notExpected);
+			CheckProperties (Path.Combine(outputPath, "AssemblyWithProperties.dll"), 1, expected, notExpected);
 		}
 
 		[Fact]
 		public void CheckSkipPropertyByRx ()
 		{
-			string xml = String.Format (
+			string outputPath = TestHelper.OutputPath;
+			string xml = string.Format (
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
 				@"<Var name='InPath' value='{0}' />" +
@@ -133,7 +136,7 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath){2}AssemblyWithProperties.dll'>" +
 				@"<SkipProperty type='TestClasses.ClassA' rx='Property\d' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithProperties", String.Empty, xml);
 
@@ -146,7 +149,7 @@ namespace ObfuscarTests
 				"PropertyA"
 			};
 
-			CheckProperties ("AssemblyWithProperties", 1, expected, notExpected);
+			CheckProperties (Path.Combine(outputPath, "AssemblyWithProperties.dll"), 1, expected, notExpected);
 		}
 	}
 }

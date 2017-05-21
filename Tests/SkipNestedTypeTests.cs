@@ -34,6 +34,7 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckNestedTypes ()
 		{
+			var output = TestHelper.OutputPath;
 			string xml = String.Format (
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
@@ -43,7 +44,7 @@ namespace ObfuscarTests
 				@"<Module file='$(InPath){2}AssemblyWithNestedTypes.dll'>" +
 				@"<SkipType name='TestClasses.ClassA/NestedClassA' />" +
 				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				@"</Obfuscator>", TestHelper.InputPath, output, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithNestedTypes", string.Empty, xml);
 
@@ -53,7 +54,7 @@ namespace ObfuscarTests
 			typesToFind.Add ("A.A/a/A");
 			typesToFind.Add ("A.A/NestedClassA");
 
-			AssemblyHelper.CheckAssembly ("AssemblyWithNestedTypes", 1,
+			AssemblyHelper.CheckAssembly (Path.Combine(output, "AssemblyWithNestedTypes.dll"), 1,
 				delegate {
 				return true;
 			},
@@ -67,7 +68,8 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckDefault ()
 		{
-			string xml = String.Format (
+			string outputPath = TestHelper.OutputPath;
+			string xml = string.Format (
 				             @"<?xml version='1.0'?>" +
 				             @"<Obfuscator>" +
 				             @"<Var name='InPath' value='{0}' />" +
@@ -76,7 +78,7 @@ namespace ObfuscarTests
 				             @"<Var name='KeepPublicApi' value='true' />" +
 				             @"<Module file='$(InPath){2}AssemblyWithNestedTypes2.dll'>" +
 				             @"</Module>" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				             @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.BuildAndObfuscate ("AssemblyWithNestedTypes2", string.Empty, xml);
 
@@ -86,7 +88,7 @@ namespace ObfuscarTests
 			typesToFind.Add ("TestClasses.ClassA/NestedClassB");
 			typesToFind.Add ("TestClasses.ClassA/NestedClassB/NestedClassC");
 
-			AssemblyHelper.CheckAssembly ("AssemblyWithNestedTypes2", 1,
+			AssemblyHelper.CheckAssembly (Path.Combine(outputPath, "AssemblyWithNestedTypes2.dll"), 1,
 				delegate {
 					return true;
 				},

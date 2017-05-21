@@ -34,6 +34,7 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckPortable()
 		{
+			string outputPath = TestHelper.OutputPath;
 			string xml = string.Format(
 				@"<?xml version='1.0'?>" +
 				@"<Obfuscator>" +
@@ -42,7 +43,7 @@ namespace ObfuscarTests
 				@"<Var name='HideStrings' value='false' />" +
 				@"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
 				@"<Module file='$(InPath){2}SharpSnmpLib.Portable.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput();
 
@@ -55,7 +56,7 @@ namespace ObfuscarTests
 				Path.Combine(TestHelper.InputPath, "SharpSnmpLib.Portable.dll"));
 
 			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
-				Path.Combine(TestHelper.OutputPath, "SharpSnmpLib.Portable.dll"));
+				Path.Combine(outputPath, "SharpSnmpLib.Portable.dll"));
 
 			var corlibs = outAssmDef.MainModule.AssemblyReferences.Where(reference => reference.Name == "mscorlib");
 			Assert.Equal(1, corlibs.Count());

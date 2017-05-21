@@ -45,7 +45,8 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckGeneric ()
 		{
-			string xml = String.Format (
+			string outputPath = TestHelper.OutputPath;
+			string xml = string.Format (
 				                      @"<?xml version='1.0'?>" +
 				                      @"<Obfuscator>" +
 				                      @"<Var name='InPath' value='{0}' />" +
@@ -53,7 +54,7 @@ namespace ObfuscarTests
 				                      @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
 				                      @"<Var name='HidePrivateApi' value='true' />" +
 				                      @"<Module file='$(InPath){2}FSharp.Compiler.dll' />" +
-				                      @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				                      @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput ();
 

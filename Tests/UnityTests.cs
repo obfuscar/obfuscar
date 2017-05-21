@@ -45,7 +45,8 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckGeneric ()
 		{
-			string xml = String.Format (
+			string outputPath = TestHelper.OutputPath;
+			string xml = string.Format (
 				             @"<?xml version='1.0'?>" +
 				             @"<Obfuscator>" +
 				             @"<Var name='InPath' value='{0}' />" +
@@ -54,7 +55,7 @@ namespace ObfuscarTests
 				             @"<Var name='HidePrivateApi' value='true' />" +
 				             @"<Var name='KeepPublicApi' value='false' />" +
 				             @"<Module file='$(InPath){2}Microsoft.Practices.Unity.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+				             @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
 			TestHelper.CleanInput ();
 
@@ -79,7 +80,7 @@ namespace ObfuscarTests
 			var typeB = map.GetClass (new TypeKey (classB));
 
 			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly (
-				                                Path.Combine (TestHelper.OutputPath, "Microsoft.Practices.Unity.dll"));
+												Path.Combine (outputPath, "Microsoft.Practices.Unity.dll"));
 
 			var name = type.StatusText.Substring (27);
 			var obfuscated = outAssmDef.MainModule.GetType (name);

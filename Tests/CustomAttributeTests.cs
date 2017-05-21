@@ -32,26 +32,29 @@ namespace ObfuscarTests
 {
 	public class CustomAttributeTests
 	{
-		public CustomAttributeTests ()
+		public string BuildAndObfuscate()
 		{
-			string xml = String.Format (
-				             @"<?xml version='1.0'?>" +
-				             @"<Obfuscator>" +
-				             @"<Var name='InPath' value='{0}' />" +
-				             @"<Var name='OutPath' value='{1}' />" +
+			var output = TestHelper.OutputPath;
+			var name = "AssemblyWithCustomAttr";
+			string xml = String.Format(
+							 @"<?xml version='1.0'?>" +
+							 @"<Obfuscator>" +
+							 @"<Var name='InPath' value='{0}' />" +
+							 @"<Var name='OutPath' value='{1}' />" +
 							 @"<Var name='KeepPublicApi' value='false' />" +
-				             @"<Var name='HidePrivateApi' value='true' />" +
-				             @"<Module file='$(InPath){2}AssemblyWithCustomAttr.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+							 @"<Var name='HidePrivateApi' value='true' />" +
+							 @"<Module file='$(InPath){2}{3}.dll' />" +
+							 @"</Obfuscator>", TestHelper.InputPath, output, Path.DirectorySeparatorChar, name);
 
-			TestHelper.BuildAndObfuscate ("AssemblyWithCustomAttr", String.Empty, xml);
+			TestHelper.BuildAndObfuscate (name, String.Empty, xml);
+			return Path.Combine(output, $"{name}.dll");
 		}
 
 		[Fact]
 		public void CheckClassHasAttribute ()
 		{
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
-				                             Path.Combine (TestHelper.OutputPath, "AssemblyWithCustomAttr.dll"));
+			var output = BuildAndObfuscate();
+			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (output);
 
 			Assert.Equal (3, assmDef.MainModule.Types.Count); // "Should contain only one type, and <Module>.");
 
@@ -79,8 +82,8 @@ namespace ObfuscarTests
 		[Fact]
 		public void CheckMethodHasAttribute ()
 		{
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
-				                             Path.Combine (TestHelper.OutputPath, "AssemblyWithCustomAttr.dll"));
+			var output = BuildAndObfuscate();
+			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (output);
 
 			bool found = false;
 			foreach (TypeDefinition typeDef in assmDef.MainModule.Types) {
