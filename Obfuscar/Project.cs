@@ -159,9 +159,14 @@ namespace Obfuscar
 							if (name.Length > 0) {
 								string value = Helper.GetAttribute(reader, "value");
 								if (value.Length > 0)
+								{
+									value = Environment.ExpandEnvironmentVariables(project.vars.Replace(value));
 									project.vars.Add(name, value);
+								}
 								else
+								{
 									project.vars.Remove(name);
+								}
 							}
 							break;
 						}
