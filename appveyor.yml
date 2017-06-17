@@ -3,6 +3,6 @@ image: Visual Studio 2017
 before_build:
 - git submodule update --init --recursive
 build_script:
-- pack.bat
+- dist.pack.bat
 test_script:
 - test.bat
