@@ -70,6 +70,7 @@
     <Compile Include="CustomAttributeTests.cs" />
     <Compile Include="FunctionOverridingTests.cs" />
     <Compile Include="HideStringsTests.cs" />
+    <Compile Include="NetStandardTests.cs" />
     <Compile Include="PortableTests.cs" />
     <Compile Include="ResourcesTests.cs" />
     <Compile Include="SigningTests.cs" />
@@ -125,7 +126,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Mono.Cecil">
-      <Version>0.10.0-beta5</Version>
+      <Version>0.10.0-beta6</Version>
     </PackageReference>
     <PackageReference Include="more.xunit.runner.utility">
       <Version>2.2.2</Version>
