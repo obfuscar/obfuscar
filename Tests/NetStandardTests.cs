@@ -1,4 +1,5 @@
 ﻿#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,6 +21,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
 
 using System.IO;
@@ -29,43 +31,46 @@ using Xunit;
 
 namespace ObfuscarTests
 {
-	public class NetStandardTests
-	{
-		[Fact]
-		public void CheckNetStandard()
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format(
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Var name='KeepPublicApi' value='false' />" +
-				@"<Var name='HideStrings' value='true' />" +
-				@"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
-				@"<Module file='$(InPath){2}SharpSnmpLib.NetStandard.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+    public class NetStandardTests
+    {
+        [Fact]
+        public void CheckNetStandard()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Var name='HideStrings' value='true' />" +
+                @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
+                @"<Module file='$(InPath){2}SharpSnmpLib.NetStandard.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.CleanInput();
+            TestHelper.CleanInput();
 
-			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy(Path.Combine(TestHelper.InputPath, @"..", "SharpSnmpLib.NetStandard.dll"), Path.Combine(TestHelper.InputPath, "SharpSnmpLib.NetStandard.dll"), true);
-			File.Copy(Path.Combine(TestHelper.InputPath, @"..", "System.ComponentModel.TypeConverter.dll"), Path.Combine(TestHelper.InputPath, "System.ComponentModel.TypeConverter.dll"), true);
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "SharpSnmpLib.NetStandard.dll"),
+                Path.Combine(TestHelper.InputPath, "SharpSnmpLib.NetStandard.dll"), true);
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "System.ComponentModel.TypeConverter.dll"),
+                Path.Combine(TestHelper.InputPath, "System.ComponentModel.TypeConverter.dll"), true);
 
-			var map = TestHelper.Obfuscate(xml, true).Mapping;
+            var map = TestHelper.Obfuscate(xml, true).Mapping;
 
-			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
-				Path.Combine(TestHelper.InputPath, "SharpSnmpLib.NetStandard.dll"));
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(TestHelper.InputPath, "SharpSnmpLib.NetStandard.dll"));
 
-			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
-				Path.Combine(outputPath, "SharpSnmpLib.NetStandard.dll"));
+            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "SharpSnmpLib.NetStandard.dll"));
 
-			var corlibs = outAssmDef.MainModule.AssemblyReferences.Where(reference => reference.Name == "mscorlib");
-			Assert.Equal(0, corlibs.Count());
+            var corlibs = outAssmDef.MainModule.AssemblyReferences.Where(reference => reference.Name == "mscorlib");
+            Assert.Equal(0, corlibs.Count());
 
-			var runtime = outAssmDef.MainModule.AssemblyReferences.Where(reference => reference.Name == "System.Runtime");
-			Assert.Equal(1, runtime.Count());
-			Assert.Equal("4.0.20.0", runtime.First().Version.ToString());
-		}
-	}
+            var runtime =
+                outAssmDef.MainModule.AssemblyReferences.Where(reference => reference.Name == "System.Runtime");
+            Assert.Equal(1, runtime.Count());
+            Assert.Equal("4.0.20.0", runtime.First().Version.ToString());
+        }
+    }
 }

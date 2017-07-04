@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,6 +21,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
 
 using System;
@@ -30,36 +32,37 @@ using Xunit;
 
 namespace ObfuscarTests
 {
-	public class BamlTests
-	{
-		[Fact]
-		public void CheckCannotObfuscateSigned( )
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format(
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Module file='$(InPath){2}WpfApplication1.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+    public class BamlTests
+    {
+        [Fact]
+        public void CheckCannotObfuscateSigned()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Module file='$(InPath){2}WpfApplication1.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.CleanInput( );
+            TestHelper.CleanInput();
 
-			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WpfApplication1.dll"), Path.Combine(TestHelper.InputPath, "WpfApplication1.dll"), true);
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WpfApplication1.dll"),
+                Path.Combine(TestHelper.InputPath, "WpfApplication1.dll"), true);
 
-			var map = TestHelper.Obfuscate( xml ).Mapping;
+            var map = TestHelper.Obfuscate(xml).Mapping;
 
-			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
-				Path.Combine(TestHelper.InputPath, "WpfApplication1.dll"));
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(TestHelper.InputPath, "WpfApplication1.dll"));
 
-			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
-				Path.Combine(outputPath, "WpfApplication1.dll"));
+            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "WpfApplication1.dll"));
 
-			TypeDefinition classAType = inAssmDef.MainModule.GetType("WpfApplication1.MainWindow");
-			var obfuscated = map.GetClass(new TypeKey(classAType));
-			Assert.True(obfuscated.Status == ObfuscationStatus.Skipped);
-		}
-	}
+            TypeDefinition classAType = inAssmDef.MainModule.GetType("WpfApplication1.MainWindow");
+            var obfuscated = map.GetClass(new TypeKey(classAType));
+            Assert.True(obfuscated.Status == ObfuscationStatus.Skipped);
+        }
+    }
 }

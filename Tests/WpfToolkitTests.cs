@@ -1,4 +1,5 @@
 ﻿#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,6 +21,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
 
 using Mono.Cecil;
@@ -46,28 +48,32 @@ namespace ObfuscarTests
         public void CheckGeneric()
         {
             string xml = String.Format(
-                             @"<?xml version='1.0'?>" +
-                             @"<Obfuscator>" +
-                             @"<Var name='InPath' value='{0}' />" +
-                             @"<Var name='OutPath' value='{1}' />" +
-                             @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
-                             @"<Var name='HidePrivateApi' value='true' />" +
-                             @"<Var name='KeepPublicApi' value='false' />" +
-                             @"<Module file='$(InPath){2}System.Windows.Controls.DataVisualization.Toolkit.dll' />" +
-                             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Module file='$(InPath){2}System.Windows.Controls.DataVisualization.Toolkit.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "System.Windows.Controls.DataVisualization.Toolkit.dll"), Path.Combine(TestHelper.InputPath, "System.Windows.Controls.DataVisualization.Toolkit.dll"), true);
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WPFToolkit.dll"), Path.Combine(TestHelper.InputPath, "WPFToolkit.dll"), true);
+            File.Copy(
+                Path.Combine(TestHelper.InputPath, @"..", "System.Windows.Controls.DataVisualization.Toolkit.dll"),
+                Path.Combine(TestHelper.InputPath, "System.Windows.Controls.DataVisualization.Toolkit.dll"), true);
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WPFToolkit.dll"),
+                Path.Combine(TestHelper.InputPath, "WPFToolkit.dll"), true);
 
             var map = TestHelper.Obfuscate(xml).Mapping;
 
             AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
-                                               Path.Combine(TestHelper.InputPath, "System.Windows.Controls.DataVisualization.Toolkit.dll"));
+                Path.Combine(TestHelper.InputPath, "System.Windows.Controls.DataVisualization.Toolkit.dll"));
 
-            TypeDefinition classAType = inAssmDef.MainModule.GetType("System.Windows.Controls.DataVisualization.Charting.NullableConverter`1");
+            TypeDefinition classAType =
+                inAssmDef.MainModule.GetType("System.Windows.Controls.DataVisualization.Charting.NullableConverter`1");
             var type = map.GetClass(new TypeKey(classAType));
             Assert.True(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
         }

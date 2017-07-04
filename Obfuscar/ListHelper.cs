@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,32 +21,36 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Obfuscar
 {
-	static class ListHelper
-	{
-		public static bool ListsEqual<T> (IList<T> a, IList<T> b)
-		{
-			if (a == null)
-				return b == null;
-			else if (b == null)
-				return false;
-			else if (a.Count != b.Count)
-				return false;
-			else {
-				for (int i = 0; i < a.Count; i++) {
-					if (!a [i].Equals (b [i]))
-						return false;
-				}
+    static class ListHelper
+    {
+        public static bool ListsEqual<T>(IList<T> a, IList<T> b)
+        {
+            if (a == null)
+                return b == null;
+            else if (b == null)
+                return false;
+            else if (a.Count != b.Count)
+                return false;
+            else
+            {
+                for (int i = 0; i < a.Count; i++)
+                {
+                    if (!a[i].Equals(b[i]))
+                        return false;
+                }
 
-				// they aren't not equal
-				return true;
-			}
-		}
-	}
+                // they aren't not equal
+                return true;
+            }
+        }
+    }
 }

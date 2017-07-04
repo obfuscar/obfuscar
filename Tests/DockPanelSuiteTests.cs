@@ -1,4 +1,5 @@
 ﻿#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,6 +21,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
 
 using Mono.Cecil;
@@ -30,45 +32,47 @@ using Xunit;
 
 namespace ObfuscarTests
 {
-	public class DockPanelSuiteTests
-	{
-		static MethodDefinition FindByFullName(TypeDefinition typeDef, string name)
-		{
-			foreach (MethodDefinition method in typeDef.Methods)
-				if (method.FullName == name)
-					return method;
+    public class DockPanelSuiteTests
+    {
+        static MethodDefinition FindByFullName(TypeDefinition typeDef, string name)
+        {
+            foreach (MethodDefinition method in typeDef.Methods)
+                if (method.FullName == name)
+                    return method;
 
-			Assert.True(false, String.Format("Expected to find method: {0}", name));
-			return null; // never here
-		}
+            Assert.True(false, String.Format("Expected to find method: {0}", name));
+            return null; // never here
+        }
 
-		[Fact]
-		public void CheckGeneric()
-		{
-			string xml = String.Format(
-							 @"<?xml version='1.0'?>" +
-							 @"<Obfuscator>" +
-							 @"<Var name='InPath' value='{0}' />" +
-							 @"<Var name='OutPath' value='{1}' />" +
-							 @"<Var name='KeyFile' value='$(InPath)\..\dockpanelsuite.snk' />" +
-							 @"<Var name='HidePrivateApi' value='true' />" +
-							 @"<Var name='KeepPublicApi' value='false' />" +
-							 @"<Module file='$(InPath){2}WeifenLuo.WinFormsUI.Docking.dll' />" +
-							 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+        [Fact]
+        public void CheckGeneric()
+        {
+            string xml = String.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeyFile' value='$(InPath)\..\dockpanelsuite.snk' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Module file='$(InPath){2}WeifenLuo.WinFormsUI.Docking.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.CleanInput();
+            TestHelper.CleanInput();
 
-			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WeifenLuo.WinFormsUI.Docking.dll"), Path.Combine(TestHelper.InputPath, "WeifenLuo.WinFormsUI.Docking.dll"), true);
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WeifenLuo.WinFormsUI.Docking.dll"),
+                Path.Combine(TestHelper.InputPath, "WeifenLuo.WinFormsUI.Docking.dll"), true);
 
-			var map = TestHelper.Obfuscate(xml).Mapping;
+            var map = TestHelper.Obfuscate(xml).Mapping;
 
-			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
-											   Path.Combine(TestHelper.InputPath, "WeifenLuo.WinFormsUI.Docking.dll"));
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(TestHelper.InputPath, "WeifenLuo.WinFormsUI.Docking.dll"));
 
-			TypeDefinition classAType = inAssmDef.MainModule.GetType("WeifenLuo.WinFormsUI.Docking.AutoHideStripBase/TabCollection/<System.Collections.Generic.IEnumerable<WeifenLuo.WinFormsUI.Docking.AutoHideStripBase.Tab>.GetEnumerator>d__0");
-			var type = map.GetClass(new TypeKey(classAType));
-			Assert.True(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
-		}
-	}
+            TypeDefinition classAType = inAssmDef.MainModule.GetType(
+                "WeifenLuo.WinFormsUI.Docking.AutoHideStripBase/TabCollection/<System.Collections.Generic.IEnumerable<WeifenLuo.WinFormsUI.Docking.AutoHideStripBase.Tab>.GetEnumerator>d__0");
+            var type = map.GetClass(new TypeKey(classAType));
+            Assert.True(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
+        }
+    }
 }

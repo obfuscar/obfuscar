@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,7 +21,9 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using System.IO;
 using System.Linq;
@@ -30,101 +33,103 @@ using Obfuscar;
 
 namespace ObfuscarTests
 {
-	public class CustomAttributeTests
-	{
-		public string BuildAndObfuscate()
-		{
-			var output = TestHelper.OutputPath;
-			var name = "AssemblyWithCustomAttr";
-			string xml = String.Format(
-							 @"<?xml version='1.0'?>" +
-							 @"<Obfuscator>" +
-							 @"<Var name='InPath' value='{0}' />" +
-							 @"<Var name='OutPath' value='{1}' />" +
-							 @"<Var name='KeepPublicApi' value='false' />" +
-							 @"<Var name='HidePrivateApi' value='true' />" +
-							 @"<Module file='$(InPath){2}{3}.dll' />" +
-							 @"</Obfuscator>", TestHelper.InputPath, output, Path.DirectorySeparatorChar, name);
+    public class CustomAttributeTests
+    {
+        public string BuildAndObfuscate()
+        {
+            var output = TestHelper.OutputPath;
+            var name = "AssemblyWithCustomAttr";
+            string xml = String.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}{3}.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, output, Path.DirectorySeparatorChar, name);
 
-			TestHelper.BuildAndObfuscate (name, String.Empty, xml);
-			return Path.Combine(output, $"{name}.dll");
-		}
+            TestHelper.BuildAndObfuscate(name, String.Empty, xml);
+            return Path.Combine(output, $"{name}.dll");
+        }
 
-		[Fact]
-		public void CheckClassHasAttribute ()
-		{
-			var output = BuildAndObfuscate();
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (output);
+        [Fact]
+        public void CheckClassHasAttribute()
+        {
+            var output = BuildAndObfuscate();
+            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(output);
 
-			Assert.Equal (3, assmDef.MainModule.Types.Count); // "Should contain only one type, and <Module>.");
+            Assert.Equal(3, assmDef.MainModule.Types.Count); // "Should contain only one type, and <Module>.");
 
-			bool found = false;
-			foreach (TypeDefinition typeDef in assmDef.MainModule.Types) {
-				if (typeDef.Name == "<Module>" || typeDef.BaseType.Name == "Attribute")
-					continue;
-				else
-					found = true;
+            bool found = false;
+            foreach (TypeDefinition typeDef in assmDef.MainModule.Types)
+            {
+                if (typeDef.Name == "<Module>" || typeDef.BaseType.Name == "Attribute")
+                    continue;
+                else
+                    found = true;
 
-				Assert.Equal (1, typeDef.CustomAttributes.Count); // "Type should have an attribute.");
+                Assert.Equal(1, typeDef.CustomAttributes.Count); // "Type should have an attribute.");
 
-				CustomAttribute attr = typeDef.CustomAttributes [0];
-				Assert.Equal ("System.Void A.a::.ctor(System.String)", attr.Constructor.ToString());
-				// "Type should have ObsoleteAttribute on it.");
+                CustomAttribute attr = typeDef.CustomAttributes[0];
+                Assert.Equal("System.Void A.a::.ctor(System.String)", attr.Constructor.ToString());
+                // "Type should have ObsoleteAttribute on it.");
 
-				Assert.Equal (1, attr.ConstructorArguments.Count); // "ObsoleteAttribute should have one parameter.");
-				Assert.Equal ("test", attr.ConstructorArguments[0].Value);
-				// "ObsoleteAttribute param should have appropriate value.");
-			}
+                Assert.Equal(1, attr.ConstructorArguments.Count); // "ObsoleteAttribute should have one parameter.");
+                Assert.Equal("test", attr.ConstructorArguments[0].Value);
+                // "ObsoleteAttribute param should have appropriate value.");
+            }
 
-			Assert.True (found, "Should have found non-<Module> type.");
-		}
+            Assert.True(found, "Should have found non-<Module> type.");
+        }
 
-		[Fact]
-		public void CheckMethodHasAttribute ()
-		{
-			var output = BuildAndObfuscate();
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (output);
+        [Fact]
+        public void CheckMethodHasAttribute()
+        {
+            var output = BuildAndObfuscate();
+            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(output);
 
-			bool found = false;
-			foreach (TypeDefinition typeDef in assmDef.MainModule.Types) {
-				if (typeDef.Name == "<Module>" || typeDef.BaseType.Name == "Attribute")
-					continue;
-				else
-					found = true;
+            bool found = false;
+            foreach (TypeDefinition typeDef in assmDef.MainModule.Types)
+            {
+                if (typeDef.Name == "<Module>" || typeDef.BaseType.Name == "Attribute")
+                    continue;
+                else
+                    found = true;
 
-				Assert.Equal (2, typeDef.Methods.Count); // "Type is expected to have a single member.");
-			
-				MethodDefinition methodDef = typeDef.Methods.First(item => item.Name != ".ctor");
+                Assert.Equal(2, typeDef.Methods.Count); // "Type is expected to have a single member.");
 
-				CustomAttribute attr = methodDef.CustomAttributes [0];
-				Assert.Equal ("System.Void A.a::.ctor(System.String)", attr.Constructor.ToString());
-				// "Type should have ObsoleteAttribute on it.");
+                MethodDefinition methodDef = typeDef.Methods.First(item => item.Name != ".ctor");
 
-				Assert.Equal (1, attr.ConstructorArguments.Count); // "ObsoleteAttribute should have one parameter.");
-				Assert.Equal ("test", attr.ConstructorArguments[0].Value);
-				// "ObsoleteAttribute param should have appropriate value.");
-			}
+                CustomAttribute attr = methodDef.CustomAttributes[0];
+                Assert.Equal("System.Void A.a::.ctor(System.String)", attr.Constructor.ToString());
+                // "Type should have ObsoleteAttribute on it.");
 
-			Assert.True (found, "Should have found non-<Module> type.");
-		}
+                Assert.Equal(1, attr.ConstructorArguments.Count); // "ObsoleteAttribute should have one parameter.");
+                Assert.Equal("test", attr.ConstructorArguments[0].Value);
+                // "ObsoleteAttribute param should have appropriate value.");
+            }
 
-		[Fact]
-		public void TestInclude()
-		{
-			string xml = String.Format(
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Var name='KeepPublicApi' value='false' />" +
-				@"<Var name='HidePrivateApi' value='true' />" +
-				@"<Include path='$(InPath){2}TestInclude.xml' />" +
-				@"<Module file='$(InPath){2}AssemblyWithCustomAttr.dll'>" +
-				@"<Include path='$(InPath){2}TestIncludeModule.xml' />" +
-				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+            Assert.True(found, "Should have found non-<Module> type.");
+        }
 
-			Obfuscator obfuscator = Obfuscator.CreateFromXml(xml);
-		}
-	}
+        [Fact]
+        public void TestInclude()
+        {
+            string xml = String.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Include path='$(InPath){2}TestInclude.xml' />" +
+                @"<Module file='$(InPath){2}AssemblyWithCustomAttr.dll'>" +
+                @"<Include path='$(InPath){2}TestIncludeModule.xml' />" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+
+            Obfuscator obfuscator = Obfuscator.CreateFromXml(xml);
+        }
+    }
 }

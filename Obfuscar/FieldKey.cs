@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,104 +21,113 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using Mono.Cecil;
 
 namespace Obfuscar
 {
-	class FieldKey
-	{
-		readonly TypeKey typeKey;
-		readonly string type;
-		readonly string name;
-		readonly FieldDefinition fieldDefinition;
+    class FieldKey
+    {
+        readonly TypeKey typeKey;
+        readonly string type;
+        readonly string name;
+        readonly FieldDefinition fieldDefinition;
 
-		public FieldKey (FieldDefinition field)
-			: this(new TypeKey((TypeDefinition)field.DeclaringType), field.FieldType.FullName, field.Name, field)
-		{
-		}
+        public FieldKey(FieldDefinition field)
+            : this(new TypeKey((TypeDefinition) field.DeclaringType), field.FieldType.FullName, field.Name, field)
+        {
+        }
 
-		public FieldKey (TypeKey typeKey, string type, string name, FieldDefinition fieldDefinition)
-		{
-			this.typeKey = typeKey;
-			this.type = type;
-			this.name = name;
-			this.fieldDefinition = fieldDefinition;
-		}
+        public FieldKey(TypeKey typeKey, string type, string name, FieldDefinition fieldDefinition)
+        {
+            this.typeKey = typeKey;
+            this.type = type;
+            this.name = name;
+            this.fieldDefinition = fieldDefinition;
+        }
 
-		public FieldAttributes FieldAttributes {
-			get { return fieldDefinition.Attributes; }
-		}
+        public FieldAttributes FieldAttributes
+        {
+            get { return fieldDefinition.Attributes; }
+        }
 
-		public TypeDefinition DeclaringType {
-			get { return (TypeDefinition)fieldDefinition.DeclaringType; }
-		}
+        public TypeDefinition DeclaringType
+        {
+            get { return (TypeDefinition) fieldDefinition.DeclaringType; }
+        }
 
-		public FieldDefinition Field {
-			get { return fieldDefinition; }
-		}
+        public FieldDefinition Field
+        {
+            get { return fieldDefinition; }
+        }
 
-		public TypeKey TypeKey {
-			get { return typeKey; }
-		}
+        public TypeKey TypeKey
+        {
+            get { return typeKey; }
+        }
 
-		public string Type {
-			get { return type; }
-		}
+        public string Type
+        {
+            get { return type; }
+        }
 
-		public string Name {
-			get { return name; }
-		}
+        public string Name
+        {
+            get { return name; }
+        }
 
-		public virtual bool Matches (MemberReference member)
-		{
-			FieldReference fieldRef = member as FieldReference;
-			if (fieldRef != null) {
-				if (typeKey.Matches (fieldRef.DeclaringType))
-					return type == fieldRef.FieldType.FullName && name == fieldRef.Name;
-			}
+        public virtual bool Matches(MemberReference member)
+        {
+            FieldReference fieldRef = member as FieldReference;
+            if (fieldRef != null)
+            {
+                if (typeKey.Matches(fieldRef.DeclaringType))
+                    return type == fieldRef.FieldType.FullName && name == fieldRef.Name;
+            }
 
-			return false;
-		}
+            return false;
+        }
 
-		public override bool Equals (object obj)
-		{
-			FieldKey key = obj as FieldKey;
-			if (key == null)
-				return false;
+        public override bool Equals(object obj)
+        {
+            FieldKey key = obj as FieldKey;
+            if (key == null)
+                return false;
 
-			return this == key;
-		}
+            return this == key;
+        }
 
-		public static bool operator == (FieldKey a, FieldKey b)
-		{
-			if ((object)a == null)
-				return (object)b == null;
-			else if ((object)b == null)
-				return false;
-			else
-				return a.typeKey == b.typeKey && a.type == b.type && a.name == b.name;
-		}
+        public static bool operator ==(FieldKey a, FieldKey b)
+        {
+            if ((object) a == null)
+                return (object) b == null;
+            else if ((object) b == null)
+                return false;
+            else
+                return a.typeKey == b.typeKey && a.type == b.type && a.name == b.name;
+        }
 
-		public static bool operator != (FieldKey a, FieldKey b)
-		{
-			if ((object)a == null)
-				return (object)b != null;
-			else if ((object)b == null)
-				return true;
-			else
-				return a.typeKey != b.typeKey || a.type != b.type || a.name != b.name;
-		}
+        public static bool operator !=(FieldKey a, FieldKey b)
+        {
+            if ((object) a == null)
+                return (object) b != null;
+            else if ((object) b == null)
+                return true;
+            else
+                return a.typeKey != b.typeKey || a.type != b.type || a.name != b.name;
+        }
 
-		public override int GetHashCode ()
-		{
-			return typeKey.GetHashCode () ^ type.GetHashCode () ^ name.GetHashCode ();
-		}
+        public override int GetHashCode()
+        {
+            return typeKey.GetHashCode() ^ type.GetHashCode() ^ name.GetHashCode();
+        }
 
-		public override string ToString ()
-		{
-			return String.Format ("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
-		}
-	}
+        public override string ToString()
+        {
+            return String.Format("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
+        }
+    }
 }

@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,7 +21,9 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -29,40 +32,42 @@ using Mono.Cecil;
 
 namespace Obfuscar
 {
-	class EventTester : IPredicate<EventKey>
-	{
-		private readonly string name;
-		private readonly Regex nameRx;
-		private readonly string type;
-		private readonly string attrib;
-		private readonly string typeAttrib;
+    class EventTester : IPredicate<EventKey>
+    {
+        private readonly string name;
+        private readonly Regex nameRx;
+        private readonly string type;
+        private readonly string attrib;
+        private readonly string typeAttrib;
 
-		public EventTester (string name, string type, string attrib, string typeAttrib)
-		{
-			this.name = name;
-			this.type = type;
-			this.attrib = attrib;
-			this.typeAttrib = typeAttrib;
-		}
+        public EventTester(string name, string type, string attrib, string typeAttrib)
+        {
+            this.name = name;
+            this.type = type;
+            this.attrib = attrib;
+            this.typeAttrib = typeAttrib;
+        }
 
-		public EventTester (Regex nameRx, string type, string attrib, string typeAttrib)
-		{
-			this.nameRx = nameRx;
-			this.type = type;
-			this.attrib = attrib;
-			this.typeAttrib = typeAttrib;
-		}
+        public EventTester(Regex nameRx, string type, string attrib, string typeAttrib)
+        {
+            this.nameRx = nameRx;
+            this.type = type;
+            this.attrib = attrib;
+            this.typeAttrib = typeAttrib;
+        }
 
-		public bool Test (EventKey evt, InheritMap map)
-		{
-			if (Helper.CompareOptionalRegex (evt.TypeKey.Fullname, type) && !MethodTester.CheckMemberVisibility (attrib, typeAttrib, evt.AddMethodAttributes, evt.DeclaringType)) {
-				if (name != null)
-					return Helper.CompareOptionalRegex (evt.Name, name);
-				else
-					return nameRx.IsMatch (evt.Name);
-			}
+        public bool Test(EventKey evt, InheritMap map)
+        {
+            if (Helper.CompareOptionalRegex(evt.TypeKey.Fullname, type) &&
+                !MethodTester.CheckMemberVisibility(attrib, typeAttrib, evt.AddMethodAttributes, evt.DeclaringType))
+            {
+                if (name != null)
+                    return Helper.CompareOptionalRegex(evt.Name, name);
+                else
+                    return nameRx.IsMatch(evt.Name);
+            }
 
-			return false;
-		}
-	}
+            return false;
+        }
+    }
 }

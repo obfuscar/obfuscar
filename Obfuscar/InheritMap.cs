@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,6 +21,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
 
 using System.Collections.Generic;
@@ -29,245 +31,267 @@ using Mono.Cecil;
 
 namespace Obfuscar
 {
-	class MethodGroup
-	{
-		private readonly HashSet<MethodKey> methods = new HashSet<MethodKey> ();
-		private string name = null;
-		private bool external = false;
+    class MethodGroup
+    {
+        private readonly HashSet<MethodKey> methods = new HashSet<MethodKey>();
+        private string name = null;
+        private bool external = false;
 
-		public HashSet<MethodKey> Methods {
-			get { return methods; }
-		}
+        public HashSet<MethodKey> Methods
+        {
+            get { return methods; }
+        }
 
-		public string Name {
-			get { return name; }
-			set { name = value; }
-		}
+        public string Name
+        {
+            get { return name; }
+            set { name = value; }
+        }
 
-		public bool External {
-			get { return external; }
-			set { external = value; }
-		}
+        public bool External
+        {
+            get { return external; }
+            set { external = value; }
+        }
 
-		public override string ToString ()
-		{
-			StringBuilder sb = new StringBuilder ();
-			sb.Append (Name);
-			if (external)
-				sb.Append ("(ext)");
-			else
-				sb.Append ("(int)");
-			sb.Append (": ");
-			foreach (MethodKey k in methods) {
-				sb.Append (k.ToString ());
-				sb.Append (" ");
-			}
-			return sb.ToString ();
-		}
-	}
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(Name);
+            if (external)
+                sb.Append("(ext)");
+            else
+                sb.Append("(int)");
+            sb.Append(": ");
+            foreach (MethodKey k in methods)
+            {
+                sb.Append(k.ToString());
+                sb.Append(" ");
+            }
+            return sb.ToString();
+        }
+    }
 
-	class InheritMap
-	{
-		private readonly Project project;
-		// method to group map
-		private readonly Dictionary<MethodKey, MethodGroup> methodGroups = new Dictionary<MethodKey, MethodGroup> ();
-		private readonly Dictionary<TypeKey, TypeKey[]> baseTypes = new Dictionary<TypeKey, TypeKey[]> ();
+    class InheritMap
+    {
+        private readonly Project project;
 
-		public InheritMap (Project project)
-		{
-			this.project = project;
+        // method to group map
+        private readonly Dictionary<MethodKey, MethodGroup> methodGroups = new Dictionary<MethodKey, MethodGroup>();
 
-			// cache for assemblies not in the project
-			project.Cache = new AssemblyCache (project);
+        private readonly Dictionary<TypeKey, TypeKey[]> baseTypes = new Dictionary<TypeKey, TypeKey[]>();
 
-			foreach (AssemblyInfo info in project) {
-				foreach (TypeDefinition type in info.GetAllTypeDefinitions()) {
-					if (type.FullName == "<Module>")
-						continue;
+        public InheritMap(Project project)
+        {
+            this.project = project;
 
-					TypeKey typeKey = new TypeKey (type);
+            // cache for assemblies not in the project
+            project.Cache = new AssemblyCache(project);
 
-					baseTypes [typeKey] = GetBaseTypes (type);
+            foreach (AssemblyInfo info in project)
+            {
+                foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+                {
+                    if (type.FullName == "<Module>")
+                        continue;
 
-					int i = 0;
-					int j;
+                    TypeKey typeKey = new TypeKey(type);
 
-					MethodKey[] methods = GetVirtualMethods (project.Cache, type);
-					while (i < methods.Length) {
-						MethodGroup group;
-						var left = methods [i];
-						if (!methodGroups.TryGetValue (left, out group))
-							group = null;
+                    baseTypes[typeKey] = GetBaseTypes(type);
 
-						for (j = i + 1; j < methods.Length; j++) {
-							var right = methods [j];
-							if (!MethodsMatch (left, right))
-								continue;
+                    int i = 0;
+                    int j;
 
-							// found an override
+                    MethodKey[] methods = GetVirtualMethods(project.Cache, type);
+                    while (i < methods.Length)
+                    {
+                        MethodGroup group;
+                        var left = methods[i];
+                        if (!methodGroups.TryGetValue(left, out group))
+                            group = null;
 
-							// see if either method is already in a group
-							if (group != null)
-								group = AddToGroup (group, right);
-							else if (methodGroups.TryGetValue (right, out group))
-								group = AddToGroup (group, left);
-							else {
-								group = new MethodGroup ();
+                        for (j = i + 1; j < methods.Length; j++)
+                        {
+                            var right = methods[j];
+                            if (!MethodsMatch(left, right))
+                                continue;
 
-								group = AddToGroup (group, left);
-								group = AddToGroup (group, right);
-							}
+                            // found an override
 
-							// if the group isn't already external, see if it should be
-							Debug.Assert (group != null, "should have a group by now");
-							if (!group.External && !project.Contains (right.TypeKey))
-								group.External = true;
-						}
+                            // see if either method is already in a group
+                            if (group != null)
+                                group = AddToGroup(group, right);
+                            else if (methodGroups.TryGetValue(right, out group))
+                                group = AddToGroup(group, left);
+                            else
+                            {
+                                group = new MethodGroup();
 
-						// if the group isn't already external, see if it should be
-						if (group != null && !group.External && !project.Contains (left.TypeKey))
-							group.External = true;
+                                group = AddToGroup(group, left);
+                                group = AddToGroup(group, right);
+                            }
 
-						// move on to the next thing that doesn't match
-						i++;
-					}
-				}
-			}
-		}
+                            // if the group isn't already external, see if it should be
+                            Debug.Assert(group != null, "should have a group by now");
+                            if (!group.External && !project.Contains(right.TypeKey))
+                                group.External = true;
+                        }
 
-		static bool MethodsMatch (MethodKey left, MethodKey right)
-		{
-			return MethodKey.MethodMatch (left.Method, right.Method)
-				|| MethodKey.MethodMatch (right.Method, left.Method);
-		}
+                        // if the group isn't already external, see if it should be
+                        if (group != null && !group.External && !project.Contains(left.TypeKey))
+                            group.External = true;
 
-		public static void GetBaseTypes (Project project, HashSet<TypeKey> baseTypes, TypeDefinition type)
-		{
-			// check the interfaces
-			foreach (var ifaceRef in type.Interfaces) {
-				TypeDefinition iface = project.GetTypeDefinition (ifaceRef.InterfaceType);
-				if (iface != null) {
-					GetBaseTypes (project, baseTypes, iface);
-					baseTypes.Add (new TypeKey (iface));
-				}
-			}
+                        // move on to the next thing that doesn't match
+                        i++;
+                    }
+                }
+            }
+        }
 
-			// check the base type unless it isn't in the project, or we don't have one
-			TypeDefinition baseType = project.GetTypeDefinition (type.BaseType);
-			if (baseType != null && baseType.FullName != "System.Object") {
-				GetBaseTypes (project, baseTypes, baseType);
-				baseTypes.Add (new TypeKey (baseType));
-			}
-		}
+        static bool MethodsMatch(MethodKey left, MethodKey right)
+        {
+            return MethodKey.MethodMatch(left.Method, right.Method)
+                   || MethodKey.MethodMatch(right.Method, left.Method);
+        }
 
-		TypeKey[] GetBaseTypes (TypeDefinition type)
-		{
-			HashSet<TypeKey> baseTypes = new HashSet<TypeKey> ();
-			GetBaseTypes (project, baseTypes, type);
-			return new List<TypeKey> (baseTypes).ToArray ();
-		}
+        public static void GetBaseTypes(Project project, HashSet<TypeKey> baseTypes, TypeDefinition type)
+        {
+            // check the interfaces
+            foreach (var ifaceRef in type.Interfaces)
+            {
+                TypeDefinition iface = project.GetTypeDefinition(ifaceRef.InterfaceType);
+                if (iface != null)
+                {
+                    GetBaseTypes(project, baseTypes, iface);
+                    baseTypes.Add(new TypeKey(iface));
+                }
+            }
 
-		void GetVirtualMethods (AssemblyCache cache, HashSet<MethodKey> methods, TypeDefinition type)
-		{
-			// check the interfaces
-			foreach (var ifaceRef in type.Interfaces) {
-				TypeDefinition iface = project.GetTypeDefinition (ifaceRef.InterfaceType);
+            // check the base type unless it isn't in the project, or we don't have one
+            TypeDefinition baseType = project.GetTypeDefinition(type.BaseType);
+            if (baseType != null && baseType.FullName != "System.Object")
+            {
+                GetBaseTypes(project, baseTypes, baseType);
+                baseTypes.Add(new TypeKey(baseType));
+            }
+        }
 
-				// if it's not in the project, try to get it via the cache
-				if (iface == null)
-					iface = cache.GetTypeDefinition (ifaceRef.InterfaceType);
+        TypeKey[] GetBaseTypes(TypeDefinition type)
+        {
+            HashSet<TypeKey> baseTypes = new HashSet<TypeKey>();
+            GetBaseTypes(project, baseTypes, type);
+            return new List<TypeKey>(baseTypes).ToArray();
+        }
 
-				// search interface
-				if (iface != null)
-					GetVirtualMethods (cache, methods, iface);
-			}
+        void GetVirtualMethods(AssemblyCache cache, HashSet<MethodKey> methods, TypeDefinition type)
+        {
+            // check the interfaces
+            foreach (var ifaceRef in type.Interfaces)
+            {
+                TypeDefinition iface = project.GetTypeDefinition(ifaceRef.InterfaceType);
 
-			// check the base type unless it isn't in the project, or we don't have one
-			TypeDefinition baseType = project.GetTypeDefinition (type.BaseType);
+                // if it's not in the project, try to get it via the cache
+                if (iface == null)
+                    iface = cache.GetTypeDefinition(ifaceRef.InterfaceType);
 
-			// if it's not in the project, try to get it via the cache
-			if (baseType == null)
-				baseType = cache.GetTypeDefinition (type.BaseType);
+                // search interface
+                if (iface != null)
+                    GetVirtualMethods(cache, methods, iface);
+            }
 
-			// search base
-			if (baseType != null)
-				GetVirtualMethods (cache, methods, baseType);
+            // check the base type unless it isn't in the project, or we don't have one
+            TypeDefinition baseType = project.GetTypeDefinition(type.BaseType);
 
-			foreach (MethodDefinition method in type.Methods) {
-				if (method.IsVirtual)
-					methods.Add (new MethodKey (method));
-			}
-		}
+            // if it's not in the project, try to get it via the cache
+            if (baseType == null)
+                baseType = cache.GetTypeDefinition(type.BaseType);
 
-		MethodKey[] GetVirtualMethods (AssemblyCache cache, TypeDefinition type)
-		{
-			HashSet<MethodKey> methods = new HashSet<MethodKey> ();
-			GetVirtualMethods (cache, methods, type);
-			return new List<MethodKey> (methods).ToArray ();
-		}
+            // search base
+            if (baseType != null)
+                GetVirtualMethods(cache, methods, baseType);
 
-		MethodGroup AddToGroup (MethodGroup group, MethodKey methodKey)
-		{
-			// add the method to the group
-			group.Methods.Add (methodKey);
+            foreach (MethodDefinition method in type.Methods)
+            {
+                if (method.IsVirtual)
+                    methods.Add(new MethodKey(method));
+            }
+        }
 
-			// point the method at the group
-			MethodGroup group2;
-			if (methodGroups.TryGetValue (methodKey, out group2) && group2 != group) {
-				// we have a problem; two unrelated groups come together; merge them
-				if (group.Methods.Count > group2.Methods.Count) {
-					group.Name = group.Name ?? group2.Name;
-					group.External = group.External | group2.External;
-					foreach (MethodKey mk in group2.Methods) {
-						methodGroups [mk] = group;
-						group.Methods.Add (mk);
+        MethodKey[] GetVirtualMethods(AssemblyCache cache, TypeDefinition type)
+        {
+            HashSet<MethodKey> methods = new HashSet<MethodKey>();
+            GetVirtualMethods(cache, methods, type);
+            return new List<MethodKey>(methods).ToArray();
+        }
 
-					}
-					return group;
-				} else {
-					group2.Name = group2.Name ?? group.Name;
-					group2.External = group2.External | group.External;
-					foreach (MethodKey mk in group.Methods) {
-						methodGroups [mk] = group2;
-						group2.Methods.Add (mk);
+        MethodGroup AddToGroup(MethodGroup group, MethodKey methodKey)
+        {
+            // add the method to the group
+            group.Methods.Add(methodKey);
 
-					}
-					return group2;
-				}
-			}
-			methodGroups [methodKey] = group;
+            // point the method at the group
+            MethodGroup group2;
+            if (methodGroups.TryGetValue(methodKey, out group2) && group2 != group)
+            {
+                // we have a problem; two unrelated groups come together; merge them
+                if (group.Methods.Count > group2.Methods.Count)
+                {
+                    group.Name = group.Name ?? group2.Name;
+                    group.External = group.External | group2.External;
+                    foreach (MethodKey mk in group2.Methods)
+                    {
+                        methodGroups[mk] = group;
+                        group.Methods.Add(mk);
+                    }
+                    return group;
+                }
+                else
+                {
+                    group2.Name = group2.Name ?? group.Name;
+                    group2.External = group2.External | group.External;
+                    foreach (MethodKey mk in group.Methods)
+                    {
+                        methodGroups[mk] = group2;
+                        group2.Methods.Add(mk);
+                    }
+                    return group2;
+                }
+            }
+            methodGroups[methodKey] = group;
 
-			return group;
-		}
+            return group;
+        }
 
-		public MethodGroup GetMethodGroup (MethodKey methodKey)
-		{
-			MethodGroup group;
-			if (methodGroups.TryGetValue (methodKey, out group))
-				return group;
-			else
-				return null;
-		}
+        public MethodGroup GetMethodGroup(MethodKey methodKey)
+        {
+            MethodGroup group;
+            if (methodGroups.TryGetValue(methodKey, out group))
+                return group;
+            else
+                return null;
+        }
 
-		public bool Inherits (TypeDefinition type, string interfaceFullName)
-		{
-			if (type.FullName == interfaceFullName) {
-				return true;
-			}
+        public bool Inherits(TypeDefinition type, string interfaceFullName)
+        {
+            if (type.FullName == interfaceFullName)
+            {
+                return true;
+            }
 
 
-			if (type.BaseType != null) {
-				var typeDef = project.Cache.GetTypeDefinition (type.BaseType);
+            if (type.BaseType != null)
+            {
+                var typeDef = project.Cache.GetTypeDefinition(type.BaseType);
 
-				return Inherits (typeDef, interfaceFullName);
-			}
+                return Inherits(typeDef, interfaceFullName);
+            }
 
-			return false;
-		}
+            return false;
+        }
 
-		public TypeKey[] GetBaseTypes (TypeKey typeKey)
-		{
-			return baseTypes [typeKey];
-		}
-	}
+        public TypeKey[] GetBaseTypes(TypeKey typeKey)
+        {
+            return baseTypes[typeKey];
+        }
+    }
 }

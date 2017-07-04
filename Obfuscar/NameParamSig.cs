@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,105 +21,107 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using Mono.Cecil;
 using Mono.Cecil.Metadata;
 
 namespace Obfuscar
 {
-	/// <summary>
-	/// Used to identify the signature of a method by its name and parameters.
-	/// </summary>
-	class NameParamSig : ParamSig, IComparable<NameParamSig>
-	{
-		readonly string name;
-		readonly int hashCode;
+    /// <summary>
+    /// Used to identify the signature of a method by its name and parameters.
+    /// </summary>
+    class NameParamSig : ParamSig, IComparable<NameParamSig>
+    {
+        readonly string name;
+        readonly int hashCode;
 
-		public NameParamSig (string name, string[] paramTypes)
-			: base(paramTypes)
-		{
-			this.name = name;
+        public NameParamSig(string name, string[] paramTypes)
+            : base(paramTypes)
+        {
+            this.name = name;
 
-			hashCode = CalcHashCode ();
-		}
+            hashCode = CalcHashCode();
+        }
 
-		public NameParamSig (MethodReference method)
-			: base(method)
-		{
-			name = method.Name;
+        public NameParamSig(MethodReference method)
+            : base(method)
+        {
+            name = method.Name;
 
-			hashCode = CalcHashCode ();
-		}
+            hashCode = CalcHashCode();
+        }
 
-		public NameParamSig (MethodDefinition method)
-			: base(method)
-		{
-			name = method.Name;
+        public NameParamSig(MethodDefinition method)
+            : base(method)
+        {
+            name = method.Name;
 
-			hashCode = CalcHashCode ();
-		}
+            hashCode = CalcHashCode();
+        }
 
-		private int CalcHashCode ()
-		{
-			return name.GetHashCode () ^ base.GetHashCode ();
-		}
+        private int CalcHashCode()
+        {
+            return name.GetHashCode() ^ base.GetHashCode();
+        }
 
-		public string Name {
-			get { return name; }
-		}
+        public string Name
+        {
+            get { return name; }
+        }
 
-		public bool Equals (NameParamSig other)
-		{
-			return other != null &&
-				name == other.name &&
-				Equals ((ParamSig)other);
-		}
+        public bool Equals(NameParamSig other)
+        {
+            return other != null &&
+                   name == other.name &&
+                   Equals((ParamSig) other);
+        }
 
-		public override bool Equals (object obj)
-		{
-			return obj is NameParamSig ? Equals ((NameParamSig)obj) : false;
-		}
+        public override bool Equals(object obj)
+        {
+            return obj is NameParamSig ? Equals((NameParamSig) obj) : false;
+        }
 
-		public static bool operator == (NameParamSig a, NameParamSig b)
-		{
-			if ((object)a == null)
-				return (object)b == null;
-			else if ((object)b == null)
-				return false;
-			else
-				return a.Equals (b);
-		}
+        public static bool operator ==(NameParamSig a, NameParamSig b)
+        {
+            if ((object) a == null)
+                return (object) b == null;
+            else if ((object) b == null)
+                return false;
+            else
+                return a.Equals(b);
+        }
 
-		public static bool operator != (NameParamSig a, NameParamSig b)
-		{
-			if ((object)a == null)
-				return (object)b != null;
-			else if ((object)b == null)
-				return true;
-			else
-				return !a.Equals (b);
-		}
+        public static bool operator !=(NameParamSig a, NameParamSig b)
+        {
+            if ((object) a == null)
+                return (object) b != null;
+            else if ((object) b == null)
+                return true;
+            else
+                return !a.Equals(b);
+        }
 
-		public override int GetHashCode ()
-		{
-			return hashCode;
-		}
+        public override int GetHashCode()
+        {
+            return hashCode;
+        }
 
-		public override string ToString ()
-		{
-			return String.Format ("{0}[{1}]", name, ParamTypes.Length);
-		}
+        public override string ToString()
+        {
+            return String.Format("{0}[{1}]", name, ParamTypes.Length);
+        }
 
-		public int CompareTo (NameParamSig other)
-		{
-			int cmp = String.Compare (name, other.Name);
-			if (cmp == 0)
-				cmp = CompareTo ((ParamSig)other);
-			return cmp;
-		}
-	}
+        public int CompareTo(NameParamSig other)
+        {
+            int cmp = String.Compare(name, other.Name);
+            if (cmp == 0)
+                cmp = CompareTo((ParamSig) other);
+            return cmp;
+        }
+    }
 }

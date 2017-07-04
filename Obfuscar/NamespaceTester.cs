@@ -1,4 +1,5 @@
 ﻿#region Copyright (c) 2008 Scherry Lemos. <scherrylemos@ig.com.br>
+
 /// <copyright>
 /// Copyright (c) 2008 Scherry Lemos<scherrylemos@ig.com.br>
 /// 
@@ -20,44 +21,47 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
-
 using Mono.Cecil;
 
 namespace Obfuscar
 {
-	class NamespaceTester : IPredicate<string>
-	{
-		private readonly string name;
-		private readonly Regex nameRx;
+    class NamespaceTester : IPredicate<string>
+    {
+        private readonly string name;
+        private readonly Regex nameRx;
 
-		public NamespaceTester (string name)
-		{
-			this.name = name;
-		}
+        public NamespaceTester(string name)
+        {
+            this.name = name;
+        }
 
-		public NamespaceTester (Regex nameRx)
-		{
-			this.nameRx = nameRx;
-		}
+        public NamespaceTester(Regex nameRx)
+        {
+            this.nameRx = nameRx;
+        }
 
-		public bool Test (string ns, InheritMap map)
-		{
-			// regex matches
-			if (nameRx != null && !nameRx.IsMatch (ns)) {
-				return false;
-			}
-			
-			// name matches
-			if (!string.IsNullOrEmpty (name) && !Helper.CompareOptionalRegex (ns, name)) {
-				return false;
-			}
+        public bool Test(string ns, InheritMap map)
+        {
+            // regex matches
+            if (nameRx != null && !nameRx.IsMatch(ns))
+            {
+                return false;
+            }
 
-			return true;
-		}
-	}
+            // name matches
+            if (!string.IsNullOrEmpty(name) && !Helper.CompareOptionalRegex(ns, name))
+            {
+                return false;
+            }
+
+            return true;
+        }
+    }
 }

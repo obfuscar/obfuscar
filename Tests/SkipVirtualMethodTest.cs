@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,7 +21,9 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using System.IO;
 using System.Reflection;
@@ -29,86 +32,87 @@ using Xunit;
 
 namespace ObfuscarTests
 {
-	public class SkipVirtualMethodTest
-	{
-		[Fact]
-		public void CheckSkipsVirtualMethodFromInterface ()
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath){2}SkipVirtualMethodTest1.dll'>" +
-				@"<SkipMethod type='SkipVirtualMethodTest.Interface1' name='Method1' />" +
-				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+    public class SkipVirtualMethodTest
+    {
+        [Fact]
+        public void CheckSkipsVirtualMethodFromInterface()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}SkipVirtualMethodTest1.dll'>" +
+                @"<SkipMethod type='SkipVirtualMethodTest.Interface1' name='Method1' />" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.BuildAndObfuscate ("SkipVirtualMethodTest", "1", xml);
+            TestHelper.BuildAndObfuscate("SkipVirtualMethodTest", "1", xml);
 
-			string[] expected = new string[] {
-				"Method1"
-			};
+            string[] expected = new string[]
+            {
+                "Method1"
+            };
 
-			string[] notExpected = new string[] {
-				"Method2"
-			};
+            string[] notExpected = new string[]
+            {
+                "Method2"
+            };
 
-			AssemblyHelper.CheckAssembly(Path.Combine(outputPath, "SkipVirtualMethodTest1.dll"), 2, expected, notExpected,
-				delegate (TypeDefinition typeDef)
-				{
-					return !typeDef.IsInterface;
-				},
-				CheckType);
-		}
+            AssemblyHelper.CheckAssembly(Path.Combine(outputPath, "SkipVirtualMethodTest1.dll"), 2, expected,
+                notExpected,
+                delegate(TypeDefinition typeDef) { return !typeDef.IsInterface; },
+                CheckType);
+        }
 
-		[Fact]
-		public void CheckSkipsVirtualMethodFromClass ()
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Var name='KeepPublicApi' value='true' />" +
-				@"<Var name='HidePrivateApi' value='true' />" +
-				@"<Module file='$(InPath){2}SkipVirtualMethodTest2.dll'>" +
-				@"<SkipMethod type='SkipVirtualMethodTest.Class1' name='Method1' />" +
-				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+        [Fact]
+        public void CheckSkipsVirtualMethodFromClass()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeepPublicApi' value='true' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}SkipVirtualMethodTest2.dll'>" +
+                @"<SkipMethod type='SkipVirtualMethodTest.Class1' name='Method1' />" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.BuildAndObfuscate ("SkipVirtualMethodTest", "2", xml);
+            TestHelper.BuildAndObfuscate("SkipVirtualMethodTest", "2", xml);
 
-			string[] expected = new string[] {
-				"Method1"
-			};
+            string[] expected = new string[]
+            {
+                "Method1"
+            };
 
-			string[] notExpected = new string[] {
-				"Method2"
-			};
+            string[] notExpected = new string[]
+            {
+                "Method2"
+            };
 
-			AssemblyHelper.CheckAssembly(Path.Combine(outputPath, "SkipVirtualMethodTest2.dll"), 2, expected, notExpected,
-				delegate (TypeDefinition typeDef)
-				{
-					return !typeDef.IsInterface;
-				},
-				CheckType);
-		}
+            AssemblyHelper.CheckAssembly(Path.Combine(outputPath, "SkipVirtualMethodTest2.dll"), 2, expected,
+                notExpected,
+                delegate(TypeDefinition typeDef) { return !typeDef.IsInterface; },
+                CheckType);
+        }
 
-		void CheckType (TypeDefinition typeDef)
-		{
-			Assembly assm = Assembly.LoadFile (Path.GetFullPath (typeDef.Module.FullyQualifiedName));
-			Type type = assm.GetType (typeDef.FullName);
+        void CheckType(TypeDefinition typeDef)
+        {
+            Assembly assm = Assembly.LoadFile(Path.GetFullPath(typeDef.Module.FullyQualifiedName));
+            Type type = assm.GetType(typeDef.FullName);
 
-			object obj = Activator.CreateInstance (type);
+            object obj = Activator.CreateInstance(type);
 
-			object result = type.InvokeMember ("Method1", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, obj, null);
-			Assert.IsType<string> (result); // "Method1 returns a string.");
+            object result = type.InvokeMember("Method1",
+                BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, obj, null);
+            Assert.IsType<string>(result); // "Method1 returns a string.");
 
-			Assert.Equal ("Method1 result", result); // "Method1 is expected to return a specific string.");
-		}
-	}
+            Assert.Equal("Method1 result", result); // "Method1 is expected to return a specific string.");
+        }
+    }
 }

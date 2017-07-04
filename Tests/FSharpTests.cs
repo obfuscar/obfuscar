@@ -1,4 +1,5 @@
 ﻿#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,6 +21,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
 
 using Mono.Cecil;
@@ -30,69 +32,69 @@ using Xunit;
 
 namespace ObfuscarTests
 {
-	public class FSharpTests
-	{
-		private static MethodDefinition FindByFullName (TypeDefinition typeDef, string name)
-		{
-			foreach (MethodDefinition method in typeDef.Methods)
-				if (method.FullName == name)
-					return method;
+    public class FSharpTests
+    {
+        private static MethodDefinition FindByFullName(TypeDefinition typeDef, string name)
+        {
+            foreach (MethodDefinition method in typeDef.Methods)
+                if (method.FullName == name)
+                    return method;
 
-			Assert.True (false, String.Format ("Expected to find method: {0}", name));
-			return null; // never here
-		}
+            Assert.True(false, String.Format("Expected to find method: {0}", name));
+            return null; // never here
+        }
 
-		[Fact]
-		public void CheckGeneric ()
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format (
-				                      @"<?xml version='1.0'?>" +
-				                      @"<Obfuscator>" +
-				                      @"<Var name='InPath' value='{0}' />" +
-				                      @"<Var name='OutPath' value='{1}' />" +
-				                      @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
-				                      @"<Var name='HidePrivateApi' value='true' />" +
-				                      @"<Module file='$(InPath){2}FSharp.Compiler.dll' />" +
-				                      @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+        [Fact]
+        public void CheckGeneric()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}FSharp.Compiler.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.CleanInput ();
+            TestHelper.CleanInput();
 
-			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy (Path.Combine (TestHelper.InputPath, @"..", "FSharp.Core.dll"),
-				Path.Combine (TestHelper.InputPath, "FSharp.Core.dll"), true);
-			File.Copy (Path.Combine (TestHelper.InputPath, @"..", "FSharp.Compiler.dll"),
-				Path.Combine (TestHelper.InputPath, "FSharp.Compiler.dll"), true);
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "FSharp.Core.dll"),
+                Path.Combine(TestHelper.InputPath, "FSharp.Core.dll"), true);
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "FSharp.Compiler.dll"),
+                Path.Combine(TestHelper.InputPath, "FSharp.Compiler.dll"), true);
 
-			var map = TestHelper.Obfuscate (xml).Mapping;
+            var map = TestHelper.Obfuscate(xml).Mapping;
 
-			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
-				                                        Path.Combine (TestHelper.InputPath, "FSharp.Compiler.dll"));
-			{
-				TypeDefinition classAType =
-					inAssmDef.MainModule.GetType ("Microsoft.FSharp.Compiler.AbstractIL.IL/ldargs@2513");
-				var type = map.GetClass (new TypeKey (classAType));
-				Assert.True (type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(TestHelper.InputPath, "FSharp.Compiler.dll"));
+            {
+                TypeDefinition classAType =
+                    inAssmDef.MainModule.GetType("Microsoft.FSharp.Compiler.AbstractIL.IL/ldargs@2513");
+                var type = map.GetClass(new TypeKey(classAType));
+                Assert.True(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
 
-				var method1 = FindByFullName (classAType,
-					                          "System.Int32 Microsoft.FSharp.Compiler.AbstractIL.IL/ldargs@2513::GenerateNext(System.Collections.Generic.IEnumerable`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILInstr>&)");
-				var m1 = map.GetMethod (new MethodKey (method1));
-				Assert.True (m1.Status == ObfuscationStatus.Skipped, "Instance method should have been skipped.");
-				Assert.Equal (m1.StatusText, "external base class or interface");
-			}
+                var method1 = FindByFullName(classAType,
+                    "System.Int32 Microsoft.FSharp.Compiler.AbstractIL.IL/ldargs@2513::GenerateNext(System.Collections.Generic.IEnumerable`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILInstr>&)");
+                var m1 = map.GetMethod(new MethodKey(method1));
+                Assert.True(m1.Status == ObfuscationStatus.Skipped, "Instance method should have been skipped.");
+                Assert.Equal(m1.StatusText, "external base class or interface");
+            }
 
-			{
-				TypeDefinition classAType =
-					inAssmDef.MainModule.GetType ("Microsoft.FSharp.Compiler.AbstractIL.IL/mkILMethods@2352");
-				var type = map.GetClass (new TypeKey (classAType));
-				Assert.True (type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
+            {
+                TypeDefinition classAType =
+                    inAssmDef.MainModule.GetType("Microsoft.FSharp.Compiler.AbstractIL.IL/mkILMethods@2352");
+                var type = map.GetClass(new TypeKey(classAType));
+                Assert.True(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
 
-				var method1 = FindByFullName (classAType,
-					                          "System.Tuple`2<Microsoft.FSharp.Collections.FSharpList`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef>,Microsoft.FSharp.Collections.FSharpMap`2<System.String,Microsoft.FSharp.Collections.FSharpList`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef>>> Microsoft.FSharp.Compiler.AbstractIL.IL/mkILMethods@2352::Invoke(Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef,System.Tuple`2<Microsoft.FSharp.Collections.FSharpList`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef>,Microsoft.FSharp.Collections.FSharpMap`2<System.String,Microsoft.FSharp.Collections.FSharpList`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef>>>)");
-				var m1 = map.GetMethod (new MethodKey (method1));
-				Assert.True (m1.Status == ObfuscationStatus.Skipped, "Instance method should have been skipped.");
-				Assert.Equal (m1.StatusText, "external base class or interface");
-			}
-		}
-	}
+                var method1 = FindByFullName(classAType,
+                    "System.Tuple`2<Microsoft.FSharp.Collections.FSharpList`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef>,Microsoft.FSharp.Collections.FSharpMap`2<System.String,Microsoft.FSharp.Collections.FSharpList`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef>>> Microsoft.FSharp.Compiler.AbstractIL.IL/mkILMethods@2352::Invoke(Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef,System.Tuple`2<Microsoft.FSharp.Collections.FSharpList`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef>,Microsoft.FSharp.Collections.FSharpMap`2<System.String,Microsoft.FSharp.Collections.FSharpList`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef>>>)");
+                var m1 = map.GetMethod(new MethodKey(method1));
+                Assert.True(m1.Status == ObfuscationStatus.Skipped, "Instance method should have been skipped.");
+                Assert.Equal(m1.StatusText, "external base class or interface");
+            }
+        }
+    }
 }

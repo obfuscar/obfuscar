@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,136 +21,144 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Xunit;
 
 namespace ObfuscarTests
 {
-	public class TesterTests
-	{
-		[Fact]
-		public void TestTypeTester ()
-		{
-			Obfuscar.TypeKey key = new Obfuscar.TypeKey ("anything", "ns", "name");
+    public class TesterTests
+    {
+        [Fact]
+        public void TestTypeTester()
+        {
+            Obfuscar.TypeKey key = new Obfuscar.TypeKey("anything", "ns", "name");
 
-			Obfuscar.IPredicate<Obfuscar.TypeKey> tester;
+            Obfuscar.IPredicate<Obfuscar.TypeKey> tester;
 
-			tester = new Obfuscar.TypeTester ("ns.name");
-			Assert.True (tester.Test (key), "Tester should handle strings.");
-			tester = new Obfuscar.TypeTester ("ns.n*e");
-			Assert.True (tester.Test (key), "Tester should handle wildcards.");
-			tester = new Obfuscar.TypeTester ("^ns\\.n.*e");
-			Assert.True (tester.Test (key), "Tester should handle regular expressions.");
-		}
+            tester = new Obfuscar.TypeTester("ns.name");
+            Assert.True(tester.Test(key), "Tester should handle strings.");
+            tester = new Obfuscar.TypeTester("ns.n*e");
+            Assert.True(tester.Test(key), "Tester should handle wildcards.");
+            tester = new Obfuscar.TypeTester("^ns\\.n.*e");
+            Assert.True(tester.Test(key), "Tester should handle regular expressions.");
+        }
 
-		[Fact]
-		public void TestPropertyTester ()
-		{
-			Obfuscar.TypeKey typeKey = new Obfuscar.TypeKey ("anything", "ns", "name");
-			var mock = new TypeReference (string.Empty, "type", null, null);
-			Obfuscar.PropertyKey key = new Obfuscar.PropertyKey (typeKey, new PropertyDefinition ("property", PropertyAttributes.None, mock) {
-				GetMethod = new MethodDefinition ("get_property", MethodAttributes.Public, mock)
-			});
+        [Fact]
+        public void TestPropertyTester()
+        {
+            Obfuscar.TypeKey typeKey = new Obfuscar.TypeKey("anything", "ns", "name");
+            var mock = new TypeReference(string.Empty, "type", null, null);
+            Obfuscar.PropertyKey key = new Obfuscar.PropertyKey(typeKey,
+                new PropertyDefinition("property", PropertyAttributes.None, mock)
+                {
+                    GetMethod = new MethodDefinition("get_property", MethodAttributes.Public, mock)
+                });
 
-			Obfuscar.IPredicate<Obfuscar.PropertyKey> tester;
+            Obfuscar.IPredicate<Obfuscar.PropertyKey> tester;
 
-			// check differnt kinds of name
-			tester = new Obfuscar.PropertyTester ("property", "ns.name", "public", null);
-			Assert.True (tester.Test (key), "Tester should handle strings.");
-			tester = new Obfuscar.PropertyTester ("pr*ty", "ns.name", "public", null);
-			Assert.True (tester.Test (key), "Tester should handle wildcards.");
-			tester = new Obfuscar.PropertyTester ("^pr.*ty", "ns.name", "public", null);
-			Assert.True (tester.Test (key), "Tester should handle regular expressions.");
-			tester = new Obfuscar.PropertyTester (new Regex ("p.*y"), "ns.name", "public", null);
-			Assert.True (tester.Test (key), "Tester should handle regular expressions.");
+            // check differnt kinds of name
+            tester = new Obfuscar.PropertyTester("property", "ns.name", "public", null);
+            Assert.True(tester.Test(key), "Tester should handle strings.");
+            tester = new Obfuscar.PropertyTester("pr*ty", "ns.name", "public", null);
+            Assert.True(tester.Test(key), "Tester should handle wildcards.");
+            tester = new Obfuscar.PropertyTester("^pr.*ty", "ns.name", "public", null);
+            Assert.True(tester.Test(key), "Tester should handle regular expressions.");
+            tester = new Obfuscar.PropertyTester(new Regex("p.*y"), "ns.name", "public", null);
+            Assert.True(tester.Test(key), "Tester should handle regular expressions.");
 
-			// check differnt kinds of type name
-			tester = new Obfuscar.PropertyTester ("property", "ns.n*e", "public", null);
-			Assert.True (tester.Test (key), "Tester should handle type wildcards.");
-			tester = new Obfuscar.PropertyTester ("property", "^ns\\.n.*e", "public", null);
-			Assert.True (tester.Test (key), "Tester should handle type regular expressions.");
-		}
+            // check differnt kinds of type name
+            tester = new Obfuscar.PropertyTester("property", "ns.n*e", "public", null);
+            Assert.True(tester.Test(key), "Tester should handle type wildcards.");
+            tester = new Obfuscar.PropertyTester("property", "^ns\\.n.*e", "public", null);
+            Assert.True(tester.Test(key), "Tester should handle type regular expressions.");
+        }
 
-		[Fact]
-		public void TestMethodTester ()
-		{
-			Obfuscar.TypeKey typeKey = new Obfuscar.TypeKey ("anything", "ns", "name");
-			var mock = new TypeReference (string.Empty, "type", null, null);
-			Obfuscar.MethodKey key = new Obfuscar.MethodKey (typeKey, new MethodDefinition ("method", MethodAttributes.Public, mock));
+        [Fact]
+        public void TestMethodTester()
+        {
+            Obfuscar.TypeKey typeKey = new Obfuscar.TypeKey("anything", "ns", "name");
+            var mock = new TypeReference(string.Empty, "type", null, null);
+            Obfuscar.MethodKey key =
+                new Obfuscar.MethodKey(typeKey, new MethodDefinition("method", MethodAttributes.Public, mock));
 
-			Obfuscar.IPredicate<Obfuscar.MethodKey> tester;
+            Obfuscar.IPredicate<Obfuscar.MethodKey> tester;
 
-			// check differnt kinds of name
-			tester = new Obfuscar.MethodTester ("method", "ns.name", "", "");
-			Assert.True (tester.Test (key), "Tester should handle strings.");
-			tester = new Obfuscar.MethodTester ("me*od", "ns.name", "", "");
-			Assert.True (tester.Test (key), "Tester should handle wildcards.");
-			tester = new Obfuscar.MethodTester ("^me.*od", "ns.name", "", "");
-			Assert.True (tester.Test (key), "Tester should handle regular expressions.");
-			tester = new Obfuscar.MethodTester (new Regex ("me.*od"), "ns.name", "", "");
-			Assert.True (tester.Test (key), "Tester should handle regular expressions.");
+            // check differnt kinds of name
+            tester = new Obfuscar.MethodTester("method", "ns.name", "", "");
+            Assert.True(tester.Test(key), "Tester should handle strings.");
+            tester = new Obfuscar.MethodTester("me*od", "ns.name", "", "");
+            Assert.True(tester.Test(key), "Tester should handle wildcards.");
+            tester = new Obfuscar.MethodTester("^me.*od", "ns.name", "", "");
+            Assert.True(tester.Test(key), "Tester should handle regular expressions.");
+            tester = new Obfuscar.MethodTester(new Regex("me.*od"), "ns.name", "", "");
+            Assert.True(tester.Test(key), "Tester should handle regular expressions.");
 
-			// check differnt kinds of type name
-			tester = new Obfuscar.MethodTester ("method", "ns.n*e", "", "");
-			Assert.True (tester.Test (key), "Tester should handle type wildcards.");
-			tester = new Obfuscar.MethodTester ("method", "^ns\\.n.*e", "", "");
-			Assert.True (tester.Test (key), "Tester should handle type regular expressions.");
-		}
+            // check differnt kinds of type name
+            tester = new Obfuscar.MethodTester("method", "ns.n*e", "", "");
+            Assert.True(tester.Test(key), "Tester should handle type wildcards.");
+            tester = new Obfuscar.MethodTester("method", "^ns\\.n.*e", "", "");
+            Assert.True(tester.Test(key), "Tester should handle type regular expressions.");
+        }
 
-		[Fact]
-		public void TestFieldTester ()
-		{
-			Obfuscar.TypeKey typeKey = new Obfuscar.TypeKey ("anything", "ns", "name");
-			var mock = new TypeReference (string.Empty, "type", null, null);
-			Obfuscar.FieldKey key = new Obfuscar.FieldKey (typeKey, "type", "field", new FieldDefinition ("field", FieldAttributes.Public, mock) {
-				DeclaringType = new TypeDefinition (string.Empty, "type", TypeAttributes.Public)
-			});
+        [Fact]
+        public void TestFieldTester()
+        {
+            Obfuscar.TypeKey typeKey = new Obfuscar.TypeKey("anything", "ns", "name");
+            var mock = new TypeReference(string.Empty, "type", null, null);
+            Obfuscar.FieldKey key = new Obfuscar.FieldKey(typeKey, "type", "field",
+                new FieldDefinition("field", FieldAttributes.Public, mock)
+                {
+                    DeclaringType = new TypeDefinition(string.Empty, "type", TypeAttributes.Public)
+                });
 
-			Obfuscar.IPredicate<Obfuscar.FieldKey> tester;
+            Obfuscar.IPredicate<Obfuscar.FieldKey> tester;
 
-			// check differnt kinds of name
-			tester = new Obfuscar.FieldTester ("field", "ns.name", "", "", "", "", false, false);
-			Assert.True (tester.Test (key), "Tester should handle strings.");
-			tester = new Obfuscar.FieldTester ("f*d", "ns.name", "", "", "", "", false, false);
-			Assert.True (tester.Test (key), "Tester should handle wildcards.");
-			tester = new Obfuscar.FieldTester ("^f.*d", "ns.name", "", "", "", "", false, false);
-			Assert.True (tester.Test (key), "Tester should handle regular expressions.");
-			tester = new Obfuscar.FieldTester (new Regex ("f.*d"), "ns.name", "", "", "", "", false, false);
-			Assert.True (tester.Test (key), "Tester should handle regular expressions.");
+            // check differnt kinds of name
+            tester = new Obfuscar.FieldTester("field", "ns.name", "", "", "", "", false, false);
+            Assert.True(tester.Test(key), "Tester should handle strings.");
+            tester = new Obfuscar.FieldTester("f*d", "ns.name", "", "", "", "", false, false);
+            Assert.True(tester.Test(key), "Tester should handle wildcards.");
+            tester = new Obfuscar.FieldTester("^f.*d", "ns.name", "", "", "", "", false, false);
+            Assert.True(tester.Test(key), "Tester should handle regular expressions.");
+            tester = new Obfuscar.FieldTester(new Regex("f.*d"), "ns.name", "", "", "", "", false, false);
+            Assert.True(tester.Test(key), "Tester should handle regular expressions.");
 
-			// check differnt kinds of type name
-			tester = new Obfuscar.FieldTester ("field", "ns.n*e", "", "", "", "", false, false);
-			Assert.True (tester.Test (key), "Tester should handle type wildcards.");
-			tester = new Obfuscar.FieldTester ("field", "^ns\\.n.*e", "", "", "", "", false, false);
-			Assert.True (tester.Test (key), "Tester should handle type regular expressions.");
-		}
+            // check differnt kinds of type name
+            tester = new Obfuscar.FieldTester("field", "ns.n*e", "", "", "", "", false, false);
+            Assert.True(tester.Test(key), "Tester should handle type wildcards.");
+            tester = new Obfuscar.FieldTester("field", "^ns\\.n.*e", "", "", "", "", false, false);
+            Assert.True(tester.Test(key), "Tester should handle type regular expressions.");
+        }
 
-		[Fact]
-		public void TestEventTester ()
-		{
-			Obfuscar.TypeKey typeKey = new Obfuscar.TypeKey ("anything", "ns", "name");
-			var mock = new TypeReference (string.Empty, "type", null, null);
-			Obfuscar.EventKey key = new Obfuscar.EventKey (typeKey, "type", "event", new EventDefinition ("event", EventAttributes.None, mock));
+        [Fact]
+        public void TestEventTester()
+        {
+            Obfuscar.TypeKey typeKey = new Obfuscar.TypeKey("anything", "ns", "name");
+            var mock = new TypeReference(string.Empty, "type", null, null);
+            Obfuscar.EventKey key = new Obfuscar.EventKey(typeKey, "type", "event",
+                new EventDefinition("event", EventAttributes.None, mock));
 
-			Obfuscar.IPredicate<Obfuscar.EventKey> tester;
+            Obfuscar.IPredicate<Obfuscar.EventKey> tester;
 
-			// check differnt kinds of name
-			tester = new Obfuscar.EventTester ("event", "ns.name", "", "");
-			Assert.True (tester.Test (key), "Tester should handle strings.");
-			tester = new Obfuscar.EventTester ("e*t", "ns.name", "", "");
-			Assert.True (tester.Test (key), "Tester should handle wildcards.");
-			tester = new Obfuscar.EventTester ("^e.*t", "ns.name", "", "");
-			Assert.True (tester.Test (key), "Tester should handle regular expressions.");
-			tester = new Obfuscar.EventTester (new Regex ("e.*t"), "ns.name", "", "");
-			Assert.True (tester.Test (key), "Tester should handle regular expressions.");
+            // check differnt kinds of name
+            tester = new Obfuscar.EventTester("event", "ns.name", "", "");
+            Assert.True(tester.Test(key), "Tester should handle strings.");
+            tester = new Obfuscar.EventTester("e*t", "ns.name", "", "");
+            Assert.True(tester.Test(key), "Tester should handle wildcards.");
+            tester = new Obfuscar.EventTester("^e.*t", "ns.name", "", "");
+            Assert.True(tester.Test(key), "Tester should handle regular expressions.");
+            tester = new Obfuscar.EventTester(new Regex("e.*t"), "ns.name", "", "");
+            Assert.True(tester.Test(key), "Tester should handle regular expressions.");
 
-			// check differnt kinds of type name
-			tester = new Obfuscar.EventTester ("event", "ns.n*e", "", "");
-			Assert.True (tester.Test (key), "Tester should handle type wildcards.");
-			tester = new Obfuscar.EventTester ("event", "^ns\\.n.*e", "", "");
-			Assert.True (tester.Test (key), "Tester should handle type regular expressions.");
-		}
-	}
+            // check differnt kinds of type name
+            tester = new Obfuscar.EventTester("event", "ns.n*e", "", "");
+            Assert.True(tester.Test(key), "Tester should handle type wildcards.");
+            tester = new Obfuscar.EventTester("event", "^ns\\.n.*e", "", "");
+            Assert.True(tester.Test(key), "Tester should handle type regular expressions.");
+        }
+    }
 }

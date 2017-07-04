@@ -1,4 +1,5 @@
 ﻿#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,6 +21,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
 
 using Mono.Cecil;
@@ -29,46 +31,47 @@ using Xunit;
 
 namespace ObfuscarTests
 {
-	public class DelaySignedTests
-	{
-		static MethodDefinition FindByFullName(TypeDefinition typeDef, string name)
-		{
-			foreach (MethodDefinition method in typeDef.Methods)
-				if (method.FullName == name)
-					return method;
+    public class DelaySignedTests
+    {
+        static MethodDefinition FindByFullName(TypeDefinition typeDef, string name)
+        {
+            foreach (MethodDefinition method in typeDef.Methods)
+                if (method.FullName == name)
+                    return method;
 
-			Assert.True(false, String.Format("Expected to find method: {0}", name));
-			return null; // never here
-		}
+            Assert.True(false, String.Format("Expected to find method: {0}", name));
+            return null; // never here
+        }
 
-		[Fact]
-		public void CheckGeneric()
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format(
-							 @"<?xml version='1.0'?>" +
-							 @"<Obfuscator>" +
-							 @"<Var name='InPath' value='{0}' />" +
-							 @"<Var name='OutPath' value='{1}' />" +
-							 @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
-							 @"<Var name='HidePrivateApi' value='true' />" +
-							 @"<Var name='KeepPublicApi' value='false' />" +
-							 @"<Module file='$(InPath){2}DelaySigned.dll' />" +
-							 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+        [Fact]
+        public void CheckGeneric()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Module file='$(InPath){2}DelaySigned.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.CleanInput();
-			var assembly = Path.Combine(TestHelper.InputPath, "DelaySigned.dll");
+            TestHelper.CleanInput();
+            var assembly = Path.Combine(TestHelper.InputPath, "DelaySigned.dll");
 
-			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy(Path.Combine(TestHelper.InputPath, @"..", "DelaySigned.dll"), assembly, true);
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "DelaySigned.dll"), assembly, true);
 
-			var map = TestHelper.Obfuscate(xml).Mapping;
+            var map = TestHelper.Obfuscate(xml).Mapping;
 
-			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(assembly);
-			Assert.False(inAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(assembly);
+            Assert.False(inAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
 
-			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(Path.Combine(outputPath, "DelaySigned.dll"));
-			Assert.True(outAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
-		}
-	}
+            AssemblyDefinition outAssmDef =
+                AssemblyDefinition.ReadAssembly(Path.Combine(outputPath, "DelaySigned.dll"));
+            Assert.True(outAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
+        }
+    }
 }

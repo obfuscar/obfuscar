@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,6 +21,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
 
 using System.Collections.Generic;
@@ -29,82 +31,90 @@ using Obfuscar.Helpers;
 
 namespace Obfuscar
 {
-	class AssemblyCache : DefaultAssemblyResolver
-	{
-		private List<string> paths = new List<string> ();
+    class AssemblyCache : DefaultAssemblyResolver
+    {
+        private List<string> paths = new List<string>();
 
-		public AssemblyCache (Project project)
-		{
-			foreach (var path in project.AllAssemblySearchPaths)
-				AddSearchDirectory (path);
+        public AssemblyCache(Project project)
+        {
+            foreach (var path in project.AllAssemblySearchPaths)
+                AddSearchDirectory(path);
 
-			foreach (AssemblyInfo info in project)
-				AddSearchDirectory (Path.GetDirectoryName (info.Filename));
-		}
+            foreach (AssemblyInfo info in project)
+                AddSearchDirectory(Path.GetDirectoryName(info.Filename));
+        }
 
-		public TypeDefinition GetTypeDefinition (TypeReference type)
-		{
-			if (type == null)
-				return null;
+        public TypeDefinition GetTypeDefinition(TypeReference type)
+        {
+            if (type == null)
+                return null;
 
-			TypeDefinition typeDef = type as TypeDefinition;
-			if (typeDef != null)
-				return typeDef;
+            TypeDefinition typeDef = type as TypeDefinition;
+            if (typeDef != null)
+                return typeDef;
 
-			AssemblyNameReference name = type.Scope as AssemblyNameReference;
-			if (name == null) {
-				GenericInstanceType gi = type as GenericInstanceType;
-				return gi == null ? null : GetTypeDefinition (gi.ElementType);
-			}
+            AssemblyNameReference name = type.Scope as AssemblyNameReference;
+            if (name == null)
+            {
+                GenericInstanceType gi = type as GenericInstanceType;
+                return gi == null ? null : GetTypeDefinition(gi.ElementType);
+            }
 
-			AssemblyDefinition assmDef;
-			try {
-				assmDef = Resolve (name);
-			} catch (FileNotFoundException) {
-				throw new ObfuscarException ("Unable to resolve dependency:  " + name.Name);
-			}
+            AssemblyDefinition assmDef;
+            try
+            {
+                assmDef = Resolve(name);
+            }
+            catch (FileNotFoundException)
+            {
+                throw new ObfuscarException("Unable to resolve dependency:  " + name.Name);
+            }
 
-			string fullName = type.GetFullName ();
-			typeDef = assmDef.MainModule.GetType (fullName);
-			if (typeDef != null)
-				return typeDef;
+            string fullName = type.GetFullName();
+            typeDef = assmDef.MainModule.GetType(fullName);
+            if (typeDef != null)
+                return typeDef;
 
-			// IMPORTANT: handle type forwarding
-			if (!assmDef.MainModule.HasExportedTypes)
-				return null;
+            // IMPORTANT: handle type forwarding
+            if (!assmDef.MainModule.HasExportedTypes)
+                return null;
 
-			foreach (var exported in assmDef.MainModule.ExportedTypes) {
-				if (exported.FullName == fullName)
-					return exported.Resolve ();
-			}
+            foreach (var exported in assmDef.MainModule.ExportedTypes)
+            {
+                if (exported.FullName == fullName)
+                    return exported.Resolve();
+            }
 
-			return null;
-		}
+            return null;
+        }
 
-		public new void RegisterAssembly (AssemblyDefinition assembly)
-		{
-			var path = assembly.GetPortableProfileDirectory ();
-			if (path != null && Directory.Exists (path))
-				paths.Add (path);
+        public new void RegisterAssembly(AssemblyDefinition assembly)
+        {
+            var path = assembly.GetPortableProfileDirectory();
+            if (path != null && Directory.Exists(path))
+                paths.Add(path);
 
-			base.RegisterAssembly (assembly);
-		}
+            base.RegisterAssembly(assembly);
+        }
 
-		public override AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters)
-		{
-			AssemblyDefinition result;
-			if (name.IsRetargetable) {
-				foreach (var path in paths)
-					AddSearchDirectory (path);
+        public override AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
+        {
+            AssemblyDefinition result;
+            if (name.IsRetargetable)
+            {
+                foreach (var path in paths)
+                    AddSearchDirectory(path);
 
-				result = base.Resolve (name, parameters);
-				foreach (var path in paths)
-					RemoveSearchDirectory (path);
-			} else {
-				result = base.Resolve (name, parameters);
-			}
+                result = base.Resolve(name, parameters);
+                foreach (var path in paths)
+                    RemoveSearchDirectory(path);
+            }
+            else
+            {
+                result = base.Resolve(name, parameters);
+            }
 
-			return result;
-		}
-	}
+            return result;
+        }
+    }
 }

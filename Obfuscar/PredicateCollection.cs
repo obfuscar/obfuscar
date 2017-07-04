@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,7 +21,9 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,21 +31,22 @@ using System.Text.RegularExpressions;
 
 namespace Obfuscar
 {
-	interface IPredicate<T>
-	{
-		bool Test (T item, InheritMap map=null);
-	}
+    interface IPredicate<T>
+    {
+        bool Test(T item, InheritMap map = null);
+    }
 
-	class PredicateCollection<T> : List<IPredicate<T>>
-	{
-		public bool IsMatch (T thing, InheritMap map=null)
-		{
-			foreach (IPredicate<T> test in this) {
-				if (test.Test (thing, map))
-					return true;
-			}
+    class PredicateCollection<T> : List<IPredicate<T>>
+    {
+        public bool IsMatch(T thing, InheritMap map = null)
+        {
+            foreach (IPredicate<T> test in this)
+            {
+                if (test.Test(thing, map))
+                    return true;
+            }
 
-			return false;
-		}
-	}
+            return false;
+        }
+    }
 }

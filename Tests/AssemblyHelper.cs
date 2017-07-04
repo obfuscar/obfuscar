@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,74 +21,81 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using System.Collections.Generic;
 using System.IO;
-
 using Mono.Cecil;
 using Xunit;
 
 namespace ObfuscarTests
 {
-	static class AssemblyHelper
-	{
-		public static void CheckAssembly (string name, int expectedTypes, 
-			Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType)
-		{
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (name);
+    static class AssemblyHelper
+    {
+        public static void CheckAssembly(string name, int expectedTypes,
+            Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType)
+        {
+            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(name);
 
-			Assert.Equal (expectedTypes + 1, assmDef.MainModule.Types.Count);
-			// String.Format ("Should contain only {0} types, and <Module>.", expectedTypes));
+            Assert.Equal(expectedTypes + 1, assmDef.MainModule.Types.Count);
+            // String.Format ("Should contain only {0} types, and <Module>.", expectedTypes));
 
-			bool foundType = false;
+            bool foundType = false;
 
-			foreach (TypeDefinition typeDef in assmDef.MainModule.Types) {
-				if (typeDef.Name == "<Module>")
-					continue;
-				else if (isType (typeDef)) {
-					foundType = true;
-					if (checkType != null)
-						CheckTypeNested (typeDef, isType, checkType);                    
-				}
-			}
+            foreach (TypeDefinition typeDef in assmDef.MainModule.Types)
+            {
+                if (typeDef.Name == "<Module>")
+                    continue;
+                else if (isType(typeDef))
+                {
+                    foundType = true;
+                    if (checkType != null)
+                        CheckTypeNested(typeDef, isType, checkType);
+                }
+            }
 
-			Assert.True (foundType, "Should have found non-<Module> type.");
-		}
+            Assert.True(foundType, "Should have found non-<Module> type.");
+        }
 
-		private static void CheckTypeNested (TypeDefinition typeDef, Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType)
-		{
-			checkType (typeDef);
-			if (typeDef.HasNestedTypes)
-				foreach (var nested in typeDef.NestedTypes)
-					if (isType (nested))
-						CheckTypeNested (nested, isType, checkType); 
-		}
+        private static void CheckTypeNested(TypeDefinition typeDef, Predicate<TypeDefinition> isType,
+            Action<TypeDefinition> checkType)
+        {
+            checkType(typeDef);
+            if (typeDef.HasNestedTypes)
+                foreach (var nested in typeDef.NestedTypes)
+                    if (isType(nested))
+                        CheckTypeNested(nested, isType, checkType);
+        }
 
-		public static void CheckAssembly (string name, int expectedTypes, string[] expectedMethods, string[] notExpectedMethods,
-			Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType)
-		{
-			HashSet<string> methodsToFind = new HashSet<string> (expectedMethods);
-			HashSet<string> methodsNotToFind = new HashSet<string> (notExpectedMethods);
+        public static void CheckAssembly(string name, int expectedTypes, string[] expectedMethods,
+            string[] notExpectedMethods,
+            Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType)
+        {
+            HashSet<string> methodsToFind = new HashSet<string>(expectedMethods);
+            HashSet<string> methodsNotToFind = new HashSet<string>(notExpectedMethods);
 
-			CheckAssembly (name, expectedTypes, isType,
-				delegate( TypeDefinition typeDef ) {
-					// make sure we have enough methods...
-					Assert.Equal (expectedMethods.Length + notExpectedMethods.Length + 1, typeDef.Methods.Count);
-					// "Some of the methods for the type are missing.");
+            CheckAssembly(name, expectedTypes, isType,
+                delegate(TypeDefinition typeDef)
+                {
+                    // make sure we have enough methods...
+                    Assert.Equal(expectedMethods.Length + notExpectedMethods.Length + 1, typeDef.Methods.Count);
+                    // "Some of the methods for the type are missing.");
 
-				foreach (MethodDefinition method in typeDef.Methods) {
-					Assert.False (methodsNotToFind.Contains (method.Name), String.Format (
-							"Did not expect to find method '{0}'.", method.Name));
+                    foreach (MethodDefinition method in typeDef.Methods)
+                    {
+                        Assert.False(methodsNotToFind.Contains(method.Name), String.Format(
+                            "Did not expect to find method '{0}'.", method.Name));
 
-					methodsToFind.Remove (method.Name);
-				}
+                        methodsToFind.Remove(method.Name);
+                    }
 
-				if (checkType != null)
-					checkType (typeDef);
-			});
+                    if (checkType != null)
+                        checkType(typeDef);
+                });
 
-			Assert.False (methodsToFind.Count > 0, "Failed to find all expected methods.");
-		}
-	}
+            Assert.False(methodsToFind.Count > 0, "Failed to find all expected methods.");
+        }
+    }
 }

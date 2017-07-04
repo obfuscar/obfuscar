@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,6 +21,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
 
 using Obfuscar;
@@ -27,25 +29,25 @@ using Xunit;
 
 namespace ObfuscarTests
 {
-	public class VariablesTests
-	{
-		[Fact]
-		public void CheckReplace ()
-		{
-			Variables variables = new Variables ();
-			variables.Add ("Key1", "Value1");
+    public class VariablesTests
+    {
+        [Fact]
+        public void CheckReplace()
+        {
+            Variables variables = new Variables();
+            variables.Add("Key1", "Value1");
 
-			string result = variables.Replace ("This: $(Key1) got replaced.");
-			Assert.Equal ("This: Value1 got replaced.", result);
-		}
+            string result = variables.Replace("This: $(Key1) got replaced.");
+            Assert.Equal("This: Value1 got replaced.", result);
+        }
 
-		[Fact]
-		public void CheckBadReplace ()
-		{
-			Variables variables = new Variables ();
-			variables.Add ("Key1", "Value1");
-			var exception = Assert.Throws<ObfuscarException>(() => { variables.Replace("$(Unreplaceable)"); });
-			Assert.Equal("Unable to replace variable:  Unreplaceable", exception.Message);
-		}
-	}
+        [Fact]
+        public void CheckBadReplace()
+        {
+            Variables variables = new Variables();
+            variables.Add("Key1", "Value1");
+            var exception = Assert.Throws<ObfuscarException>(() => { variables.Replace("$(Unreplaceable)"); });
+            Assert.Equal("Unable to replace variable:  Unreplaceable", exception.Message);
+        }
+    }
 }

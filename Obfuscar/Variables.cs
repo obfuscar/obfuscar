@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,63 +21,67 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Obfuscar
 {
-	class Variables
-	{
-		readonly Dictionary<string, string> vars = new Dictionary<string, string> ();
-		readonly System.Text.RegularExpressions.Regex re =
-			new System.Text.RegularExpressions.Regex (@"\$\(([^)]+)\)");
+    class Variables
+    {
+        readonly Dictionary<string, string> vars = new Dictionary<string, string>();
 
-		public void Add (string name, string value)
-		{
-			vars [name] = value;
-		}
+        readonly System.Text.RegularExpressions.Regex re =
+            new System.Text.RegularExpressions.Regex(@"\$\(([^)]+)\)");
 
-		public void Remove (string name)
-		{
-			vars.Remove (name);
-		}
+        public void Add(string name, string value)
+        {
+            vars[name] = value;
+        }
 
-		public string GetValue (string name, string def)
-		{
-			string value;
-			return this.Replace (vars.TryGetValue (name, out value) ? value : def);
-		}
+        public void Remove(string name)
+        {
+            vars.Remove(name);
+        }
 
-		public string Replace (string str)
-		{
-			if (string.IsNullOrEmpty (str)) {
-				return str;
-			}
+        public string GetValue(string name, string def)
+        {
+            string value;
+            return this.Replace(vars.TryGetValue(name, out value) ? value : def);
+        }
 
-			System.Text.StringBuilder formatted = new System.Text.StringBuilder ();
+        public string Replace(string str)
+        {
+            if (string.IsNullOrEmpty(str))
+            {
+                return str;
+            }
 
-			int lastMatch = 0;
+            System.Text.StringBuilder formatted = new System.Text.StringBuilder();
 
-			string variable;
-			string replacement;
-			foreach (System.Text.RegularExpressions.Match m in re.Matches(str)) {
+            int lastMatch = 0;
 
-				formatted.Append (str.Substring (lastMatch, m.Index - lastMatch));
+            string variable;
+            string replacement;
+            foreach (System.Text.RegularExpressions.Match m in re.Matches(str))
+            {
+                formatted.Append(str.Substring(lastMatch, m.Index - lastMatch));
 
-				variable = m.Groups [1].Value;
-				if (vars.TryGetValue (variable, out replacement))
-					formatted.Append (this.Replace (replacement));
-				else
+                variable = m.Groups[1].Value;
+                if (vars.TryGetValue(variable, out replacement))
+                    formatted.Append(this.Replace(replacement));
+                else
                     throw new ObfuscarException("Unable to replace variable:  " + variable);
 
-				lastMatch = m.Index + m.Length;
-			}
+                lastMatch = m.Index + m.Length;
+            }
 
-			formatted.Append (str.Substring (lastMatch));
+            formatted.Append(str.Substring(lastMatch));
 
-			return formatted.ToString ();
-		}
-	}
+            return formatted.ToString();
+        }
+    }
 }

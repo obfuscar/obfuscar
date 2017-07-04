@@ -1,4 +1,5 @@
 ﻿#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,6 +21,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
 
 using Mono.Cecil;
@@ -31,48 +33,53 @@ using Xunit;
 
 namespace ObfuscarTests
 {
-	public class ResourcesTests
-	{
-		private static MethodDefinition FindByFullName(TypeDefinition typeDef, string name)
-		{
-			foreach (MethodDefinition method in typeDef.Methods)
-				if (method.FullName == name)
-					return method;
+    public class ResourcesTests
+    {
+        private static MethodDefinition FindByFullName(TypeDefinition typeDef, string name)
+        {
+            foreach (MethodDefinition method in typeDef.Methods)
+                if (method.FullName == name)
+                    return method;
 
-			Assert.True(false, String.Format("Expected to find method: {0}", name));
-			return null; // never here
-		}
+            Assert.True(false, String.Format("Expected to find method: {0}", name));
+            return null; // never here
+        }
 
-		[Fact]
-		public void CheckGeneric()
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format(
-									  @"<?xml version='1.0'?>" +
-									  @"<Obfuscator>" +
-									  @"<Var name='InPath' value='{0}' />" +
-									  @"<Var name='OutPath' value='{1}' />" +
-									  @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
-									  @"<Var name='HidePrivateApi' value='true' />" +
-									  @"<Var name='KeepPublicApi' value='false' />" +
-									  @"<Module file='$(InPath){2}WindowsFormsApplication1.exe' />" +
-									  @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+        [Fact]
+        public void CheckGeneric()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Module file='$(InPath){2}WindowsFormsApplication1.exe' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.CleanInput();
+            TestHelper.CleanInput();
 
-			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WindowsFormsApplication1.exe"),
-				Path.Combine(TestHelper.InputPath, "WindowsFormsApplication1.exe"), true);
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WindowsFormsApplication1.exe"),
+                Path.Combine(TestHelper.InputPath, "WindowsFormsApplication1.exe"), true);
 
-			var map = TestHelper.Obfuscate(xml).Mapping;
+            var map = TestHelper.Obfuscate(xml).Mapping;
 
-			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
-														Path.Combine(outputPath, "WindowsFormsApplication1.exe"));
-			Assert.False (outAssmDef.MainModule.Resources.Any(item => item.Name == "WindowsFormsApplication1.Properties.Resources.resources"));
-			Assert.False (outAssmDef.MainModule.Resources.Any(item => item.Name == "WindowsFormsApplication1.CustomForm.resources"));
-			Assert.False (outAssmDef.MainModule.Resources.Any(item => item.Name == "WindowsFormsApplication1.CustomForm1.resources"));
-			Assert.False (outAssmDef.MainModule.Resources.Any(item => item.Name == "WindowsFormsApplication1.Form1.resources"));
-			Assert.False (outAssmDef.MainModule.Resources.Any(item => item.Name == "WindowsFormsApplication1.UserControl1.resources"));
-		}
-	}
+            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "WindowsFormsApplication1.exe"));
+            Assert.False(outAssmDef.MainModule.Resources.Any(item =>
+                item.Name == "WindowsFormsApplication1.Properties.Resources.resources"));
+            Assert.False(outAssmDef.MainModule.Resources.Any(item =>
+                item.Name == "WindowsFormsApplication1.CustomForm.resources"));
+            Assert.False(outAssmDef.MainModule.Resources.Any(item =>
+                item.Name == "WindowsFormsApplication1.CustomForm1.resources"));
+            Assert.False(outAssmDef.MainModule.Resources.Any(item =>
+                item.Name == "WindowsFormsApplication1.Form1.resources"));
+            Assert.False(outAssmDef.MainModule.Resources.Any(item =>
+                item.Name == "WindowsFormsApplication1.UserControl1.resources"));
+        }
+    }
 }

@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,21 +21,23 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using System.IO;
 using Xunit;
 
 namespace ObfuscarTests
 {
-	public class CleanPoolTests
-	{
-		public void BuildAndObfuscateAssemblies()
-		{
-			string xml = String.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
+    public class CleanPoolTests
+    {
+        public void BuildAndObfuscateAssemblies()
+        {
+            string xml = String.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='ReuseNames' value='true' />" +
                 @"<Var name='KeepPublicApi' value='false' />" +
@@ -42,13 +45,13 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyForCleanPoolInterface.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.BuildAndObfuscate (new[] { "AssemblyForCleanPoolInterface", "AssemblyForCleanPoolClass" }, xml);
+            TestHelper.BuildAndObfuscate(new[] {"AssemblyForCleanPoolInterface", "AssemblyForCleanPoolClass"}, xml);
         }
 
-		[Fact]
-		public void CheckCleanPool ()
-		{
-			BuildAndObfuscateAssemblies ();
-		}
-	}
+        [Fact]
+        public void CheckCleanPool()
+        {
+            BuildAndObfuscateAssemblies();
+        }
+    }
 }

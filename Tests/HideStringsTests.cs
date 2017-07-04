@@ -1,4 +1,5 @@
 ﻿#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,181 +21,192 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
-#endregion
-using System.IO;
 
+#endregion
+
+using System.IO;
 using Mono.Cecil;
 using Xunit;
 
 namespace ObfuscarTests
 {
-	public class HideStringsTests
-	{
-		[Fact]
-		public void CheckHideStringsClassDoesNotExist ()
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Var name='HideStrings' value='false' />" +
-				@"<Module file='$(InPath){2}AssemblyWithStrings.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+    public class HideStringsTests
+    {
+        [Fact]
+        public void CheckHideStringsClassDoesNotExist()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HideStrings' value='false' />" +
+                @"<Module file='$(InPath){2}AssemblyWithStrings.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
-				Path.Combine (outputPath, "AssemblyWithStrings.dll"));
+            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true);
+            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
-			Assert.Equal (3, assmDef.MainModule.Types.Count);
+            Assert.Equal(3, assmDef.MainModule.Types.Count);
 
-			TypeDefinition expected = null;
-			foreach (var type in assmDef.MainModule.Types) {
-				if (type.FullName.Contains ("PrivateImplementation")) {
-					expected = type;
-				}
-			}
+            TypeDefinition expected = null;
+            foreach (var type in assmDef.MainModule.Types)
+            {
+                if (type.FullName.Contains("PrivateImplementation"))
+                {
+                    expected = type;
+                }
+            }
 
-			Assert.Null (expected);
-		}
+            Assert.Null(expected);
+        }
 
-		[Fact]
-		public void CheckHideStringsClassExists ()
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Var name='HideStrings' value='true' />" +
-				@"<Module file='$(InPath){2}AssemblyWithStrings.dll' />" +
-				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+        [Fact]
+        public void CheckHideStringsClassExists()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HideStrings' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithStrings.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
-				Path.Combine (outputPath, "AssemblyWithStrings.dll"));
+            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true);
+            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
-			Assert.Equal (4, assmDef.MainModule.Types.Count);
+            Assert.Equal(4, assmDef.MainModule.Types.Count);
 
-			TypeDefinition expected = null;
-			foreach (var type in assmDef.MainModule.Types) {
-				if (type.FullName.Contains ("PrivateImplementation")) {
-					expected = type;
-				}
-			}
+            TypeDefinition expected = null;
+            foreach (var type in assmDef.MainModule.Types)
+            {
+                if (type.FullName.Contains("PrivateImplementation"))
+                {
+                    expected = type;
+                }
+            }
 
-			Assert.NotNull (expected);
+            Assert.NotNull(expected);
 
-			Assert.Equal (3, expected.Fields.Count);
+            Assert.Equal(3, expected.Fields.Count);
 
-			Assert.Equal (6, expected.Methods.Count);
-		}
+            Assert.Equal(6, expected.Methods.Count);
+        }
 
-		[Fact]
-		public void CheckHideStringsClassSkip ()
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Var name='HideStrings' value='true' />" +
-				@"<Module file='$(InPath){2}AssemblyWithStrings.dll'>" +
-				@"  <SkipStringHiding type='TestClasses.PublicClass1' name='*' />" +
-				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+        [Fact]
+        public void CheckHideStringsClassSkip()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HideStrings' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithStrings.dll'>" +
+                @"  <SkipStringHiding type='TestClasses.PublicClass1' name='*' />" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
-				Path.Combine (outputPath, "AssemblyWithStrings.dll"));
+            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true);
+            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
-			Assert.Equal (4, assmDef.MainModule.Types.Count);
+            Assert.Equal(4, assmDef.MainModule.Types.Count);
 
-			TypeDefinition expected = null;
-			foreach (var type in assmDef.MainModule.Types) {
-				if (type.FullName.Contains ("PrivateImplementation")) {
-					expected = type;
-				}
-			}
+            TypeDefinition expected = null;
+            foreach (var type in assmDef.MainModule.Types)
+            {
+                if (type.FullName.Contains("PrivateImplementation"))
+                {
+                    expected = type;
+                }
+            }
 
-			Assert.NotNull (expected);
+            Assert.NotNull(expected);
 
-			Assert.Equal (3, expected.Fields.Count);
+            Assert.Equal(3, expected.Fields.Count);
 
-			Assert.Equal (4, expected.Methods.Count);
-		}
+            Assert.Equal(4, expected.Methods.Count);
+        }
 
-		[Fact]
-		public void CheckHideStringsClassForce ()
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Var name='HideStrings' value='false' />" +
-				@"<Module file='$(InPath){2}AssemblyWithStrings.dll'>" +
-				@"  <ForceStringHiding type='TestClasses.PublicClass1' name='*' />" +
-				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+        [Fact]
+        public void CheckHideStringsClassForce()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HideStrings' value='false' />" +
+                @"<Module file='$(InPath){2}AssemblyWithStrings.dll'>" +
+                @"  <ForceStringHiding type='TestClasses.PublicClass1' name='*' />" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
-				Path.Combine (outputPath, "AssemblyWithStrings.dll"));
+            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true);
+            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
-			Assert.Equal (4, assmDef.MainModule.Types.Count);
+            Assert.Equal(4, assmDef.MainModule.Types.Count);
 
-			TypeDefinition expected = null;
-			foreach (var type in assmDef.MainModule.Types) {
-				if (type.FullName.Contains ("PrivateImplementation")) {
-					expected = type;
-				}
-			}
+            TypeDefinition expected = null;
+            foreach (var type in assmDef.MainModule.Types)
+            {
+                if (type.FullName.Contains("PrivateImplementation"))
+                {
+                    expected = type;
+                }
+            }
 
-			Assert.NotNull (expected);
+            Assert.NotNull(expected);
 
-			Assert.Equal (3, expected.Fields.Count);
+            Assert.Equal(3, expected.Fields.Count);
 
-			Assert.Equal (4, expected.Methods.Count);
-		}
+            Assert.Equal(4, expected.Methods.Count);
+        }
 
-		[Fact]
-		public void CheckHideStringsClassForce2 ()
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format (
-				@"<?xml version='1.0'?>" +
-				@"<Obfuscator>" +
-				@"<Var name='InPath' value='{0}' />" +
-				@"<Var name='OutPath' value='{1}' />" +
-				@"<Var name='HideStrings' value='false' />" +
-				@"<Module file='$(InPath){2}AssemblyWithStrings.dll'>" +
-				@"  <ForceType name='TestClasses.PublicClass1' forceStringHiding='true' />" +
-				@"</Module>" +
-				@"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+        [Fact]
+        public void CheckHideStringsClassForce2()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HideStrings' value='false' />" +
+                @"<Module file='$(InPath){2}AssemblyWithStrings.dll'>" +
+                @"  <ForceType name='TestClasses.PublicClass1' forceStringHiding='true' />" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.BuildAndObfuscate ("AssemblyWithStrings", string.Empty, xml, true);
-			AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly (
-				Path.Combine (outputPath, "AssemblyWithStrings.dll"));
+            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true);
+            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
-			Assert.Equal (4, assmDef.MainModule.Types.Count);
+            Assert.Equal(4, assmDef.MainModule.Types.Count);
 
-			TypeDefinition expected = null;
-			foreach (var type in assmDef.MainModule.Types) {
-				if (type.FullName.Contains ("PrivateImplementation")) {
-					expected = type;
-				}
-			}
+            TypeDefinition expected = null;
+            foreach (var type in assmDef.MainModule.Types)
+            {
+                if (type.FullName.Contains("PrivateImplementation"))
+                {
+                    expected = type;
+                }
+            }
 
-			Assert.NotNull (expected);
+            Assert.NotNull(expected);
 
-			Assert.Equal (3, expected.Fields.Count);
+            Assert.Equal(3, expected.Fields.Count);
 
-			Assert.Equal (4, expected.Methods.Count);
-		}
-	}
+            Assert.Equal(4, expected.Methods.Count);
+        }
+    }
 }

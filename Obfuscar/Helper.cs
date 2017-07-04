@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,7 +21,9 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using System.Xml;
 using System.Text.RegularExpressions;
@@ -29,94 +32,100 @@ using System.Collections.Generic;
 
 namespace Obfuscar
 {
-	class Node<T>
-	{
-		public List<Node<T>> Parents = new List<Node<T>> ();
-		public List<Node<T>> Children = new List<Node<T>> ();
-		public T Item;
+    class Node<T>
+    {
+        public List<Node<T>> Parents = new List<Node<T>>();
+        public List<Node<T>> Children = new List<Node<T>>();
+        public T Item;
 
-		public void AppendTo (Node<T> parent)
-		{
-			if (parent == null)
-				return;
+        public void AppendTo(Node<T> parent)
+        {
+            if (parent == null)
+                return;
 
-			parent.Children.Add (this);
-			Parents.Add (parent);
-		}
-	}
+            parent.Children.Add(this);
+            Parents.Add(parent);
+        }
+    }
 
-	static class Helper
-	{
-		public static void Noop ()
-		{
-		}
+    static class Helper
+    {
+        public static void Noop()
+        {
+        }
 
-		/// <summary>
-		/// Builds a name for a parameter type that can be used for comparing parameters.  See 
-		/// <see cref="GetTypeName"/> for details.
-		/// </summary>
-		public static string GetParameterTypeName (ParameterReference param)
-		{
-			return TypeNameCache.GetTypeName (param.ParameterType);
-		}
+        /// <summary>
+        /// Builds a name for a parameter type that can be used for comparing parameters.  See 
+        /// <see cref="GetTypeName"/> for details.
+        /// </summary>
+        public static string GetParameterTypeName(ParameterReference param)
+        {
+            return TypeNameCache.GetTypeName(param.ParameterType);
+        }
 
-		public static string GetAttribute (XmlReader reader, string name)
-		{
-			string val = reader.GetAttribute (name);
-			if (val == null)
-				val = String.Empty;
-			else
-				val = val.Trim ();
+        public static string GetAttribute(XmlReader reader, string name)
+        {
+            string val = reader.GetAttribute(name);
+            if (val == null)
+                val = String.Empty;
+            else
+                val = val.Trim();
 
-			return val;
-		}
+            return val;
+        }
 
-		public static string GetAttribute (XmlReader reader, string name, Variables vars)
-		{
-			return vars.Replace (GetAttribute (reader, name));
-		}
+        public static string GetAttribute(XmlReader reader, string name, Variables vars)
+        {
+            return vars.Replace(GetAttribute(reader, name));
+        }
 
-		private static bool MatchWithWildCards (string test, int testIdx, string pattern, int patIdx)
-		{
-			while (true) {
-				if (testIdx >= test.Length && patIdx >= pattern.Length)
-					return true;
-				if (patIdx >= pattern.Length) // text has still characters but there is no pattern left.
-					return false;
-				if (pattern [patIdx] != '*') {
-					if (testIdx >= test.Length || pattern [patIdx] != '?' && pattern [patIdx] != test [testIdx])
-						return false;
-					testIdx++;
-				} else {
-					while (!MatchWithWildCards (test, testIdx, pattern, patIdx + 1)) {
-						if (test.Length <= testIdx++)
-							return false;
-					}
-				}
-				patIdx++;
-			}
-		}
+        private static bool MatchWithWildCards(string test, int testIdx, string pattern, int patIdx)
+        {
+            while (true)
+            {
+                if (testIdx >= test.Length && patIdx >= pattern.Length)
+                    return true;
+                if (patIdx >= pattern.Length) // text has still characters but there is no pattern left.
+                    return false;
+                if (pattern[patIdx] != '*')
+                {
+                    if (testIdx >= test.Length || pattern[patIdx] != '?' && pattern[patIdx] != test[testIdx])
+                        return false;
+                    testIdx++;
+                }
+                else
+                {
+                    while (!MatchWithWildCards(test, testIdx, pattern, patIdx + 1))
+                    {
+                        if (test.Length <= testIdx++)
+                            return false;
+                    }
+                }
+                patIdx++;
+            }
+        }
 
-		public static bool MatchWithWildCards (string test, string pattern)
-		{
-			return MatchWithWildCards (test, 0, pattern, 0);
-		}
+        public static bool MatchWithWildCards(string test, string pattern)
+        {
+            return MatchWithWildCards(test, 0, pattern, 0);
+        }
 
-		public static bool CompareOptionalRegex (string test, string pattern)
-		{
-			if (pattern.StartsWith ("^"))
-				return Regex.IsMatch (test, pattern);
-			else
-				return MatchWithWildCards (test, pattern);
-		}
+        public static bool CompareOptionalRegex(string test, string pattern)
+        {
+            if (pattern.StartsWith("^"))
+                return Regex.IsMatch(test, pattern);
+            else
+                return MatchWithWildCards(test, pattern);
+        }
 
-		public static object GetAttributePropertyByName (CustomAttribute attr, string name)
-		{
-			foreach (CustomAttributeNamedArgument property in attr.Properties) {
-				if (property.Name == name)
-					return property.Argument.Value;
-			}
-			return null;
-		}
-	}
+        public static object GetAttributePropertyByName(CustomAttribute attr, string name)
+        {
+            foreach (CustomAttributeNamedArgument property in attr.Properties)
+            {
+                if (property.Name == name)
+                    return property.Argument.Value;
+            }
+            return null;
+        }
+    }
 }

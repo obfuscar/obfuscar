@@ -1,4 +1,5 @@
 ﻿#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,6 +21,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
 
 using Mono.Cecil;
@@ -30,66 +32,72 @@ using Xunit;
 
 namespace ObfuscarTests
 {
-	public class UnityTests
-	{
-		static MethodDefinition FindByFullName (TypeDefinition typeDef, string name)
-		{
-			foreach (MethodDefinition method in typeDef.Methods)
-				if (method.FullName == name)
-					return method;
+    public class UnityTests
+    {
+        static MethodDefinition FindByFullName(TypeDefinition typeDef, string name)
+        {
+            foreach (MethodDefinition method in typeDef.Methods)
+                if (method.FullName == name)
+                    return method;
 
-			Assert.True (false, String.Format ("Expected to find method: {0}", name));
-			return null; // never here
-		}
+            Assert.True(false, String.Format("Expected to find method: {0}", name));
+            return null; // never here
+        }
 
-		[Fact]
-		public void CheckGeneric ()
-		{
-			string outputPath = TestHelper.OutputPath;
-			string xml = string.Format (
-				             @"<?xml version='1.0'?>" +
-				             @"<Obfuscator>" +
-				             @"<Var name='InPath' value='{0}' />" +
-				             @"<Var name='OutPath' value='{1}' />" +
-				             @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
-				             @"<Var name='HidePrivateApi' value='true' />" +
-				             @"<Var name='KeepPublicApi' value='false' />" +
-				             @"<Module file='$(InPath){2}Microsoft.Practices.Unity.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+        [Fact]
+        public void CheckGeneric()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Module file='$(InPath){2}Microsoft.Practices.Unity.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-			TestHelper.CleanInput ();
+            TestHelper.CleanInput();
 
-			// build it with the keyfile option (embeds the public key, and signs the assembly)
-			File.Copy (Path.Combine (TestHelper.InputPath, @"..", "Microsoft.Practices.Unity.dll"), Path.Combine (TestHelper.InputPath, "Microsoft.Practices.Unity.dll"), true);
-			File.Copy (Path.Combine (TestHelper.InputPath, @"..", "Microsoft.Practices.ServiceLocation.dll"), Path.Combine (TestHelper.InputPath, "Microsoft.Practices.ServiceLocation.dll"), true);
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "Microsoft.Practices.Unity.dll"),
+                Path.Combine(TestHelper.InputPath, "Microsoft.Practices.Unity.dll"), true);
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "Microsoft.Practices.ServiceLocation.dll"),
+                Path.Combine(TestHelper.InputPath, "Microsoft.Practices.ServiceLocation.dll"), true);
 
-			var map = TestHelper.Obfuscate (xml).Mapping;
+            var map = TestHelper.Obfuscate(xml).Mapping;
 
-			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
-				                               Path.Combine (TestHelper.InputPath, "Microsoft.Practices.Unity.dll"));
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(TestHelper.InputPath, "Microsoft.Practices.Unity.dll"));
 
-			TypeDefinition classAType = inAssmDef.MainModule.GetType ("Microsoft.Practices.ObjectBuilder2.PolicyListExtensions");
-			var type = map.GetClass (new TypeKey (classAType));
-			Assert.True (type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
+            TypeDefinition classAType =
+                inAssmDef.MainModule.GetType("Microsoft.Practices.ObjectBuilder2.PolicyListExtensions");
+            var type = map.GetClass(new TypeKey(classAType));
+            Assert.True(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
 
-			var method1 = FindByFullName (classAType, "System.Void Microsoft.Practices.ObjectBuilder2.PolicyListExtensions::Clear(Microsoft.Practices.ObjectBuilder2.IPolicyList,System.Object)");
-			var m1 = map.GetMethod (new MethodKey (method1));
-			Assert.True (m1.Status == ObfuscationStatus.Renamed, "Instance method should have been renamed.");
+            var method1 = FindByFullName(classAType,
+                "System.Void Microsoft.Practices.ObjectBuilder2.PolicyListExtensions::Clear(Microsoft.Practices.ObjectBuilder2.IPolicyList,System.Object)");
+            var m1 = map.GetMethod(new MethodKey(method1));
+            Assert.True(m1.Status == ObfuscationStatus.Renamed, "Instance method should have been renamed.");
 
-			var classB = inAssmDef.MainModule.GetType ("Microsoft.Practices.ObjectBuilder2.IPolicyList");
-			var typeB = map.GetClass (new TypeKey (classB));
+            var classB = inAssmDef.MainModule.GetType("Microsoft.Practices.ObjectBuilder2.IPolicyList");
+            var typeB = map.GetClass(new TypeKey(classB));
 
-			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly (
-												Path.Combine (outputPath, "Microsoft.Practices.Unity.dll"));
+            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "Microsoft.Practices.Unity.dll"));
 
-			var name = type.StatusText.Substring (27);
-			var obfuscated = outAssmDef.MainModule.GetType (name);
-			var method2 = FindByFullName (obfuscated, "System.Void " + name + "::" + m1.StatusText + "(" + typeB.StatusText.Substring (27) + ",System.Object)");
-			Assert.NotNull (method2);
-			var first = method2.Parameters[0].Name;
-			var second = method2.Parameters[1].Name;
-			Assert.Equal("", first);
-			Assert.Equal("", second);
-		}
-	}
+            var name = type.StatusText.Substring(27);
+            var obfuscated = outAssmDef.MainModule.GetType(name);
+            var method2 = FindByFullName(obfuscated,
+                "System.Void " + name + "::" + m1.StatusText + "(" + typeB.StatusText.Substring(27) +
+                ",System.Object)");
+            Assert.NotNull(method2);
+            var first = method2.Parameters[0].Name;
+            var second = method2.Parameters[1].Name;
+            Assert.Equal("", first);
+            Assert.Equal("", second);
+        }
+    }
 }

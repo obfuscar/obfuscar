@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,109 +21,118 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
+
 using System;
 using Mono.Cecil;
 
 namespace Obfuscar
 {
-	class EventKey
-	{
-		readonly TypeKey typeKey;
-		readonly string type;
-		readonly string name;
-		readonly EventDefinition eventDefinition;
+    class EventKey
+    {
+        readonly TypeKey typeKey;
+        readonly string type;
+        readonly string name;
+        readonly EventDefinition eventDefinition;
 
-		public EventKey (EventDefinition evt)
-            : this(new TypeKey((TypeDefinition)evt.DeclaringType), evt)
-		{
-		}
+        public EventKey(EventDefinition evt)
+            : this(new TypeKey((TypeDefinition) evt.DeclaringType), evt)
+        {
+        }
 
-		public EventKey (TypeKey typeKey, EventDefinition evt)
+        public EventKey(TypeKey typeKey, EventDefinition evt)
             : this(typeKey, evt.EventType.FullName, evt.Name, evt)
-		{
-		}
+        {
+        }
 
-		public EventKey (TypeKey typeKey, string type, string name, EventDefinition eventDefinition)
-		{
-			this.typeKey = typeKey;
-			this.type = type;
-			this.name = name;
-			this.eventDefinition = eventDefinition;
-		}
+        public EventKey(TypeKey typeKey, string type, string name, EventDefinition eventDefinition)
+        {
+            this.typeKey = typeKey;
+            this.type = type;
+            this.name = name;
+            this.eventDefinition = eventDefinition;
+        }
 
-		public TypeKey TypeKey {
-			get { return typeKey; }
-		}
+        public TypeKey TypeKey
+        {
+            get { return typeKey; }
+        }
 
-		public string Type {
-			get { return type; }
-		}
+        public string Type
+        {
+            get { return type; }
+        }
 
-		public string Name {
-			get { return name; }
-		}
+        public string Name
+        {
+            get { return name; }
+        }
 
-		public MethodAttributes AddMethodAttributes {
-			get { return eventDefinition.AddMethod != null ? eventDefinition.AddMethod.Attributes : 0; }
-		}
+        public MethodAttributes AddMethodAttributes
+        {
+            get { return eventDefinition.AddMethod != null ? eventDefinition.AddMethod.Attributes : 0; }
+        }
 
-		public TypeDefinition DeclaringType {
-			get { return (TypeDefinition)eventDefinition.DeclaringType; }
-		}
+        public TypeDefinition DeclaringType
+        {
+            get { return (TypeDefinition) eventDefinition.DeclaringType; }
+        }
 
-		public EventDefinition Event {
-			get { return eventDefinition; }
-		}
+        public EventDefinition Event
+        {
+            get { return eventDefinition; }
+        }
 
-		public virtual bool Matches (MemberReference member)
-		{
-			EventReference evtRef = member as EventReference;
-			if (evtRef != null) {
-				if (typeKey.Matches (evtRef.DeclaringType))
-					return type == evtRef.EventType.FullName && name == evtRef.Name;
-			}
+        public virtual bool Matches(MemberReference member)
+        {
+            EventReference evtRef = member as EventReference;
+            if (evtRef != null)
+            {
+                if (typeKey.Matches(evtRef.DeclaringType))
+                    return type == evtRef.EventType.FullName && name == evtRef.Name;
+            }
 
-			return false;
-		}
+            return false;
+        }
 
-		public override bool Equals (object obj)
-		{
-			EventKey key = obj as EventKey;
-			if (key == null)
-				return false;
+        public override bool Equals(object obj)
+        {
+            EventKey key = obj as EventKey;
+            if (key == null)
+                return false;
 
-			return this == key;
-		}
+            return this == key;
+        }
 
-		public static bool operator == (EventKey a, EventKey b)
-		{
-			if ((object)a == null)
-				return (object)b == null;
-			else if ((object)b == null)
-				return false;
-			else
-				return a.typeKey == b.typeKey && a.type == b.type && a.name == b.name;
-		}
+        public static bool operator ==(EventKey a, EventKey b)
+        {
+            if ((object) a == null)
+                return (object) b == null;
+            else if ((object) b == null)
+                return false;
+            else
+                return a.typeKey == b.typeKey && a.type == b.type && a.name == b.name;
+        }
 
-		public static bool operator != (EventKey a, EventKey b)
-		{
-			if ((object)a == null)
-				return (object)b != null;
-			else if ((object)b == null)
-				return true;
-			else
-				return a.typeKey != b.typeKey || a.type != b.type || a.name != b.name;
-		}
+        public static bool operator !=(EventKey a, EventKey b)
+        {
+            if ((object) a == null)
+                return (object) b != null;
+            else if ((object) b == null)
+                return true;
+            else
+                return a.typeKey != b.typeKey || a.type != b.type || a.name != b.name;
+        }
 
-		public override int GetHashCode ()
-		{
-			return typeKey.GetHashCode () ^ type.GetHashCode () ^ name.GetHashCode ();
-		}
+        public override int GetHashCode()
+        {
+            return typeKey.GetHashCode() ^ type.GetHashCode() ^ name.GetHashCode();
+        }
 
-		public override string ToString ()
-		{
-			return String.Format ("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
-		}
-	}
+        public override string ToString()
+        {
+            return String.Format("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
+        }
+    }
 }

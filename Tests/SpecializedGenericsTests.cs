@@ -1,4 +1,5 @@
 #region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -20,6 +21,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
+
 #endregion
 
 using System;
@@ -30,86 +32,86 @@ using Obfuscar;
 
 namespace ObfuscarTests
 {
-	public class SpecializedGenericsTests
-	{
-		Obfuscator BuildAndObfuscateAssemblies ()
-		{
-			string xml = String.Format (
-				             @"<?xml version='1.0'?>" +
-				             @"<Obfuscator>" +
-				             @"<Var name='InPath' value='{0}' />" +
-				             @"<Var name='OutPath' value='{1}' />" +
-				             @"<Var name='ReuseNames' value='false' />" +
-				             @"<Var name='HidePrivateApi' value='true' />" +
-				             @"<Module file='$(InPath){2}AssemblyWithSpecializedGenerics.dll' />" +
-				             @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+    public class SpecializedGenericsTests
+    {
+        Obfuscator BuildAndObfuscateAssemblies()
+        {
+            string xml = String.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='ReuseNames' value='false' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithSpecializedGenerics.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
-			return TestHelper.BuildAndObfuscate ("AssemblyWithSpecializedGenerics", String.Empty, xml);
-		}
+            return TestHelper.BuildAndObfuscate("AssemblyWithSpecializedGenerics", String.Empty, xml);
+        }
 
-		MethodDefinition FindByName (TypeDefinition typeDef, string name)
-		{
-			foreach (MethodDefinition method in typeDef.Methods)
-				if (method.Name == name)
-					return method;
+        MethodDefinition FindByName(TypeDefinition typeDef, string name)
+        {
+            foreach (MethodDefinition method in typeDef.Methods)
+                if (method.Name == name)
+                    return method;
 
-			Assert.True (false, String.Format ("Expected to find method: {0}", name));
-			return null; // never here
-		}
+            Assert.True(false, String.Format("Expected to find method: {0}", name));
+            return null; // never here
+        }
 
-		[Fact]
-		public void CheckClassHasAttribute ()
-		{
-			Obfuscator item = BuildAndObfuscateAssemblies ();
-			ObfuscationMap map = item.Mapping;
+        [Fact]
+        public void CheckClassHasAttribute()
+        {
+            Obfuscator item = BuildAndObfuscateAssemblies();
+            ObfuscationMap map = item.Mapping;
 
-			string assmName = "AssemblyWithSpecializedGenerics.dll";
+            string assmName = "AssemblyWithSpecializedGenerics.dll";
 
-			AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly (
-				                               Path.Combine (TestHelper.InputPath, assmName));
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(TestHelper.InputPath, assmName));
 
-			AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly (
-				                                Path.Combine (item.Project.Settings.OutPath, assmName));
+            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(item.Project.Settings.OutPath, assmName));
 
-			{
-				TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.ClassA`1");
-				MethodDefinition classAmethod2 = FindByName (classAType, "Method2");
+            {
+                TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.ClassA`1");
+                MethodDefinition classAmethod2 = FindByName(classAType, "Method2");
 
-				TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.ClassB");
-				MethodDefinition classBmethod2 = FindByName (classBType, "Method2");
+                TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.ClassB");
+                MethodDefinition classBmethod2 = FindByName(classBType, "Method2");
 
-				ObfuscatedThing classAEntry = map.GetMethod (new MethodKey(classAmethod2));
-				ObfuscatedThing classBEntry = map.GetMethod (new MethodKey(classBmethod2));
+                ObfuscatedThing classAEntry = map.GetMethod(new MethodKey(classAmethod2));
+                ObfuscatedThing classBEntry = map.GetMethod(new MethodKey(classBmethod2));
 
-				Assert.True (
-					classAEntry.Status == ObfuscationStatus.Renamed &&
-					classBEntry.Status == ObfuscationStatus.Renamed,
-					"Both methods should have been renamed.");
+                Assert.True(
+                    classAEntry.Status == ObfuscationStatus.Renamed &&
+                    classBEntry.Status == ObfuscationStatus.Renamed,
+                    "Both methods should have been renamed.");
 
-				Assert.True (
-					classAEntry.StatusText == classBEntry.StatusText,
-					"Both methods should have been renamed to the same thing.");
-			}
+                Assert.True(
+                    classAEntry.StatusText == classBEntry.StatusText,
+                    "Both methods should have been renamed to the same thing.");
+            }
 
-			{
-				TypeDefinition classAType = inAssmDef.MainModule.GetType ("TestClasses.ClassA`1");
-				MethodDefinition classAmethod2 = FindByName (classAType, "Method3");
+            {
+                TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.ClassA`1");
+                MethodDefinition classAmethod2 = FindByName(classAType, "Method3");
 
-				TypeDefinition classBType = inAssmDef.MainModule.GetType ("TestClasses.ClassB");
-				MethodDefinition classBmethod2 = FindByName (classBType, "Method3");
+                TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.ClassB");
+                MethodDefinition classBmethod2 = FindByName(classBType, "Method3");
 
-				ObfuscatedThing classAEntry = map.GetMethod (new MethodKey(classAmethod2));
-				ObfuscatedThing classBEntry = map.GetMethod (new MethodKey(classBmethod2));
+                ObfuscatedThing classAEntry = map.GetMethod(new MethodKey(classAmethod2));
+                ObfuscatedThing classBEntry = map.GetMethod(new MethodKey(classBmethod2));
 
-				Assert.True (
-					classAEntry.Status == ObfuscationStatus.Renamed &&
-					classBEntry.Status == ObfuscationStatus.Renamed,
-					"Both methods should have been renamed.");
+                Assert.True(
+                    classAEntry.Status == ObfuscationStatus.Renamed &&
+                    classBEntry.Status == ObfuscationStatus.Renamed,
+                    "Both methods should have been renamed.");
 
-				Assert.True (
-					classAEntry.StatusText == classBEntry.StatusText,
-					"Both methods should have been renamed to the same thing.");
-			}
-		}
-	}
+                Assert.True(
+                    classAEntry.StatusText == classBEntry.StatusText,
+                    "Both methods should have been renamed to the same thing.");
+            }
+        }
+    }
 }
