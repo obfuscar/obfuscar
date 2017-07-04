@@ -142,12 +142,12 @@ namespace Obfuscar
 
 			project.vars.Add (SPECIALVAR_PROJECTFILEDIRECTORY, string.IsNullOrEmpty (projectFileDirectory) ? "." : projectFileDirectory);
 
-			FromXmlReadNode(reader, project);
+			FromXmlReadNode(project.vars.GetValue(SPECIALVAR_PROJECTFILEDIRECTORY, "."), reader, project);
 
 			return project;
 		}
 
-		private static void FromXmlReadNode(XmlReader reader, Project project)
+		private static void FromXmlReadNode(string currentFilePath, XmlReader reader, Project project)
 		{
 			while (reader.Read())
 			{
@@ -166,7 +166,7 @@ namespace Obfuscar
 							break;
 						}
 						case "Module":
-							AssemblyInfo info = AssemblyInfo.FromXml(project, reader, project.vars);
+							AssemblyInfo info = AssemblyInfo.FromXml(currentFilePath, project, reader, project.vars);
 							if (info.Exclude) {
 								project.copyAssemblyList.Add(info);
 								break;
@@ -181,7 +181,7 @@ namespace Obfuscar
 							break;
 						}
 						case "Include": {
-							ReadIncludeTag(reader, project, FromXmlReadNode);
+							ReadIncludeTag(currentFilePath, reader, project, FromXmlReadNode);
 							break;
 						}
 					}
@@ -189,7 +189,7 @@ namespace Obfuscar
 			}
 		}
 
-		internal static void ReadIncludeTag(XmlReader parentReader, Project project, Action<XmlReader, Project> readAction)
+		internal static void ReadIncludeTag(string currentFilePath, XmlReader parentReader, Project project, Action<string, XmlReader, Project> readAction)
 		{
 			if (parentReader == null)
 				throw new ArgumentNullException("parentReader");
@@ -198,8 +198,13 @@ namespace Obfuscar
 				throw new ArgumentNullException("readAction");
 
 			string path = Environment.ExpandEnvironmentVariables(project.vars.Replace(Helper.GetAttribute(parentReader, "path")));
+			if (!File.Exists(path))
+			{
+				path = Path.Combine(currentFilePath, Path.GetFileName(path));
+			}
+			FileStream fileStream = File.OpenRead(path);
 			XmlReaderSettings includeReaderSettings = Obfuscator.GetReaderSettings();
-			using (XmlReader includeReader = XmlReader.Create(File.OpenRead(path), includeReaderSettings))
+			using (XmlReader includeReader = XmlReader.Create(fileStream, includeReaderSettings))
 			{
 				// Start reading
 				includeReader.Read();
@@ -212,7 +217,7 @@ namespace Obfuscar
 
 				Debug.Assert(includeReader.NodeType == XmlNodeType.Element && includeReader.Name == "Include");
 
-				readAction(includeReader, project);
+				readAction(path, includeReader, project);
 			}
 		}
 

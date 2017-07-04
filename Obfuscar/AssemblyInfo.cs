@@ -78,7 +78,7 @@ namespace Obfuscar
 			return def.Name.PublicKeyToken.Length != 0;
 		}
 
-		public static AssemblyInfo FromXml (Project project, XmlReader reader, Variables vars)
+		public static AssemblyInfo FromXml (string currentFilePath, Project project, XmlReader reader, Variables vars)
 		{
 			Debug.Assert (reader.NodeType == XmlNodeType.Element && reader.Name == "Module");
 
@@ -100,13 +100,13 @@ namespace Obfuscar
 			}
 
 			if (!reader.IsEmptyElement) {
-				FromXmlReadNode(reader, project, vars, info);
+				FromXmlReadNode(currentFilePath, reader, project, vars, info);
 			}
 
 			return info;
 		}
 
-		private static void FromXmlReadNode(XmlReader reader, Project project, Variables vars, AssemblyInfo info)
+		private static void FromXmlReadNode(string currentFilePath, XmlReader reader, Project project, Variables vars, AssemblyInfo info)
 		{
 			string val;
 			while (reader.Read())
@@ -145,7 +145,7 @@ namespace Obfuscar
 					{
 						case "Include":
 						{
-							Project.ReadIncludeTag(reader, project, (includeReader, proj) => FromXmlReadNode(includeReader, proj, vars, info));
+							Project.ReadIncludeTag(currentFilePath, reader, project, (path, includeReader, proj) => FromXmlReadNode(path, includeReader, proj, vars, info));
 							break;
 						}
 						case "SkipNamespace":
