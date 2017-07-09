@@ -114,9 +114,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="default.runsettings" />
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="xunit.runner.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
