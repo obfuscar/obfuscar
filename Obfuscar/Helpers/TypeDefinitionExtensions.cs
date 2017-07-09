@@ -20,7 +20,9 @@ namespace Obfuscar.Helpers
 
         public static bool? MarkedToRename(this IMemberDefinition type, bool fromMember = false)
         {
+#pragma warning disable 618
             var obfuscarObfuscate = typeof(ObfuscateAttribute).FullName;
+#pragma warning restore 618
             var reflectionObfuscate = typeof(System.Reflection.ObfuscationAttribute).FullName;
 
             foreach (CustomAttribute attr in type.CustomAttributes)

@@ -30,7 +30,9 @@ using System.Text;
 
 namespace ObfuscarTests
 {
+#pragma warning disable 618
     [Obfuscar.Obfuscate]
+#pragma warning restore 618
     public class TestNonInternalOverloadBase : IDisposable
     {
         public void Dispose()
@@ -43,7 +45,9 @@ namespace ObfuscarTests
         }
     }
 
+#pragma warning disable 618
     [Obfuscar.Obfuscate]
+#pragma warning restore 618
     public class TestNonInternalOverloadOverride : TestNonInternalOverloadBase
     {
         protected override void Dispose(bool disp)

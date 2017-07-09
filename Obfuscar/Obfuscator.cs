@@ -1353,7 +1353,7 @@ namespace Obfuscar
 
                 var module = info.Definition.MainModule;
                 var attribute = new TypeReference("System.Runtime.CompilerServices", "SuppressIldasmAttribute", module,
-                    module.TypeSystem.Corlib).Resolve();
+                    module.TypeSystem.CoreLibrary).Resolve();
                 if (attribute == null)
                     return;
 
@@ -1365,8 +1365,8 @@ namespace Obfuscar
                     continue;
 
                 //Add one
-                var add = module.Import(attribute.GetConstructors().FirstOrDefault(item => !item.HasParameters));
-                MethodReference constructor = module.Import(add);
+                var add = module.ImportReference(attribute.GetConstructors().FirstOrDefault(item => !item.HasParameters));
+                MethodReference constructor = module.ImportReference(add);
                 CustomAttribute attr = new CustomAttribute(constructor);
                 module.CustomAttributes.Add(attr);
                 module.Assembly.CustomAttributes.Add(attr);
@@ -1429,11 +1429,11 @@ namespace Obfuscar
                 SystemVoidTypeReference = library.MainModule.TypeSystem.Void;
                 SystemStringTypeReference = library.MainModule.TypeSystem.String;
                 var systemValueTypeTypeReference = new TypeReference("System", "ValueType", library.MainModule,
-                    library.MainModule.TypeSystem.Corlib);
+                    library.MainModule.TypeSystem.CoreLibrary);
                 SystemByteTypeReference = library.MainModule.TypeSystem.Byte;
                 SystemIntTypeReference = library.MainModule.TypeSystem.Int32;
                 var encoding = new TypeReference("System.Text", "Encoding", library.MainModule,
-                    library.MainModule.TypeSystem.Corlib).Resolve();
+                    library.MainModule.TypeSystem.CoreLibrary).Resolve();
                 if (encoding == null)
                 {
                     _disabled = true;
@@ -1441,13 +1441,13 @@ namespace Obfuscar
                 }
 
                 var method1 =
-                    library.MainModule.Import(encoding.Methods.FirstOrDefault(method => method.Name == "get_UTF8"));
-                var method2 = library.MainModule.Import(encoding.Methods.FirstOrDefault(method =>
+                    library.MainModule.ImportReference(encoding.Methods.FirstOrDefault(method => method.Name == "get_UTF8"));
+                var method2 = library.MainModule.ImportReference(encoding.Methods.FirstOrDefault(method =>
                     method.FullName ==
                     "System.String System.Text.Encoding::GetString(System.Byte[],System.Int32,System.Int32)"));
                 var runtimeHelpers = new TypeReference("System.Runtime.CompilerServices", "RuntimeHelpers",
-                    library.MainModule, library.MainModule.TypeSystem.Corlib).Resolve();
-                Method3 = library.MainModule.Import(
+                    library.MainModule, library.MainModule.TypeSystem.CoreLibrary).Resolve();
+                Method3 = library.MainModule.ImportReference(
                     runtimeHelpers.Methods.FirstOrDefault(method => method.Name == "InitializeArray"));
 
                 // New static class with a method for each unique string we substitute.

@@ -30,7 +30,9 @@ using System.Text;
 
 namespace ObfuscarTests
 {
+#pragma warning disable 618
     [Obfuscar.Obfuscate]
+#pragma warning restore 618
     public interface TestClass_Interface1
     {
         int MethodA(int param1);
@@ -39,7 +41,9 @@ namespace ObfuscarTests
         int Method2(int param1);
     }
 
+#pragma warning disable 618
     [Obfuscar.Obfuscate]
+#pragma warning restore 618
     public class TestClass_InterfaceOverride1 : TestClass_Interface1
     {
         public int MethodA(int param1)
@@ -63,7 +67,9 @@ namespace ObfuscarTests
         }
     }
 
+#pragma warning disable 618
     [Obfuscar.Obfuscate]
+#pragma warning restore 618
     public class TestClass_Base1
     {
         public int MethodA(int param1)
@@ -87,7 +93,9 @@ namespace ObfuscarTests
         }
     }
 
+#pragma warning disable 618
     [Obfuscar.Obfuscate]
+#pragma warning restore 618
     public class TestClass_InterfaceOverride2 : TestClass_Base1, TestClass_Interface1
     {
         public virtual int MethodX(int param1)

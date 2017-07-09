@@ -103,7 +103,7 @@ namespace ObfuscarTests
 
         void CheckType(TypeDefinition typeDef)
         {
-            Assembly assm = Assembly.LoadFile(Path.GetFullPath(typeDef.Module.FullyQualifiedName));
+            Assembly assm = Assembly.LoadFile(Path.GetFullPath(typeDef.Module.FileName));
             Type type = assm.GetType(typeDef.FullName);
 
             object obj = Activator.CreateInstance(type);

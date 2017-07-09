@@ -28,7 +28,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 using Mono.Options;
+using RollbarDotNet;
 
 namespace Obfuscar
 {
@@ -38,8 +41,8 @@ namespace Obfuscar
     {
         private static void ShowHelp(OptionSet optionSet)
         {
-            Console.WriteLine("Obfuscar is available at https://obfuscar.codeplex.com");
-            Console.WriteLine("(C) 2007-2015, Ryan Williams and other contributors.");
+            Console.WriteLine("Obfuscar is available at https://www.obfuscar.com");
+            Console.WriteLine("(C) 2007-2017, Ryan Williams and other contributors.");
             Console.WriteLine();
             Console.WriteLine("obfuscar [Options] [project_file] [project_file]");
             Console.WriteLine("Options:");
@@ -52,9 +55,11 @@ namespace Obfuscar
         {
             bool showHelp = false;
             bool showVersion = false;
+            bool suppress = false;
 
             OptionSet p = new OptionSet()
                 .Add("h|?|help", "Print this help information.", delegate(string v) { showHelp = v != null; })
+                .Add("s|suppress", "Suppress Rollbar crash report.", delegate(string v) { suppress = v != null; })
                 .Add("V", "Display version number of this application.",
                     delegate(string v) { showVersion = v != null; });
 
@@ -93,6 +98,11 @@ namespace Obfuscar
                 return 1;
             }
 
+            if (!suppress)
+            {
+                RegisterRollbar();
+            }
+
             int start = Environment.TickCount;
             foreach (var project in extra)
             {
@@ -108,6 +118,11 @@ namespace Obfuscar
                 }
                 catch (ObfuscarException e)
                 {
+                    if (!suppress)
+                    {
+                        Rollbar.Report(e);
+                    }
+                    
                     Console.WriteLine();
                     Console.Error.WriteLine("An error occurred during processing:");
                     Console.Error.WriteLine(e.Message);
@@ -118,6 +133,31 @@ namespace Obfuscar
             }
 
             return 0;
+        }
+
+        private static void RegisterRollbar()
+        {
+            Console.WriteLine("Note that Rollbar API is enabled by default to collect crashes. If you want to opt out, please run with -s switch");
+            Rollbar.Init(new RollbarConfig
+            {
+                AccessToken = "1dd3cf880c5a46eeb4338dbea73f9620",
+                Environment = "production"
+            });
+            
+            Application.ThreadException += (sender, args) =>
+            {
+                Rollbar.Report(args.Exception);
+            };
+
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+            {
+                Rollbar.Report(args.ExceptionObject as System.Exception);
+            };
+
+            TaskScheduler.UnobservedTaskException += (sender, args) =>
+            {
+                Rollbar.Report(args.Exception);
+            };
         }
     }
 }

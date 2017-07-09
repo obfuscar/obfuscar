@@ -15,10 +15,10 @@ Maintained and supported by [LeXtudio](https://lextudio.com/).
 # Project Description
 Obfuscar is an open source .NET obfuscator released under MIT license. It provides basic obfuscation features that help secure secrets in a .NET assembly.
 
-[![Obfuscar](obfuscar.png)](https://obfuscar.lextudio.com/)
+[![Obfuscar](obfuscar.png)](https://www.obfuscar.com/)
 
 # Get Started
-[Documentation section](https://obfuscar.lextudio.com/) contains most information you need, and also a detailed history of this project all through the years.
+[Documentation section](http://docs.obfuscar.com/) contains most information you need, and also a detailed history of this project all through the years.
 
 This tool has been heavily in Lex Li's personal project ([#SNMP Pro](https://www.sharpsnmp.com/)). 
 
