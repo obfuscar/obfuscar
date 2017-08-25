@@ -34,7 +34,6 @@ using System.Linq;
 using System.Resources;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Xml;
 using System.Xml.Linq;
 #if !__MonoCS__
 using ILSpy.BamlDecompiler;
@@ -83,15 +82,11 @@ namespace Obfuscar
         public Obfuscator(string projfile)
         {
             Mapping = new ObfuscationMap();
-            // open XmlTextReader over xml string stream
-            XmlReaderSettings settings = GetReaderSettings();
 
             try
             {
-                using (XmlReader reader = XmlReader.Create(File.OpenRead(projfile), settings))
-                {
-                    LoadFromReader(reader, Path.GetDirectoryName(projfile));
-                }
+                var document = XDocument.Load(projfile);
+                LoadFromReader(document, Path.GetDirectoryName(projfile));
             }
             catch (IOException e)
             {
@@ -103,7 +98,7 @@ namespace Obfuscar
         /// Creates an obfuscator initialized from a project file.
         /// </summary>
         /// <param name="reader">The reader.</param>
-        private Obfuscator(XmlReader reader)
+        private Obfuscator(XDocument reader)
         {
             Mapping = new ObfuscationMap();
             LoadFromReader(reader, null);
@@ -150,30 +145,15 @@ namespace Obfuscar
 
         public static Obfuscator CreateFromXml(string xml)
         {
-            // open XmlTextReader over xml string stream
-            XmlReaderSettings settings = GetReaderSettings();
-
-            using (XmlReader reader = XmlReader.Create(new StringReader(xml), settings))
+            var document = XDocument.Load(new StringReader(xml));
             {
-                return new Obfuscator(reader);
+                return new Obfuscator(document);
             }
-        }
-
-        internal static XmlReaderSettings GetReaderSettings()
-        {
-            var settings = new XmlReaderSettings
-            {
-                IgnoreProcessingInstructions = true,
-                IgnoreWhitespace = true,
-                XmlResolver = null,
-                DtdProcessing = DtdProcessing.Parse
-            };
-            return settings;
         }
 
         internal Project Project { get; set; }
 
-        private void LoadFromReader(XmlReader reader, string projectFileDirectory)
+        private void LoadFromReader(XDocument reader, string projectFileDirectory)
         {
             Project = Project.FromXml(reader, projectFileDirectory);
 

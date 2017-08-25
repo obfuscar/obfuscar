@@ -28,12 +28,11 @@ using Mono.Cecil;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Xml;
 using Obfuscar.Helpers;
+using System.Xml.Linq;
 
 namespace Obfuscar
 {
@@ -157,7 +156,7 @@ namespace Obfuscar
             set { m_cache = value; }
         }
 
-        public static Project FromXml(XmlReader reader, string projectFileDirectory)
+        public static Project FromXml(XDocument reader, string projectFileDirectory)
         {
             Project project = new Project();
 
@@ -169,58 +168,54 @@ namespace Obfuscar
             return project;
         }
 
-        private static void FromXmlReadNode(XmlReader reader, Project project)
+        private static void FromXmlReadNode(XDocument reader, Project project)
         {
-            while (reader.Read())
+            if (reader.Root.Name != "Obfuscator")
             {
-                if (reader.NodeType == XmlNodeType.Element)
+                throw new ObfuscarException("XML configuration file should have <Obfuscator> root tag.");
+            }
+
+            var settings = reader.Root.Elements("Var");
+            foreach (var setting in settings)
+            {
+                var name = setting.Attribute("name")?.Value;
+                if (!string.IsNullOrEmpty(name))
                 {
-                    switch (reader.Name)
-                    {
-                        case "Var":
-                        {
-                            string name = Helper.GetAttribute(reader, "name");
-                            if (name.Length > 0)
-                            {
-                                string value = Helper.GetAttribute(reader, "value");
-                                if (value.Length > 0)
-                                    project.vars.Add(name, value);
-                                else
-                                    project.vars.Remove(name);
-                            }
-                            break;
-                        }
-                        case "Module":
-                            AssemblyInfo info = AssemblyInfo.FromXml(project, reader, project.vars);
-                            if (info.Exclude)
-                            {
-                                project.copyAssemblyList.Add(info);
-                                break;
-                            }
-                            Console.WriteLine("Processing assembly: " + info.Definition.Name.FullName);
-                            project.assemblyList.Add(info);
-                            project.assemblyMap[info.Name] = info;
-                            break;
-                        case "AssemblySearchPath":
-                        {
-                            string path =
-                                Environment.ExpandEnvironmentVariables(
-                                    project.vars.Replace(Helper.GetAttribute(reader, "path")));
-                            project.assemblySearchPaths.Add(path);
-                            break;
-                        }
-                        case "Include":
-                        {
-                            ReadIncludeTag(reader, project, FromXmlReadNode);
-                            break;
-                        }
-                    }
+                    var value = setting.Attribute("value")?.Value;
+                    if (!string.IsNullOrEmpty(value))
+                        project.vars.Add(name, value);
+                    else
+                        project.vars.Remove(name);
                 }
+            }
+
+            var searchPaths = reader.Root.Elements("AssemblySearchPath");
+            foreach (var searchPath in searchPaths)
+            {
+                string path =
+                    Environment.ExpandEnvironmentVariables(
+                        project.vars.Replace(searchPath.Attribute("path").Value));
+                project.assemblySearchPaths.Add(path);
+            }
+
+            var modules = reader.Root.Elements("Module");
+            foreach (var module in modules)
+            {
+                AssemblyInfo info = AssemblyInfo.FromXml(project, module, project.vars);
+                if (info.Exclude)
+                {
+                    project.copyAssemblyList.Add(info);
+                    break;
+                }
+
+                Console.WriteLine("Processing assembly: " + info.Definition.Name.FullName);
+                project.assemblyList.Add(info);
+                project.assemblyMap[info.Name] = info;
             }
         }
 
-        internal static void ReadIncludeTag(XmlReader parentReader, Project project,
-            Action<XmlReader, Project> readAction)
+        internal static void ReadIncludeTag(XElement parentReader, Project project,
+            Action<XElement, Project> readAction)
         {
             if (parentReader == null)
                 throw new ArgumentNullException("parentReader");
@@ -230,21 +225,10 @@ namespace Obfuscar
 
             string path =
                 Environment.ExpandEnvironmentVariables(project.vars.Replace(Helper.GetAttribute(parentReader, "path")));
-            XmlReaderSettings includeReaderSettings = Obfuscator.GetReaderSettings();
-            using (XmlReader includeReader = XmlReader.Create(File.OpenRead(path), includeReaderSettings))
+            var includeReader = XDocument.Load(path);
+            if (includeReader.Root.Name == "Include")
             {
-                // Start reading
-                includeReader.Read();
-
-                // Skip declaration, if present
-                if (includeReader.NodeType == XmlNodeType.XmlDeclaration)
-                {
-                    includeReader.Read();
-                }
-
-                Debug.Assert(includeReader.NodeType == XmlNodeType.Element && includeReader.Name == "Include");
-
-                readAction(includeReader, project);
+                readAction(includeReader.Root, project);
             }
         }
 

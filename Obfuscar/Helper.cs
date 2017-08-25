@@ -25,10 +25,10 @@
 #endregion
 
 using System;
-using System.Xml;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using System.Collections.Generic;
+using System.Xml.Linq;
 
 namespace Obfuscar
 {
@@ -63,18 +63,19 @@ namespace Obfuscar
             return TypeNameCache.GetTypeName(param.ParameterType);
         }
 
-        public static string GetAttribute(XmlReader reader, string name)
+        public static string GetAttribute(XElement reader, string name)
         {
-            string val = reader.GetAttribute(name);
+            string result;
+            var val = reader.Attribute(name);
             if (val == null)
-                val = String.Empty;
+                result = String.Empty;
             else
-                val = val.Trim();
+                result = val.Value.Trim();
 
-            return val;
+            return result;
         }
 
-        public static string GetAttribute(XmlReader reader, string name, Variables vars)
+        public static string GetAttribute(XElement reader, string name, Variables vars)
         {
             return vars.Replace(GetAttribute(reader, name));
         }
