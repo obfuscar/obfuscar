@@ -72,5 +72,40 @@ namespace ObfuscarTests
             Assert.Equal(1, runtime.Count());
             Assert.Equal("4.0.20.0", runtime.First().Version.ToString());
         }
+
+        [Fact]
+        public void CheckNetStandard20()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='SuppressIldasm' value='false' />" +
+                @"<Var name='HideStrings' value='false' />" +
+                @"<Module file='$(InPath){2}NetStandard20.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.CleanInput();
+
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "NetStandard20.dll"),
+                Path.Combine(TestHelper.InputPath, "NetStandard20.dll"), true);
+
+            var map = TestHelper.Obfuscate(xml, true).Mapping;
+
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(TestHelper.InputPath, "NetStandard20.dll"));
+
+            Assert.Equal(1, inAssmDef.MainModule.AssemblyReferences.Count);
+            Assert.Equal("netstandard", inAssmDef.MainModule.AssemblyReferences[0].Name);
+
+            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "NetStandard20.dll"));
+
+            Assert.Equal(1, outAssmDef.MainModule.AssemblyReferences.Count);
+            Assert.Equal("netstandard", outAssmDef.MainModule.AssemblyReferences[0].Name);
+        }
     }
 }
