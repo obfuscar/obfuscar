@@ -7,8 +7,8 @@ using System.Reflection;
 // You can specify all the values or you can use the default the Revision and
 // Build Numbers by using the '*' as shown below:
 
-[assembly: AssemblyVersion("2.2.6.0")]
-[assembly: AssemblyProduct("Obfuscar 2.2.6")]
+[assembly: AssemblyVersion("2.2.7.0")]
+[assembly: AssemblyProduct("Obfuscar 2.2.7")]
 #if (!CF)
-[assembly: AssemblyFileVersion("2.2.6.0")]
+[assembly: AssemblyFileVersion("2.2.7.0")]
 #endif
