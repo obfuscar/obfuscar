@@ -163,19 +163,19 @@ namespace Obfuscar
             project.vars.Add(SPECIALVAR_PROJECTFILEDIRECTORY,
                 string.IsNullOrEmpty(projectFileDirectory) ? "." : projectFileDirectory);
 
-            FromXmlReadNode(reader, project);
-
-            return project;
-        }
-
-        private static void FromXmlReadNode(XDocument reader, Project project)
-        {
             if (reader.Root.Name != "Obfuscator")
             {
                 throw new ObfuscarException("XML configuration file should have <Obfuscator> root tag.");
             }
 
-            var settings = reader.Root.Elements("Var");
+            FromXmlReadNode(reader.Root, project);
+
+            return project;
+        }
+
+        private static void FromXmlReadNode(XElement reader, Project project)
+        {
+            var settings = reader.Elements("Var");
             foreach (var setting in settings)
             {
                 var name = setting.Attribute("name")?.Value;
@@ -189,16 +189,21 @@ namespace Obfuscar
                 }
             }
 
-            var searchPaths = reader.Root.Elements("AssemblySearchPath");
+            var includes = reader.Elements("Include");
+            foreach (var include in includes)
+            {
+                ReadIncludeTag(include, project, FromXmlReadNode);
+            }
+
+            var searchPaths = reader.Elements("AssemblySearchPath");
             foreach (var searchPath in searchPaths)
             {
                 string path =
-                    Environment.ExpandEnvironmentVariables(
-                        project.vars.Replace(searchPath.Attribute("path").Value));
+                    Environment.ExpandEnvironmentVariables(Helper.GetAttribute(searchPath, "path", project.vars));
                 project.assemblySearchPaths.Add(path);
             }
 
-            var modules = reader.Root.Elements("Module");
+            var modules = reader.Elements("Module");
             foreach (var module in modules)
             {
                 AssemblyInfo info = AssemblyInfo.FromXml(project, module, project.vars);
@@ -224,7 +229,7 @@ namespace Obfuscar
                 throw new ArgumentNullException("readAction");
 
             string path =
-                Environment.ExpandEnvironmentVariables(project.vars.Replace(Helper.GetAttribute(parentReader, "path")));
+                Environment.ExpandEnvironmentVariables(Helper.GetAttribute(parentReader, "path", project.vars));
             var includeReader = XDocument.Load(path);
             if (includeReader.Root.Name == "Include")
             {

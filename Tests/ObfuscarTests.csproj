@@ -70,6 +70,7 @@
     <Compile Include="CustomAttributeTests.cs" />
     <Compile Include="FunctionOverridingTests.cs" />
     <Compile Include="HideStringsTests.cs" />
+    <Compile Include="IncludeTests.cs" />
     <Compile Include="NetStandardTests.cs" />
     <Compile Include="PortableTests.cs" />
     <Compile Include="ResourcesTests.cs" />
@@ -137,6 +138,10 @@
       <Project>{f28cddff-5a7a-413e-809e-15ffb8766e86}</Project>
       <Name>Obfuscar</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TestIncludeModule.xml" />
+    <Content Include="TestInclude.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

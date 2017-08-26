@@ -1,1 +1,4 @@
-<?xml version='1.0'?><Include><Var name='TestIncludeVar' value='Foo' /></Include>
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<Include>
+  <Var name='KeepPublicApi' value='false' />
+</Include>
