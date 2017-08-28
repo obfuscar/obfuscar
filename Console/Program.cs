@@ -118,11 +118,6 @@ namespace Obfuscar
                 }
                 catch (ObfuscarException e)
                 {
-                    if (!suppress)
-                    {
-                        Rollbar.Report(e);
-                    }
-                    
                     Console.WriteLine();
                     Console.Error.WriteLine("An error occurred during processing:");
                     Console.Error.WriteLine(e.Message);
