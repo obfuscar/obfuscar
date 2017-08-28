@@ -92,6 +92,10 @@ namespace Obfuscar
             {
                 throw new ObfuscarException("Unable to read specified project file:  " + projfile, e);
             }
+            catch (System.Xml.XmlException e)
+            {
+                throw new ObfuscarException($"{projfile} is not a valid XML file", e);
+            }
         }
 
         /// <summary>
