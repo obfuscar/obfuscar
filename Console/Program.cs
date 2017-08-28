@@ -138,7 +138,11 @@ namespace Obfuscar
                 AccessToken = "1dd3cf880c5a46eeb4338dbea73f9620",
                 Environment = "production"
             });
-            
+            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            Rollbar.PersonData(() => new Person(version)
+            {
+                UserName = $"{version}"
+            });
             Application.ThreadException += (sender, args) =>
             {
                 Rollbar.Report(args.Exception);
