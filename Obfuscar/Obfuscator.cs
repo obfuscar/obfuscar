@@ -1359,7 +1359,7 @@ namespace Obfuscar
 
         private class StringSqueeze
         {
-            public TypeDefinition NewType { get; private set; }
+            private TypeDefinition NewType { get; set; }
 
             private TypeDefinition StructType { get; set; }
 
@@ -1391,7 +1391,7 @@ namespace Obfuscar
             // Array of bytes receiving the obfuscated strings in UTF8 format.
             private readonly List<byte> _dataBytes = new List<byte>();
 
-            private AssemblyDefinition _library;
+            private readonly AssemblyDefinition _library;
             private bool _initialized;
             private bool _disabled;
 

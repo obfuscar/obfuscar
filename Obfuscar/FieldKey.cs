@@ -31,11 +31,6 @@ namespace Obfuscar
 {
     class FieldKey
     {
-        readonly TypeKey typeKey;
-        readonly string type;
-        readonly string name;
-        readonly FieldDefinition fieldDefinition;
-
         public FieldKey(FieldDefinition field)
             : this(new TypeKey((TypeDefinition) field.DeclaringType), field.FieldType.FullName, field.Name, field)
         {
@@ -43,49 +38,37 @@ namespace Obfuscar
 
         public FieldKey(TypeKey typeKey, string type, string name, FieldDefinition fieldDefinition)
         {
-            this.typeKey = typeKey;
-            this.type = type;
-            this.name = name;
-            this.fieldDefinition = fieldDefinition;
+            this.TypeKey = typeKey;
+            this.Type = type;
+            this.Name = name;
+            this.Field = fieldDefinition;
         }
 
         public FieldAttributes FieldAttributes
         {
-            get { return fieldDefinition.Attributes; }
+            get { return Field.Attributes; }
         }
 
         public TypeDefinition DeclaringType
         {
-            get { return (TypeDefinition) fieldDefinition.DeclaringType; }
+            get { return (TypeDefinition) Field.DeclaringType; }
         }
 
-        public FieldDefinition Field
-        {
-            get { return fieldDefinition; }
-        }
+        public FieldDefinition Field { get; }
 
-        public TypeKey TypeKey
-        {
-            get { return typeKey; }
-        }
+        public TypeKey TypeKey { get; }
 
-        public string Type
-        {
-            get { return type; }
-        }
+        public string Type { get; }
 
-        public string Name
-        {
-            get { return name; }
-        }
+        public string Name { get; }
 
         public virtual bool Matches(MemberReference member)
         {
             FieldReference fieldRef = member as FieldReference;
             if (fieldRef != null)
             {
-                if (typeKey.Matches(fieldRef.DeclaringType))
-                    return type == fieldRef.FieldType.FullName && name == fieldRef.Name;
+                if (TypeKey.Matches(fieldRef.DeclaringType))
+                    return Type == fieldRef.FieldType.FullName && Name == fieldRef.Name;
             }
 
             return false;
@@ -107,7 +90,7 @@ namespace Obfuscar
             else if ((object) b == null)
                 return false;
             else
-                return a.typeKey == b.typeKey && a.type == b.type && a.name == b.name;
+                return a.TypeKey == b.TypeKey && a.Type == b.Type && a.Name == b.Name;
         }
 
         public static bool operator !=(FieldKey a, FieldKey b)
@@ -117,17 +100,17 @@ namespace Obfuscar
             else if ((object) b == null)
                 return true;
             else
-                return a.typeKey != b.typeKey || a.type != b.type || a.name != b.name;
+                return a.TypeKey != b.TypeKey || a.Type != b.Type || a.Name != b.Name;
         }
 
         public override int GetHashCode()
         {
-            return typeKey.GetHashCode() ^ type.GetHashCode() ^ name.GetHashCode();
+            return TypeKey.GetHashCode() ^ Type.GetHashCode() ^ Name.GetHashCode();
         }
 
         public override string ToString()
         {
-            return String.Format("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
+            return String.Format("[{0}]{1} {2}::{3}", TypeKey.Scope, Type, TypeKey.Fullname, Name);
         }
     }
 }

@@ -31,9 +31,7 @@ namespace Obfuscar
 {
     class MethodKey : NameParamSig, IComparable<MethodKey>
     {
-        readonly TypeKey typeKey;
         readonly int hashCode;
-        readonly MethodDefinition methodDefinition;
 
         public MethodKey(MethodDefinition method) : this(new TypeKey((TypeDefinition) method.DeclaringType), method)
         {
@@ -42,43 +40,37 @@ namespace Obfuscar
         public MethodKey(TypeKey typeKey, MethodDefinition method)
             : base(method)
         {
-            this.typeKey = typeKey;
-            this.methodDefinition = method;
+            this.TypeKey = typeKey;
+            this.Method = method;
 
             hashCode = CalcHashCode();
         }
 
         private int CalcHashCode()
         {
-            return typeKey.GetHashCode() ^ base.GetHashCode();
+            return TypeKey.GetHashCode() ^ base.GetHashCode();
         }
 
         public MethodAttributes MethodAttributes
         {
-            get { return methodDefinition.Attributes; }
+            get { return Method.Attributes; }
         }
 
         public TypeDefinition DeclaringType
         {
-            get { return (TypeDefinition) methodDefinition.DeclaringType; }
+            get { return (TypeDefinition) Method.DeclaringType; }
         }
 
-        public TypeKey TypeKey
-        {
-            get { return typeKey; }
-        }
+        public TypeKey TypeKey { get; }
 
-        public MethodDefinition Method
-        {
-            get { return methodDefinition; }
-        }
+        public MethodDefinition Method { get; }
 
         public bool Matches(MemberReference member)
         {
             MethodReference methodRef = member as MethodReference;
             if (methodRef != null)
             {
-                if (typeKey.Matches(methodRef.DeclaringType))
+                if (TypeKey.Matches(methodRef.DeclaringType))
                     return MethodMatch(Method, methodRef);
             }
 
@@ -89,7 +81,7 @@ namespace Obfuscar
         {
             return other != null &&
                    hashCode == other.hashCode &&
-                   (typeKey == null ? other.typeKey == null : typeKey == other.typeKey) &&
+                   (TypeKey == null ? other.TypeKey == null : TypeKey == other.TypeKey) &&
                    Equals((NameParamSig) other);
         }
 
@@ -125,14 +117,14 @@ namespace Obfuscar
 
         public override string ToString()
         {
-            return String.Format("{0}::{1}", typeKey, base.ToString());
+            return String.Format("{0}::{1}", TypeKey, base.ToString());
         }
 
         public int CompareTo(MethodKey other)
         {
             int cmp = CompareTo((NameParamSig) other);
             if (cmp == 0)
-                cmp = typeKey.CompareTo(other.typeKey);
+                cmp = TypeKey.CompareTo(other.TypeKey);
             return cmp;
         }
 

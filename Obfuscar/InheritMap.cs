@@ -33,37 +33,22 @@ namespace Obfuscar
 {
     class MethodGroup
     {
-        private readonly HashSet<MethodKey> methods = new HashSet<MethodKey>();
-        private string name = null;
-        private bool external = false;
+        public HashSet<MethodKey> Methods { get; } = new HashSet<MethodKey>();
 
-        public HashSet<MethodKey> Methods
-        {
-            get { return methods; }
-        }
+        public string Name { get; set; } = null;
 
-        public string Name
-        {
-            get { return name; }
-            set { name = value; }
-        }
-
-        public bool External
-        {
-            get { return external; }
-            set { external = value; }
-        }
+        public bool External { get; set; } = false;
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(Name);
-            if (external)
+            if (External)
                 sb.Append("(ext)");
             else
                 sb.Append("(int)");
             sb.Append(": ");
-            foreach (MethodKey k in methods)
+            foreach (MethodKey k in Methods)
             {
                 sb.Append(k.ToString());
                 sb.Append(" ");

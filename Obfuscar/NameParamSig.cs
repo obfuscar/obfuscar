@@ -37,13 +37,12 @@ namespace Obfuscar
     /// </summary>
     class NameParamSig : ParamSig, IComparable<NameParamSig>
     {
-        readonly string name;
         readonly int hashCode;
 
         public NameParamSig(string name, string[] paramTypes)
             : base(paramTypes)
         {
-            this.name = name;
+            this.Name = name;
 
             hashCode = CalcHashCode();
         }
@@ -51,7 +50,7 @@ namespace Obfuscar
         public NameParamSig(MethodReference method)
             : base(method)
         {
-            name = method.Name;
+            Name = method.Name;
 
             hashCode = CalcHashCode();
         }
@@ -59,25 +58,22 @@ namespace Obfuscar
         public NameParamSig(MethodDefinition method)
             : base(method)
         {
-            name = method.Name;
+            Name = method.Name;
 
             hashCode = CalcHashCode();
         }
 
         private int CalcHashCode()
         {
-            return name.GetHashCode() ^ base.GetHashCode();
+            return Name.GetHashCode() ^ base.GetHashCode();
         }
 
-        public string Name
-        {
-            get { return name; }
-        }
+        public string Name { get; }
 
         public bool Equals(NameParamSig other)
         {
             return other != null &&
-                   name == other.name &&
+                   Name == other.Name &&
                    Equals((ParamSig) other);
         }
 
@@ -113,12 +109,12 @@ namespace Obfuscar
 
         public override string ToString()
         {
-            return String.Format("{0}[{1}]", name, ParamTypes.Length);
+            return String.Format("{0}[{1}]", Name, ParamTypes.Length);
         }
 
         public int CompareTo(NameParamSig other)
         {
-            int cmp = String.Compare(name, other.Name);
+            int cmp = String.Compare(Name, other.Name);
             if (cmp == 0)
                 cmp = CompareTo((ParamSig) other);
             return cmp;

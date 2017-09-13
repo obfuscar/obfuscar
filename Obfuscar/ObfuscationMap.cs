@@ -42,17 +42,12 @@ namespace Obfuscar
 
     class ObfuscatedThing
     {
-        private readonly string name;
-
         public ObfuscatedThing(string name)
         {
-            this.name = name;
+            this.Name = name;
         }
 
-        public string Name
-        {
-            get { return name; }
-        }
+        public string Name { get; }
 
         public void Update(ObfuscationStatus status, string statusText)
         {
@@ -65,7 +60,7 @@ namespace Obfuscar
 
         public override string ToString()
         {
-            return name + " " + Status + " " + (StatusText ?? "");
+            return Name + " " + Status + " " + (StatusText ?? "");
         }
     }
 
@@ -84,27 +79,18 @@ namespace Obfuscar
 
     class ObfuscationMap
     {
-        readonly Dictionary<TypeKey, ObfuscatedClass> classMap = new Dictionary<TypeKey, ObfuscatedClass>();
-        readonly List<ObfuscatedThing> resources = new List<ObfuscatedThing>();
+        public Dictionary<TypeKey, ObfuscatedClass> ClassMap { get; } = new Dictionary<TypeKey, ObfuscatedClass>();
 
-        public Dictionary<TypeKey, ObfuscatedClass> ClassMap
-        {
-            get { return classMap; }
-        }
-
-        public List<ObfuscatedThing> Resources
-        {
-            get { return resources; }
-        }
+        public List<ObfuscatedThing> Resources { get; } = new List<ObfuscatedThing>();
 
         public ObfuscatedClass GetClass(TypeKey key)
         {
             ObfuscatedClass c;
 
-            if (!classMap.TryGetValue(key, out c))
+            if (!ClassMap.TryGetValue(key, out c))
             {
                 c = new ObfuscatedClass(key.ToString());
-                classMap[key] = c;
+                ClassMap[key] = c;
             }
 
             return c;
@@ -207,12 +193,12 @@ namespace Obfuscar
 
             r.Update(status, text);
 
-            resources.Add(r);
+            Resources.Add(r);
         }
 
         public IEnumerable<Tuple<TypeKey, string>> FindClasses(string name)
         {
-            foreach (var kvp in classMap)
+            foreach (var kvp in ClassMap)
             {
                 if (kvp.Value.Status == ObfuscationStatus.Renamed)
                 {

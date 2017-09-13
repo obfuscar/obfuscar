@@ -39,8 +39,6 @@ namespace Obfuscar
                     AttributeTargets.Interface | AttributeTargets.Enum)]
     public class ObfuscateAttribute : Attribute
     {
-        private bool shouldObfuscate;
-
         /// <summary>
         /// Marks a type to be obfuscated.
         /// </summary>
@@ -54,17 +52,13 @@ namespace Obfuscar
         /// </summary>
         public ObfuscateAttribute(bool shouldObfuscate)
         {
-            this.shouldObfuscate = shouldObfuscate;
+            this.ShouldObfuscate = shouldObfuscate;
         }
 
         /// <summary>
         /// Specifies whether the marked type should or should not be obfuscated.  Defaults to
         /// see <see langref="true"/>.
         /// </summary>
-        public bool ShouldObfuscate
-        {
-            get { return shouldObfuscate; }
-            set { shouldObfuscate = value; }
-        }
+        public bool ShouldObfuscate { get; set; }
     }
 }

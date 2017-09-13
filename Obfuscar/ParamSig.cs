@@ -37,39 +37,38 @@ namespace Obfuscar
     /// </summary>
     class ParamSig : IComparable<ParamSig>
     {
-        readonly string[] paramTypes;
         readonly int hashCode;
 
         public ParamSig(ParamSig sig)
-            : this((string[]) sig.paramTypes.Clone())
+            : this((string[]) sig.ParamTypes.Clone())
         {
         }
 
         public ParamSig(string[] paramTypes)
         {
-            this.paramTypes = paramTypes;
+            this.ParamTypes = paramTypes;
 
             hashCode = CalcHashCode();
         }
 
         public ParamSig(MethodReference method)
         {
-            paramTypes = new string[method.Parameters.Count];
+            ParamTypes = new string[method.Parameters.Count];
 
             int i = 0;
             foreach (ParameterDefinition param in method.Parameters)
-                paramTypes[i++] = Helper.GetParameterTypeName(param);
+                ParamTypes[i++] = Helper.GetParameterTypeName(param);
 
             hashCode = CalcHashCode();
         }
 
         public ParamSig(MethodDefinition method)
         {
-            paramTypes = new string[method.Parameters.Count];
+            ParamTypes = new string[method.Parameters.Count];
 
             int i = 0;
             foreach (ParameterDefinition param in method.Parameters)
-                paramTypes[i++] = Helper.GetParameterTypeName(param);
+                ParamTypes[i++] = Helper.GetParameterTypeName(param);
 
             hashCode = CalcHashCode();
         }
@@ -77,30 +76,27 @@ namespace Obfuscar
         private int CalcHashCode()
         {
             int hashCode = 0;
-            for (int i = 0; i < paramTypes.Length; i++)
-                hashCode ^= paramTypes[i].GetHashCode();
+            for (int i = 0; i < ParamTypes.Length; i++)
+                hashCode ^= ParamTypes[i].GetHashCode();
             return hashCode;
         }
 
         public int Count
         {
-            get { return paramTypes.Length; }
+            get { return ParamTypes.Length; }
         }
 
         public string this[int index]
         {
-            get { return paramTypes[index]; }
+            get { return ParamTypes[index]; }
         }
 
-        public string[] ParamTypes
-        {
-            get { return paramTypes; }
-        }
+        public string[] ParamTypes { get; }
 
         public bool Equals(ParamSig other)
         {
             return other != null &&
-                   ParamsEqual(paramTypes, other.paramTypes);
+                   ParamsEqual(ParamTypes, other.ParamTypes);
         }
 
         private static bool ParamsEqual(IList<string> a, IList<string> b)
@@ -159,20 +155,20 @@ namespace Obfuscar
 
         public override string ToString()
         {
-            if (paramTypes.Length == 0)
+            if (ParamTypes.Length == 0)
                 return "";
-            else if (paramTypes.Length == 1)
-                return paramTypes[0].ToString();
-            else if (paramTypes.Length == 2)
-                return paramTypes[0].ToString() + " " + paramTypes[1].ToString();
+            else if (ParamTypes.Length == 1)
+                return ParamTypes[0].ToString();
+            else if (ParamTypes.Length == 2)
+                return ParamTypes[0].ToString() + " " + ParamTypes[1].ToString();
             else
             {
                 StringBuilder sb = new StringBuilder();
-                sb.Append(paramTypes[0]);
-                for (int i = 1; i < paramTypes.Length; i++)
+                sb.Append(ParamTypes[0]);
+                for (int i = 1; i < ParamTypes.Length; i++)
                 {
                     sb.Append(" ");
-                    sb.Append(paramTypes[i]);
+                    sb.Append(ParamTypes[i]);
                 }
                 return sb.ToString();
             }
@@ -180,15 +176,15 @@ namespace Obfuscar
 
         public int CompareTo(ParamSig other)
         {
-            if (paramTypes.Length < other.paramTypes.Length)
+            if (ParamTypes.Length < other.ParamTypes.Length)
                 return -1;
-            else if (paramTypes.Length > other.paramTypes.Length)
+            else if (ParamTypes.Length > other.ParamTypes.Length)
                 return 1;
             else
             {
-                for (int i = 0; i < paramTypes.Length; i++)
+                for (int i = 0; i < ParamTypes.Length; i++)
                 {
-                    int cmp = String.Compare(paramTypes[i], other.paramTypes[i]);
+                    int cmp = String.Compare(ParamTypes[i], other.ParamTypes[i]);
                     if (cmp != 0)
                         return cmp;
                 }

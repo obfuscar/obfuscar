@@ -46,7 +46,6 @@ namespace Obfuscar
     {
         private readonly string name;
         private readonly Regex nameRx;
-        private readonly TypeAffectFlags skipFlags;
         private readonly string attrib;
         private readonly string inherits;
         private readonly bool? isStatic;
@@ -55,10 +54,7 @@ namespace Obfuscar
             "Reviewed. Suppression is OK here.")] private readonly bool?
             isSerializable;
 
-        public TypeAffectFlags AffectFlags
-        {
-            get { return this.skipFlags; }
-        }
+        public TypeAffectFlags AffectFlags { get; }
 
         public TypeTester(string name)
             : this(name, TypeAffectFlags.SkipNone, string.Empty)
@@ -68,7 +64,7 @@ namespace Obfuscar
         public TypeTester(string name, TypeAffectFlags skipFlags, string attrib)
         {
             this.name = name;
-            this.skipFlags = skipFlags;
+            this.AffectFlags = skipFlags;
             this.attrib = attrib.ToLower();
         }
 
@@ -84,7 +80,7 @@ namespace Obfuscar
         public TypeTester(Regex nameRx, TypeAffectFlags skipFlags, string attrib)
         {
             this.nameRx = nameRx;
-            this.skipFlags = skipFlags;
+            this.AffectFlags = skipFlags;
             this.attrib = attrib.ToLower();
         }
 

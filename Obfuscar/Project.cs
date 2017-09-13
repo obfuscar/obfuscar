@@ -41,16 +41,11 @@ namespace Obfuscar
         private const string SPECIALVAR_PROJECTFILEDIRECTORY = "ProjectFileDirectory";
         private readonly List<AssemblyInfo> assemblyList = new List<AssemblyInfo>();
 
-        public List<AssemblyInfo> CopyAssemblyList
-        {
-            get { return copyAssemblyList; }
-        }
+        public List<AssemblyInfo> CopyAssemblyList { get; } = new List<AssemblyInfo>();
 
-        private readonly List<AssemblyInfo> copyAssemblyList = new List<AssemblyInfo>();
         private readonly Dictionary<string, AssemblyInfo> assemblyMap = new Dictionary<string, AssemblyInfo>();
         private readonly Variables vars = new Variables();
         private readonly List<string> assemblySearchPaths = new List<string>();
-        InheritMap inheritMap;
 
         Settings settings;
 
@@ -209,7 +204,7 @@ namespace Obfuscar
                 AssemblyInfo info = AssemblyInfo.FromXml(project, module, project.vars);
                 if (info.Exclude)
                 {
-                    project.copyAssemblyList.Add(info);
+                    project.CopyAssemblyList.Add(info);
                     break;
                 }
 
@@ -341,10 +336,7 @@ namespace Obfuscar
             }
         }
 
-        internal InheritMap InheritMap
-        {
-            get { return inheritMap; }
-        }
+        internal InheritMap InheritMap { get; private set; }
 
         internal Settings Settings
         {
@@ -386,7 +378,7 @@ namespace Obfuscar
             }
 
             // build inheritance map
-            inheritMap = new InheritMap(this);
+            InheritMap = new InheritMap(this);
             ReorderAssemblies();
         }
 

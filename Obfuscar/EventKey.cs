@@ -31,11 +31,6 @@ namespace Obfuscar
 {
     class EventKey
     {
-        readonly TypeKey typeKey;
-        readonly string type;
-        readonly string name;
-        readonly EventDefinition eventDefinition;
-
         public EventKey(EventDefinition evt)
             : this(new TypeKey((TypeDefinition) evt.DeclaringType), evt)
         {
@@ -48,49 +43,37 @@ namespace Obfuscar
 
         public EventKey(TypeKey typeKey, string type, string name, EventDefinition eventDefinition)
         {
-            this.typeKey = typeKey;
-            this.type = type;
-            this.name = name;
-            this.eventDefinition = eventDefinition;
+            this.TypeKey = typeKey;
+            this.Type = type;
+            this.Name = name;
+            this.Event = eventDefinition;
         }
 
-        public TypeKey TypeKey
-        {
-            get { return typeKey; }
-        }
+        public TypeKey TypeKey { get; }
 
-        public string Type
-        {
-            get { return type; }
-        }
+        public string Type { get; }
 
-        public string Name
-        {
-            get { return name; }
-        }
+        public string Name { get; }
 
         public MethodAttributes AddMethodAttributes
         {
-            get { return eventDefinition.AddMethod != null ? eventDefinition.AddMethod.Attributes : 0; }
+            get { return Event.AddMethod != null ? Event.AddMethod.Attributes : 0; }
         }
 
         public TypeDefinition DeclaringType
         {
-            get { return (TypeDefinition) eventDefinition.DeclaringType; }
+            get { return (TypeDefinition) Event.DeclaringType; }
         }
 
-        public EventDefinition Event
-        {
-            get { return eventDefinition; }
-        }
+        public EventDefinition Event { get; }
 
         public virtual bool Matches(MemberReference member)
         {
             EventReference evtRef = member as EventReference;
             if (evtRef != null)
             {
-                if (typeKey.Matches(evtRef.DeclaringType))
-                    return type == evtRef.EventType.FullName && name == evtRef.Name;
+                if (TypeKey.Matches(evtRef.DeclaringType))
+                    return Type == evtRef.EventType.FullName && Name == evtRef.Name;
             }
 
             return false;
@@ -112,7 +95,7 @@ namespace Obfuscar
             else if ((object) b == null)
                 return false;
             else
-                return a.typeKey == b.typeKey && a.type == b.type && a.name == b.name;
+                return a.TypeKey == b.TypeKey && a.Type == b.Type && a.Name == b.Name;
         }
 
         public static bool operator !=(EventKey a, EventKey b)
@@ -122,17 +105,17 @@ namespace Obfuscar
             else if ((object) b == null)
                 return true;
             else
-                return a.typeKey != b.typeKey || a.type != b.type || a.name != b.name;
+                return a.TypeKey != b.TypeKey || a.Type != b.Type || a.Name != b.Name;
         }
 
         public override int GetHashCode()
         {
-            return typeKey.GetHashCode() ^ type.GetHashCode() ^ name.GetHashCode();
+            return TypeKey.GetHashCode() ^ Type.GetHashCode() ^ Name.GetHashCode();
         }
 
         public override string ToString()
         {
-            return String.Format("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
+            return String.Format("[{0}]{1} {2}::{3}", TypeKey.Scope, Type, TypeKey.Fullname, Name);
         }
     }
 }

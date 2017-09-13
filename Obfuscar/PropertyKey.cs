@@ -31,56 +31,39 @@ namespace Obfuscar
 {
     class PropertyKey
     {
-        readonly TypeKey typeKey;
-        readonly string type;
-        readonly string name;
-        readonly PropertyDefinition propertyDefinition;
-
         public PropertyKey(TypeKey typeKey, PropertyDefinition prop)
         {
-            this.typeKey = typeKey;
-            this.type = prop.PropertyType.FullName;
-            this.name = prop.Name;
-            this.propertyDefinition = prop;
+            this.TypeKey = typeKey;
+            this.Type = prop.PropertyType.FullName;
+            this.Name = prop.Name;
+            this.Property = prop;
         }
 
-        public TypeKey TypeKey
-        {
-            get { return typeKey; }
-        }
+        public TypeKey TypeKey { get; }
 
-        public string Type
-        {
-            get { return type; }
-        }
+        public string Type { get; }
 
-        public string Name
-        {
-            get { return name; }
-        }
+        public string Name { get; }
 
         public MethodAttributes GetterMethodAttributes
         {
-            get { return propertyDefinition.GetMethod != null ? propertyDefinition.GetMethod.Attributes : 0; }
+            get { return Property.GetMethod != null ? Property.GetMethod.Attributes : 0; }
         }
 
         public TypeDefinition DeclaringType
         {
-            get { return (TypeDefinition) propertyDefinition.DeclaringType; }
+            get { return (TypeDefinition) Property.DeclaringType; }
         }
 
-        public PropertyDefinition Property
-        {
-            get { return propertyDefinition; }
-        }
+        public PropertyDefinition Property { get; }
 
         public virtual bool Matches(MemberReference member)
         {
             PropertyReference propRef = member as PropertyReference;
             if (propRef != null)
             {
-                if (typeKey.Matches(propRef.DeclaringType))
-                    return type == propRef.PropertyType.FullName && name == propRef.Name;
+                if (TypeKey.Matches(propRef.DeclaringType))
+                    return Type == propRef.PropertyType.FullName && Name == propRef.Name;
             }
 
             return false;
@@ -102,7 +85,7 @@ namespace Obfuscar
             else if ((object) b == null)
                 return false;
             else
-                return a.typeKey == b.typeKey && a.type == b.type && a.name == b.name;
+                return a.TypeKey == b.TypeKey && a.Type == b.Type && a.Name == b.Name;
         }
 
         public static bool operator !=(PropertyKey a, PropertyKey b)
@@ -112,17 +95,17 @@ namespace Obfuscar
             else if ((object) b == null)
                 return true;
             else
-                return a.typeKey != b.typeKey || a.type != b.type || a.name != b.name;
+                return a.TypeKey != b.TypeKey || a.Type != b.Type || a.Name != b.Name;
         }
 
         public override int GetHashCode()
         {
-            return typeKey.GetHashCode() ^ type.GetHashCode() ^ name.GetHashCode();
+            return TypeKey.GetHashCode() ^ Type.GetHashCode() ^ Name.GetHashCode();
         }
 
         public override string ToString()
         {
-            return String.Format("[{0}]{1} {2}::{3}", typeKey.Scope, type, typeKey.Fullname, name);
+            return String.Format("[{0}]{1} {2}::{3}", TypeKey.Scope, Type, TypeKey.Fullname, Name);
         }
     }
 }

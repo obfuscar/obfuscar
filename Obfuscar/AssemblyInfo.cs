@@ -54,21 +54,14 @@ namespace Obfuscar
         private readonly PredicateCollection<EventKey> forceEvents = new PredicateCollection<EventKey>();
         private readonly PredicateCollection<MethodKey> skipStringHiding = new PredicateCollection<MethodKey>();
         private readonly PredicateCollection<MethodKey> forceStringHiding = new PredicateCollection<MethodKey>();
-        private readonly List<AssemblyInfo> references = new List<AssemblyInfo>();
-        private readonly List<AssemblyInfo> referencedBy = new List<AssemblyInfo>();
         private List<TypeReference> unrenamedTypeReferences;
         private List<MemberReference> unrenamedReferences;
         private string filename;
         private AssemblyDefinition definition;
         private string name;
-        private bool exclude;
         private bool skipEnums;
 
-        public bool Exclude
-        {
-            get { return exclude; }
-            set { exclude = value; }
-        }
+        public bool Exclude { get; set; }
 
         bool initialized;
 
@@ -744,15 +737,9 @@ namespace Obfuscar
             }
         }
 
-        public List<AssemblyInfo> References
-        {
-            get { return references; }
-        }
+        public List<AssemblyInfo> References { get; } = new List<AssemblyInfo>();
 
-        public List<AssemblyInfo> ReferencedBy
-        {
-            get { return referencedBy; }
-        }
+        public List<AssemblyInfo> ReferencedBy { get; } = new List<AssemblyInfo>();
 
         private bool ShouldSkip(string ns, InheritMap map)
         {
