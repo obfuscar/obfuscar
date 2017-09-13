@@ -1328,7 +1328,7 @@ namespace Obfuscar
                     foreach (MethodDefinition method in type.Methods)
                     {
                         if (method.HasBody && Project.Settings.Optimize)
-                            method.Body.OptimizeMacros();
+                            method.Body.Optimize();
                     }
                 }
 
@@ -1637,7 +1637,10 @@ namespace Obfuscar
                 }
 
                 // Optimize method back
-                method.Body.Optimize();
+                if (project.Settings.Optimize)
+                {
+                    method.Body.Optimize();
+                }
             }
         }
 
