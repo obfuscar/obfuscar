@@ -108,8 +108,8 @@
     <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\XmlNamespace.cs">
       <Link>XmlNamespace.cs</Link>
     </Compile>
-    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\XmlPIMapping.cs">
-      <Link>XmlPIMapping.cs</Link>
+    <Compile Include="..\ilspy\ILSpy.BamlDecompiler\Ricciolo.StylesExplorer.MarkupReflection\XmlToClrNamespaceMapping.cs">
+      <Link>XmlToClrNamespaceMapping.cs</Link>
     </Compile>
     <Compile Include="Helper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
