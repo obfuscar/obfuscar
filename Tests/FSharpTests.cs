@@ -55,6 +55,7 @@ namespace ObfuscarTests
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
                 @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='OptimizeMethods' value='false' />" +
                 @"<Module file='$(InPath){2}FSharp.Compiler.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
