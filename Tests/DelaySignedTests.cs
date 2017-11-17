@@ -62,7 +62,10 @@ namespace ObfuscarTests
             var assembly = Path.Combine(TestHelper.InputPath, "DelaySigned.dll");
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "DelaySigned.dll"), assembly, true);
+            if (!File.Exists(assembly))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "DelaySigned.dll"), assembly, true);
+            }
 
             var map = TestHelper.Obfuscate(xml).Mapping;
 

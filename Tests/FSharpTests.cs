@@ -62,10 +62,19 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "FSharp.Core.dll"),
-                Path.Combine(TestHelper.InputPath, "FSharp.Core.dll"), true);
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "FSharp.Compiler.dll"),
-                Path.Combine(TestHelper.InputPath, "FSharp.Compiler.dll"), true);
+            string destFileName = Path.Combine(TestHelper.InputPath, "FSharp.Core.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "FSharp.Core.dll"),
+                    destFileName, true);
+            }
+
+            string destFileName1 = Path.Combine(TestHelper.InputPath, "FSharp.Compiler.dll");
+            if (!File.Exists(destFileName1))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "FSharp.Compiler.dll"),
+                    destFileName1, true);
+            }
 
             var map = TestHelper.Obfuscate(xml).Mapping;
 
@@ -81,7 +90,7 @@ namespace ObfuscarTests
                     "System.Int32 Microsoft.FSharp.Compiler.AbstractIL.IL/ldargs@2513::GenerateNext(System.Collections.Generic.IEnumerable`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILInstr>&)");
                 var m1 = map.GetMethod(new MethodKey(method1));
                 Assert.True(m1.Status == ObfuscationStatus.Skipped, "Instance method should have been skipped.");
-                Assert.Equal(m1.StatusText, "external base class or interface");
+                Assert.Equal("external base class or interface", m1.StatusText);
             }
 
             {
@@ -94,7 +103,7 @@ namespace ObfuscarTests
                     "System.Tuple`2<Microsoft.FSharp.Collections.FSharpList`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef>,Microsoft.FSharp.Collections.FSharpMap`2<System.String,Microsoft.FSharp.Collections.FSharpList`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef>>> Microsoft.FSharp.Compiler.AbstractIL.IL/mkILMethods@2352::Invoke(Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef,System.Tuple`2<Microsoft.FSharp.Collections.FSharpList`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef>,Microsoft.FSharp.Collections.FSharpMap`2<System.String,Microsoft.FSharp.Collections.FSharpList`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILMethodDef>>>)");
                 var m1 = map.GetMethod(new MethodKey(method1));
                 Assert.True(m1.Status == ObfuscationStatus.Skipped, "Instance method should have been skipped.");
-                Assert.Equal(m1.StatusText, "external base class or interface");
+                Assert.Equal("external base class or interface", m1.StatusText);
             }
         }
     }

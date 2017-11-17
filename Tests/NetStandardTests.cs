@@ -51,10 +51,20 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "SharpSnmpLib.NetStandard.dll"),
-                Path.Combine(TestHelper.InputPath, "SharpSnmpLib.NetStandard.dll"), true);
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "System.ComponentModel.TypeConverter.dll"),
-                Path.Combine(TestHelper.InputPath, "System.ComponentModel.TypeConverter.dll"), true);
+            string destFileName = Path.Combine(TestHelper.InputPath, "SharpSnmpLib.NetStandard.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "SharpSnmpLib.NetStandard.dll"),
+                    destFileName, true);
+            }
+
+
+            string destFileName1 = Path.Combine(TestHelper.InputPath, "System.ComponentModel.TypeConverter.dll");
+            if (!File.Exists(destFileName1))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "System.ComponentModel.TypeConverter.dll"),
+                    destFileName1, true);
+            }
 
             var map = TestHelper.Obfuscate(xml, true).Mapping;
 
@@ -65,11 +75,11 @@ namespace ObfuscarTests
                 Path.Combine(outputPath, "SharpSnmpLib.NetStandard.dll"));
 
             var corlibs = outAssmDef.MainModule.AssemblyReferences.Where(reference => reference.Name == "mscorlib");
-            Assert.Equal(0, corlibs.Count());
+            Assert.Empty(corlibs);
 
             var runtime =
                 outAssmDef.MainModule.AssemblyReferences.Where(reference => reference.Name == "System.Runtime");
-            Assert.Equal(1, runtime.Count());
+            Assert.Single(runtime);
             Assert.Equal("4.0.20.0", runtime.First().Version.ToString());
         }
 
@@ -84,27 +94,32 @@ namespace ObfuscarTests
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='SuppressIldasm' value='false' />" +
                 @"<Var name='HideStrings' value='false' />" +
+                @"<AssemblySearchPath path='C:\Program Files\dotnet\sdk\NuGetFallbackFolder\microsoft.netcore.app\2.0.0\ref\netcoreapp2.0\' />" +
                 @"<Module file='$(InPath){2}NetStandard20.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "NetStandard20.dll"),
-                Path.Combine(TestHelper.InputPath, "NetStandard20.dll"), true);
+            string destFileName = Path.Combine(TestHelper.InputPath, "NetStandard20.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "NetStandard20.dll"),
+                    destFileName, true);
+            }
 
             var map = TestHelper.Obfuscate(xml, true).Mapping;
 
             AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(TestHelper.InputPath, "NetStandard20.dll"));
 
-            Assert.Equal(1, inAssmDef.MainModule.AssemblyReferences.Count);
+            Assert.Single(inAssmDef.MainModule.AssemblyReferences);
             Assert.Equal("netstandard", inAssmDef.MainModule.AssemblyReferences[0].Name);
 
             AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "NetStandard20.dll"));
 
-            Assert.Equal(1, outAssmDef.MainModule.AssemblyReferences.Count);
+            Assert.Single(outAssmDef.MainModule.AssemblyReferences);
             Assert.Equal("netstandard", outAssmDef.MainModule.AssemblyReferences[0].Name);
         }
     }

@@ -61,8 +61,12 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WeifenLuo.WinFormsUI.Docking.dll"),
-                Path.Combine(TestHelper.InputPath, "WeifenLuo.WinFormsUI.Docking.dll"), true);
+            string destFileName = Path.Combine(TestHelper.InputPath, "WeifenLuo.WinFormsUI.Docking.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WeifenLuo.WinFormsUI.Docking.dll"),
+                    destFileName, true);
+            }
 
             var map = TestHelper.Obfuscate(xml).Mapping;
 

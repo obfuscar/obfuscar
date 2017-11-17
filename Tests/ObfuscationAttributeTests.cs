@@ -153,7 +153,7 @@ namespace ObfuscarTests
 
             var exception = Assert.Throws<ObfuscarException>(() =>
                 TestHelper.BuildAndObfuscate("AssemblyWithTypesAttrs2", string.Empty, xml));
-            Assert.True(exception.Message.StartsWith("Inconsistent virtual method obfuscation"));
+            Assert.StartsWith("Inconsistent virtual method obfuscation", exception.Message);
         }
 
         [Fact]
@@ -171,13 +171,22 @@ namespace ObfuscarTests
                 @"								<Module file='$(InPath){2}AssemblyG.dll' />" +
                 @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
             // Directory.Delete (TestHelper.OutputPath, true);
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "AssemblyG.dll"),
-                Path.Combine(TestHelper.InputPath, "AssemblyG.dll"), true);
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "AssemblyF.dll"),
-                Path.Combine(TestHelper.InputPath, "AssemblyF.dll"), true);
+            string destFileName = Path.Combine(TestHelper.InputPath, "AssemblyG.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "AssemblyG.dll"),
+                    destFileName, true);
+            }
+
+            string destFileName1 = Path.Combine(TestHelper.InputPath, "AssemblyF.dll");
+            if (!File.Exists(destFileName1))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "AssemblyF.dll"),
+                    destFileName1, true);
+            }
 
             var exception = Assert.Throws<ObfuscarException>(() => TestHelper.Obfuscate(xml));
-            Assert.True(exception.Message.StartsWith("Inconsistent virtual method obfuscation"));
+            Assert.StartsWith("Inconsistent virtual method obfuscation", exception.Message);
 
             Assert.False(File.Exists(Path.Combine(TestHelper.OutputPath, @"AssemblyG.dll")));
             Assert.False(File.Exists(Path.Combine(TestHelper.OutputPath, @"AssemblyF.dll")));

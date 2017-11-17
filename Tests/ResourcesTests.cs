@@ -63,8 +63,12 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WindowsFormsApplication1.exe"),
-                Path.Combine(TestHelper.InputPath, "WindowsFormsApplication1.exe"), true);
+            string destFileName = Path.Combine(TestHelper.InputPath, "WindowsFormsApplication1.exe");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WindowsFormsApplication1.exe"),
+                    destFileName, true);
+            }
 
             var map = TestHelper.Obfuscate(xml).Mapping;
 

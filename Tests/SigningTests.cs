@@ -55,7 +55,7 @@ namespace ObfuscarTests
                 exception.Message);
         }
 
-        // [Fact] no longer valid due to Cecil changes
+        // [Fact] //no longer valid due to Cecil changes
         public void CheckCanObfuscateDelaySigned()
         {
             string xml = String.Format(

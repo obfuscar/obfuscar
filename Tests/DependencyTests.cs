@@ -81,7 +81,7 @@ namespace ObfuscarTests
             Obfuscator obfuscator = Obfuscator.CreateFromXml(xml);
         }
 
-        //[Fact]
+        [Fact]
         public void CheckDeletedDependency()
         {
             string xml = String.Format(
@@ -107,8 +107,13 @@ namespace ObfuscarTests
                 @"</Obfuscator>", TestHelper.InputPath, Path.DirectorySeparatorChar);
 
             // InPath defaults to '.', which doesn't contain AssemblyA
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "AssemblyD.dll"),
-                Path.Combine(TestHelper.InputPath, "AssemblyD.dll"), true);
+            string destFileName = Path.Combine(TestHelper.InputPath, "AssemblyD.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "AssemblyD.dll"),
+                    destFileName, true);
+            }
+
             var exception = Assert.Throws<ObfuscarException>(() => { Obfuscator.CreateFromXml(xml); });
             Assert.Equal("Unable to resolve dependency:  AssemblyC", exception.Message);
         }

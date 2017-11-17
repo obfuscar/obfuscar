@@ -61,11 +61,20 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            File.Copy(
-                Path.Combine(TestHelper.InputPath, @"..", "System.Windows.Controls.DataVisualization.Toolkit.dll"),
-                Path.Combine(TestHelper.InputPath, "System.Windows.Controls.DataVisualization.Toolkit.dll"), true);
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WPFToolkit.dll"),
-                Path.Combine(TestHelper.InputPath, "WPFToolkit.dll"), true);
+            string destFileName = Path.Combine(TestHelper.InputPath, "System.Windows.Controls.DataVisualization.Toolkit.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(
+                    Path.Combine(TestHelper.InputPath, @"..", "System.Windows.Controls.DataVisualization.Toolkit.dll"),
+                    destFileName, true);
+            }
+
+            string destFileName1 = Path.Combine(TestHelper.InputPath, "WPFToolkit.dll");
+            if (!File.Exists(destFileName1))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WPFToolkit.dll"),
+                    destFileName1, true);
+            }
 
             var map = TestHelper.Obfuscate(xml).Mapping;
 

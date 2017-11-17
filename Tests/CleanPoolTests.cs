@@ -32,7 +32,7 @@ namespace ObfuscarTests
 {
     public class CleanPoolTests
     {
-        public void BuildAndObfuscateAssemblies()
+        internal void BuildAndObfuscateAssemblies()
         {
             string xml = String.Format(
                 @"<?xml version='1.0'?>" +

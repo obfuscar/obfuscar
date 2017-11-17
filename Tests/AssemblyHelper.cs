@@ -91,8 +91,7 @@ namespace ObfuscarTests
                         methodsToFind.Remove(method.Name);
                     }
 
-                    if (checkType != null)
-                        checkType(typeDef);
+                    checkType?.Invoke(typeDef);
                 });
 
             Assert.False(methodsToFind.Count > 0, "Failed to find all expected methods.");

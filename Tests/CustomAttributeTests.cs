@@ -69,13 +69,13 @@ namespace ObfuscarTests
                 else
                     found = true;
 
-                Assert.Equal(1, typeDef.CustomAttributes.Count); // "Type should have an attribute.");
+                Assert.Single(typeDef.CustomAttributes); // "Type should have an attribute.");
 
                 CustomAttribute attr = typeDef.CustomAttributes[0];
                 Assert.Equal("System.Void A.a::.ctor(System.String)", attr.Constructor.ToString());
                 // "Type should have ObsoleteAttribute on it.");
 
-                Assert.Equal(1, attr.ConstructorArguments.Count); // "ObsoleteAttribute should have one parameter.");
+                Assert.Single(attr.ConstructorArguments); // "ObsoleteAttribute should have one parameter.");
                 Assert.Equal("test", attr.ConstructorArguments[0].Value);
                 // "ObsoleteAttribute param should have appropriate value.");
             }
@@ -105,7 +105,7 @@ namespace ObfuscarTests
                 Assert.Equal("System.Void A.a::.ctor(System.String)", attr.Constructor.ToString());
                 // "Type should have ObsoleteAttribute on it.");
 
-                Assert.Equal(1, attr.ConstructorArguments.Count); // "ObsoleteAttribute should have one parameter.");
+                Assert.Single(attr.ConstructorArguments); // "ObsoleteAttribute should have one parameter.");
                 Assert.Equal("test", attr.ConstructorArguments[0].Value);
                 // "ObsoleteAttribute param should have appropriate value.");
             }

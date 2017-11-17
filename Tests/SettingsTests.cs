@@ -47,8 +47,12 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WpfApplication1.dll"),
-                Path.Combine(TestHelper.InputPath, "WpfApplication1.dll"), true);
+            string destFileName = Path.Combine(TestHelper.InputPath, "WpfApplication1.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WpfApplication1.dll"),
+                    destFileName, true);
+            }
 
             var obfuscator = TestHelper.Obfuscate(xml);
 

@@ -48,8 +48,13 @@ namespace ObfuscarTests
                 @"  <Module file='$(InPath){2}AssemblyWithProperties.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "TestInclude.xml"),
-                Path.Combine(TestHelper.InputPath, "TestInclude.xml"), true);
+            string destFileName = Path.Combine(TestHelper.InputPath, "TestInclude.xml");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "TestInclude.xml"),
+                    destFileName, true);
+            }
+
             Obfuscator obfuscator = Obfuscator.CreateFromXml(xml);
             Assert.False(obfuscator.Project.Settings.KeepPublicApi);
         }
@@ -68,8 +73,12 @@ namespace ObfuscarTests
                 @"  </Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "TestIncludeModule.xml"),
-                Path.Combine(TestHelper.InputPath, "TestIncludeModule.xml"), true);
+            string destFileName = Path.Combine(TestHelper.InputPath, "TestIncludeModule.xml");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "TestIncludeModule.xml"),
+                    destFileName, true);
+            }
 
             TestHelper.BuildAndObfuscate("SkipVirtualMethodTest", "1", xml);
 

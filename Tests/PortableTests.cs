@@ -50,8 +50,12 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            File.Copy(Path.Combine(TestHelper.InputPath, @"..", "SharpSnmpLib.Portable.dll"),
-                Path.Combine(TestHelper.InputPath, "SharpSnmpLib.Portable.dll"), true);
+            string destFileName = Path.Combine(TestHelper.InputPath, "SharpSnmpLib.Portable.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "SharpSnmpLib.Portable.dll"),
+                  destFileName, true);
+            }
 
             var map = TestHelper.Obfuscate(xml).Mapping;
 
@@ -62,7 +66,7 @@ namespace ObfuscarTests
                 Path.Combine(outputPath, "SharpSnmpLib.Portable.dll"));
 
             var corlibs = outAssmDef.MainModule.AssemblyReferences.Where(reference => reference.Name == "mscorlib");
-            Assert.Equal(1, corlibs.Count());
+            Assert.Single(corlibs);
             Assert.Equal("2.0.5.0", corlibs.First().Version.ToString());
         }
     }
