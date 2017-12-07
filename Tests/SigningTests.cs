@@ -56,7 +56,7 @@ namespace ObfuscarTests
         }
 
         // [Fact] //no longer valid due to Cecil changes
-        public void CheckCanObfuscateDelaySigned()
+        private void CheckCanObfuscateDelaySigned()
         {
             string xml = String.Format(
                 @"<?xml version='1.0'?>" +

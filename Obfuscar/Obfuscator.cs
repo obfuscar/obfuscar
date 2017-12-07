@@ -179,7 +179,7 @@ namespace Obfuscar
         /// <summary>
         /// Saves changes made to assemblies to the output path.
         /// </summary>
-        public void SaveAssemblies(bool throwException = false)
+        public void SaveAssemblies(bool throwException = true)
         {
             string outPath = Project.Settings.OutPath;
 

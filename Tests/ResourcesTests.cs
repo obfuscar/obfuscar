@@ -74,16 +74,16 @@ namespace ObfuscarTests
 
             AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "WindowsFormsApplication1.exe"));
-            Assert.False(outAssmDef.MainModule.Resources.Any(item =>
-                item.Name == "WindowsFormsApplication1.Properties.Resources.resources"));
-            Assert.False(outAssmDef.MainModule.Resources.Any(item =>
-                item.Name == "WindowsFormsApplication1.CustomForm.resources"));
-            Assert.False(outAssmDef.MainModule.Resources.Any(item =>
-                item.Name == "WindowsFormsApplication1.CustomForm1.resources"));
-            Assert.False(outAssmDef.MainModule.Resources.Any(item =>
-                item.Name == "WindowsFormsApplication1.Form1.resources"));
-            Assert.False(outAssmDef.MainModule.Resources.Any(item =>
-                item.Name == "WindowsFormsApplication1.UserControl1.resources"));
+            Assert.DoesNotContain(outAssmDef.MainModule.Resources, item =>
+                item.Name == "WindowsFormsApplication1.Properties.Resources.resources");
+            Assert.DoesNotContain(outAssmDef.MainModule.Resources, item =>
+                item.Name == "WindowsFormsApplication1.CustomForm.resources");
+            Assert.DoesNotContain(outAssmDef.MainModule.Resources, item =>
+                item.Name == "WindowsFormsApplication1.CustomForm1.resources");
+            Assert.DoesNotContain(outAssmDef.MainModule.Resources, item =>
+                item.Name == "WindowsFormsApplication1.Form1.resources");
+            Assert.DoesNotContain(outAssmDef.MainModule.Resources, item =>
+                item.Name == "WindowsFormsApplication1.UserControl1.resources");
         }
     }
 }
