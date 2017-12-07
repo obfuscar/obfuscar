@@ -179,7 +179,7 @@ namespace Obfuscar
         /// <summary>
         /// Saves changes made to assemblies to the output path.
         /// </summary>
-        public void SaveAssemblies()
+        public void SaveAssemblies(bool throwException = false)
         {
             string outPath = Project.Settings.OutPath;
 
@@ -237,6 +237,11 @@ namespace Obfuscar
                 }
                 catch (Exception e)
                 {
+                    if (throwException)
+                    {
+                        throw;
+                    }
+
                     LogOutput(String.Format("\nFailed to save {0}", fileName));
                     LogOutput(String.Format("\n{0}: {1}", e.GetType().Name, e.Message));
                     var match = Regex.Match(e.Message, @"Failed to resolve\s+(?<name>[^\s]+)");

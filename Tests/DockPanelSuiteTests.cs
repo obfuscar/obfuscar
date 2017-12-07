@@ -78,5 +78,33 @@ namespace ObfuscarTests
             var type = map.GetClass(new TypeKey(classAType));
             Assert.True(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
         }
+
+        [Fact]
+        public void CheckOverwriting()
+        {
+            string xml = String.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeyFile' value='$(InPath)\..\dockpanelsuite.snk' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Module file='$(InPath){2}WeifenLuo.WinFormsUI.Docking.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, TestHelper.InputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.CleanInput();
+
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            string destFileName = Path.Combine(TestHelper.InputPath, "WeifenLuo.WinFormsUI.Docking.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WeifenLuo.WinFormsUI.Docking.dll"),
+                    destFileName, true);
+            }
+
+            var map = TestHelper.Obfuscate(xml).Mapping;
+            File.Delete(destFileName);
+        }
     }
 }

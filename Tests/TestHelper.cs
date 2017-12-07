@@ -112,7 +112,7 @@ namespace ObfuscarTests
             obfuscator.RenameMethods();
             obfuscator.RenameTypes();
             obfuscator.PostProcessing();
-            obfuscator.SaveAssemblies();
+            obfuscator.SaveAssemblies(true);
 
             return obfuscator;
         }
