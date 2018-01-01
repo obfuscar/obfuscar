@@ -39,3 +39,4 @@ T4MVC.cs
 *.iml
 .idea/
 .vs
+/local

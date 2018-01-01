@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
 	<metadata>
-		<version>2.2.10</version>
+		<version>2.2.11</version>
 		<authors>Ryan Williams, and other contributors.</authors>
 		<owners>Lex Li</owners>
 		<licenseUrl>https://github.com/lextm/obfuscar/blob/master/LICENSE</licenseUrl>
@@ -13,96 +13,13 @@
 		<description>Obfuscar is a basic obfuscator for .NET assemblies. It uses massive overloading to rename metadata in .NET assemblies (including the names of methods, properties, events, fields, types and namespaces) to a minimal set, distinguishable in most cases only by signature.</description>
 		<summary>Open source obfuscar for .NET and Mono.</summary>
 		<developmentDependency>true</developmentDependency>
-		<releaseNotes>
-Version 2.2.10
-* Updated Cecil to latest.
-
-Version 2.2.9
-* Fixed OptimizeMethods option.
-
-Version 2.2.8
-* Fixed Rollbar exceptions.
-* Fixed XML exceptions.
-
-Version 2.2.7
-* Fixed sample project script.
-* Fixed UWP issue.
-* Configuration implementation switched to LINQ to XML.
-
-Version 2.2.6
-* Added the ability to automatically disable string hiding in not supported scenarios.
-
-Version 2.2.5
-* Enabled string hiding.
-* Fixed GitHub#10 Added Include" tag in configuration.
-* Fixed GitHub#99 Fixed a possible null reference exception.
-* Fixed GitHub#102 Added "AssemblySearchPath" tag in configuration.
-
-Version 2.2.4
-* Updated Mono.Cecil.
-
-Version 2.2.3
-* Disable string hiding.
-
-Version 2.2.2
-* Updated Mono.Cecil.
-* Fixed GitHub#85 Initial patch for .NET Core assembly obfuscation.
-
-Version 2.2.1
-* Fixed GitHub#83 Some resources files are not renamed.
-
-Version 2.2.0
-* Fixed GitHub#71 Added RenameFields option.
-* Fixed GitHub#72 Added SkipEnums option.
-* Fixed GitHub#73 MissingMethodException in some generic method case.
-* Fixed GitHub#74 Graph class might enter an infinite loop.
-		
-Version 2.1.0
-* Fixed GitHub#60 Type forwarding in System.Runtime is not properly supported.
-* Fixed GitHub#61 String hiding should skip resource manager creation methods.
-
-Version 2.0.4
-* Fixed CodePlex#30 HideStrings setting does not work as documented.
-* Fixed CodePlex#31 SkipStringHinding does not work.
-* Fixed CodePlex#32 ForceStringHiding and related are added.
-
-Version 2.0.3
-* Fixed GitHub#58 "protected internal" property/method is not treated as public API.
-* Fixed GitHub#59 Special enumerator leads to InvalidOperationException in TypeKey class.
-
-Version 2.0.2
-* Fixed GitHub#47 F# compiler can now be obfuscated.
-* Fixed GitHub#55 The default value for the ObfuscatorAttribute is different.
-* Fixed GitHub#56 SuppressIldasm setting is spelled as SupressIldasm in config.
-* Fixed CodePlex#7 Avoid creating invalid overriding methods during obfuscation.
-* Fixed CodePlex#9 Added command line options (help and version). Multiple project files can also be processed now.
-
-Version 2.0.1
-* Fixed CodePlex#12 BAML reader error.
-* Fixed CodePlex#13 Nested classes are obfuscated wrongly.
-* Fixed CodePlex#17 PCL library wrongly refers to .NET 4 mscorlib.
-* Fixed CodePlex#20 Environment variable support.
-* Fixed CodePlex#24 MarkedOnly option does not always work.
-
-Version 2.0.0
-The changes since last commit on Google Code include,
-* Merged all patches from RemObjects' fork.
-	** Unicode chars can be used as obfuscated names.
-	** Better dependency resolution.
-	** Various other small fixes.
-* Merged patches from @AngryAnt (Emil Johansen)'s fork
-	** Korean chars can be used as obfuscated names.
-	** New tags are introduced (I could not yet verify every one, as there is no corresponding unit test cases).
-* Add an option to automatic exclude of public types and members so that public API is kept.
-* Add an option to automatic include all non-public types and members so that private API is obfuscated.
-* Add Force* rules to supplement Skip* rules.
-* Various bug fixes.
-		</releaseNotes>
-		<copyright>(C) 2007-2016 Ryan Williams and other contributors.</copyright>
+		<releaseNotes>https://github.com/lextm/obfuscar/releases</releaseNotes>
+		<copyright>(C) 2007-2018 Ryan Williams and other contributors.</copyright>
 		<language>en-US</language>
 		<tags>obfuscation,obfuscator,open source</tags>
 	</metadata>
 	<files>
 		<file src="bin\release\obfuscar.console.exe" target="tools" />
+		<file src="build\obfuscar.props" target="build" />
 	</files>
 </package>
