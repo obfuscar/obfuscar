@@ -31,7 +31,8 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Mono.Options;
-using RollbarDotNet;
+using Rollbar;
+using Rollbar.DTOs;
 
 namespace Obfuscar
 {
@@ -133,29 +134,33 @@ namespace Obfuscar
         private static void RegisterRollbar()
         {
             Console.WriteLine("Note that Rollbar API is enabled by default to collect crashes. If you want to opt out, please run with -s switch");
-            Rollbar.Init(new RollbarConfig
-            {
-                AccessToken = "1dd3cf880c5a46eeb4338dbea73f9620",
-                Environment = "production"
-            });
             var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            Rollbar.PersonData(() => new Person(version)
-            {
-                UserName = $"{version}"
-            });
+            RollbarLocator.RollbarInstance.Configure(
+                new RollbarConfig("1dd3cf880c5a46eeb4338dbea73f9620")
+                {
+                    Environment = "production",
+                    Transform = payload =>
+                    {
+                        payload.Data.Person = new Person(version)
+                        {
+                            UserName = $"{version}"
+                        };
+                    }
+                });
+
             Application.ThreadException += (sender, args) =>
             {
-                Rollbar.Report(args.Exception);
+                RollbarLocator.RollbarInstance.Error(args.Exception);
             };
 
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
-                Rollbar.Report(args.ExceptionObject as System.Exception);
+                RollbarLocator.RollbarInstance.Error(args.ExceptionObject as System.Exception);
             };
 
             TaskScheduler.UnobservedTaskException += (sender, args) =>
             {
-                Rollbar.Report(args.Exception);
+                RollbarLocator.RollbarInstance.Error(args.Exception);
             };
         }
     }
