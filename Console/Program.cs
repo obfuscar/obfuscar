@@ -61,7 +61,7 @@ namespace Obfuscar
             OptionSet p = new OptionSet()
                 .Add("h|?|help", "Print this help information.", delegate(string v) { showHelp = v != null; })
                 .Add("s|suppress", "Suppress Rollbar crash report.", delegate(string v) { suppress = v != null; })
-                .Add("V", "Display version number of this application.",
+                .Add("V|version", "Display version number of this application.",
                     delegate(string v) { showVersion = v != null; });
 
             if (args.Length == 0)
