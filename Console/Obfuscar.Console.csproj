@@ -108,11 +108,11 @@
   <PropertyGroup>
     <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT' ">
 rename Obfuscar.Console.exe Obfuscar.exe
-$(ILRepack) /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Baml.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Newtonsoft.Json.dll
+"$(ILRepack)" /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Baml.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Newtonsoft.Json.dll
 del Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Baml.dll Obfuscar.dll Rollbar.dll Obfuscar.exe Newtonsoft.Json.dll</PostBuildEvent>
     <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' != 'Windows_NT' ">
 mv Obfuscar.Console.exe Obfuscar.exe
-mono $(ILRepack) /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Newtonsoft.Json.dll
+mono "$(ILRepack)" /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Newtonsoft.Json.dll
 rm Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Obfuscar.exe Newtonsoft.Json.dll</PostBuildEvent>
   </PropertyGroup>
 </Project>
