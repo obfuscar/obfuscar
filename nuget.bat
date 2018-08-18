@@ -1,1 +1,0 @@
-call .\.nuget\nuget.exe pack 

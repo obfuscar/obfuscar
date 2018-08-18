@@ -1,2 +1,2 @@
 call build.release.bat
-call nuget.bat
+powershell -file sign.ps1
