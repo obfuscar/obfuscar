@@ -77,7 +77,8 @@ namespace Obfuscar
         }
 
         public string KeyContainerName = null;
-        public byte[] keyPair;
+        private byte[] keyPair;
+        private RSA keyValue;
 
         public byte[] KeyPair
         {
@@ -112,8 +113,13 @@ namespace Obfuscar
         {
             get
             {
-                //if (keyvalue != null)
-                //	return keyvalue;
+                if (keyValue != null)
+                {
+                    return keyValue;
+                }
+
+                if (Type.GetType("System.MonoType") != null)
+                    throw new ObfuscarException("Key containers are not supported for Mono.");
 
                 var lKeyFileName = vars.GetValue("KeyFile", null);
                 var lKeyContainerName = vars.GetValue("KeyContainer", null);
@@ -123,15 +129,17 @@ namespace Obfuscar
                 if (lKeyFileName != null && lKeyContainerName != null)
                     throw new ObfuscarException("'Key file' and 'Key container' properties cann't be setted together.");
 
-                if (vars.GetValue("KeyContainer", null) != null)
+                KeyContainerName = vars.GetValue("KeyContainer", null);
+                if (KeyContainerName != null)
                 {
-                    KeyContainerName = vars.GetValue("KeyContainer", null);
-                    if (Type.GetType("System.MonoType") != null)
-                        throw new ObfuscarException("Key containers are not supported for Mono.");
+                    CspParameters cp = new CspParameters();
+                    cp.KeyContainerName = KeyContainerName;
+
+                    keyValue = new RSACryptoServiceProvider(cp);
+                    return keyValue;
                 }
 
                 return null;
-                //return keyvalue;
             }
         }
 

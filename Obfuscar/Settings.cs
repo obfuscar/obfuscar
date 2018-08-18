@@ -25,8 +25,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Xml;
 
 namespace Obfuscar
@@ -54,8 +52,6 @@ namespace Obfuscar
 
             XmlMapping = XmlConvert.ToBoolean(vars.GetValue("XmlMapping", "false"));
             RegenerateDebugInfo = XmlConvert.ToBoolean(vars.GetValue("RegenerateDebugInfo", "false"));
-            KeyFile = vars.GetValue("KeyFile", null);
-            KeyFile = KeyFile == null ? null : Environment.ExpandEnvironmentVariables(KeyFile);
         }
 
         public bool RegenerateDebugInfo { get; }
@@ -91,7 +87,5 @@ namespace Obfuscar
         public bool UseUnicodeNames { get; }
 
         public bool UseKoreanNames { get; }
-
-        public string KeyFile { get; }
     }
 }

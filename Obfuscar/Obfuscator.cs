@@ -218,16 +218,19 @@ namespace Obfuscar
 
                     if (info.Definition.Name.HasPublicKey)
                     {
-                        if (Project.KeyContainerName != null)
+                        if (Project.KeyValue != null)
                         {
                             info.Definition.Write(outName, parameters);
                             MsNetSigner.SignAssemblyFromKeyContainer(outName, Project.KeyContainerName);
                         }
-
-                        if (Project.KeyPair != null)
+                        else if (Project.KeyPair != null)
                         {
                             parameters.StrongNameKeyPair = new System.Reflection.StrongNameKeyPair(Project.KeyPair);
                             info.Definition.Write(outName, parameters);
+                        }
+                        else
+                        {
+                            throw new ObfuscarException($"Obfuscating a signed assembly would result in an invalid assembly:  {info.Name}; use the KeyFile or KeyContainer property to set a key to use");
                         }
                     }
                     else
