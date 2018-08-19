@@ -51,7 +51,7 @@ namespace ObfuscarTests
                 "/keyfile:" + Path.Combine(TestHelper.InputPath, @"SigningKey.snk"));
             var exception = Assert.Throws<ObfuscarException>(() => { TestHelper.Obfuscate(xml); });
             Assert.Equal(
-                "Obfuscating a signed assembly would result in an invalid assembly:  AssemblyForSigning; use the KeyFile property to set a key to use",
+                "Obfuscating a signed assembly would result in an invalid assembly:  AssemblyForSigning; use the KeyFile or KeyContainer property to set a key to use",
                 exception.Message);
         }
 
