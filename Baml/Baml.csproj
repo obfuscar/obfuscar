@@ -112,6 +112,7 @@
       <Link>XmlToClrNamespaceMapping.cs</Link>
     </Compile>
     <Compile Include="Helper.cs" />
+    <Compile Include="Helper.Unix.cs" Condition=" '$(OS)' != 'Windows_NT' " />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
