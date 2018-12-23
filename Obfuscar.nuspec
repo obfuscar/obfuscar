@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
 	<metadata>
-		<version>2.2.13</version>
+		<version>2.2.14</version>
 		<authors>Ryan Williams, and other contributors.</authors>
 		<owners>Lex Li</owners>
 		<licenseUrl>https://github.com/obfuscar/obfuscar/blob/master/LICENSE</licenseUrl>
