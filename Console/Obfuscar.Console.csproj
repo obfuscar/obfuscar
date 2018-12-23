@@ -96,13 +96,13 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ILRepack">
-      <Version>2.0.15</Version>
+      <Version>2.0.16</Version>
     </PackageReference>
     <PackageReference Include="Mono.Options">
       <Version>5.3.0.1</Version>
     </PackageReference>
     <PackageReference Include="Rollbar">
-      <Version>1.5.0</Version>
+      <Version>2.0.0</Version>
     </PackageReference>
   </ItemGroup>
   <PropertyGroup>

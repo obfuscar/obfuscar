@@ -26,6 +26,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B2A0589A-CCAD-4BA1-97AD-771424706E0D}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		test.bat = test.bat
 	EndProjectSection
 EndProject
 Global
@@ -143,6 +144,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9B9716C5-F814-4182-84D5-642C2A3FDFCA}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = Program\Obfuscar.exe.csproj

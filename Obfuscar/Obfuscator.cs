@@ -225,8 +225,19 @@ namespace Obfuscar
                         }
                         else if (Project.KeyPair != null)
                         {
-                            parameters.StrongNameKeyPair = new System.Reflection.StrongNameKeyPair(Project.KeyPair);
-                            info.Definition.Write(outName, parameters);
+                            var strongNameKeyPair = new System.Reflection.StrongNameKeyPair(Project.KeyPair);
+                            try
+                            {
+                                var publicKey = strongNameKeyPair.PublicKey;
+                                parameters.StrongNameKeyPair = strongNameKeyPair;
+                                info.Definition.Write(outName, parameters);
+                            }
+                            catch (ArgumentException)
+                            {
+                                // delay sign.
+                                info.Definition.Name.PublicKey = Project.KeyPair;
+                                info.Definition.Write(outName, parameters);
+                            }
                         }
                         else
                         {

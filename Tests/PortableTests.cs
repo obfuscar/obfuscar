@@ -43,7 +43,7 @@ namespace ObfuscarTests
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='HideStrings' value='false' />" +
-                @"<Var name='KeyFile' value='$(InPath){2}..{2}dockpanelsuite.snk' />" +
+                @"<Var name='KeyFile' value='$(InPath){2}SigningKey.snk' />" +
                 @"<Module file='$(InPath){2}SharpSnmpLib.Portable.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 

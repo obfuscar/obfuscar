@@ -117,7 +117,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Mono.Cecil">
-      <Version>0.10.0</Version>
+      <Version>0.10.1</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

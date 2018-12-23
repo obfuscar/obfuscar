@@ -52,7 +52,7 @@ namespace ObfuscarTests
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='KeyFile' value='$(InPath)\..\dockpanelsuite.snk' />" +
+                @"<Var name='KeyFile' value='$(InPath)\SigningKey.snk' />" +
                 @"<Var name='HidePrivateApi' value='true' />" +
                 @"<Var name='KeepPublicApi' value='false' />" +
                 @"<Module file='$(InPath){2}WeifenLuo.WinFormsUI.Docking.dll' />" +
@@ -87,7 +87,7 @@ namespace ObfuscarTests
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='KeyFile' value='$(InPath)\..\dockpanelsuite.snk' />" +
+                @"<Var name='KeyFile' value='$(InPath)\SigningKey.snk' />" +
                 @"<Var name='HidePrivateApi' value='true' />" +
                 @"<Var name='KeepPublicApi' value='false' />" +
                 @"<Module file='$(InPath){2}WeifenLuo.WinFormsUI.Docking.dll' />" +

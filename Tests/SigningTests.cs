@@ -26,6 +26,7 @@
 
 using System;
 using System.IO;
+using Mono.Cecil;
 using Obfuscar;
 using Xunit;
 
@@ -74,6 +75,74 @@ namespace ObfuscarTests
 
             // this should not throw
             TestHelper.Obfuscate(xml);
+        }
+
+        [Fact]
+        public void DelaySignedToFullSigned()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeyFile' value='$(InPath){2}SigningKey.snk' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Module file='$(InPath){2}DelaySigned.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.CleanInput();
+            var assembly = Path.Combine(TestHelper.InputPath, "DelaySigned.dll");
+
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            if (!File.Exists(assembly))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "DelaySigned.dll"), assembly, true);
+            }
+
+            var map = TestHelper.Obfuscate(xml).Mapping;
+
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(assembly);
+            Assert.False(inAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
+
+            AssemblyDefinition outAssmDef =
+                AssemblyDefinition.ReadAssembly(Path.Combine(outputPath, "DelaySigned.dll"));
+            Assert.True(outAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
+        }
+
+        [Fact]
+        public void DelaySignedRemains()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeyFile' value='$(InPath){2}public.snk' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Module file='$(InPath){2}DelaySigned.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.CleanInput();
+            var assembly = Path.Combine(TestHelper.InputPath, "DelaySigned.dll");
+
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            if (!File.Exists(assembly))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "DelaySigned.dll"), assembly, true);
+            }
+
+            var map = TestHelper.Obfuscate(xml).Mapping;
+
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(assembly);
+            Assert.False(inAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
+
+            AssemblyDefinition outAssmDef =
+                AssemblyDefinition.ReadAssembly(Path.Combine(outputPath, "DelaySigned.dll"));
+            Assert.False(outAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
         }
     }
 }
