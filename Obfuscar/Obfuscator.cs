@@ -35,16 +35,15 @@ using System.Resources;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-#if !__MonoCS__
+#if !NETCOREAPP2_1
 using ILSpy.BamlDecompiler;
 #endif
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Obfuscar.Helpers;
-#if !__MonoCS__
+#if !NETCOREAPP2_1
 using Ricciolo.StylesExplorer.MarkupReflection;
-
 #endif
 
 namespace Obfuscar
@@ -229,7 +228,11 @@ namespace Obfuscar
                             try
                             {
                                 var publicKey = strongNameKeyPair.PublicKey;
+#if NETCOREAPP2_1
+                                throw new PlatformNotSupportedException("Signing is not supported in .NET Core Global Tools build");
+#else
                                 parameters.StrongNameKeyPair = strongNameKeyPair;
+#endif
                                 info.Definition.Write(outName, parameters);
                             }
                             catch (ArgumentException)
@@ -698,7 +701,7 @@ namespace Obfuscar
 
                         try
                         {
-#if !__MonoCS__
+#if !NETCOREAPP2_1
                             using (var bamlReader =
                                 new XmlBamlReader(stream, new CecilTypeResolver(Project.Cache, library)))
                                 result.Add(XDocument.Load(bamlReader));

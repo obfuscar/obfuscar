@@ -22,6 +22,10 @@ $nuget = ".\.nuget\nuget.exe"
 & $nuget update /self | Write-Debug
 & $nuget pack
 
+Set-Location .\GlobalTools
+& dotnet pack
+Set-Location ..
+
 Write-Host "Sign NuGet packages."
 & $nuget sign *.nupkg -CertificateSubjectName "Yang Li" -Timestamper http://timestamp.digicert.com | Write-Debug
 & $nuget verify -All *.nupkg | Write-Debug

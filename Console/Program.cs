@@ -43,7 +43,7 @@ namespace Obfuscar
         private static void ShowHelp(OptionSet optionSet)
         {
             Console.WriteLine("Obfuscar is available at https://www.obfuscar.com");
-            Console.WriteLine("(C) 2007-2017, Ryan Williams and other contributors.");
+            Console.WriteLine("(C) 2007-2018, Ryan Williams and other contributors.");
             Console.WriteLine();
             Console.WriteLine("obfuscar [Options] [project_file] [project_file]");
             Console.WriteLine("Options:");
