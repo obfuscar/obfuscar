@@ -5,11 +5,11 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
 
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>obfuscar</ToolCommandName>
+    <ToolCommandName>obfuscar.console</ToolCommandName>
     <PackageOutputPath>..</PackageOutputPath>
 
     <PackageId>Obfuscar.GlobalTool</PackageId>
-    <Version>1.0.0-beta3</Version>
+    <Version>2.2.15</Version>
     <Authors>Ryan Williams, and other contributors.</Authors>
     <Company>LeXtudio</Company>
     <Product>Obfuscar Global Tools build</Product>
@@ -19,11 +19,11 @@
     <PackageProjectUrl>https://github.com/obfuscar/obfuscar</PackageProjectUrl>
     <PackageIconUrl>https://github.com/obfuscar/obfuscar/raw/master/Potion-icon.png</PackageIconUrl>
     <PackageLicenseUrl>https://github.com/obfuscar/obfuscar/blob/master/LICENSE</PackageLicenseUrl>
-    <Copyright>Copyright (c) 2007 Ryan Williams Copyright (c) 2009-2018 Calvin Rien, Lex Li, RemObjects and other contributors</Copyright>
+    <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2019 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
     <RepositoryType>git</RepositoryType>
     <PackageTags>obfuscar,obfuscation</PackageTags>
-    <AssemblyVersion>1.0.0.1</AssemblyVersion>
-    <FileVersion>1.0.0.1</FileVersion>
+    <AssemblyVersion>2.2.15.0</AssemblyVersion>
+    <FileVersion>2.2.15.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
