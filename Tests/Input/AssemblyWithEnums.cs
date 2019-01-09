@@ -34,4 +34,9 @@ namespace TestClasses
 		Value2,
 		ValueA
 	}
+
+    internal class Test
+    {
+        public int TestField = 5; 
+    }
 }
