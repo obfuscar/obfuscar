@@ -998,7 +998,7 @@ namespace Obfuscar
                 return true;
             }
 
-            if (skipEnums)
+            if (skipEnums && field.DeclaringType.IsEnum)
             {
                 message = "enum rule in configuration";
                 return true;

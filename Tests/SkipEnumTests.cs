@@ -28,6 +28,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
+using Obfuscar;
 using Xunit;
 
 namespace ObfuscarTests
@@ -222,7 +223,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEnums", String.Empty, xml);
+            var map = TestHelper.BuildAndObfuscate("AssemblyWithEnums", String.Empty, xml).Mapping;
 
             string[] expected = new string[]
             {
@@ -235,7 +236,22 @@ namespace ObfuscarTests
             {
             };
 
-            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 1, expected, notExpected);
+            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 2, expected, notExpected);
+
+            string assmName = "AssemblyWithEnums.dll";
+
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(TestHelper.InputPath, assmName));
+
+            var classBType = inAssmDef.MainModule.GetType("TestClasses.Test");
+            var classB = map.GetClass(new TypeKey(classBType));
+
+            Assert.True(classB.Status == ObfuscationStatus.Renamed, "Internal class is not renamed");
+
+            var fieldType = classBType.Fields[0];
+            var fieldB = map.GetField(new FieldKey(fieldType));
+
+            Assert.True(fieldB.Status == ObfuscationStatus.Renamed, "Fields of internal class is not renamed");
         }
     }
 }
