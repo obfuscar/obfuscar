@@ -112,25 +112,25 @@ namespace Obfuscar
             // The SemanticAttributes of MethodDefinitions have to be loaded before any fields,properties or events are removed
             LoadMethodSemantics();
 
-            LogOutput("hiding strings...\n");
+            LogOutput("Hiding strings...\n");
             HideStrings();
 
             LogOutput("Renaming:  fields...");
             RenameFields();
 
-            LogOutput("parameters...");
+            LogOutput("Parameters...");
             RenameParams();
 
-            LogOutput("properties...");
+            LogOutput("Properties...");
             RenameProperties();
 
-            LogOutput("events...");
+            LogOutput("Events...");
             RenameEvents();
 
-            LogOutput("methods...");
+            LogOutput("Methods...");
             RenameMethods();
 
-            LogOutput("types...");
+            LogOutput("Types...");
             RenameTypes();
 
             PostProcessing();
