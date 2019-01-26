@@ -200,6 +200,24 @@ namespace Obfuscar
                 if (method.IsVirtual)
                     methods.Add(new MethodKey(method));
             }
+
+            foreach (PropertyDefinition property in type.Properties)
+            {
+                if (property.GetMethod != null && property.GetMethod.IsVirtual)
+                    methods.Add(new MethodKey(property.GetMethod));
+
+                if (property.SetMethod != null && property.SetMethod.IsVirtual)
+                    methods.Add(new MethodKey(property.SetMethod));
+            }
+
+            foreach (EventDefinition @event in type.Events)
+            {
+                if (@event.AddMethod != null && @event.AddMethod.IsVirtual)
+                    methods.Add(new MethodKey(@event.AddMethod));
+
+                if (@event.RemoveMethod != null && @event.RemoveMethod.IsVirtual)
+                    methods.Add(new MethodKey(@event.RemoveMethod));
+            }
         }
 
         MethodKey[] GetVirtualMethods(AssemblyCache cache, TypeDefinition type)
