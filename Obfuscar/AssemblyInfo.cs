@@ -913,7 +913,10 @@ namespace Obfuscar
                 return true;
             }
 
-            if (method.DeclaringType.IsTypePublic() && method.Method.IsPublic())
+            if (method.Method.IsPublic() && (
+                method.DeclaringType.IsTypePublic() ||
+                map.GetMethodGroup(method)?.Methods.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
+            ))
             {
                 message = "KeepPublicApi option in configuration";
                 return keepPublicApi;
@@ -1004,7 +1007,7 @@ namespace Obfuscar
                 return true;
             }
 
-            if (field.DeclaringType.IsTypePublic() && (field.Field.IsPublic || field.Field.IsFamily))
+            if (field.Field.IsPublic() && field.DeclaringType.IsTypePublic())
             {
                 message = "KeepPublicApi option in configuration";
                 return keepPublicApi;
@@ -1067,7 +1070,11 @@ namespace Obfuscar
                 return true;
             }
 
-            if (prop.DeclaringType.IsTypePublic() && prop.Property.IsPublic())
+            if (prop.Property.IsPublic() && (
+                prop.DeclaringType.IsTypePublic() ||
+                prop.Property.GetMethod != null && map.GetMethodGroup(new MethodKey(prop.Property.GetMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null ||
+                prop.Property.SetMethod != null && map.GetMethodGroup(new MethodKey(prop.Property.SetMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
+            ))
             {
                 message = "KeepPublicApi option in configuration";
                 return keepPublicApi;
@@ -1132,7 +1139,11 @@ namespace Obfuscar
                 return true;
             }
 
-            if (evt.DeclaringType.IsTypePublic() && evt.Event.IsPublic())
+            if (evt.Event.IsPublic() && (
+                evt.DeclaringType.IsTypePublic() ||
+                evt.Event.AddMethod != null && map.GetMethodGroup(new MethodKey(evt.Event.AddMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null ||
+                evt.Event.RemoveMethod != null && map.GetMethodGroup(new MethodKey(evt.Event.RemoveMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
+            ))
             {
                 message = "KeepPublicApi option in configuration";
                 return keepPublicApi;
