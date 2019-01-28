@@ -1315,7 +1315,9 @@ namespace Obfuscar
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
                 {
                     if (type.FullName == "<Module>")
+                    {
                         continue;
+                    }
 
                     // FIXME: Figure out why this exists if it is never used.
                     // TypeKey typeKey = new TypeKey(type);
@@ -1594,14 +1596,18 @@ namespace Obfuscar
                 method.Body.SimplifyMacros();
                 ILProcessor worker = method.Body.GetILProcessor();
 
-                // IMPORTANT: cannot convert to foreach due to modification on method body.
-                // ReSharper disable once ForCanBeConvertedToForeach
+                //
+                // Make a dictionary of all instructions to replace and their replacement.
+                //
+                Dictionary <Instruction, LdStrInstructionReplacement> oldToNewStringInstructions = new Dictionary<Instruction, LdStrInstructionReplacement>();
+
                 for (int index = 0; index < method.Body.Instructions.Count; index++)
                 {
                     Instruction instruction = method.Body.Instructions[index];
+
                     if (instruction.OpCode == OpCodes.Ldstr)
                     {
-                        string str = (string) instruction.Operand;
+                        string str = (string)instruction.Operand;
                         MethodDefinition individualStringMethodDefinition;
                         if (!_methodByString.TryGetValue(str, out individualStringMethodDefinition))
                         {
@@ -1636,7 +1642,7 @@ namespace Obfuscar
                             worker4.Emit(OpCodes.Call, StringGetterMethodDefinition);
 
                             label20.Operand = worker4.Create(OpCodes.Ret);
-                            worker4.Append((Instruction) label20.Operand);
+                            worker4.Append((Instruction)label20.Operand);
 
                             NewType.Methods.Add(individualStringMethodDefinition);
                             _methodByString.Add(str, individualStringMethodDefinition);
@@ -1647,9 +1653,12 @@ namespace Obfuscar
                         // Replace Ldstr with Call
 
                         Instruction newinstruction = worker.Create(OpCodes.Call, individualStringMethodDefinition);
-                        worker.ReplaceAndFixReferences(instruction, newinstruction);
+
+                        oldToNewStringInstructions.Add(instruction, new LdStrInstructionReplacement(index, newinstruction));
                     }
                 }
+
+                worker.ReplaceAndFixReferences(method.Body, oldToNewStringInstructions);
 
                 // Optimize method back
                 if (project.Settings.Optimize)
