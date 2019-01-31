@@ -118,7 +118,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Mono.Cecil">
-      <Version>0.10.1</Version>
+      <Version>0.10.2</Version>
     </PackageReference>
     <PackageReference Include="System.CodeDom">
       <Version>4.5.0</Version>

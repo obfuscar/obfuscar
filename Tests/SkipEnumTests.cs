@@ -85,7 +85,7 @@ namespace ObfuscarTests
                 "ValueA"
             };
 
-            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 1, expected, notExpected);
+            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 2, expected, notExpected);
         }
 
         [Fact]
@@ -116,7 +116,7 @@ namespace ObfuscarTests
                 "ValueA"
             };
 
-            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 1, expected, notExpected);
+            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 2, expected, notExpected);
         }
 
         [Fact]
@@ -147,7 +147,7 @@ namespace ObfuscarTests
                 "ValueA"
             };
 
-            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 1, expected, notExpected);
+            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 2, expected, notExpected);
         }
 
         [Fact]
@@ -177,7 +177,7 @@ namespace ObfuscarTests
             {
             };
 
-            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 1, expected, notExpected);
+            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 2, expected, notExpected);
         }
 
         [Fact]
@@ -206,7 +206,7 @@ namespace ObfuscarTests
             {
             };
 
-            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 1, expected, notExpected);
+            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 2, expected, notExpected);
         }
 
         [Fact]
