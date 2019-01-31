@@ -5,10 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Baml\Baml.csproj" Condition=" $(TargetFramework) != 'netcoreapp2.1' " />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.10.1" />
     <PackageReference Include="Rollbar" Version="2.0.1" />
     <PackageReference Include="System.Runtime.Caching" Version="4.5.0" />
