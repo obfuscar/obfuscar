@@ -35,9 +35,7 @@ using System.Resources;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-#if !NETCOREAPP2_1
 using Confuser.Renamer.BAML;
-#endif
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -229,8 +227,8 @@ namespace Obfuscar
                                 throw new PlatformNotSupportedException("Signing is not supported in .NET Core Global Tools build");
 #else
                                 parameters.StrongNameKeyPair = strongNameKeyPair;
-#endif
                                 info.Definition.Write(outName, parameters);
+#endif
                             }
                             catch (ArgumentException)
                             {
@@ -484,10 +482,10 @@ namespace Obfuscar
                 // make a list of the resources that can be renamed
                 List<Resource> resources = new List<Resource>(library.MainModule.Resources.Count);
                 resources.AddRange(library.MainModule.Resources);
-#if !NETCOREAPP2_1
+
                 var xamlFiles = GetXamlDocuments(library);
                 var namesInXaml = NamesInXaml(xamlFiles);
-#endif
+
                 // Save the original names of all types because parent (declaring) types of nested types may be already renamed.
                 // The names are used for the mappings file.
                 Dictionary<TypeDefinition, TypeKey> unrenamedTypeKeys =
@@ -531,7 +529,7 @@ namespace Obfuscar
 
                         continue;
                     }
-#if !NETCOREAPP2_1
+
                     if (namesInXaml.Contains(type.FullName))
                     {
                         Mapping.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, "filtered by BAML");
@@ -554,7 +552,7 @@ namespace Obfuscar
 
                         continue;
                     }
-#endif
+
                     string name;
                     string ns;
                     if (type.IsNested)
@@ -642,7 +640,7 @@ namespace Obfuscar
                 }
             }
         }
-#if !NETCOREAPP2_1
+
         private HashSet<string> NamesInXaml(List<BamlDocument> xamlFiles)
         {
             var result = new HashSet<string>();
@@ -714,7 +712,7 @@ namespace Obfuscar
 
             return result;
         }
-#endif
+
         private void RenameType(AssemblyInfo info, TypeDefinition type, TypeKey oldTypeKey, TypeKey newTypeKey,
             TypeKey unrenamedTypeKey)
         {

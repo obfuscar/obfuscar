@@ -2,12 +2,10 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp2.1;net45</TargetFrameworks>
-    <SignAssembly>false</SignAssembly>
-    <AssemblyOriginatorKeyFile>lextudio.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Baml\Baml.csproj" Condition=" $(TargetFramework) != 'netcoreapp2.1' " />
+    <ProjectReference Include="..\Baml\Baml.csproj" />
   </ItemGroup>
 
   <ItemGroup>
