@@ -85,6 +85,11 @@ namespace ObfuscarTests
                 inAssmDef.MainModule.GetType("System.Windows.Controls.DataVisualization.Charting.NullableConverter`1");
             var type = map.GetClass(new TypeKey(classAType));
             Assert.True(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
+
+            TypeDefinition classBType = inAssmDef.MainModule.GetType("System.Windows.Controls.DataVisualization.Charting.AreaDataPoint");
+            var type2 = map.GetClass(new TypeKey(classBType));
+            Assert.True(type2.Status == ObfuscationStatus.Skipped, "chart type should have been skipped");
+            Assert.Equal("filtered by BAML", type2.StatusText);
         }
     }
 }

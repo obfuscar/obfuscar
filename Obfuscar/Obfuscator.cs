@@ -486,6 +486,7 @@ namespace Obfuscar
                 resources.AddRange(library.MainModule.Resources);
 #if !NETCOREAPP2_1
                 var xamlFiles = GetXamlDocuments(library);
+                var namesInXaml = NamesInXaml(xamlFiles);
 #endif
                 // Save the original names of all types because parent (declaring) types of nested types may be already renamed.
                 // The names are used for the mappings file.
@@ -531,7 +532,6 @@ namespace Obfuscar
                         continue;
                     }
 #if !NETCOREAPP2_1
-                    var namesInXaml = NamesInXaml(xamlFiles);
                     if (namesInXaml.Contains(type.FullName))
                     {
                         Mapping.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, "filtered by BAML");
