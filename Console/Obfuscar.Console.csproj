@@ -60,6 +60,12 @@
   <PropertyGroup>
     <StartupObject>Obfuscar.Program</StartupObject>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>lextudio.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Windows.Forms" />
@@ -81,6 +87,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="lextudio.snk" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -102,7 +109,7 @@
       <Version>5.3.0.1</Version>
     </PackageReference>
     <PackageReference Include="Rollbar">
-      <Version>2.0.1</Version>
+      <Version>2.2.0</Version>
     </PackageReference>
   </ItemGroup>
   <PropertyGroup>

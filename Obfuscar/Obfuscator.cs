@@ -35,6 +35,9 @@ using System.Resources;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+#if !NETCOREAPP2_1
+using Confuser.Renamer.BAML;
+#endif
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -226,8 +229,8 @@ namespace Obfuscar
                                 throw new PlatformNotSupportedException("Signing is not supported in .NET Core Global Tools build");
 #else
                                 parameters.StrongNameKeyPair = strongNameKeyPair;
-                                info.Definition.Write(outName, parameters);
 #endif
+                                info.Definition.Write(outName, parameters);
                             }
                             catch (ArgumentException)
                             {
@@ -481,7 +484,9 @@ namespace Obfuscar
                 // make a list of the resources that can be renamed
                 List<Resource> resources = new List<Resource>(library.MainModule.Resources.Count);
                 resources.AddRange(library.MainModule.Resources);
-
+#if !NETCOREAPP2_1
+                var xamlFiles = GetXamlDocuments(library);
+#endif
                 // Save the original names of all types because parent (declaring) types of nested types may be already renamed.
                 // The names are used for the mappings file.
                 Dictionary<TypeDefinition, TypeKey> unrenamedTypeKeys =
@@ -525,7 +530,31 @@ namespace Obfuscar
 
                         continue;
                     }
+#if !NETCOREAPP2_1
+                    var namesInXaml = NamesInXaml(xamlFiles);
+                    if (namesInXaml.Contains(type.FullName))
+                    {
+                        Mapping.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, "filtered by BAML");
 
+                        // go through the list of resources, remove ones that would be renamed
+                        for (int i = 0; i < resources.Count;)
+                        {
+                            Resource res = resources[i];
+                            string resName = res.Name;
+                            if (Path.GetFileNameWithoutExtension(resName) == fullName)
+                            {
+                                resources.RemoveAt(i);
+                                Mapping.AddResource(resName, ObfuscationStatus.Skipped, "filtered by BAML");
+                            }
+                            else
+                            {
+                                i++;
+                            }
+                        }
+
+                        continue;
+                    }
+#endif
                     string name;
                     string ns;
                     if (type.IsNested)
@@ -613,7 +642,79 @@ namespace Obfuscar
                 }
             }
         }
+#if !NETCOREAPP2_1
+        private HashSet<string> NamesInXaml(List<BamlDocument> xamlFiles)
+        {
+            var result = new HashSet<string>();
+            if (xamlFiles.Count == 0)
+                return result;
 
+            foreach (var doc in xamlFiles)
+            {
+                foreach (BamlRecord child in doc)
+                {
+                    var classAttribute = child as TypeInfoRecord;
+                    if (classAttribute == null)
+                        continue;
+
+                    result.Add(classAttribute.TypeFullName);
+                }
+            }
+
+            return result;
+        }
+
+        private List<BamlDocument> GetXamlDocuments(AssemblyDefinition library)
+        {
+            var result = new List<BamlDocument>();
+            foreach (Resource res in library.MainModule.Resources)
+            {
+                var embed = res as EmbeddedResource;
+                if (embed == null)
+                    continue;
+
+                Stream s = embed.GetResourceStream();
+                s.Position = 0;
+                ResourceReader reader;
+                try
+                {
+                    reader = new ResourceReader(s);
+                }
+                catch (ArgumentException)
+                {
+                    continue;
+                }
+
+                foreach (DictionaryEntry entry in reader.Cast<DictionaryEntry>().OrderBy(e => e.Key.ToString()))
+                {
+                    if (entry.Key.ToString().EndsWith(".baml", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Stream stream;
+                        var value = entry.Value as Stream;
+                        if (value != null)
+                            stream = value;
+                        else if (entry.Value is byte[])
+                            stream = new MemoryStream((byte[]) entry.Value);
+                        else
+                            continue;
+
+                        try
+                        {
+                            result.Add(BamlReader.ReadDocument(stream));
+                        }
+                        catch (ArgumentException)
+                        {
+                        }
+                        catch (FileNotFoundException)
+                        {
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+#endif
         private void RenameType(AssemblyInfo info, TypeDefinition type, TypeKey oldTypeKey, TypeKey newTypeKey,
             TypeKey unrenamedTypeKey)
         {
