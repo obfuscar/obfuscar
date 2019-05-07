@@ -37,7 +37,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckCannotObfuscateSigned()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -48,7 +48,7 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            TestHelper.BuildAssembly("AssemblyForSigning", String.Empty,
+            TestHelper.BuildAssembly("AssemblyForSigning", string.Empty,
                 "/keyfile:" + Path.Combine(TestHelper.InputPath, @"SigningKey.snk"));
             var exception = Assert.Throws<ObfuscarException>(() => { TestHelper.Obfuscate(xml); });
             Assert.Equal(
@@ -56,10 +56,43 @@ namespace ObfuscarTests
                 exception.Message);
         }
 
+        [Fact]
+        public void CheckSignAttribute()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeyFile' value='auto' />" +
+                @"<Module file='$(InPath){2}AssemblyForSigning2.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.CleanInput();
+
+            var assembly = Path.Combine(TestHelper.InputPath, "AssemblyForSigning2.dll");
+
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            if (!File.Exists(assembly))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "AssemblyForSigning2.dll"), assembly, true);
+            }
+
+            var map = TestHelper.Obfuscate(xml).Mapping;
+
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(assembly);
+            Assert.True(inAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
+
+            AssemblyDefinition outAssmDef =
+                AssemblyDefinition.ReadAssembly(Path.Combine(outputPath, "AssemblyForSigning2.dll"));
+            Assert.True(outAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
+        }
+
         // [Fact] //no longer valid due to Cecil changes
         private void CheckCanObfuscateDelaySigned()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -70,7 +103,7 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the delaysign option (embeds the public key, reserves space for the signature, but does not sign)
-            TestHelper.BuildAssembly("AssemblyForSigning", String.Empty,
+            TestHelper.BuildAssembly("AssemblyForSigning", string.Empty,
                 "/delaysign /keyfile:" + Path.Combine(TestHelper.InputPath, @"SigningKey.snk"));
 
             // this should not throw

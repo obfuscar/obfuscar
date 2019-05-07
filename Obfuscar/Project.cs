@@ -77,10 +77,10 @@ namespace Obfuscar
         }
 
         public string KeyContainerName = null;
-        private byte[] keyPair;
+        private string keyPair;
         private RSA keyValue;
 
-        public byte[] KeyPair
+        public string KeyPair
         {
             get
             {
@@ -93,19 +93,9 @@ namespace Obfuscar
                 if (lKeyFileName == null && lKeyContainerName == null)
                     return null;
                 if (lKeyFileName != null && lKeyContainerName != null)
-                    throw new ObfuscarException("'Key file' and 'Key container' properties cann't be setted together.");
+                    throw new ObfuscarException("'Key file' and 'Key container' properties cann't be setted together.");                               
 
-                try
-                {
-                    keyPair = File.ReadAllBytes(vars.GetValue("KeyFile", null));
-                }
-                catch (Exception ex)
-                {
-                    throw new ObfuscarException(
-                        String.Format("Failure loading key file \"{0}\"", vars.GetValue("KeyFile", null)), ex);
-                }
-
-                return keyPair;
+                return keyPair = vars.GetValue("KeyFile", null);
             }
         }
 

@@ -219,7 +219,23 @@ namespace Obfuscar
                         }
                         else if (Project.KeyPair != null)
                         {
-                            var strongNameKeyPair = new System.Reflection.StrongNameKeyPair(Project.KeyPair);
+                            string keyFile = Project.KeyPair;
+                            if (string.Equals(keyFile, "auto", StringComparison.OrdinalIgnoreCase))
+                            {
+                                var attribute = info.Definition.CustomAttributes
+                                    .FirstOrDefault(item => item.AttributeType.FullName == "System.Reflection.AssemblyKeyFileAttribute");
+                                if (attribute != null && attribute?.ConstructorArguments.Count == 1)
+                                {
+                                    fileName = attribute.ConstructorArguments[0].Value.ToString();
+                                    if (!File.Exists(fileName))
+                                    {
+                                        keyFile = Path.Combine(Project.Settings.InPath, fileName);
+                                    }
+                                }
+                            }
+
+                            var keyPair = File.ReadAllBytes(keyFile);
+                            var strongNameKeyPair = new System.Reflection.StrongNameKeyPair(keyPair);
                             try
                             {
                                 var publicKey = strongNameKeyPair.PublicKey;
@@ -233,7 +249,7 @@ namespace Obfuscar
                             catch (ArgumentException)
                             {
                                 // delay sign.
-                                info.Definition.Name.PublicKey = Project.KeyPair;
+                                info.Definition.Name.PublicKey = keyPair;
                                 info.Definition.Write(outName, parameters);
                             }
                         }

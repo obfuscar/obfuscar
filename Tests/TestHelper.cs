@@ -61,14 +61,14 @@ namespace ObfuscarTests
             BuildAssembly(name, suffix, null);
         }
 
-        public static void BuildAssembly(string name, string suffix = null, string options = null)
+        public static void BuildAssembly(string name, string suffix = null, string options = null, bool treatWarningsAsErrors = true)
         {
             Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider();
 
             CompilerParameters cp = new CompilerParameters();
             cp.GenerateExecutable = false;
             cp.GenerateInMemory = false;
-            cp.TreatWarningsAsErrors = true;
+            cp.TreatWarningsAsErrors = treatWarningsAsErrors;
 
             if (!String.IsNullOrEmpty(options))
                 cp.CompilerOptions = options;
