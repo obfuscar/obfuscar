@@ -107,5 +107,13 @@ namespace Obfuscar
         {
             return String.Format("[{0}]{1} {2}::{3}", TypeKey.Scope, Type, TypeKey.Fullname, Name);
         }
+
+        internal static bool PropertyMatch(PropertyDefinition candidate, PropertyDefinition property)
+        {
+            return (MethodKey.MethodMatch(candidate.GetMethod, property.GetMethod)
+                && MethodKey.MethodMatch(candidate.SetMethod, property.SetMethod))
+                || (MethodKey.MethodMatch(property.GetMethod, candidate.GetMethod)
+                && MethodKey.MethodMatch(property.SetMethod, candidate.SetMethod));
+        }
     }
 }

@@ -837,6 +837,10 @@ namespace Obfuscar
         {
             PropertyKey propKey = new PropertyKey(typeKey, prop);
             ObfuscatedThing m = Mapping.GetProperty(propKey);
+            if (m.Status == ObfuscationStatus.Skipped)
+            {
+                return index;
+            }
 
             string skip;
             // skip filtered props
@@ -855,6 +859,18 @@ namespace Obfuscar
                 if (prop.SetMethod != null)
                 {
                     ForceSkip(prop.SetMethod, "skip by property");
+                }
+
+                var group = Project.InheritMap.GetPropertyGroup(propKey);
+                if (group != null)
+                {
+                    foreach (var item in group.Properties)
+                    {
+                        if (Mapping.GetProperty(item).Status != ObfuscationStatus.Skipped)
+                        {
+                            Mapping.UpdateProperty(item, ObfuscationStatus.Skipped, $"base class or interface skipped: {prop.FullName} {skip}");
+                        }
+                    }
                 }
 
                 return index;
@@ -1134,32 +1150,50 @@ namespace Obfuscar
                     skipRename = "external base class or interface";
                 }
 
+                if (skipRename == null)
+                {
+                    foreach (MethodKey m in group.Methods)
+                    {
+                        var current = Mapping.GetMethod(m);
+                        if (current.Status == ObfuscationStatus.Skipped)
+                        {
+                            skipRename = $"base class or interface skipped: {m.Method.FullName} {current.StatusText}";
+                            break;
+                        }
+                    }
+                }
+
                 // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
                 if (skipRename != null)
                 {
                     // for an external group, we can't rename.  just use the method
                     // name as group name
-                    groupName = method.Name;
+                    //groupName = method.Name;
+                    foreach (MethodKey m in @group.Methods)
+                    {
+                        if (Mapping.GetMethod(m).Status != ObfuscationStatus.Skipped)
+                        {
+                            Mapping.UpdateMethod(m, ObfuscationStatus.Skipped, skipRename);
+                        }
+                    }
                 }
                 else
                 {
                     // for an internal group, get next unused name
                     groupName = NameGroup.GetNext(nameGroups);
-                }
+                    @group.Name = groupName;
 
-                @group.Name = groupName;
-
-                // set up methods to be renamed
-                foreach (MethodKey m in @group.Methods)
-                    if (skipRename == null)
+                    // set up methods to be renamed
+                    foreach (MethodKey m in @group.Methods)
+                    {
                         Mapping.UpdateMethod(m, ObfuscationStatus.WillRename, groupName);
-                    else
-                        Mapping.UpdateMethod(m, ObfuscationStatus.Skipped, skipRename);
+                    }
 
-                // make sure the classes' name groups are updated
-                foreach (NameGroup t in nameGroups)
-                {
-                    t.Add(groupName);
+                    // make sure the classes' name groups are updated
+                    foreach (NameGroup t in nameGroups)
+                    {
+                        t.Add(groupName);
+                    }
                 }
             }
             else if (skipRename != null)

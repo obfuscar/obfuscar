@@ -131,10 +131,21 @@ namespace Obfuscar
         // taken from https://github.com/mono/mono/blob/master/mcs/tools/linker/Mono.Linker.Steps/TypeMapStep.cs
         internal static bool MethodMatch(MethodDefinition candidate, MethodReference method)
         {
+            if (candidate == null && method == null)
+            {
+                return true;
+            }
+
+            if (candidate == null || method == null)
+            {
+                return false;
+            }
+
             //if (!candidate.IsVirtual)
             //    return false;
 
-            if (candidate.Name != method.Name)
+            var expandedName = $"{candidate.DeclaringType.FullName}.{candidate.Name}";
+            if (candidate.Name != method.Name && expandedName != method.Name)
                 return false;
 
             if (!TypeMatch(candidate.ReturnType, method.ReturnType))
