@@ -57,6 +57,16 @@ namespace Obfuscar
             }
             return sb.ToString();
         }
+
+        internal void Merge(MethodGroup group)
+        {
+            foreach (var item in group.Methods)
+            {
+                Methods.Add(item);
+            }
+
+            External |= group.External;
+        }
     }
 
     class PropertyGroup
@@ -82,6 +92,16 @@ namespace Obfuscar
                 sb.Append(" ");
             }
             return sb.ToString();
+        }
+
+        internal void Merge(PropertyGroup group)
+        {
+            foreach (var item in group.Properties)
+            {
+                Properties.Add(item);
+            }
+
+            External |= group.External;
         }
     }
 
@@ -201,6 +221,7 @@ namespace Obfuscar
             var result = new List<TypeKey>();
             foreach (var baseType in baseNodes)
             {
+                result.Add(baseType.type);
                 result.AddRange(baseType.GetBaseTypes());
             }
 
@@ -292,10 +313,13 @@ namespace Obfuscar
             {
                 foreach (var item in group.Methods)
                 {
-                    if (!methodGroups.ContainsKey(item))
+                    if (methodGroups.ContainsKey(item))
                     {
-                        methodGroups.Add(item, group);
+                        methodGroups[item].Merge(group);
+                        continue;
                     }
+
+                    methodGroups.Add(item, group);
                 }
             }
 
@@ -303,10 +327,13 @@ namespace Obfuscar
             {
                 foreach (var item in group.Properties)
                 {
-                    if (!propertyGroups.ContainsKey(item))
+                    if (propertyGroups.ContainsKey(item))
                     {
-                        propertyGroups.Add(item, group);
+                        propertyGroups[item].Merge(group);
+                        continue;
                     }
+
+                    propertyGroups.Add(item, group);
                 }
             }
         }
