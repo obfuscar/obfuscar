@@ -187,9 +187,22 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
+            var assmName = "AssemblyWithGenericOverrides";
             Obfuscator obfuscator =
-                TestHelper.BuildAndObfuscate(new[] {"AssemblyWithGenericOverrides", "AssemblyWithGenericOverrides2"},
+                TestHelper.BuildAndObfuscate(new[] {assmName, "AssemblyWithGenericOverrides2"},
                     xml);
+            var map = obfuscator.Mapping;
+
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(TestHelper.InputPath, $"{assmName}.dll"));
+            TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.Alpha`1");
+            TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.IBeta`2");
+            var classARenamed = map.GetClass(new TypeKey(classAType));
+            var classBRenamed = map.GetClass(new TypeKey(classBType));
+            var end = assmName.Length + 2;
+            var newNameA = classARenamed.StatusText.Substring(end);
+            var newNameB = classBRenamed.StatusText.Substring(end);
+            var formattedString = $"Empty<string, string>={newNameA}[{newNameB}[System.String,System.String]]";
 
             var assembly2Path = Path.Combine(Directory.GetCurrentDirectory(), outputPath,
                 "AssemblyWithGenericOverrides2.dll");
@@ -201,7 +214,7 @@ namespace ObfuscarTests
             {
                 output = outputPath;
                 AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
-                Assert.True(instance.ToString() == "Empty<string, string>=A<B<String, String>>",
+                Assert.True(instance.ToString() == formattedString,
                     "Generic override should have been updated");
             }
             finally
@@ -230,7 +243,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithClosedOverrideGeneric.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithClosedOverrideGeneric", string.Empty, xml);
+            var map = TestHelper.BuildAndObfuscate("AssemblyWithClosedOverrideGeneric", string.Empty, xml);
 
             var assemblyPath = Path.Combine(Directory.GetCurrentDirectory(), outputPath,
                 "AssemblyWithClosedOverrideGeneric.dll");
