@@ -248,13 +248,7 @@ namespace ObfuscarTests
             var assemblyPath = Path.Combine(Directory.GetCurrentDirectory(), outputPath,
                 "AssemblyWithClosedOverrideGeneric.dll");
             var assembly = Assembly.LoadFile(assemblyPath);
-            try
-            {
-                Assert.Equal(5, assembly.GetTypes().Length);
-            } catch (Exception ex)
-            {
-
-            }
+            Assert.Equal(5, assembly.GetTypes().Length);
         }
     }
 }

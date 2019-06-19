@@ -31,7 +31,6 @@ using Mono.Cecil;
 
 namespace Obfuscar
 {
-
     class InheritMap
     {
         private Dictionary<TypeKey, GraphNode> nodes = new Dictionary<TypeKey, GraphNode>();
@@ -151,7 +150,7 @@ namespace Obfuscar
         }
     }
 
-    class InheritMap2
+    class InheritMap3
     {
         private readonly Project project;
 
@@ -160,7 +159,7 @@ namespace Obfuscar
 
         private readonly Dictionary<TypeKey, TypeKey[]> baseTypes = new Dictionary<TypeKey, TypeKey[]>();
 
-        public InheritMap2(Project project)
+        public InheritMap3(Project project)
         {
             this.project = project;
 

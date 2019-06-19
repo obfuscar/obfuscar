@@ -107,7 +107,28 @@ namespace Obfuscar
                 return;
             }
 
+            var methods = new List<MethodDefinition>();
             foreach (var method in type.TypeDefinition.Methods)
+            {
+                methods.Add(method);
+            }
+
+            foreach (var baseType in baseNodes)
+            {
+                if (baseType.type.TypeDefinition.HasGenericParameters)
+                {
+                    foreach (var method in baseType.type.TypeDefinition.Methods)
+                    {
+                        if (method.ReturnType.ContainsGenericParameter)
+                        {
+                            // IMPORTANT: Add such methods, as they are also part of this class.
+                            methods.Add(method);
+                        }
+                    }
+                }
+            }
+
+            foreach (var method in methods)
             {
                 //if (!method.IsVirtual)
                 //{
@@ -126,7 +147,7 @@ namespace Obfuscar
                     baseType.MatchMethodGroup(method, newGroup, project);
                 }
 
-                if (newGroup.Methods.Count > 1 || method.ReturnType.ContainsGenericParameter)
+                if (newGroup.Methods.Count > 1)
                 {
                     groups.Add(newGroup);
                 }
