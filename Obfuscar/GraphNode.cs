@@ -24,7 +24,6 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 
@@ -119,7 +118,7 @@ namespace Obfuscar
                 {
                     foreach (var method in baseType.type.TypeDefinition.Methods)
                     {
-                        if (method.ReturnType.ContainsGenericParameter)
+                        if (method.ReturnType.ContainsGenericParameter || method.ContainsGenericParameter)
                         {
                             // IMPORTANT: Add such methods, as they are also part of this class.
                             methods.Add(method);
@@ -130,11 +129,6 @@ namespace Obfuscar
 
             foreach (var method in methods)
             {
-                //if (!method.IsVirtual)
-                //{
-                //    continue;
-                //}
-
                 if (method.IsConstructor)
                 {
                     continue;
@@ -150,10 +144,6 @@ namespace Obfuscar
                 if (newGroup.Methods.Count > 1)
                 {
                     groups.Add(newGroup);
-                }
-                else
-                {
-                    newGroup.ToString();
                 }
             }
         }

@@ -144,9 +144,7 @@ namespace Obfuscar
         public static Obfuscator CreateFromXml(string xml)
         {
             var document = XDocument.Load(new StringReader(xml));
-            {
-                return new Obfuscator(document);
-            }
+            return new Obfuscator(document);
         }
 
         internal Project Project { get; set; }
