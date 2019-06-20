@@ -99,7 +99,7 @@ namespace Obfuscar
             return result;
         }
 
-        public void FillMethodGroup(List<MethodGroup> groups, Project project)
+        public void FillMethodGroup(IList<MethodGroup> groups, Project project)
         {
             if (baseNodes.Count == 0)
             {
@@ -114,17 +114,12 @@ namespace Obfuscar
 
             foreach (var baseType in baseNodes)
             {
-                if (baseType.type.TypeDefinition.HasGenericParameters)
+                if (baseType.type.TypeDefinition.IsInterface)
                 {
-                    foreach (var method in baseType.type.TypeDefinition.Methods)
-                    {
-                        if (method.ReturnType.ContainsGenericParameter || method.ContainsGenericParameter)
-                        {
-                            // IMPORTANT: Add such methods, as they are also part of this class.
-                            methods.Add(method);
-                        }
-                    }
+                    continue;
                 }
+
+                baseType.FillMethods(methods);
             }
 
             foreach (var method in methods)
@@ -145,6 +140,23 @@ namespace Obfuscar
                 {
                     groups.Add(newGroup);
                 }
+            }
+        }
+
+        private void FillMethods(IList<MethodDefinition> methods)
+        {
+            foreach (var method in type.TypeDefinition.Methods)
+            {
+                if (method.IsPublic || method.IsFamily)
+                {
+                    // IMPORTANT: Add such methods, as they are also part of this class.
+                    methods.Add(method);
+                }
+            }
+
+            foreach (var baseType in baseNodes)
+            {
+                baseType.FillMethods(methods);
             }
         }
 

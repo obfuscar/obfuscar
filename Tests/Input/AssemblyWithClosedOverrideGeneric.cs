@@ -69,7 +69,7 @@ namespace TestClasses
         public void Method ()
         {
         }
-        public T[] ToArray ()
+        public T[] ToArray () // This is required by IFoos
         {
             throw new NotImplementedException ();
         }
@@ -78,11 +78,14 @@ namespace TestClasses
             throw new NotImplementedException();
         }
     }
-    public class Foos : Generic<IFoo>, IFoos
+    public class Foos : Generic<IFoo>
     {
         public override IEnumerator<IFoo> GetEnumerator ()
         {
             throw new NotImplementedException ();
         }
+    }
+    public class ChildFoos : Foos, IFoos
+    {
     }
 }

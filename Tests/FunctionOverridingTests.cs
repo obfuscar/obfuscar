@@ -243,12 +243,12 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithClosedOverrideGeneric.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            var map = TestHelper.BuildAndObfuscate("AssemblyWithClosedOverrideGeneric", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithClosedOverrideGeneric", string.Empty, xml);
 
             var assemblyPath = Path.Combine(Directory.GetCurrentDirectory(), outputPath,
                 "AssemblyWithClosedOverrideGeneric.dll");
             var assembly = Assembly.LoadFile(assemblyPath);
-            Assert.Equal(5, assembly.GetTypes().Length);
+            Assert.Equal(6, assembly.GetTypes().Length);
         }
     }
 }
