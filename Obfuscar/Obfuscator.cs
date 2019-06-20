@@ -34,8 +34,9 @@ using System.Linq;
 using System.Resources;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Xml.Linq;
-using Confuser.Renamer.BAML;
+using ILSpy.BamlDecompiler.Baml;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -712,7 +713,7 @@ namespace Obfuscar
 
                         try
                         {
-                            result.Add(BamlReader.ReadDocument(stream));
+                            result.Add(BamlReader.ReadDocument(stream, CancellationToken.None));
                         }
                         catch (ArgumentException)
                         {
