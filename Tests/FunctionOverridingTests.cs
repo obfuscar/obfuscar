@@ -279,5 +279,57 @@ namespace ObfuscarTests
             var assembly = Assembly.LoadFile(assemblyPath);
             Assert.Equal(6, assembly.GetTypes().Length);
         }
+
+        [Fact]
+        public void CheckEventRenaming()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeepPublicApi' value='true' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithEvent.dll' />" +
+                @"<Module file='$(InPath){2}AssemblyWithEvent2.dll'>" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            var assmName = "AssemblyWithEvent";
+            Obfuscator obfuscator =
+                TestHelper.BuildAndObfuscate(new[] { assmName, "AssemblyWithEvent2" },
+                    xml);
+            var map = obfuscator.Mapping;
+
+            {
+                AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+                    Path.Combine(TestHelper.InputPath, $"{assmName}.dll"));
+                TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.ITest");
+                var classARenamed = map.GetClass(new TypeKey(classAType));
+                Assert.True(classARenamed.Status == ObfuscationStatus.Skipped, "Type must not be obfuscated");
+                var classAEvent = classAType.Events.First(item => item.Name == "TestEvent");
+                var classAEventRenamed = map.GetEvent(new EventKey(classAEvent));
+                Assert.True(classAEventRenamed.Status == ObfuscationStatus.Skipped, "Interface event must not be obfuscated");
+            }
+
+            {
+                AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+                    Path.Combine(TestHelper.InputPath, $"{assmName}2.dll"));
+                TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.Test");
+                var classARenamed = map.GetClass(new TypeKey(classAType));
+                Assert.True(classARenamed.Status == ObfuscationStatus.Renamed, "Type must be obfuscated");
+                var classAEvent = classAType.Events.First(item => item.Name == "TestEvent");
+                var classAEventRenamed = map.GetEvent(new EventKey(classAEvent));
+                Assert.True(classAEventRenamed.Status == ObfuscationStatus.Skipped, "Class event must not be obfuscated");
+            }
+
+            //var assembly2Path = Path.Combine(Directory.GetCurrentDirectory(), outputPath,
+            //    "AssemblyWithEvent2.dll");
+            //var assembly2 = Assembly.LoadFile(assembly2Path);
+            //var type = assembly2.GetType("A.A");
+            //var ctor = type.GetConstructor(new Type[0]);
+            //var instance = ctor.Invoke(new object[0]);
+        }
     }
 }
