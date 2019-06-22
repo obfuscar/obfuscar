@@ -30,6 +30,7 @@ using Mono.Cecil;
 using Obfuscar;
 using Xunit;
 using System.Reflection;
+using System.Linq;
 
 namespace ObfuscarTests
 {
@@ -200,6 +201,8 @@ namespace ObfuscarTests
             var classARenamed = map.GetClass(new TypeKey(classAType));
             var classBRenamed = map.GetClass(new TypeKey(classBType));
             var end = assmName.Length + 2;
+            Assert.True(classARenamed.Status == ObfuscationStatus.Renamed, "Type must be obfuscated");
+            Assert.True(classBRenamed.Status == ObfuscationStatus.Renamed, "Interface must be obfuscated");
             var newNameA = classARenamed.StatusText.Substring(end);
             var newNameB = classBRenamed.StatusText.Substring(end);
             var formattedString = $"Empty<string, string>={newNameA}[{newNameB}[System.String,System.String]]";
@@ -232,6 +235,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckClosedMethodOverrideGenericMethod()
         {
+            string assmName = "AssemblyWithClosedOverrideGeneric.dll";
             string outputPath = TestHelper.OutputPath;
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
@@ -240,10 +244,35 @@ namespace ObfuscarTests
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='KeepPublicApi' value='false' />" +
                 @"<Var name='HidePrivateApi' value='true' />" +
-                @"<Module file='$(InPath){2}AssemblyWithClosedOverrideGeneric.dll' />" +
-                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+                @"<Module file='$(InPath){2}{3}' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar, assmName);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithClosedOverrideGeneric", string.Empty, xml);
+            var obfuscator = TestHelper.BuildAndObfuscate("AssemblyWithClosedOverrideGeneric", string.Empty, xml);
+            var map = obfuscator.Mapping;
+
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, assmName));
+            TypeDefinition classType = inAssmDef.MainModule.GetType("TestClasses.Generic`1");
+            TypeDefinition interfaceType = inAssmDef.MainModule.GetType("TestClasses.IFoos");
+
+            MethodDefinition classMethod = classType.Methods.First(_ => _.Name == "ToArray");
+            MethodDefinition interfaceMethod = interfaceType.Methods.First(_ => _.Name == "ToArray");
+
+            var renamedClassMethod = map.GetMethod(new MethodKey(classMethod));
+            var renamedInterfaceMethod = map.GetMethod(new MethodKey(interfaceMethod));
+
+            Assert.True(renamedClassMethod.Status == ObfuscationStatus.Renamed, "class method should be renamed");
+            Assert.True(renamedInterfaceMethod.Status == ObfuscationStatus.Renamed, "interface method should be renamed");
+            Assert.True(renamedClassMethod.StatusText == renamedInterfaceMethod.StatusText, "They should have the same name");
+
+            PropertyDefinition classProperty = classType.Properties.First(_ => _.Name == "Collection");
+            PropertyDefinition interfaceProperty = interfaceType.Properties.First(_ => _.Name == "Collection");
+
+            var renamedClassProperty = map.GetProperty(new PropertyKey(new TypeKey(classType), classProperty));
+            var renamedInterfaceProperty = map.GetProperty(new PropertyKey(new TypeKey(interfaceType), interfaceProperty));
+
+            Assert.True(renamedClassProperty.Status == ObfuscationStatus.Renamed, "class property should be renamed");
+            Assert.True(renamedInterfaceProperty.Status == ObfuscationStatus.Renamed, "interface property should be renamed");
+            Assert.True(renamedClassProperty.StatusText == renamedInterfaceProperty.StatusText, "They should have the same name");
 
             var assemblyPath = Path.Combine(Directory.GetCurrentDirectory(), outputPath,
                 "AssemblyWithClosedOverrideGeneric.dll");

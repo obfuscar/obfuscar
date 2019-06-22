@@ -84,7 +84,7 @@ namespace Obfuscar
                 return (object) b == null;
             else if ((object) b == null)
                 return false;
-            else
+            else // TODO: this is wrong when type is A[] and T[]
                 return a.TypeKey == b.TypeKey && a.Type == b.Type && a.Name == b.Name;
         }
 
@@ -100,6 +100,7 @@ namespace Obfuscar
 
         public override int GetHashCode()
         {
+            // Type A[] and T[] should have the same code.
             return TypeKey.GetHashCode() ^ Type.GetHashCode() ^ Name.GetHashCode();
         }
 

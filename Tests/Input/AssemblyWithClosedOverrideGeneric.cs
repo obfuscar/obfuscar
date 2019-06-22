@@ -33,6 +33,7 @@ namespace TestClasses
     {
         IFoo[] ToArray ();
         int Test(IFoo foo);
+        IFoo[] Collection { get; }
     }
     public class ClosedFoos : IFoos
     {
@@ -51,6 +52,10 @@ namespace TestClasses
         public int Test(IFoo foo)
         {
             throw new NotImplementedException();
+        }
+        public IFoo[] Collection
+        {
+            get { throw new NotImplementedException(); }
         }
     }
     public abstract class Generic<T> : IEnumerable<T> where T : class, IFoo
@@ -76,6 +81,10 @@ namespace TestClasses
         public int Test(T t)
         {
             throw new NotImplementedException();
+        }
+        public T[] Collection
+        {
+            get { throw new NotImplementedException(); }
         }
     }
     public class Foos : Generic<IFoo>
