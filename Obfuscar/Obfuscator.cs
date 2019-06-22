@@ -157,9 +157,9 @@ namespace Obfuscar
             // make sure everything looks good
             Project.CheckSettings();
             if (Project.Settings.UseUnicodeNames)
-                NameMaker.UseUnicodeChars = true;
+                NameMaker.Instance.UseUnicodeChars = true;
             if (Project.Settings.UseKoreanNames)
-                NameMaker.UseKoreanChars = true;
+                NameMaker.Instance.UseKoreanChars = true;
 
             LogOutput("Loading assemblies...");
             LogOutput("Extra framework folders: ");
@@ -400,7 +400,7 @@ namespace Obfuscar
 
             var newName = Project.Settings.ReuseNames
                 ? nameGroup.GetNext()
-                : NameMaker.UniqueName(_uniqueMemberNameIndex++);
+                : NameMaker.Instance.UniqueName(_uniqueMemberNameIndex++);
 
             RenameField(info, fieldKey, field, newName);
             nameGroup.Add(newName);
@@ -461,7 +461,7 @@ namespace Obfuscar
 
                     int index = 0;
                     foreach (GenericParameter param in type.GenericParameters)
-                        param.Name = NameMaker.UniqueName(index++);
+                        param.Name = NameMaker.Instance.UniqueName(index++);
                 }
             }
         }
@@ -481,7 +481,7 @@ namespace Obfuscar
             int index = 0;
             foreach (GenericParameter param in method.GenericParameters)
                 if (param.CustomAttributes.Count == 0)
-                    param.Name = NameMaker.UniqueName(index++);
+                    param.Name = NameMaker.Instance.UniqueName(index++);
         }
 
         /// <summary>
@@ -573,19 +573,19 @@ namespace Obfuscar
                     if (type.IsNested)
                     {
                         ns = "";
-                        name = NameMaker.UniqueNestedTypeName(type.DeclaringType.NestedTypes.IndexOf(type));
+                        name = NameMaker.Instance.UniqueNestedTypeName(type.DeclaringType.NestedTypes.IndexOf(type));
                     }
                     else
                     {
                         if (Project.Settings.ReuseNames)
                         {
-                            name = NameMaker.UniqueTypeName(typeIndex);
-                            ns = NameMaker.UniqueNamespace(typeIndex);
+                            name = NameMaker.Instance.UniqueTypeName(typeIndex);
+                            ns = NameMaker.Instance.UniqueNamespace(typeIndex);
                         }
                         else
                         {
-                            name = NameMaker.UniqueName(_uniqueTypeNameIndex);
-                            ns = NameMaker.UniqueNamespace(_uniqueTypeNameIndex);
+                            name = NameMaker.Instance.UniqueName(_uniqueTypeNameIndex);
+                            ns = NameMaker.Instance.UniqueNamespace(_uniqueTypeNameIndex);
                             _uniqueTypeNameIndex++;
                         }
                     }
@@ -885,7 +885,7 @@ namespace Obfuscar
             else if (prop.CustomAttributes.Count > 0)
             {
                 // If a property has custom attributes we don't remove the property but rename it instead.
-                var newName = NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
+                var newName = NameMaker.Instance.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
                 RenameProperty(info, propKey, prop, newName);
             }
             else
@@ -1660,7 +1660,7 @@ namespace Obfuscar
                         MethodDefinition individualStringMethodDefinition;
                         if (!_methodByString.TryGetValue(str, out individualStringMethodDefinition))
                         {
-                            string methodName = NameMaker.UniqueName(_nameIndex++);
+                            string methodName = NameMaker.Instance.UniqueName(_nameIndex++);
 
                             // Add the string to the data array
                             byte[] stringBytes = Encoding.UTF8.GetBytes(str);

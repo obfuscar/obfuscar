@@ -272,7 +272,7 @@ namespace ObfuscarTests
 
             Assert.True(renamedClassProperty.Status == ObfuscationStatus.Renamed, "class property should be renamed");
             Assert.True(renamedInterfaceProperty.Status == ObfuscationStatus.Renamed, "interface property should be renamed");
-            Assert.True(renamedClassProperty.StatusText == renamedInterfaceProperty.StatusText, "They should have the same name");
+            Assert.True(renamedClassProperty.StatusText == renamedInterfaceProperty.StatusText, "They should both have been dropped");
 
             var assemblyPath = Path.Combine(Directory.GetCurrentDirectory(), outputPath,
                 "AssemblyWithClosedOverrideGeneric.dll");

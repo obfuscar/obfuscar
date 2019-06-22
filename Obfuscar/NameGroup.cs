@@ -41,7 +41,7 @@ namespace Obfuscar
             string name;
             for (;;)
             {
-                name = NameMaker.UniqueName(index++);
+                name = NameMaker.Instance.UniqueName(index++);
                 if (!names.Contains(name))
                     return name;
             }
@@ -77,7 +77,7 @@ namespace Obfuscar
             string name;
             for (;;)
             {
-                name = NameMaker.UniqueName(index++);
+                name = NameMaker.Instance.UniqueName(index++);
 
                 bool contained = false;
                 foreach (NameGroup group in groups)

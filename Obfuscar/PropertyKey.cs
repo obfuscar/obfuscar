@@ -26,6 +26,7 @@
 
 using System;
 using Mono.Cecil;
+using Obfuscar.Helpers;
 
 namespace Obfuscar
 {
@@ -34,7 +35,7 @@ namespace Obfuscar
         public PropertyKey(TypeKey typeKey, PropertyDefinition prop)
         {
             this.TypeKey = typeKey;
-            this.Type = prop.PropertyType.FullName;
+            this.Type = prop.PropertyType.GetGenericFullName();
             this.Name = prop.Name;
             this.Property = prop;
         }
@@ -84,7 +85,7 @@ namespace Obfuscar
                 return (object) b == null;
             else if ((object) b == null)
                 return false;
-            else // TODO: this is wrong when type is A[] and T[]
+            else
                 return a.TypeKey == b.TypeKey && a.Type == b.Type && a.Name == b.Name;
         }
 
@@ -100,7 +101,6 @@ namespace Obfuscar
 
         public override int GetHashCode()
         {
-            // Type A[] and T[] should have the same code.
             return TypeKey.GetHashCode() ^ Type.GetHashCode() ^ Name.GetHashCode();
         }
 
