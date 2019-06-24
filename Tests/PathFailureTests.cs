@@ -60,7 +60,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckBadModuleFile()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Module file='{0}\ObfuscarTests.dll' />" +
@@ -76,7 +76,7 @@ namespace ObfuscarTests
             if (t != null)
                 return;
 
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +

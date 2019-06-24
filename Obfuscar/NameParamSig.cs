@@ -109,12 +109,12 @@ namespace Obfuscar
 
         public override string ToString()
         {
-            return String.Format("{0}[{1}]", Name, ParamTypes.Length);
+            return string.Format("{0}[{1}]", Name, ParamTypes.Length);
         }
 
         public int CompareTo(NameParamSig other)
         {
-            int cmp = String.Compare(Name, other.Name);
+            int cmp = string.Compare(Name, other.Name);
             if (cmp == 0)
                 cmp = CompareTo((ParamSig) other);
             return cmp;

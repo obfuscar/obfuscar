@@ -40,8 +40,8 @@ namespace Obfuscar
             foreach (var path in project.AllAssemblySearchPaths)
                 AddSearchDirectory(path);
 
-            foreach (AssemblyInfo info in project)
-                AddSearchDirectory(Path.GetDirectoryName(info.Filename));
+            foreach (AssemblyInfo info in project.AssemblyList)
+                AddSearchDirectory(Path.GetDirectoryName(info.FileName));
         }
 
         public TypeDefinition GetTypeDefinition(TypeReference type)

@@ -46,7 +46,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}{3}.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, output, Path.DirectorySeparatorChar, name);
 
-            TestHelper.BuildAndObfuscate(name, String.Empty, xml);
+            TestHelper.BuildAndObfuscate(name, string.Empty, xml);
             return Path.Combine(output, $"{name}.dll");
         }
 

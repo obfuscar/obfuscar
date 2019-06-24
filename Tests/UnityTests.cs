@@ -40,7 +40,7 @@ namespace ObfuscarTests
                 if (method.FullName == name)
                     return method;
 
-            Assert.True(false, String.Format("Expected to find method: {0}", name));
+            Assert.True(false, string.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 

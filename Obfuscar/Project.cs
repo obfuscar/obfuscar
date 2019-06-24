@@ -36,11 +36,10 @@ using System.Xml.Linq;
 
 namespace Obfuscar
 {
-    class Project : IEnumerable<AssemblyInfo>
+    class Project
     {
         private const string SPECIALVAR_PROJECTFILEDIRECTORY = "ProjectFileDirectory";
-        private readonly List<AssemblyInfo> assemblyList = new List<AssemblyInfo>();
-
+        public List<AssemblyInfo> AssemblyList { get; } = new List<AssemblyInfo>();
         public List<AssemblyInfo> CopyAssemblyList { get; } = new List<AssemblyInfo>();
 
         private readonly Dictionary<string, AssemblyInfo> assemblyMap = new Dictionary<string, AssemblyInfo>();
@@ -207,7 +206,7 @@ namespace Obfuscar
                 }
 
                 Console.WriteLine("Processing assembly: " + info.Definition.Name.FullName);
-                project.assemblyList.Add(info);
+                project.AssemblyList.Add(info);
                 project.assemblyMap[info.Name] = info;
             }
         }
@@ -301,9 +300,9 @@ namespace Obfuscar
 
         private void ReorderAssemblies()
         {
-            var graph = new Graph(assemblyList);
-            assemblyList.Clear();
-            assemblyList.AddRange(graph.GetOrderedList());
+            var graph = new Graph(AssemblyList);
+            AssemblyList.Clear();
+            AssemblyList.AddRange(graph.GetOrderedList());
         }
 
         /// <summary>
@@ -350,7 +349,7 @@ namespace Obfuscar
         public void LoadAssemblies()
         {
             // build reference tree
-            foreach (AssemblyInfo info in assemblyList)
+            foreach (AssemblyInfo info in AssemblyList)
             {
                 // add self reference...makes things easier later, when
                 // we need to go through the member references
@@ -370,7 +369,7 @@ namespace Obfuscar
             }
 
             // make each assembly's list of member refs
-            foreach (AssemblyInfo info in assemblyList)
+            foreach (AssemblyInfo info in AssemblyList)
             {
                 info.Init();
             }
@@ -417,16 +416,6 @@ namespace Obfuscar
             }
 
             return typeDef;
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return assemblyList.GetEnumerator();
-        }
-
-        public IEnumerator<AssemblyInfo> GetEnumerator()
-        {
-            return assemblyList.GetEnumerator();
         }
     }
 }

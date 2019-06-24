@@ -84,7 +84,7 @@ namespace Obfuscar
                 return method == key;
 
             // method name matches type regex?
-            if (!String.IsNullOrEmpty(type) && !Helper.CompareOptionalRegex(method.TypeKey.Fullname, type))
+            if (!string.IsNullOrEmpty(type) && !Helper.CompareOptionalRegex(method.TypeKey.Fullname, type))
             {
                 return false;
             }

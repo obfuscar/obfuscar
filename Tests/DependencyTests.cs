@@ -71,7 +71,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckGoodDependency()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -84,7 +84,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckDeletedDependency()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -100,7 +100,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckMissingDependency()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Module file='{0}{1}AssemblyD.dll' />" +

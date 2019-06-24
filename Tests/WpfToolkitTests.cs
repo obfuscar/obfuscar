@@ -40,14 +40,14 @@ namespace ObfuscarTests
                 if (method.FullName == name)
                     return method;
 
-            Assert.True(false, String.Format("Expected to find method: {0}", name));
+            Assert.True(false, string.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 
         [Fact]
         public void CheckGeneric()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +

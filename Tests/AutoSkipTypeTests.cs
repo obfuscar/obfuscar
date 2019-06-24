@@ -14,14 +14,14 @@ namespace ObfuscarTests
                 if (method.Name == name)
                     return method;
 
-            Assert.True(false, String.Format("Expected to find method: {0}", name));
+            Assert.True(false, string.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 
         [Fact]
         public void CheckHidePrivateApiFalse()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -65,7 +65,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckHidePrivateApiTrue()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -95,7 +95,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckKeepPublicApiFalse()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -134,7 +134,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckKeepPublicApiTrue()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -175,7 +175,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckSkipNamespace()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -203,7 +203,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckSkipEnum()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -231,7 +231,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckSkipAllEnums()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +

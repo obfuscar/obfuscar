@@ -63,7 +63,7 @@ namespace ObfuscarTests
 
                     foreach (PropertyDefinition prop in typeDef.Properties)
                     {
-                        Assert.False(propsNotToFind.Contains(prop.Name), String.Format(
+                        Assert.False(propsNotToFind.Contains(prop.Name), string.Format(
                             "Did not expect to find property '{0}'.", prop.Name));
 
                         propsToFind.Remove(prop.Name);
@@ -86,7 +86,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithProperties.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithProperties", String.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
 
             string[] expected = new string[0];
 
@@ -115,7 +115,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithProperties", String.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
 
             string[] expected = new string[]
             {
@@ -146,7 +146,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithProperties", String.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
 
             string[] expected = new string[]
             {

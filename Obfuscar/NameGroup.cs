@@ -110,7 +110,7 @@ namespace Obfuscar
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            foreach (String s in names)
+            foreach (string s in names)
             {
                 if (sb.Length != 0)
                     sb.Append(",");

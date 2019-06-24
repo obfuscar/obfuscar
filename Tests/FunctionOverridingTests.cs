@@ -39,7 +39,7 @@ namespace ObfuscarTests
 
         Obfuscator BuildAndObfuscateAssemblies()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -49,7 +49,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithOverrides.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
-            return TestHelper.BuildAndObfuscate("AssemblyWithOverrides", String.Empty, xml);
+            return TestHelper.BuildAndObfuscate("AssemblyWithOverrides", string.Empty, xml);
         }
 
         MethodDefinition FindByName(TypeDefinition typeDef, string name)
@@ -58,7 +58,7 @@ namespace ObfuscarTests
                 if (method.Name == name)
                     return method;
 
-            Assert.True(false, String.Format("Expected to find method: {0}", name));
+            Assert.True(false, string.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 

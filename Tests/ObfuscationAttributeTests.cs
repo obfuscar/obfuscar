@@ -41,14 +41,14 @@ namespace ObfuscarTests
                 if (method.Name == name)
                     return method;
 
-            Assert.True(false, String.Format("Expected to find method: {0}", name));
+            Assert.True(false, string.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 
         [Fact]
         public void CheckExclusion()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"				<Obfuscator>" +
                 @"				<Var name='InPath' value='{0}' />" +
@@ -141,7 +141,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckException()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"								<Obfuscator>" +
                 @"								<Var name='InPath' value='{0}' />" +
@@ -159,7 +159,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckCrossAssembly()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -195,7 +195,8 @@ namespace ObfuscarTests
         [Fact]
         public void CheckMakedOnly()
         {
-            string xml = String.Format(
+            string name = "AssemblyWithTypesAttrs3";
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"				<Obfuscator>" +
                 @"				<Var name='InPath' value='{0}' />" +
@@ -203,17 +204,15 @@ namespace ObfuscarTests
                 @"             <Var name='KeepPublicApi' value='false' />" +
                 @"             <Var name='HidePrivateApi' value='true' />" +
                 @"             <Var name='MarkedOnly' value='true' />" +
-                @"				<Module file='$(InPath){2}AssemblyWithTypesAttrs3.dll'>" +
+                @"				<Module file='$(InPath){2}{3}.dll'>" +
                 @"				</Module>" +
-                @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+                @"				</Obfuscator>",
+                TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar, name);
 
-            var obfuscator = TestHelper.BuildAndObfuscate("AssemblyWithTypesAttrs3", string.Empty, xml);
+            var obfuscator = TestHelper.BuildAndObfuscate(name, string.Empty, xml);
             var map = obfuscator.Mapping;
 
-            const string assmName = "AssemblyWithTypesAttrs3.dll";
-
-            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
-                Path.Combine(TestHelper.InputPath, assmName));
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(obfuscator.Project.AssemblyList[0].FileName);
 
             TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.TestEnum");
             ObfuscatedThing classA = map.GetClass(new TypeKey(classAType));
@@ -232,12 +231,20 @@ namespace ObfuscarTests
 
             Assert.True(classB.Status == ObfuscationStatus.Renamed, "PublicClass should have been obfuscated.");
             Assert.True(method2.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
+
+            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(obfuscator.Project.AssemblyList[0].OutputFileName);
+            TypeDefinition classTypeRenamed = outAssmDef.MainModule.Types[2];
+            Assert.False(classTypeRenamed.HasCustomAttributes, "obfuscation attribute on type should have been removed.");
+            MethodDefinition testMethod = classTypeRenamed.Methods.First(_ => _.Name == "Test");
+            Assert.False(testMethod.HasCustomAttributes, "obfuscattion attribute on method should have been removed.");
+            MethodDefinition test2Method = classTypeRenamed.Methods.First(_ => _.Name == "Test2");
+            Assert.True(test2Method.HasCustomAttributes, "obfuscattion attribute on method should not have been removed.");
         }
 
         [Fact]
         public void CheckMarkedOnly2()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"				<Obfuscator>" +
                 @"				<Var name='InPath' value='{0}' />" +

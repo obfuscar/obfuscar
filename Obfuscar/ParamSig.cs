@@ -184,7 +184,7 @@ namespace Obfuscar
             {
                 for (int i = 0; i < ParamTypes.Length; i++)
                 {
-                    int cmp = String.Compare(ParamTypes[i], other.ParamTypes[i]);
+                    int cmp = string.Compare(ParamTypes[i], other.ParamTypes[i]);
                     if (cmp != 0)
                         return cmp;
                 }

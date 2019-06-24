@@ -38,7 +38,7 @@ namespace ObfuscarTests
         public void CheckNestedTypes()
         {
             var output = TestHelper.OutputPath;
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +

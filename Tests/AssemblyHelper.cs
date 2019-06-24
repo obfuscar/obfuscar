@@ -85,7 +85,7 @@ namespace ObfuscarTests
 
                     foreach (MethodDefinition method in typeDef.Methods)
                     {
-                        Assert.False(methodsNotToFind.Contains(method.Name), String.Format(
+                        Assert.False(methodsNotToFind.Contains(method.Name), string.Format(
                             "Did not expect to find method '{0}'.", method.Name));
 
                         methodsToFind.Remove(method.Name);
