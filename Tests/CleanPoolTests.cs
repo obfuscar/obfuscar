@@ -34,7 +34,7 @@ namespace ObfuscarTests
     {
         internal void BuildAndObfuscateAssemblies()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +

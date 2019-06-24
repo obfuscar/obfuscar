@@ -74,7 +74,7 @@ namespace Obfuscar
                         builder.Append("[]");
                     }
                     else
-                        builder.Append(String.Format("[{1}]{0}", type.FullName, type.GetScopeName()));
+                        builder.Append(string.Format("[{1}]{0}", type.FullName, type.GetScopeName()));
                 }
             }
         }

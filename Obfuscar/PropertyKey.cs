@@ -106,7 +106,7 @@ namespace Obfuscar
 
         public override string ToString()
         {
-            return String.Format("[{0}]{1} {2}::{3}", TypeKey.Scope, Type, TypeKey.Fullname, Name);
+            return string.Format("[{0}]{1} {2}::{3}", TypeKey.Scope, Type, TypeKey.Fullname, Name);
         }
 
         internal static bool PropertyMatch(PropertyDefinition candidate, PropertyDefinition property)

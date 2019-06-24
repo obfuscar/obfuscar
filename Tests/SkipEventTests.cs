@@ -75,7 +75,7 @@ namespace ObfuscarTests
 
                     foreach (MethodDefinition method in typeDef.Methods)
                     {
-                        Assert.False(methodsNotToFind.Contains(method.Name), String.Format(
+                        Assert.False(methodsNotToFind.Contains(method.Name), string.Format(
                             "Did not expect to find method '{0}'.", method.Name));
 
                         methodsToFind.Remove(method.Name);
@@ -87,7 +87,7 @@ namespace ObfuscarTests
 
                     foreach (EventDefinition evt in typeDef.Events)
                     {
-                        Assert.False(eventsNotToFind.Contains(evt.Name), String.Format(
+                        Assert.False(eventsNotToFind.Contains(evt.Name), string.Format(
                             "Did not expect to find event '{0}'.", evt.Name));
 
                         eventsToFind.Remove(evt.Name);
@@ -113,7 +113,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithEvents.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEvents", String.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEvents", string.Empty, xml);
 
             string[] expected = new string[0];
 
@@ -142,7 +142,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEvents", String.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEvents", string.Empty, xml);
 
             string[] expected = new string[]
             {
@@ -173,7 +173,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEvents", String.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEvents", string.Empty, xml);
 
             string[] expected = new string[]
             {

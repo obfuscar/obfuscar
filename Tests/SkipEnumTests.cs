@@ -51,7 +51,7 @@ namespace ObfuscarTests
 
                     foreach (FieldDefinition field in typeDef.Fields)
                     {
-                        Assert.False(valsNotToFind.Contains(field.Name), String.Format(
+                        Assert.False(valsNotToFind.Contains(field.Name), string.Format(
                             "Did not expect to find event '{0}'.", field.Name));
 
                         valsToFind.Remove(field.Name);
@@ -74,7 +74,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithEnums.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEnums", String.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml);
 
             string[] expected = new string[0];
 
@@ -103,7 +103,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEnums", String.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml);
 
             string[] expected = new string[]
             {
@@ -134,7 +134,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEnums", String.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml);
 
             string[] expected = new string[]
             {
@@ -164,7 +164,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEnums", String.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml);
 
             string[] expected = new string[]
             {
@@ -193,7 +193,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithEnums.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEnums", String.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml);
 
             string[] expected = new string[]
             {
@@ -223,7 +223,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            var map = TestHelper.BuildAndObfuscate("AssemblyWithEnums", String.Empty, xml).Mapping;
+            var map = TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml).Mapping;
 
             string[] expected = new string[]
             {

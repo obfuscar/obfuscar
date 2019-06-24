@@ -70,10 +70,10 @@ namespace ObfuscarTests
             cp.GenerateInMemory = false;
             cp.TreatWarningsAsErrors = treatWarningsAsErrors;
 
-            if (!String.IsNullOrEmpty(options))
+            if (!string.IsNullOrEmpty(options))
                 cp.CompilerOptions = options;
 
-            string dllName = String.IsNullOrEmpty(suffix) ? name : name + suffix;
+            string dllName = string.IsNullOrEmpty(suffix) ? name : name + suffix;
 
             string fileName = GetAssemblyPath(dllName);
             if (File.Exists(fileName))

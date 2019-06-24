@@ -117,7 +117,7 @@ namespace Obfuscar
 
         public override string ToString()
         {
-            return String.Format("{0}::{1}", TypeKey, base.ToString());
+            return string.Format("{0}::{1}", TypeKey, base.ToString());
         }
 
         public int CompareTo(MethodKey other)

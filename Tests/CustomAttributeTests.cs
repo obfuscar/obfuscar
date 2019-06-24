@@ -39,7 +39,7 @@ namespace ObfuscarTests
         {
             var output = TestHelper.OutputPath;
             var name = "AssemblyWithCustomAttr";
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
@@ -49,7 +49,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}{3}.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, output, Path.DirectorySeparatorChar, name);
 
-            TestHelper.BuildAndObfuscate(name, String.Empty, xml);
+            TestHelper.BuildAndObfuscate(name, string.Empty, xml);
             return Path.Combine(output, $"{name}.dll");
         }
 
@@ -116,7 +116,7 @@ namespace ObfuscarTests
         [Fact]
         public void TestInclude()
         {
-            string xml = String.Format(
+            string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +

@@ -179,7 +179,7 @@ namespace Obfuscar
             //copy excluded assemblies
             foreach (AssemblyInfo copyInfo in Project.CopyAssemblyList)
             {
-                var fileName = Path.GetFileName(copyInfo.Filename);
+                var fileName = Path.GetFileName(copyInfo.FileName);
                 // ReSharper disable once InvocationIsSkipped
                 Debug.Assert(fileName != null, "fileName != null");
                 // ReSharper disable once AssignNullToNotNullAttribute
@@ -188,7 +188,7 @@ namespace Obfuscar
             }
 
             // Cecil does not properly update the name cache, so force that:
-            foreach (AssemblyInfo info in Project)
+            foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 var types = info.Definition.MainModule.Types;
                 for (int i = 0; i < types.Count; i++)
@@ -196,9 +196,9 @@ namespace Obfuscar
             }
 
             // save the modified assemblies
-            foreach (AssemblyInfo info in Project)
+            foreach (AssemblyInfo info in Project.AssemblyList)
             {
-                var fileName = Path.GetFileName(info.Filename);
+                var fileName = Path.GetFileName(info.FileName);
                 try
                 {
                     // ReSharper disable once InvocationIsSkipped
@@ -243,6 +243,7 @@ namespace Obfuscar
 #else
                                 parameters.StrongNameKeyPair = strongNameKeyPair;
                                 info.Definition.Write(outName, parameters);
+                                info.OutputFileName = outName;
 #endif
                             }
                             catch (ArgumentException)
@@ -250,6 +251,7 @@ namespace Obfuscar
                                 // delay sign.
                                 info.Definition.Name.PublicKey = keyPair;
                                 info.Definition.Write(outName, parameters);
+                                info.OutputFileName = outName;
                             }
                         }
                         else
@@ -260,6 +262,7 @@ namespace Obfuscar
                     else
                     {
                         info.Definition.Write(outName, parameters);
+                        info.OutputFileName = outName;
                     }
                 }
                 catch (Exception e)
@@ -269,13 +272,13 @@ namespace Obfuscar
                         throw;
                     }
 
-                    LogOutput(String.Format("\nFailed to save {0}", fileName));
-                    LogOutput(String.Format("\n{0}: {1}", e.GetType().Name, e.Message));
+                    LogOutput(string.Format("\nFailed to save {0}", fileName));
+                    LogOutput(string.Format("\n{0}: {1}", e.GetType().Name, e.Message));
                     var match = Regex.Match(e.Message, @"Failed to resolve\s+(?<name>[^\s]+)");
                     if (match.Success)
                     {
                         var name = match.Groups["name"].Value;
-                        LogOutput(String.Format("\n{0} might be one of:", name));
+                        LogOutput(string.Format("\n{0} might be one of:", name));
                         LogMappings(name);
                         LogOutput("\nHint: you might need to add a SkipType for an enum above.");
                     }
@@ -289,7 +292,7 @@ namespace Obfuscar
         {
             foreach (var tuple in Mapping.FindClasses(name))
             {
-                LogOutput(String.Format("\n{0} => {1}", tuple.Item1.Fullname, tuple.Item2));
+                LogOutput(string.Format("\n{0} => {1}", tuple.Item1.Fullname, tuple.Item2));
             }
         }
 
@@ -301,11 +304,11 @@ namespace Obfuscar
             string filename = Project.Settings.XmlMapping ? "Mapping.xml" : "Mapping.txt";
 
             string logPath = Path.Combine(Project.Settings.OutPath, filename);
-            if (!String.IsNullOrEmpty(Project.Settings.LogFilePath))
+            if (!string.IsNullOrEmpty(Project.Settings.LogFilePath))
                 logPath = Project.Settings.LogFilePath;
 
             string lPath = Path.GetDirectoryName(logPath);
-            if (!String.IsNullOrEmpty(lPath) && !Directory.Exists(lPath))
+            if (!string.IsNullOrEmpty(lPath) && !Directory.Exists(lPath))
                 Directory.CreateDirectory(lPath);
 
             using (TextWriter file = File.CreateText(logPath))
@@ -334,7 +337,7 @@ namespace Obfuscar
         /// </summary>
         private void LoadMethodSemantics()
         {
-            foreach (AssemblyInfo info in Project)
+            foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
                 {
@@ -357,7 +360,7 @@ namespace Obfuscar
                 return;
             }
 
-            foreach (var info in Project)
+            foreach (var info in Project.AssemblyList)
             {
                 // loop through the types
                 foreach (var type in info.GetAllTypeDefinitions())
@@ -439,7 +442,7 @@ namespace Obfuscar
         /// </summary>
         public void RenameParams()
         {
-            foreach (AssemblyInfo info in Project)
+            foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 // loop through the types
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
@@ -490,7 +493,7 @@ namespace Obfuscar
         public void RenameTypes()
         {
             //var typerenamemap = new Dictionary<string, string> (); // For patching the parameters of typeof(xx) attribute constructors
-            foreach (AssemblyInfo info in Project)
+            foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 AssemblyDefinition library = info.Definition;
 
@@ -800,7 +803,7 @@ namespace Obfuscar
                 return;
             }
 
-            foreach (AssemblyInfo info in Project)
+            foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
                 {
@@ -933,7 +936,7 @@ namespace Obfuscar
                 return;
             }
 
-            foreach (AssemblyInfo info in Project)
+            foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
                 {
@@ -995,7 +998,7 @@ namespace Obfuscar
         public void RenameMethods()
         {
             var baseSigNames = new Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>>();
-            foreach (AssemblyInfo info in Project)
+            foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
                 {
@@ -1355,7 +1358,7 @@ namespace Obfuscar
         /// </summary>
         internal void HideStrings()
         {
-            foreach (AssemblyInfo info in Project)
+            foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 AssemblyDefinition library = info.Definition;
                 StringSqueeze container = new StringSqueeze(library);
@@ -1382,17 +1385,35 @@ namespace Obfuscar
 
         public void PostProcessing()
         {
-            foreach (AssemblyInfo info in Project)
+            foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
                 {
                     if (type.FullName == "<Module>")
                         continue;
 
+                    type.CleanAttributes();
+
+                    foreach (var field in type.Fields)
+                    {
+                        field.CleanAttributes();
+                    }
+
+                    foreach (var property in type.Properties)
+                    {
+                        property.CleanAttributes();
+                    }
+
+                    foreach (var eventItem in type.Events)
+                    {
+                        eventItem.CleanAttributes();
+                    }
+
                     // first pass.  mark grouped virtual methods to be renamed, and mark some things
                     // to be skipped as neccessary
                     foreach (MethodDefinition method in type.Methods)
                     {
+                        method.CleanAttributes();
                         if (method.HasBody && Project.Settings.Optimize)
                             method.Body.Optimize();
                     }

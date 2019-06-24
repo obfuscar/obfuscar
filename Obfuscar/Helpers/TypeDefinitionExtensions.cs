@@ -46,6 +46,24 @@ namespace Obfuscar.Helpers
             return type.DeclaringType == null ? null : MarkedToRename(type.DeclaringType, true);
         }
 
+        public static void CleanAttributes(this IMemberDefinition type)
+        {
+            var reflectionObfuscate = typeof(System.Reflection.ObfuscationAttribute).FullName;
+
+            for (int i = 0; i < type.CustomAttributes.Count; i++)
+            {
+                CustomAttribute attr = type.CustomAttributes[i];
+                var attrFullName = attr.Constructor.DeclaringType.FullName;
+                if (attrFullName == reflectionObfuscate)
+                {
+                    if ((bool)(Helper.GetAttributePropertyByName(attr, "StripAfterObfuscation") ?? true))
+                    {
+                        type.CustomAttributes.Remove(attr);
+                    }
+                }
+            }
+        }
+
         private static CacheItemPolicy policy = new CacheItemPolicy {SlidingExpiration = TimeSpan.FromMinutes(5)};
 
         public static bool IsResourcesType(this TypeDefinition type)

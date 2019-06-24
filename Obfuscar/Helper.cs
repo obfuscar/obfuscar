@@ -68,7 +68,7 @@ namespace Obfuscar
             string result;
             var val = reader.Attribute(name);
             if (val == null)
-                result = String.Empty;
+                result = string.Empty;
             else
                 result = val.Value.Trim();
 

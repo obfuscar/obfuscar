@@ -17,7 +17,7 @@ namespace Obfuscar
         }
 
         /// <summary>
-        /// Creates a <see cref="ObfuscarException"/> instance with a specific <see cref="String"/>.
+        /// Creates a <see cref="ObfuscarException"/> instance with a specific <see cref="string"/>.
         /// </summary>
         /// <param name="message">Message</param>
         public ObfuscarException(string message) : base(message)
@@ -25,7 +25,7 @@ namespace Obfuscar
         }
 
         /// <summary>
-        /// Creates a <see cref="ObfuscarException"/> instance with a specific <see cref="String"/> and an <see cref="Exception"/>.
+        /// Creates a <see cref="ObfuscarException"/> instance with a specific <see cref="string"/> and an <see cref="Exception"/>.
         /// </summary>
         /// <param name="message">Message</param>
         /// <param name="inner">Inner exception</param>

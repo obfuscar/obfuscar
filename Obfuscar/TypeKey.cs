@@ -149,15 +149,15 @@ namespace Obfuscar
 
         public override string ToString()
         {
-            return String.Format("[{0}]{1}", Scope, Fullname);
+            return string.Format("[{0}]{1}", Scope, Fullname);
         }
 
         public int CompareTo(TypeKey other)
         {
             // no need to check ns and name...should be in fullname
-            int cmp = String.Compare(Scope, other.Scope);
+            int cmp = string.Compare(Scope, other.Scope);
             if (cmp == 0)
-                cmp = String.Compare(Fullname, other.Fullname);
+                cmp = string.Compare(Fullname, other.Fullname);
             return cmp;
         }
     }
