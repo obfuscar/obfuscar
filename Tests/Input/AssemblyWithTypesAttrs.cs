@@ -96,4 +96,21 @@ namespace TestClasses
         protected void ProtectedMethod() // no
         { }
     }
+
+    [System.Reflection.ObfuscationAttribute(Exclude = true, ApplyToMembers = false)]
+    public class PublicClass3 // no
+    {
+        private void PrivateMethod() // yes
+        { }
+
+        [System.Reflection.ObfuscationAttribute(Exclude = true)]
+        public void PublicMethod() // no
+        { }
+
+        protected void ProtectedMethod() // yes
+        { }
+
+        public void PublicMethod2() // yes
+        { }
+    }
 }

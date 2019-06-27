@@ -129,13 +129,34 @@ namespace ObfuscarTests
             Assert.True(nestedClassB.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
             Assert.True(nestedClassB2.Status == ObfuscationStatus.Renamed, "Nested class should have been obfuscated");
 
-            TypeDefinition classDType = inAssmDef.MainModule.GetType("TestClasses.PublicClass2");
-            ObfuscatedThing classD = map.GetClass(new TypeKey(classDType));
-            var classDmethod1 = FindByName(classDType, "PublicMethod");
-            var method3 = map.GetMethod(new MethodKey(classDmethod1));
+            {
+                TypeDefinition classDType = inAssmDef.MainModule.GetType("TestClasses.PublicClass2");
+                ObfuscatedThing classD = map.GetClass(new TypeKey(classDType));
+                var classDmethod1 = FindByName(classDType, "PublicMethod");
+                var method3 = map.GetMethod(new MethodKey(classDmethod1));
+                var classDmethod2 = FindByName(classDType, "ProtectedMethod");
+                var method4 = map.GetMethod(new MethodKey(classDmethod2));
 
-            Assert.True(classD.Status == ObfuscationStatus.Skipped, "PublicClass2 shouldn't have been obfuscated.");
-            Assert.True(method3.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
+                Assert.True(classD.Status == ObfuscationStatus.Skipped, "PublicClass2 shouldn't have been obfuscated.");
+                Assert.True(method3.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
+                Assert.True(method4.Status == ObfuscationStatus.Skipped, "ProtectedMethod shouldn't have been obfuscated.");
+            }
+
+            {
+                TypeDefinition classDType = inAssmDef.MainModule.GetType("TestClasses.PublicClass3");
+                ObfuscatedThing classD = map.GetClass(new TypeKey(classDType));
+                var classDmethod1 = FindByName(classDType, "PublicMethod");
+                var method3 = map.GetMethod(new MethodKey(classDmethod1));
+                var classDmethod2 = FindByName(classDType, "ProtectedMethod");
+                var method4 = map.GetMethod(new MethodKey(classDmethod2));
+                var classDmethod3 = FindByName(classDType, "PublicMethod2");
+                var method5 = map.GetMethod(new MethodKey(classDmethod3));
+
+                Assert.True(classD.Status == ObfuscationStatus.Skipped, "PublicClass2 shouldn't have been obfuscated.");
+                Assert.True(method3.Status == ObfuscationStatus.Skipped, "PublicMethod shouldn't have been obfuscated.");
+                Assert.True(method4.Status == ObfuscationStatus.Renamed, "ProtectedMethod should have been obfuscated.");
+                Assert.True(method5.Status == ObfuscationStatus.Renamed, "PublicMethod2 should have been obfuscated.");
+            }
         }
 
         [Fact]
