@@ -945,6 +945,14 @@ namespace Obfuscar
             if (skipStringHiding.IsMatch(method, map))
                 return true;
 
+            //
+            // Check if Exclude = true and ApplyToMembers is set on the owning method.
+            //
+            if (!(method.Method.MarkedToRename(true) ?? true))
+            {
+                return true;
+            }
+
             return !projectHideStrings;
         }
 
