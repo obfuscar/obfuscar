@@ -1,4 +1,4 @@
-$foundCert = Test-Certificate -Cert Cert:\CurrentUser\my\46B0B01ABEEC5A041CA86E6B288A866BC7349EAD -User
+$foundCert = Test-Certificate -Cert Cert:\CurrentUser\my\43eb601ecc35ed5263141d4dc4aff9c77858451c -User
 if(!$foundCert)
 {
     Write-Host "Certificate doesn't exist. Exit."
