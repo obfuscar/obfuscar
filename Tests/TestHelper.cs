@@ -68,6 +68,7 @@ namespace ObfuscarTests
             CompilerParameters cp = new CompilerParameters();
             cp.GenerateExecutable = false;
             cp.GenerateInMemory = false;
+            cp.ReferencedAssemblies.Add("System.Runtime.Serialization.dll");
             cp.TreatWarningsAsErrors = treatWarningsAsErrors;
 
             if (!string.IsNullOrEmpty(options))
