@@ -427,6 +427,10 @@ namespace Obfuscar
                 {
                     var node = new Node<TypeDefinition> {Item = item};
                     Root.Add(node);
+                    if (_map.ContainsKey(item.FullName))
+                    {
+                        Console.WriteLine(item.FullName );
+                    }
                     _map.Add(item.FullName, node);
                 }
 
@@ -1068,6 +1072,11 @@ namespace Obfuscar
             if (skipProperties.IsMatch(prop, map))
             {
                 message = "property rule in configuration";
+                return true;
+            }
+
+            if(prop.DeclaringType.Interfaces.Any(i=>i.InterfaceType.FullName.Equals("System.ComponentModel.INotifyPropertyChanged"))){
+                message = "declaring type implements INotifyPropertyChanged";
                 return true;
             }
 
