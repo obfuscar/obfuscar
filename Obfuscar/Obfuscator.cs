@@ -111,22 +111,23 @@ namespace Obfuscar
             LogOutput("Hiding strings...\n");
             HideStrings();
 
-            LogOutput("Renaming:  fields...");
+            LogOutput("Renaming:\n");
+            LogOutput("Fields...\n");
             RenameFields();
 
-            LogOutput("Parameters...");
+            LogOutput("Parameters...\n");
             RenameParams();
 
-            LogOutput("Properties...");
+            LogOutput("Properties...\n");
             RenameProperties();
 
-            LogOutput("Events...");
+            LogOutput("Events...\n");
             RenameEvents();
 
-            LogOutput("Methods...");
+            LogOutput("Methods...\n");
             RenameMethods();
 
-            LogOutput("Types...");
+            LogOutput("Types...\n");
             RenameTypes();
 
             PostProcessing();
@@ -267,11 +268,6 @@ namespace Obfuscar
                 }
                 catch (Exception e)
                 {
-                    if (throwException)
-                    {
-                        throw;
-                    }
-
                     LogOutput(string.Format("\nFailed to save {0}", fileName));
                     LogOutput(string.Format("\n{0}: {1}", e.GetType().Name, e.Message));
                     var match = Regex.Match(e.Message, @"Failed to resolve\s+(?<name>[^\s]+)");
@@ -281,6 +277,11 @@ namespace Obfuscar
                         LogOutput(string.Format("\n{0} might be one of:", name));
                         LogMappings(name);
                         LogOutput("\nHint: you might need to add a SkipType for an enum above.");
+                    }
+
+                    if (throwException)
+                    {
+                        throw;
                     }
                 }
             }
@@ -1218,7 +1219,10 @@ namespace Obfuscar
                     message.AppendFormat("{0}->{1}:{2}", item, state.Status, state.StatusText).AppendLine();
                 }
 
-                throw new ObfuscarException(message.ToString());
+                if (Project.Settings.AbortOnInconsistentState)
+                    throw new ObfuscarException(message.ToString());
+
+                LogOutput("Warning: " + message.ToString());
             }
             else
             {
