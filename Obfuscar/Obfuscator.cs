@@ -35,6 +35,7 @@ using System.Resources;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using ILSpy.BamlDecompiler.Baml;
 using Mono.Cecil;
@@ -413,7 +414,7 @@ namespace Obfuscar
         private void RenameField(AssemblyInfo info, FieldKey fieldKey, FieldDefinition field, string newName)
         {
             // find references, rename them, then rename the field itself
-            foreach (AssemblyInfo reference in info.ReferencedBy)
+            Parallel.ForEach(info.ReferencedBy, reference =>
             {
                 for (int i = 0; i < reference.UnrenamedReferences.Count;)
                 {
@@ -432,7 +433,7 @@ namespace Obfuscar
 
                     i++;
                 }
-            }
+            });
 
             field.Name = newName;
             Mapping.UpdateField(fieldKey, ObfuscationStatus.Renamed, newName);
@@ -1317,7 +1318,7 @@ namespace Obfuscar
 
             var generics = new List<GenericInstanceMethod>();
 
-            foreach (AssemblyInfo reference in references)
+            Parallel.ForEach(references, reference =>
             {
                 for (int i = 0; i < reference.UnrenamedReferences.Count;)
                 {
@@ -1333,7 +1334,8 @@ namespace Obfuscar
                             }
                             else
                             {
-                                generics.Add(generic);
+                                lock (generics)
+                                    generics.Add(generic);
                             }
 
                             reference.UnrenamedReferences.RemoveAt(i);
@@ -1345,7 +1347,7 @@ namespace Obfuscar
 
                     i++;
                 }
-            }
+            });
 
             foreach (var generic in generics)
             {
