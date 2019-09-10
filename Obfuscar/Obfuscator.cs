@@ -1208,7 +1208,13 @@ namespace Obfuscar
                 Debug.Assert(!@group.External,
                     "Group's external flag should have been handled when the group was created, " +
                     "and all methods in the group should already be marked skipped.");
-                Mapping.UpdateMethod(methodKey, ObfuscationStatus.Skipped, skipRename);
+                foreach (MethodKey m in @group.Methods)
+                {
+                    if (Mapping.GetMethod(m).Status != ObfuscationStatus.Skipped)
+                    {
+                        Mapping.UpdateMethod(m, ObfuscationStatus.Skipped, skipRename);
+                    }
+                }
 
                 var message =
                     new StringBuilder(

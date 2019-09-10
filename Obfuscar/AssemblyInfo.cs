@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -802,7 +802,7 @@ namespace Obfuscar
 
             if (forceTypes.IsMatch(type, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({type})";
                 return false;
             }
 
@@ -814,7 +814,7 @@ namespace Obfuscar
 
             if (skipTypes.IsMatch(type, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({type})";
                 return true;
             }
 
@@ -896,7 +896,7 @@ namespace Obfuscar
 
             if (ShouldForce(method.TypeKey, TypeAffectFlags.AffectMethod, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({method.TypeKey})";
                 return false;
             }
 
@@ -908,7 +908,7 @@ namespace Obfuscar
 
             if (ShouldSkip(method.TypeKey, TypeAffectFlags.AffectMethod, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({method.TypeKey})";
                 return true;
             }
 
@@ -984,7 +984,7 @@ namespace Obfuscar
 
             if (ShouldForce(field.TypeKey, TypeAffectFlags.AffectField, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({field.TypeKey})";
                 return false;
             }
 
@@ -996,7 +996,7 @@ namespace Obfuscar
 
             if (ShouldSkip(field.TypeKey, TypeAffectFlags.AffectField, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({field.TypeKey})";
                 return true;
             }
 
@@ -1053,7 +1053,7 @@ namespace Obfuscar
 
             if (ShouldForce(prop.TypeKey, TypeAffectFlags.AffectProperty, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({prop.TypeKey})";
                 return false;
             }
 
@@ -1065,7 +1065,7 @@ namespace Obfuscar
 
             if (ShouldSkip(prop.TypeKey, TypeAffectFlags.AffectProperty, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({prop.TypeKey})";
                 return true;
             }
 
@@ -1127,7 +1127,7 @@ namespace Obfuscar
 
             if (ShouldForce(evt.TypeKey, TypeAffectFlags.AffectEvent, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({evt.TypeKey})";
                 return false;
             }
 
@@ -1139,7 +1139,7 @@ namespace Obfuscar
 
             if (ShouldSkip(evt.TypeKey, TypeAffectFlags.AffectEvent, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({evt.TypeKey})";
                 return true;
             }
 

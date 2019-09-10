@@ -64,39 +64,51 @@ namespace Obfuscar
             //    nodes.Remove(item);
             //}
 
-            var groups = new List<MethodGroup>();
+            var methods = new List<MethodGroup>();
             var properties = new List<PropertyGroup>();
             foreach (var node in nodes)
             {
-                node.Value.FillMethodGroup(groups, Project);
+                node.Value.FillMethodGroup(methods, Project);
                 node.Value.FillPropertyGroup(properties, Project);
             }
 
-            foreach (var group in groups)
+            // Merge overlapping method groups
+            foreach (var group in methods)
             {
+                MethodGroup mergeGroup = null;
                 foreach (var item in group.Methods)
                 {
-                    if (methodGroups.ContainsKey(item))
+                    if (methodGroups.TryGetValue(item, out mergeGroup))
                     {
-                        methodGroups[item].Merge(group);
-                        continue;
+                        mergeGroup.Merge(group);
+                        break;
                     }
-
-                    methodGroups.Add(item, group);
+                }
+                if (mergeGroup == null)
+                    mergeGroup = group;
+                foreach (var item in group.Methods)
+                {
+                    methodGroups[item] = mergeGroup;
                 }
             }
 
+            // Merge overlapping property groups
             foreach (var group in properties)
             {
+                PropertyGroup mergeGroup = null;
                 foreach (var item in group.Properties)
                 {
-                    if (propertyGroups.ContainsKey(item))
+                    if (propertyGroups.TryGetValue(item, out mergeGroup))
                     {
-                        propertyGroups[item].Merge(group);
-                        continue;
+                        mergeGroup.Merge(group);
+                        break;
                     }
-
-                    propertyGroups.Add(item, group);
+                }
+                if (mergeGroup == null)
+                    mergeGroup = group;
+                foreach (var item in group.Properties)
+                {
+                    propertyGroups[item] = mergeGroup;
                 }
             }
         }
