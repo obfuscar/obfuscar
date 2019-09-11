@@ -113,8 +113,11 @@ namespace Obfuscar
             HideStrings();
 
             LogOutput("Renaming:\n");
+            var xamlFiles = Project.AssemblyList.SelectMany(info => GetXamlDocuments(info.Definition));
+            var namesInXaml = NamesInXaml(xamlFiles);
+
             LogOutput("Fields...\n");
-            RenameFields();
+            RenameFields(namesInXaml);
 
             LogOutput("Parameters...\n");
             RenameParams();
@@ -129,7 +132,7 @@ namespace Obfuscar
             RenameMethods();
 
             LogOutput("Types...\n");
-            RenameTypes();
+            RenameTypes(namesInXaml);
 
             PostProcessing();
 
@@ -355,7 +358,7 @@ namespace Obfuscar
         /// <summary>
         /// Renames fields in the project.
         /// </summary>
-        public void RenameFields()
+        public void RenameFields(HashSet<string> namesInXaml)
         {
             if (!Project.Settings.RenameFields)
             {
@@ -368,6 +371,11 @@ namespace Obfuscar
                 foreach (var type in info.GetAllTypeDefinitions())
                 {
                     if (type.FullName == "<Module>")
+                    {
+                        continue;
+                    }
+
+                    if (type.IsEnum && namesInXaml.Contains(type.FullName))
                     {
                         continue;
                     }
@@ -492,7 +500,7 @@ namespace Obfuscar
         /// <summary>
         /// Renames types and resources in the project.
         /// </summary>
-        public void RenameTypes()
+        public void RenameTypes(HashSet<string> namesInXaml)
         {
             //var typerenamemap = new Dictionary<string, string> (); // For patching the parameters of typeof(xx) attribute constructors
             foreach (AssemblyInfo info in Project.AssemblyList)
@@ -502,9 +510,6 @@ namespace Obfuscar
                 // make a list of the resources that can be renamed
                 List<Resource> resources = new List<Resource>(library.MainModule.Resources.Count);
                 resources.AddRange(library.MainModule.Resources);
-
-                var xamlFiles = GetXamlDocuments(library);
-                var namesInXaml = NamesInXaml(xamlFiles);
 
                 // Save the original names of all types because parent (declaring) types of nested types may be already renamed.
                 // The names are used for the mappings file.
@@ -661,11 +666,9 @@ namespace Obfuscar
             }
         }
 
-        private HashSet<string> NamesInXaml(List<BamlDocument> xamlFiles)
+        private HashSet<string> NamesInXaml(IEnumerable<BamlDocument> xamlFiles)
         {
             var result = new HashSet<string>();
-            if (xamlFiles.Count == 0)
-                return result;
 
             foreach (var doc in xamlFiles)
             {

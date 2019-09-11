@@ -962,6 +962,12 @@ namespace Obfuscar
                 return true;
             }
 
+            if (field.Type == "System.Windows.DependencyProperty")
+            {
+                message = "DependencyProperty";
+                return true;
+            }
+
             var attribute = field.Field.MarkedToRename();
             if (attribute != null)
             {
