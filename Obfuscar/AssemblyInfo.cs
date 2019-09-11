@@ -1075,9 +1075,13 @@ namespace Obfuscar
                 return true;
             }
 
-            if(prop.DeclaringType.Interfaces.Any(i=>i.InterfaceType.FullName.Equals("System.ComponentModel.INotifyPropertyChanged"))){
-                message = "declaring type implements INotifyPropertyChanged";
-                return true;
+            for (var type = prop.DeclaringType; type != null; type = type.BaseType?.Resolve())
+            {
+                if (type.Interfaces.Any(i => i.InterfaceType.FullName.Equals("System.ComponentModel.INotifyPropertyChanged")))
+                {
+                    message = "declaring type implements INotifyPropertyChanged";
+                    return true;
+                }
             }
 
             if (prop.Property.IsPublic() && (
