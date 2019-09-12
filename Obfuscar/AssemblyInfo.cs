@@ -812,6 +812,13 @@ namespace Obfuscar
                 return false;
             }
 
+            if (type.TypeDefinition.BaseType?.FullName == "System.Windows.Controls.DataTemplateSelector")
+            {
+                // Mono.Cecil should find this type in the BAML so it would be excluded, but for some reason it doesn't
+                message = $"DataTemplateSelector";
+                return true;
+            }
+
             if (skipTypes.IsMatch(type, map))
             {
                 message = $"type rule in configuration ({type})";
@@ -1088,6 +1095,13 @@ namespace Obfuscar
                     message = "declaring type implements INotifyPropertyChanged";
                     return true;
                 }
+            }
+
+            if (prop.Type == "System.Windows.DataTemplate" &&
+                prop.DeclaringType.BaseType?.FullName == "System.Windows.Controls.DataTemplateSelector")
+            {
+                message = "DataTemplateSelector/DataTemplate";
+                return true;
             }
 
             if (prop.Property.IsPublic() && (
