@@ -1097,6 +1097,16 @@ namespace Obfuscar
                 }
             }
 
+            for (var type = prop.DeclaringType; type != null; type = type.BaseType?.Resolve())
+            {
+                if (type.Interfaces.Any(i => i.InterfaceType.FullName.Equals("System.Windows.Data.IValueConverter") ||
+                    i.InterfaceType.FullName.Equals("System.Windows.Data.IMultiValueConverter")))
+                {
+                    message = "declaring type implements a value converter";
+                    return true;
+                }
+            }
+
             if (prop.Type == "System.Windows.DataTemplate" &&
                 prop.DeclaringType.BaseType?.FullName == "System.Windows.Controls.DataTemplateSelector")
             {
