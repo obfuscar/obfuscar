@@ -1033,7 +1033,10 @@ namespace Obfuscar
                         }
                     }
                 }
+            }
 
+            foreach (AssemblyInfo info in Project.AssemblyList)
+            {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
                 {
                     if (type.FullName == "<Module>")
