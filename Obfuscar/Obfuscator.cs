@@ -113,8 +113,7 @@ namespace Obfuscar
             HideStrings();
 
             LogOutput("Renaming:\n");
-            var xamlFiles = Project.AssemblyList.SelectMany(info => GetXamlDocuments(info.Definition));
-            var namesInXaml = NamesInXaml(xamlFiles);
+            var namesInXaml = CollectTypesFromXaml();
 
             LogOutput("Fields...\n");
             RenameFields(namesInXaml);
@@ -145,6 +144,38 @@ namespace Obfuscar
             LogOutput("Writing log file...");
             SaveMapping();
             LogOutput("Done.\n");
+        }
+
+        private HashSet<string> CollectTypesFromXaml()
+        {
+            var xamlFiles = Project.AssemblyList.SelectMany(info => GetXamlDocuments(info.Definition));
+            var namesInXaml = NamesInXaml(xamlFiles);
+
+            // Extend with enums used in public interface of the types directly mentioned in XAML
+            foreach (var info in Project.AssemblyList)
+            {
+                foreach (var type in info.GetAllTypeDefinitions().Where(t => namesInXaml.Contains(t.FullName)))
+                {
+                    var typeKey = new TypeKey(type);
+                    foreach (FieldDefinition field in type.Fields)
+                    {
+                        if (field.IsPublic && field.FieldType.Resolve().IsEnum)
+                            namesInXaml.Add(field.FieldType.FullName);
+                    }
+                    foreach (PropertyDefinition prop in type.Properties)
+                    {
+                        if (prop.IsPublic() && prop.PropertyType.Resolve().IsEnum)
+                            namesInXaml.Add(prop.PropertyType.FullName);
+                    }
+                    foreach (MethodDefinition method in type.Methods)
+                    {
+                        if (method.IsPublic() && method.ReturnType.Resolve().IsEnum)
+                            namesInXaml.Add(method.ReturnType.FullName);
+                    }
+                }
+            }
+
+            return namesInXaml;
         }
 
         public static Obfuscator CreateFromXml(string xml)
