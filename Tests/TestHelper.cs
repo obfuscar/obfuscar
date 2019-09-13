@@ -108,7 +108,7 @@ namespace ObfuscarTests
                 obfuscator.HideStrings();
             obfuscator.RenameFields(new HashSet<string>());
             obfuscator.RenameParams();
-            obfuscator.RenameProperties();
+            obfuscator.RenameProperties(new HashSet<string>());
             obfuscator.RenameEvents();
             obfuscator.RenameMethods();
             obfuscator.RenameTypes(new HashSet<string>());

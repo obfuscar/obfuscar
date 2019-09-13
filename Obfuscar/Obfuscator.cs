@@ -123,7 +123,7 @@ namespace Obfuscar
             RenameParams();
 
             LogOutput("Properties...\n");
-            RenameProperties();
+            RenameProperties(namesInXaml);
 
             LogOutput("Events...\n");
             RenameEvents();
@@ -375,26 +375,23 @@ namespace Obfuscar
                         continue;
                     }
 
-                    if (type.IsEnum && namesInXaml.Contains(type.FullName))
-                    {
-                        continue;
-                    }
-
                     var typeKey = new TypeKey(type);
 
                     var nameGroups = new Dictionary<string, NameGroup>();
 
+                    var typeInXaml = namesInXaml.Contains(type.FullName);
+
                     // rename field, grouping according to signature
                     foreach (FieldDefinition field in type.Fields)
                     {
-                        ProcessField(field, typeKey, nameGroups, info);
+                        ProcessField(field, typeKey, nameGroups, info, typeInXaml);
                     }
                 }
             }
         }
 
         private void ProcessField(FieldDefinition field, TypeKey typeKey, Dictionary<string, NameGroup> nameGroups,
-            AssemblyInfo info)
+            AssemblyInfo info, bool typeInXaml)
         {
             string sig = field.FieldType.FullName;
             var fieldKey = new FieldKey(typeKey, sig, field.Name, field);
@@ -404,7 +401,7 @@ namespace Obfuscar
             string skip;
             if (info.ShouldSkip(fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi,
                 Project.Settings.HidePrivateApi,
-                Project.Settings.MarkedOnly, out skip))
+                Project.Settings.MarkedOnly, typeInXaml, out skip))
             {
                 Mapping.UpdateField(fieldKey, ObfuscationStatus.Skipped, skip);
                 nameGroup.Add(fieldKey.Name);
@@ -800,7 +797,7 @@ namespace Obfuscar
             return nameGroup;
         }
 
-        public void RenameProperties()
+        public void RenameProperties(HashSet<string> namesInXaml)
         {
             // do nothing if it was requested not to rename
             if (!Project.Settings.RenameProperties)
@@ -819,12 +816,14 @@ namespace Obfuscar
 
                     TypeKey typeKey = new TypeKey(type);
 
+                    var typeInXaml = namesInXaml.Contains(type.FullName);
+
                     int index = 0;
                     List<PropertyDefinition> propsToDrop = new List<PropertyDefinition>();
                     // ReSharper disable once LoopCanBeConvertedToQuery
                     foreach (PropertyDefinition prop in type.Properties)
                     {
-                        index = ProcessProperty(typeKey, prop, info, type, index, propsToDrop);
+                        index = ProcessProperty(typeKey, prop, info, type, typeInXaml, index, propsToDrop);
                     }
 
                     foreach (PropertyDefinition prop in propsToDrop)
@@ -838,7 +837,7 @@ namespace Obfuscar
             }
         }
 
-        private int ProcessProperty(TypeKey typeKey, PropertyDefinition prop, AssemblyInfo info, TypeDefinition type,
+        private int ProcessProperty(TypeKey typeKey, PropertyDefinition prop, AssemblyInfo info, TypeDefinition type, bool typeInXaml,
             int index,
             List<PropertyDefinition> propsToDrop)
         {
@@ -851,7 +850,7 @@ namespace Obfuscar
 
             string skip;
             // skip filtered props
-            if (info.ShouldSkip(propKey, Project.InheritMap, Project.Settings.KeepPublicApi,
+            if (info.ShouldSkip(propKey, typeInXaml, Project.InheritMap, Project.Settings.KeepPublicApi,
                 Project.Settings.HidePrivateApi,
                 Project.Settings.MarkedOnly, out skip))
             {

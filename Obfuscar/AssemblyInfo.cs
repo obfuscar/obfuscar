@@ -959,7 +959,7 @@ namespace Obfuscar
             return !projectHideStrings;
         }
 
-        public bool ShouldSkip(FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
+        public bool ShouldSkip(FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly, bool typeInXaml,
             out string message)
         {
             // skip runtime methods
@@ -1007,6 +1007,12 @@ namespace Obfuscar
                 return false;
             }
 
+            if (typeInXaml && field.Field.IsPublic())
+            {
+                message = "filtered by BAML";
+                return true;
+            }
+
             if (ShouldSkip(field.TypeKey, TypeAffectFlags.AffectField, map))
             {
                 message = $"type rule in configuration ({field.TypeKey})";
@@ -1035,7 +1041,7 @@ namespace Obfuscar
             return !hidePrivateApi;
         }
 
-        public bool ShouldSkip(PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
+        public bool ShouldSkip(PropertyKey prop, bool typeInXaml, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
             bool markedOnly, out string message)
         {
             if (prop.Property.IsRuntimeSpecialName)
@@ -1088,21 +1094,17 @@ namespace Obfuscar
                 return true;
             }
 
+            if (typeInXaml && prop.Property.IsPublic())
+            {
+                message = "filtered by BAML";
+                return true;
+            }
+
             for (var type = prop.DeclaringType; type != null; type = type.BaseType?.Resolve())
             {
                 if (type.Interfaces.Any(i => i.InterfaceType.FullName.Equals("System.ComponentModel.INotifyPropertyChanged")))
                 {
                     message = "declaring type implements INotifyPropertyChanged";
-                    return true;
-                }
-            }
-
-            for (var type = prop.DeclaringType; type != null; type = type.BaseType?.Resolve())
-            {
-                if (type.Interfaces.Any(i => i.InterfaceType.FullName.Equals("System.Windows.Data.IValueConverter") ||
-                    i.InterfaceType.FullName.Equals("System.Windows.Data.IMultiValueConverter")))
-                {
-                    message = "declaring type implements a value converter";
                     return true;
                 }
             }
