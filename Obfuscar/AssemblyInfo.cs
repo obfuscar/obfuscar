@@ -1013,6 +1013,12 @@ namespace Obfuscar
                 return true;
             }
 
+            if (field.DeclaringType.BaseType?.FullName == "System.Attribute")
+            {
+                message = "declaring type is an Attribute";
+                return true;
+            }
+
             if (ShouldSkip(field.TypeKey, TypeAffectFlags.AffectField, map))
             {
                 message = $"type rule in configuration ({field.TypeKey})";
@@ -1102,7 +1108,7 @@ namespace Obfuscar
 
             for (var type = prop.DeclaringType; type != null; type = type.BaseType?.Resolve())
             {
-                if (type.Interfaces.Any(i => i.InterfaceType.FullName.Equals("System.ComponentModel.INotifyPropertyChanged")))
+                if (type.Interfaces.Any(i => i.InterfaceType.FullName == "System.ComponentModel.INotifyPropertyChanged"))
                 {
                     message = "declaring type implements INotifyPropertyChanged";
                     return true;
