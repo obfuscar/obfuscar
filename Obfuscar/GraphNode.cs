@@ -91,7 +91,7 @@ namespace Obfuscar
             if (baseType == null)
                 baseType = project.Cache.GetTypeDefinition(type.BaseType);
 
-            if (baseType != null && baseType.FullName != "System.Object")
+            if (baseType != null)
             {
                 result.Add(new TypeKey(baseType));
             }
