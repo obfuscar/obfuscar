@@ -25,6 +25,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
 using Mono.Cecil;
 
 namespace Obfuscar
@@ -131,9 +132,18 @@ namespace Obfuscar
 
                 var newGroup = new MethodGroup();
                 newGroup.Methods.Add(new MethodKey(method));
-                foreach (var baseType in baseNodes)
+                if (method.Parameters.Any(p => p.ParameterType is GenericParameter))
                 {
-                    baseType.MatchMethodGroup(method, newGroup, project);
+                    // If the method has generic arguments we need to group it with overloads in the same class so they are renamed the same
+                    // way, otherwise the call site updating may fail to choose the right overload
+                    MatchMethodGroup(method, newGroup, project);
+                }
+                else
+                {
+                    foreach (var baseType in baseNodes)
+                    {
+                        baseType.MatchMethodGroup(method, newGroup, project);
+                    }
                 }
 
                 if (newGroup.Methods.Count > 1)

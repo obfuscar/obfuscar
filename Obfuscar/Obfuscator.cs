@@ -1146,9 +1146,16 @@ namespace Obfuscar
                 if (skiprename != null)
                 {
                     m.Update(ObfuscationStatus.Skipped, skiprename);
+                    return;
                 }
-
+                if (Project.InheritMap.GetMethodGroup(methodKey) == null ||
+                    !method.Parameters.Any(p => p.ParameterType is GenericParameter))
                 return;
+
+                // If the method has generic arguments we need to group it with overloads in the same class so they are renamed the same
+                // way, otherwise the call site updating may fail to choose the right overload. Therefore we continue as if it was virtual.
+
+                Trace.WriteLine(methodKey);
             }
 
             // if we need to skip the method or we don't yet have a name planned for a method, rename it
