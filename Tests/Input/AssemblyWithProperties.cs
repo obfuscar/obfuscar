@@ -25,6 +25,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.ComponentModel;
 
 namespace TestClasses
 {
@@ -51,5 +52,13 @@ namespace TestClasses
 			get { return propertyA; }
 			set { propertyA = value; }
 		}
+	}
+	internal class ClassB : INotifyPropertyChanged
+	{
+        public event PropertyChangedEventHandler PropertyChanged { add { } remove { } }
+	}
+	internal class ClassC : ClassB
+	{
+		public int PropertyB { get; set; }
 	}
 }

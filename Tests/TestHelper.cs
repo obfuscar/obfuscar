@@ -67,6 +67,7 @@ namespace ObfuscarTests
             Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider();
 
             CompilerParameters cp = new CompilerParameters();
+            cp.ReferencedAssemblies.Add("System.dll");
             cp.GenerateExecutable = false;
             cp.GenerateInMemory = false;
             cp.TreatWarningsAsErrors = treatWarningsAsErrors;

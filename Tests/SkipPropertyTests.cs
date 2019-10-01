@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,13 +28,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
+using Obfuscar;
 using Xunit;
 
 namespace ObfuscarTests
 {
     public class SkipPropertyTests
     {
-        protected void CheckProperties(string name, int expectedTypes, string[] expected, string[] notExpected)
+        protected void CheckProperties(string name, string typeName, string[] expected, string[] notExpected)
         {
             HashSet<string> propsToFind = new HashSet<string>(expected);
             HashSet<string> propsNotToFind = new HashSet<string>(notExpected);
@@ -53,8 +54,8 @@ namespace ObfuscarTests
                 notExpectedMethods[i * 2 + 1] = "set_" + notExpected[i];
             }
 
-            AssemblyHelper.CheckAssembly(name, expectedTypes, expectedMethods, notExpectedMethods,
-                delegate(TypeDefinition typeDef) { return true; },
+            AssemblyHelper.CheckAssembly(name, 3, expectedMethods, notExpectedMethods,
+                delegate(TypeDefinition typeDef) { return typeDef.Name == typeName; },
                 delegate(TypeDefinition typeDef)
                 {
                     Assert.Equal(expected.Length, typeDef.Properties.Count);
@@ -97,7 +98,7 @@ namespace ObfuscarTests
                 "PropertyA"
             };
 
-            CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), 1, expected, notExpected);
+            CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), "A", expected, notExpected);
         }
 
         [Fact]
@@ -128,7 +129,7 @@ namespace ObfuscarTests
                 "PropertyA"
             };
 
-            CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), 1, expected, notExpected);
+            CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), "A", expected, notExpected);
         }
 
         [Fact]
@@ -159,7 +160,35 @@ namespace ObfuscarTests
                 "PropertyA"
             };
 
-            CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), 1, expected, notExpected);
+            CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), "A", expected, notExpected);
+        }
+
+        [Fact]
+        public void CheckSkipPropertyByINotifyPropertyChanged()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithProperties.dll'>" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
+
+            string[] expected = new string[]
+            {
+                "PropertyB",
+            };
+
+            string[] notExpected = new string[]
+            {
+            };
+
+            CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), "B", expected, notExpected);
         }
     }
 }
