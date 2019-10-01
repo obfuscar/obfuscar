@@ -362,7 +362,9 @@ namespace Obfuscar
                     AssemblyInfo reference;
                     if (assemblyMap.TryGetValue(nameRef.Name, out reference))
                     {
+                        if (!info.References.Contains(reference))
                         info.References.Add(reference);
+                        if (!reference.ReferencedBy.Contains(info))
                         reference.ReferencedBy.Add(info);
                     }
                 }
