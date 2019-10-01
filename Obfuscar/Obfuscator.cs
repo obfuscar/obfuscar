@@ -146,7 +146,7 @@ namespace Obfuscar
             LogOutput("Done.\n");
         }
 
-        private HashSet<string> CollectTypesFromXaml()
+        internal HashSet<string> CollectTypesFromXaml()
         {
             var xamlFiles = Project.AssemblyList.SelectMany(info => GetXamlDocuments(info.Definition));
             var namesInXaml = NamesInXaml(xamlFiles);

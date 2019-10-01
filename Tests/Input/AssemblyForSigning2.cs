@@ -25,8 +25,6 @@
 using System;
 using System.Reflection;
 
-[assembly: AssemblyKeyFileAttribute("SigningKey.snk")]
-
 namespace TestClasses
 {
 	public class ClassA

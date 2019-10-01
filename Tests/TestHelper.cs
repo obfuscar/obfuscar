@@ -106,12 +106,13 @@ namespace ObfuscarTests
 
             if (hideStrings)
                 obfuscator.HideStrings();
-            obfuscator.RenameFields(new HashSet<string>());
+            var namesInXaml = obfuscator.CollectTypesFromXaml();
+            obfuscator.RenameFields(namesInXaml);
             obfuscator.RenameParams();
-            obfuscator.RenameProperties(new HashSet<string>());
+            obfuscator.RenameProperties(namesInXaml);
             obfuscator.RenameEvents();
             obfuscator.RenameMethods();
-            obfuscator.RenameTypes(new HashSet<string>());
+            obfuscator.RenameTypes(namesInXaml);
             obfuscator.PostProcessing();
             obfuscator.SaveAssemblies(true);
 

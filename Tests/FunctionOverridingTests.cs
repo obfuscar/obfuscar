@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -203,9 +203,7 @@ namespace ObfuscarTests
             var end = assmName.Length + 2;
             Assert.True(classARenamed.Status == ObfuscationStatus.Renamed, "Type must be obfuscated");
             Assert.True(classBRenamed.Status == ObfuscationStatus.Renamed, "Interface must be obfuscated");
-            var newNameA = classARenamed.StatusText.Substring(end);
-            var newNameB = classBRenamed.StatusText.Substring(end);
-            var formattedString = $"Empty<string, string>={newNameA}[{newNameB}[System.String,System.String]]";
+            var formattedString = $"Empty<string, string>=A<B<String, String>>";
 
             var assembly2Path = Path.Combine(Directory.GetCurrentDirectory(), outputPath,
                 "AssemblyWithGenericOverrides2.dll");
@@ -264,10 +262,9 @@ namespace ObfuscarTests
             Assert.True(renamedInterfaceMethod.Status == ObfuscationStatus.Renamed, "interface method should be renamed");
             Assert.True(renamedClassMethod.StatusText == renamedInterfaceMethod.StatusText, "They should have the same name");
 
-            PropertyDefinition classProperty = classType.Properties.First(_ => _.Name == "Collection");
             PropertyDefinition interfaceProperty = interfaceType.Properties.First(_ => _.Name == "Collection");
 
-            var renamedClassProperty = map.GetProperty(new PropertyKey(new TypeKey(classType), classProperty));
+            var renamedClassProperty = map.GetClass(new TypeKey(classType)).Properties.First(p => p.Key.Name == "Collection").Value;
             var renamedInterfaceProperty = map.GetProperty(new PropertyKey(new TypeKey(interfaceType), interfaceProperty));
 
             Assert.True(renamedClassProperty.Status == ObfuscationStatus.Renamed, "class property should be renamed");

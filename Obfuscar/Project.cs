@@ -92,7 +92,7 @@ namespace Obfuscar
                 if (lKeyFileName == null && lKeyContainerName == null)
                     return null;
                 if (lKeyFileName != null && lKeyContainerName != null)
-                    throw new ObfuscarException("'Key file' and 'Key container' properties cann't be setted together.");                               
+                    throw new ObfuscarException("'Key file' and 'Key container' properties cann't be setted together.");
 
                 return keyPair = vars.GetValue("KeyFile", null);
             }
@@ -363,9 +363,9 @@ namespace Obfuscar
                     if (assemblyMap.TryGetValue(nameRef.Name, out reference))
                     {
                         if (!info.References.Contains(reference))
-                        info.References.Add(reference);
+                            info.References.Add(reference);
                         if (!reference.ReferencedBy.Contains(info))
-                        reference.ReferencedBy.Add(info);
+                            reference.ReferencedBy.Add(info);
                     }
                 }
             }
