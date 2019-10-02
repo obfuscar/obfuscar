@@ -1009,7 +1009,7 @@ namespace Obfuscar
 
             if (typeInXaml && field.Field.IsPublic())
             {
-                message = "filtered by BAML";
+                message = "filtered by BAML/INotifyPropertyChanged";
                 return true;
             }
 
@@ -1106,13 +1106,10 @@ namespace Obfuscar
                 return true;
             }
 
-            for (var type = prop.DeclaringType; type != null; type = type.BaseType?.Resolve())
+            if (prop.Property.IsPublic() && prop.DeclaringType.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged"))
             {
-                if (type.Interfaces.Any(i => i.InterfaceType.FullName == "System.ComponentModel.INotifyPropertyChanged"))
-                {
-                    message = "declaring type implements INotifyPropertyChanged";
-                    return true;
-                }
+                message = "declaring type implements INotifyPropertyChanged";
+                return true;
             }
 
             if (prop.Type == "System.Windows.DataTemplate" &&

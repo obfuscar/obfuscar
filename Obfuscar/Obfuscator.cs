@@ -151,12 +151,11 @@ namespace Obfuscar
             var xamlFiles = Project.AssemblyList.SelectMany(info => GetXamlDocuments(info.Definition));
             var namesInXaml = NamesInXaml(xamlFiles);
 
-            // Extend with enums used in public interface of the types directly mentioned in XAML
             foreach (var info in Project.AssemblyList)
             {
+                // Extend with enums used in public interface of the types directly mentioned in XAML
                 foreach (var type in info.GetAllTypeDefinitions().Where(t => namesInXaml.Contains(t.FullName)))
                 {
-                    var typeKey = new TypeKey(type);
                     foreach (FieldDefinition field in type.Fields)
                     {
                         if (field.IsPublic && field.FieldType.Resolve().IsEnum)
@@ -171,6 +170,18 @@ namespace Obfuscar
                     {
                         if (method.IsPublic() && method.ReturnType.Resolve().IsEnum)
                             namesInXaml.Add(method.ReturnType.FullName);
+                    }
+                }
+
+                // Extend with enums used in public properties on types implementing INotifyPropertyChanged
+                foreach (var type in info.GetAllTypeDefinitions().
+                    Where(t => t.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged")))
+                {
+                    foreach (PropertyDefinition prop in type.Properties)
+                    {
+                        TypeDefinition propType;
+                        if (prop.IsPublic() && (propType = prop.PropertyType.Resolve()) != null && propType.IsEnum)
+                            namesInXaml.Add(prop.PropertyType.FullName);
                     }
                 }
             }
@@ -585,7 +596,7 @@ namespace Obfuscar
 
                     if (namesInXaml.Contains(type.FullName))
                     {
-                        Mapping.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, "filtered by BAML");
+                        Mapping.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, "filtered by BAML/INotifyPropertyChanged");
 
                         // go through the list of resources, remove ones that would be renamed
                         for (int i = 0; i < resources.Count;)
@@ -595,7 +606,7 @@ namespace Obfuscar
                             if (Path.GetFileNameWithoutExtension(resName) == fullName)
                             {
                                 resources.RemoveAt(i);
-                                Mapping.AddResource(resName, ObfuscationStatus.Skipped, "filtered by BAML");
+                                Mapping.AddResource(resName, ObfuscationStatus.Skipped, "filtered by BAML/INotifyPropertyChanged");
                             }
                             else
                             {

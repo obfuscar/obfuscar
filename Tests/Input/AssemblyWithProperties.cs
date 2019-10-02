@@ -57,8 +57,10 @@ namespace TestClasses
 	{
         public event PropertyChangedEventHandler PropertyChanged { add { } remove { } }
 	}
+	internal enum TestEnum { Value1, Value2 }
 	internal class ClassC : ClassB
 	{
-		public int PropertyB { get; set; }
+		public TestEnum PropertyB { get; set; }
+		private TestEnum PropertyC { get; set; }
 	}
 }

@@ -54,7 +54,7 @@ namespace ObfuscarTests
                 notExpectedMethods[i * 2 + 1] = "set_" + notExpected[i];
             }
 
-            AssemblyHelper.CheckAssembly(name, 3, expectedMethods, notExpectedMethods,
+            AssemblyHelper.CheckAssembly(name, 4, expectedMethods, notExpectedMethods,
                 delegate(TypeDefinition typeDef) { return typeDef.Name == typeName; },
                 delegate(TypeDefinition typeDef)
                 {
@@ -186,6 +186,7 @@ namespace ObfuscarTests
 
             string[] notExpected = new string[]
             {
+                "PropertyC",
             };
 
             CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), "B", expected, notExpected);
