@@ -132,21 +132,28 @@ namespace Obfuscar
 
                 var newGroup = new MethodGroup();
                 newGroup.Methods.Add(new MethodKey(method));
+                MethodDefinition rootMethod = null;
                 if (method.Parameters.Any(p => p.ParameterType is GenericParameter))
                 {
                     // If the method has generic arguments we need to group it with overloads in the same class so they are renamed the same
                     // way, otherwise the call site updating may fail to choose the right overload
-                    MatchMethodGroup(method, newGroup, project);
+                    MatchMethodGroup(method, newGroup, project, ref rootMethod);
                 }
                 else
                 {
                     foreach (var baseType in baseNodes)
                     {
-                        baseType.MatchMethodGroup(method, newGroup, project);
+                        baseType.MatchMethodGroup(method, newGroup, project, ref rootMethod);
                     }
                 }
 
-                if (newGroup.Methods.Count > 1)
+                // Mark external methods declared in a base class outside the scanned class hierarchy
+                if (rootMethod == null && !newGroup.External && method.IsVirtual && method.IsReuseSlot && !method.IsSpecialName)
+                {
+                    newGroup.External = true;
+                }
+
+                if (newGroup.Methods.Count > 1 || newGroup.External)
                 {
                     groups.Add(newGroup);
                 }
@@ -170,7 +177,7 @@ namespace Obfuscar
             }
         }
 
-        private void MatchMethodGroup(MethodDefinition method, MethodGroup newGroup, Project project)
+        private void MatchMethodGroup(MethodDefinition method, MethodGroup newGroup, Project project, ref MethodDefinition rootMethod)
         {
             foreach (var baseMethod in type.TypeDefinition.Methods)
             {
@@ -179,11 +186,13 @@ namespace Obfuscar
                 {
                     newGroup.Methods.Add(new MethodKey(baseMethod));
                     newGroup.External |= !project.Contains(type);
+                    if (baseMethod.IsNewSlot)
+                        rootMethod = baseMethod;
                 }
             }
             // Add base type methods recursively as the method might override something further up the hierarchy
             foreach (var baseType in baseNodes)
-                baseType.MatchMethodGroup(method, newGroup, project);
+                baseType.MatchMethodGroup(method, newGroup, project, ref rootMethod);
         }
 
         internal TypeKey[] GetBaseTypes()
