@@ -25,11 +25,13 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Mono.Cecil;
 
 namespace Obfuscar
 {
+    [DebuggerDisplay("{type}")]
     class GraphNode
     {
         private TypeKey type;

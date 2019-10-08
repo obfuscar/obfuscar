@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -113,20 +113,28 @@ namespace ObfuscarTests
             AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(item.Project.Settings.OutPath, assmName));
             {
-                TypeDefinition classCType = inAssmDef.MainModule.GetType("TestClasses.C");
-                MethodDefinition method = FindMethodByName(classCType, "Method");
-                PropertyDefinition property1 = FindPropertyByName(classCType, "TestClasses.A.Property");
-                PropertyDefinition property2 = FindPropertyByName(classCType, "TestClasses.B.Property");
+                TypeDefinition classDType = inAssmDef.MainModule.GetType("TestClasses.D");
+                MethodDefinition method1 = FindMethodByName(classDType, "Method");
+                MethodDefinition method2 = FindMethodByName(classDType, "TestClasses.C<System.Int32>.Method");
+                PropertyDefinition property1 = FindPropertyByName(classDType, "TestClasses.A.Property");
+                PropertyDefinition property2 = FindPropertyByName(classDType, "TestClasses.B.Property");
+                PropertyDefinition property3 = FindPropertyByName(classDType, "TestClasses.C<System.Int32>.Property");
 
-                ObfuscatedThing methodEntry = map.GetMethod(new MethodKey(method));
-                ObfuscatedThing property1Entry = map.GetProperty(new PropertyKey(new TypeKey(classCType), property1));
-                ObfuscatedThing property2Entry = map.GetProperty(new PropertyKey(new TypeKey(classCType), property2));
+                ObfuscatedThing method1Entry = map.GetMethod(new MethodKey(method1));
+                ObfuscatedThing method2Entry = map.GetMethod(new MethodKey(method2));
+                ObfuscatedThing property1Entry = map.GetProperty(new PropertyKey(new TypeKey(classDType), property1));
+                ObfuscatedThing property2Entry = map.GetProperty(new PropertyKey(new TypeKey(classDType), property2));
+                ObfuscatedThing property3Entry = map.GetProperty(new PropertyKey(new TypeKey(classDType), property3));
 
-                Assert.True(methodEntry.Status == ObfuscationStatus.Skipped, "public interface method should not be obfuscated.");
+                Assert.True(method1Entry.Status == ObfuscationStatus.Skipped, "public interface method should not be obfuscated.");
+
+                Assert.True(method2Entry.Status == ObfuscationStatus.Skipped, "generic public interface method should not be obfuscated.");
 
                 Assert.True(property1Entry.Status == ObfuscationStatus.Skipped, "public interface property should not be obfuscated.");
 
                 Assert.True(property2Entry.Status == ObfuscationStatus.Renamed, "internal interface property should be obfuscated.");
+
+                Assert.True(property3Entry.Status == ObfuscationStatus.Skipped, "generic public interface property should not be obfuscated.");
             }
         }
 
