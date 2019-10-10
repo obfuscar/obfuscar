@@ -145,14 +145,14 @@ namespace Obfuscar
             //if (!candidate.IsVirtual)
             //    return false;
 
+            if (candidate.Parameters.Count != method.Parameters.Count)
+                return false;
+
             var expandedName = $"{candidate.DeclaringType.FullName}.{candidate.Name}";
             if (candidate.Name != method.Name && expandedName != ToGenerelGenericMemberName(method.Name))
                 return false;
 
             if (!TypeMatch(candidate.ReturnType, method.ReturnType))
-                return false;
-
-            if (candidate.Parameters.Count != method.Parameters.Count)
                 return false;
 
             for (int i = 0; i < candidate.Parameters.Count; i++)
