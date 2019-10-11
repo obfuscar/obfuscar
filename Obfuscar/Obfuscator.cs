@@ -1160,7 +1160,7 @@ namespace Obfuscar
                 }
                 if (Project.InheritMap.GetMethodGroup(methodKey) == null ||
                     !method.Parameters.Any(p => p.ParameterType is GenericParameter))
-                return;
+                    return;
 
                 // If the method has generic arguments we need to group it with overloads in the same class so they are renamed the same
                 // way, otherwise the call site updating may fail to choose the right overload. Therefore we continue as if it was virtual.
@@ -1193,12 +1193,6 @@ namespace Obfuscar
             if (groupName == null)
             {
                 // group is not yet named
-
-                // counts are grouping according to signature
-                ParamSig sig = new ParamSig(method);
-
-                // get name groups for classes in the group
-                NameGroup[] nameGroups = GetNameGroups(baseSigNames, @group.Methods, sig);
 
                 if (@group.External)
                 {
@@ -1234,6 +1228,12 @@ namespace Obfuscar
                 }
                 else
                 {
+                    // counts are grouping according to signature
+                    ParamSig sig = new ParamSig(method, true);
+
+                    // get name groups for classes in the group
+                    NameGroup[] nameGroups = GetNameGroups(baseSigNames, @group.Methods, sig);
+
                     // for an internal group, get next unused name
                     groupName = NameGroup.GetNext(nameGroups);
                     @group.Name = groupName;
@@ -1344,7 +1344,7 @@ namespace Obfuscar
         private string GetNewName(Dictionary<ParamSig, NameGroup> sigNames, MethodDefinition method)
         {
             // counts are grouping according to signature
-            ParamSig sig = new ParamSig(method);
+            ParamSig sig = new ParamSig(method, true);
 
             NameGroup nameGroup = GetNameGroup(sigNames, sig);
 
