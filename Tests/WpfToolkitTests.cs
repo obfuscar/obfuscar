@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -89,7 +89,7 @@ namespace ObfuscarTests
             TypeDefinition classBType = inAssmDef.MainModule.GetType("System.Windows.Controls.DataVisualization.Charting.AreaDataPoint");
             var type2 = map.GetClass(new TypeKey(classBType));
             Assert.True(type2.Status == ObfuscationStatus.Skipped, "chart type should have been skipped");
-            Assert.Equal("filtered by BAML", type2.StatusText);
+            Assert.Equal("filtered by BAML/INotifyPropertyChanged", type2.StatusText);
         }
     }
 }

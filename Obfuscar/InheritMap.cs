@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -64,39 +64,51 @@ namespace Obfuscar
             //    nodes.Remove(item);
             //}
 
-            var groups = new List<MethodGroup>();
+            var methods = new List<MethodGroup>();
             var properties = new List<PropertyGroup>();
             foreach (var node in nodes)
             {
-                node.Value.FillMethodGroup(groups, Project);
+                node.Value.FillMethodGroup(methods, Project);
                 node.Value.FillPropertyGroup(properties, Project);
             }
 
-            foreach (var group in groups)
+            // Merge overlapping method groups
+            foreach (var group in methods)
             {
+                MethodGroup mergeGroup = null;
                 foreach (var item in group.Methods)
                 {
-                    if (methodGroups.ContainsKey(item))
+                    if (methodGroups.TryGetValue(item, out mergeGroup))
                     {
-                        methodGroups[item].Merge(group);
-                        continue;
+                        mergeGroup.Merge(group);
+                        break;
                     }
-
-                    methodGroups.Add(item, group);
+                }
+                if (mergeGroup == null)
+                    mergeGroup = group;
+                foreach (var item in group.Methods)
+                {
+                    methodGroups[item] = mergeGroup;
                 }
             }
 
+            // Merge overlapping property groups
             foreach (var group in properties)
             {
+                PropertyGroup mergeGroup = null;
                 foreach (var item in group.Properties)
                 {
-                    if (propertyGroups.ContainsKey(item))
+                    if (propertyGroups.TryGetValue(item, out mergeGroup))
                     {
-                        propertyGroups[item].Merge(group);
-                        continue;
+                        mergeGroup.Merge(group);
+                        break;
                     }
-
-                    propertyGroups.Add(item, group);
+                }
+                if (mergeGroup == null)
+                    mergeGroup = group;
+                foreach (var item in group.Properties)
+                {
+                    propertyGroups[item] = mergeGroup;
                 }
             }
         }
@@ -105,12 +117,14 @@ namespace Obfuscar
 
         public MethodGroup GetMethodGroup(MethodKey methodKey)
         {
-            return methodGroups.ContainsKey(methodKey) ? methodGroups[methodKey] : null;
+            methodGroups.TryGetValue(methodKey, out var result);
+            return result;
         }
 
         public PropertyGroup GetPropertyGroup(PropertyKey propertyKey)
         {
-            return propertyGroups.ContainsKey(propertyKey) ? propertyGroups[propertyKey] : null;
+            propertyGroups.TryGetValue(propertyKey, out var result);
+            return result;
         }
 
         public bool Inherits(TypeDefinition type, string interfaceFullName)

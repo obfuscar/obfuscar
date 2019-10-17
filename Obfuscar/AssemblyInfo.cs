@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -798,7 +798,7 @@ namespace Obfuscar
 
             if (forceTypes.IsMatch(type, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({type})";
                 return false;
             }
 
@@ -808,9 +808,16 @@ namespace Obfuscar
                 return false;
             }
 
+            if (type.TypeDefinition.BaseType?.FullName == "System.Windows.Controls.DataTemplateSelector")
+            {
+                // Mono.Cecil should find this type in the BAML so it would be excluded, but for some reason it doesn't
+                message = $"DataTemplateSelector";
+                return true;
+            }
+
             if (skipTypes.IsMatch(type, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({type})";
                 return true;
             }
 
@@ -892,7 +899,7 @@ namespace Obfuscar
 
             if (ShouldForce(method.TypeKey, TypeAffectFlags.AffectMethod, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({method.TypeKey})";
                 return false;
             }
 
@@ -904,7 +911,7 @@ namespace Obfuscar
 
             if (ShouldSkip(method.TypeKey, TypeAffectFlags.AffectMethod, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({method.TypeKey})";
                 return true;
             }
 
@@ -948,13 +955,19 @@ namespace Obfuscar
             return !projectHideStrings;
         }
 
-        public bool ShouldSkip(FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
+        public bool ShouldSkip(FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly, bool typeInXaml,
             out string message)
         {
             // skip runtime methods
             if ((field.Field.IsRuntimeSpecialName && field.Field.Name == "value__"))
             {
                 message = "special name";
+                return true;
+            }
+
+            if (field.Type == "System.Windows.DependencyProperty")
+            {
+                message = "DependencyProperty";
                 return true;
             }
 
@@ -980,7 +993,7 @@ namespace Obfuscar
 
             if (ShouldForce(field.TypeKey, TypeAffectFlags.AffectField, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({field.TypeKey})";
                 return false;
             }
 
@@ -990,9 +1003,21 @@ namespace Obfuscar
                 return false;
             }
 
+            if (typeInXaml && field.Field.IsPublic())
+            {
+                message = "filtered by BAML/INotifyPropertyChanged";
+                return true;
+            }
+
+            if (field.DeclaringType.BaseType?.FullName == "System.Attribute")
+            {
+                message = "declaring type is an Attribute";
+                return true;
+            }
+
             if (ShouldSkip(field.TypeKey, TypeAffectFlags.AffectField, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({field.TypeKey})";
                 return true;
             }
 
@@ -1018,7 +1043,7 @@ namespace Obfuscar
             return !hidePrivateApi;
         }
 
-        public bool ShouldSkip(PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
+        public bool ShouldSkip(PropertyKey prop, bool typeInXaml, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
             bool markedOnly, out string message)
         {
             if (prop.Property.IsRuntimeSpecialName)
@@ -1049,7 +1074,7 @@ namespace Obfuscar
 
             if (ShouldForce(prop.TypeKey, TypeAffectFlags.AffectProperty, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({prop.TypeKey})";
                 return false;
             }
 
@@ -1061,13 +1086,32 @@ namespace Obfuscar
 
             if (ShouldSkip(prop.TypeKey, TypeAffectFlags.AffectProperty, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({prop.TypeKey})";
                 return true;
             }
 
             if (skipProperties.IsMatch(prop, map))
             {
                 message = "property rule in configuration";
+                return true;
+            }
+
+            if (typeInXaml && prop.Property.IsPublic())
+            {
+                message = "filtered by BAML";
+                return true;
+            }
+
+            if (prop.Property.IsPublic() && prop.DeclaringType.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged"))
+            {
+                message = "declaring type implements INotifyPropertyChanged";
+                return true;
+            }
+
+            if (prop.Type == "System.Windows.DataTemplate" &&
+                prop.DeclaringType.BaseType?.FullName == "System.Windows.Controls.DataTemplateSelector")
+            {
+                message = "DataTemplateSelector/DataTemplate";
                 return true;
             }
 
@@ -1118,7 +1162,7 @@ namespace Obfuscar
 
             if (ShouldForce(evt.TypeKey, TypeAffectFlags.AffectEvent, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({evt.TypeKey})";
                 return false;
             }
 
@@ -1130,7 +1174,7 @@ namespace Obfuscar
 
             if (ShouldSkip(evt.TypeKey, TypeAffectFlags.AffectEvent, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({evt.TypeKey})";
                 return true;
             }
 

@@ -110,5 +110,18 @@ namespace Obfuscar.Helpers
 
             return false;
         }
+
+        public static bool ImplementsInterface(this TypeDefinition type, string interfaceName)
+        {
+            while (type != null)
+            {
+                if (type.Interfaces.Any(i => i.InterfaceType.FullName == interfaceName))
+                {
+                    return true;
+                }
+                type = type.BaseType?.Resolve();
+            }
+            return false;
+        }
     }
 }

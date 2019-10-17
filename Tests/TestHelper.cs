@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,6 +29,7 @@ using System.IO;
 using System.CodeDom.Compiler;
 using Xunit;
 using System.Text;
+using System.Collections.Generic;
 
 namespace ObfuscarTests
 {
@@ -66,6 +67,7 @@ namespace ObfuscarTests
             Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider();
 
             CompilerParameters cp = new CompilerParameters();
+            cp.ReferencedAssemblies.Add("System.dll");
             cp.GenerateExecutable = false;
             cp.GenerateInMemory = false;
             cp.TreatWarningsAsErrors = treatWarningsAsErrors;
@@ -105,12 +107,13 @@ namespace ObfuscarTests
 
             if (hideStrings)
                 obfuscator.HideStrings();
-            obfuscator.RenameFields();
+            var namesInXaml = obfuscator.CollectTypesFromXaml();
+            obfuscator.RenameFields(namesInXaml);
             obfuscator.RenameParams();
-            obfuscator.RenameProperties();
+            obfuscator.RenameProperties(namesInXaml);
             obfuscator.RenameEvents();
             obfuscator.RenameMethods();
-            obfuscator.RenameTypes();
+            obfuscator.RenameTypes(namesInXaml);
             obfuscator.PostProcessing();
             obfuscator.SaveAssemblies(true);
 

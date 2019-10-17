@@ -35,7 +35,7 @@ namespace Obfuscar
         public PropertyKey(TypeKey typeKey, PropertyDefinition prop)
         {
             this.TypeKey = typeKey;
-            this.Type = prop.PropertyType.GetGenericFullName();
+            this.Type = prop.PropertyType.FullName;
             this.Name = prop.Name;
             this.Property = prop;
         }

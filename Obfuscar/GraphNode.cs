@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,10 +25,13 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using Mono.Cecil;
 
 namespace Obfuscar
 {
+    [DebuggerDisplay("{type}")]
     class GraphNode
     {
         private TypeKey type;
@@ -73,7 +76,7 @@ namespace Obfuscar
             foreach (var ifaceRef in type.Interfaces)
             {
                 TypeDefinition iface = project.GetTypeDefinition(ifaceRef.InterfaceType);
-                
+
                 // if it's not in the project, try to get it via the cache
                 if (iface == null)
                     iface = project.Cache.GetTypeDefinition(ifaceRef.InterfaceType);
@@ -86,12 +89,12 @@ namespace Obfuscar
 
             // check the base type unless it isn't in the project, or we don't have one
             TypeDefinition baseType = project.GetTypeDefinition(type.BaseType);
-            
+
             // if it's not in the project, try to get it via the cache
             if (baseType == null)
                 baseType = project.Cache.GetTypeDefinition(type.BaseType);
 
-            if (baseType != null && baseType.FullName != "System.Object")
+            if (baseType != null)
             {
                 result.Add(new TypeKey(baseType));
             }
@@ -131,12 +134,28 @@ namespace Obfuscar
 
                 var newGroup = new MethodGroup();
                 newGroup.Methods.Add(new MethodKey(method));
-                foreach (var baseType in baseNodes)
+                MethodDefinition rootMethod = null;
+                if (method.Parameters.Any(p => p.ParameterType is GenericParameter))
                 {
-                    baseType.MatchMethodGroup(method, newGroup, project);
+                    // If the method has generic arguments we need to group it with overloads in the same class so they are renamed the same
+                    // way, otherwise the call site updating may fail to choose the right overload
+                    MatchMethodGroup(method, newGroup, project, ref rootMethod);
+                }
+                else
+                {
+                    foreach (var baseType in baseNodes)
+                    {
+                        baseType.MatchMethodGroup(method, newGroup, project, ref rootMethod);
+                    }
                 }
 
-                if (newGroup.Methods.Count > 1)
+                // Mark external methods declared in a base class outside the scanned class hierarchy
+                if (rootMethod == null && !newGroup.External && method.IsVirtual && method.IsReuseSlot && !method.IsSpecialName)
+                {
+                    newGroup.External = true;
+                }
+
+                if (newGroup.Methods.Count > 1 || newGroup.External)
                 {
                     groups.Add(newGroup);
                 }
@@ -160,17 +179,22 @@ namespace Obfuscar
             }
         }
 
-        private void MatchMethodGroup(MethodDefinition method, MethodGroup newGroup, Project project)
+        private void MatchMethodGroup(MethodDefinition method, MethodGroup newGroup, Project project, ref MethodDefinition rootMethod)
         {
             foreach (var baseMethod in type.TypeDefinition.Methods)
             {
-                if (MethodKey.MethodMatch(baseMethod, method) 
+                if (MethodKey.MethodMatch(baseMethod, method)
                     || MethodKey.MethodMatch(method, baseMethod))
                 {
                     newGroup.Methods.Add(new MethodKey(baseMethod));
                     newGroup.External |= !project.Contains(type);
+                    if (baseMethod.IsNewSlot)
+                        rootMethod = baseMethod;
                 }
             }
+            // Add base type methods recursively as the method might override something further up the hierarchy
+            foreach (var baseType in baseNodes)
+                baseType.MatchMethodGroup(method, newGroup, project, ref rootMethod);
         }
 
         internal TypeKey[] GetBaseTypes()
@@ -220,6 +244,9 @@ namespace Obfuscar
                     newGroup.External |= !project.Contains(type);
                 }
             }
+            // Add base type properties recursively as the property might override something further up the hierarchy
+            foreach (var baseType in baseNodes)
+                baseType.MatchPropertyGroup(property, newGroup, project);
         }
     }
 }
