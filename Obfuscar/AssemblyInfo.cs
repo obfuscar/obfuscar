@@ -427,10 +427,6 @@ namespace Obfuscar
                 {
                     var node = new Node<TypeDefinition> {Item = item};
                     Root.Add(node);
-                    if (_map.ContainsKey(item.FullName))
-                    {
-                        Console.WriteLine(item.FullName );
-                    }
                     _map.Add(item.FullName, node);
                 }
 
