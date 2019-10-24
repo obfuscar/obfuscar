@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.10.4" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.0" />
     <PackageReference Include="Rollbar" Version="3.2.0" />
     <PackageReference Include="System.Runtime.Caching" Version="4.5.0" />
   </ItemGroup>
