@@ -272,7 +272,10 @@ namespace Obfuscar
 
         public XmlMapWriter(TextWriter writer)
         {
-            this.writer = new XmlTextWriter(writer);
+            this.writer = new XmlTextWriter(writer)
+            {
+                Formatting = Formatting.Indented,
+            };
         }
 
         public void WriteMap(ObfuscationMap map)
@@ -287,7 +290,6 @@ namespace Obfuscar
                     DumpClass(classInfo);
             }
             writer.WriteEndElement();
-            writer.WriteString("\r\n");
 
             writer.WriteStartElement("skippedTypes");
 
@@ -298,7 +300,6 @@ namespace Obfuscar
                     DumpClass(classInfo);
             }
             writer.WriteEndElement();
-            writer.WriteString("\r\n");
 
             writer.WriteStartElement("renamedResources");
 
@@ -314,7 +315,6 @@ namespace Obfuscar
             }
 
             writer.WriteEndElement();
-            writer.WriteString("\r\n");
 
             writer.WriteStartElement("skippedResources");
 
@@ -329,9 +329,7 @@ namespace Obfuscar
                 }
             }
             writer.WriteEndElement();
-            writer.WriteString("\r\n");
             writer.WriteEndElement();
-            writer.WriteString("\r\n");
         }
 
         private void DumpClass(ObfuscatedClass classInfo)
@@ -418,7 +416,6 @@ namespace Obfuscar
             }
 
             writer.WriteEndElement();
-            writer.WriteString("\r\n");
         }
 
         private void DumpMethod(MethodKey key, ObfuscatedThing info)
@@ -441,7 +438,6 @@ namespace Obfuscar
                 writer.WriteAttributeString("oldName", sb.ToString());
                 writer.WriteAttributeString("newName", info.StatusText);
                 writer.WriteEndElement();
-                writer.WriteString("\r\n");
             }
             else
             {
@@ -449,7 +445,6 @@ namespace Obfuscar
                 writer.WriteAttributeString("name", sb.ToString());
                 writer.WriteAttributeString("reason", info.StatusText);
                 writer.WriteEndElement();
-                writer.WriteString("\r\n");
             }
         }
 
@@ -461,7 +456,6 @@ namespace Obfuscar
                 writer.WriteAttributeString("oldName", info.Name);
                 writer.WriteAttributeString("newName", info.StatusText);
                 writer.WriteEndElement();
-                writer.WriteString("\r\n");
             }
             else
             {
@@ -469,7 +463,6 @@ namespace Obfuscar
                 writer.WriteAttributeString("name", info.Name);
                 writer.WriteAttributeString("reason", info.StatusText);
                 writer.WriteEndElement();
-                writer.WriteString("\r\n");
             }
         }
 
@@ -481,7 +474,6 @@ namespace Obfuscar
                 writer.WriteAttributeString("oldName", info.Name);
                 writer.WriteAttributeString("newName", info.StatusText);
                 writer.WriteEndElement();
-                writer.WriteString("\r\n");
             }
             else
             {
@@ -489,7 +481,6 @@ namespace Obfuscar
                 writer.WriteAttributeString("name", info.Name);
                 writer.WriteAttributeString("reason", info.StatusText);
                 writer.WriteEndElement();
-                writer.WriteString("\r\n");
             }
         }
 
@@ -501,7 +492,6 @@ namespace Obfuscar
                 writer.WriteAttributeString("oldName", info.Name);
                 writer.WriteAttributeString("newName", info.StatusText);
                 writer.WriteEndElement();
-                writer.WriteString("\r\n");
             }
             else
             {
@@ -509,7 +499,6 @@ namespace Obfuscar
                 writer.WriteAttributeString("name", info.Name);
                 writer.WriteAttributeString("reason", info.StatusText);
                 writer.WriteEndElement();
-                writer.WriteString("\r\n");
             }
         }
 
