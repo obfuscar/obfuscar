@@ -618,7 +618,8 @@ namespace Obfuscar
                     return false;
                 }
 
-                //return !(memberref is CallSite); // Is never true
+                return true;
+                //return !(memberref is CallSite); // Is never CallSite
             }
 
             return false;
