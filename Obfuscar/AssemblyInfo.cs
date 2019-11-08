@@ -853,6 +853,17 @@ namespace Obfuscar
                 return true;
             }
 
+            if (method.Name.StartsWith("Set") || method.Name.StartsWith("Get")) // Check if dependency property accessor
+            {
+                var propertyName = method.Name.Substring(3);
+                if (method.DeclaringType.Fields.Any(f => f.FieldType.FullName == "System.Windows.DependencyProperty" &&
+                    f.Name.Contains(propertyName)))
+                {
+                    message = "DependencyProperty accessor";
+                    return true;
+                }
+            }
+
             if (method.Method.IsSpecialName)
             {
                 switch (method.Method.SemanticsAttributes)
