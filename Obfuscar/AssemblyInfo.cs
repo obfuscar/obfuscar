@@ -816,6 +816,14 @@ namespace Obfuscar
                 return true;
             }
 
+            if (type.TypeDefinition.CustomAttributes.Any(a =>
+                a.AttributeType.FullName == "System.Runtime.Serialization.DataContractAttribute" &&
+                a.Properties.All(p => p.Name != "Name")))
+            {
+                message = "unnamed DataContract";
+                return true;
+            }
+
             if (skipTypes.IsMatch(type, map))
             {
                 message = $"type rule in configuration ({type})";
@@ -1045,6 +1053,13 @@ namespace Obfuscar
                 return true;
             }
 
+            if (field.Field.CustomAttributes.Any(a => a.AttributeType.FullName == "System.Runtime.Serialization.DataMemberAttribute" &&
+                a.Properties.All(p => p.Name != "Name")))
+            {
+                message = "unnamed DataMember";
+                return true;
+            }
+
             if (field.Field.IsPublic() && field.DeclaringType.IsTypePublic())
             {
                 message = "KeepPublicApi option in configuration";
@@ -1124,6 +1139,13 @@ namespace Obfuscar
                 prop.DeclaringType.BaseType?.FullName == "System.Windows.Controls.DataTemplateSelector")
             {
                 message = "DataTemplateSelector/DataTemplate";
+                return true;
+            }
+
+            if (prop.Property.CustomAttributes.Any(a => a.AttributeType.FullName == "System.Runtime.Serialization.DataMemberAttribute" &&
+                a.Properties.All(p => p.Name != "Name")))
+            {
+                message = "unnamed DataMember";
                 return true;
             }
 
