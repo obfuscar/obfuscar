@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -81,11 +81,11 @@ namespace ObfuscarTests
             AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(TestHelper.InputPath, "FSharp.Compiler.dll"));
             {
-                TypeDefinition classAType =
-                    inAssmDef.MainModule.GetType("Microsoft.FSharp.Compiler.AbstractIL.IL/ldargs@2513");
+                TypeDefinition classAType = inAssmDef.MainModule.GetType("Microsoft.FSharp.Compiler.AbstractIL.IL");
                 var type = map.GetClass(new TypeKey(classAType));
                 Assert.True(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
 
+                classAType = inAssmDef.MainModule.GetType("Microsoft.FSharp.Compiler.AbstractIL.IL/ldargs@2513");
                 var method1 = FindByFullName(classAType,
                     "System.Int32 Microsoft.FSharp.Compiler.AbstractIL.IL/ldargs@2513::GenerateNext(System.Collections.Generic.IEnumerable`1<Microsoft.FSharp.Compiler.AbstractIL.IL/ILInstr>&)");
                 var m1 = map.GetMethod(new MethodKey(method1));

@@ -816,6 +816,13 @@ namespace Obfuscar
                 return true;
             }
 
+            // Exclude Serializable classes. For some reason all static classes have IsSerializable set so we need to ignore those.
+            if (type.TypeDefinition.IsSerializable && type.TypeDefinition.Fields.Any(f => !f.IsStatic))
+            {
+                message = "Serializable";
+                return true;
+            }
+
             if (type.TypeDefinition.CustomAttributes.Any(a =>
                 a.AttributeType.FullName == "System.Runtime.Serialization.DataContractAttribute" &&
                 a.Properties.All(p => p.Name != "Name")))
@@ -1050,6 +1057,14 @@ namespace Obfuscar
             if (skipEnums && field.DeclaringType.IsEnum)
             {
                 message = "enum rule in configuration";
+                return true;
+            }
+
+            // Exclude serializable field
+            if (!field.Field.IsStatic && !field.Field.IsNotSerialized && field.DeclaringType.IsSerializable &&
+                field.Field.CustomAttributes.All(a => a.AttributeType.FullName != "System.Runtime.CompilerServices.CompilerGeneratedAttribute"))
+            {
+                message = "declaring type is Serializable";
                 return true;
             }
 

@@ -930,6 +930,10 @@ namespace Obfuscar
                 m.Update(ObfuscationStatus.Skipped, "public setter of a custom attribute");
                 // no problem when the getter or setter methods are renamed by RenameMethods()
             }
+            else if (prop.DeclaringType.IsSerializable)
+            {
+                m.Update(ObfuscationStatus.Skipped, "declaring type is Serializable");
+            }
             else if (prop.CustomAttributes.Count > 0)
             {
                 // If a property has custom attributes we don't remove the property but rename it instead.
