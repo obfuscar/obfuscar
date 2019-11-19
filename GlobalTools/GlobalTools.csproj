@@ -22,8 +22,8 @@
     <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2019 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
     <RepositoryType>git</RepositoryType>
     <PackageTags>obfuscar,obfuscation</PackageTags>
-    <AssemblyVersion>2.2.25.0</AssemblyVersion>
-    <FileVersion>2.2.25.0</FileVersion>
+    <AssemblyVersion>2.2.26.0</AssemblyVersion>
+    <FileVersion>2.2.26.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
