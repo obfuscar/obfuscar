@@ -1,6 +1,7 @@
 mode: ContinuousDeployment
 branches:
-  threeshape.obfuscar:
+  ThreeShape.Obfuscar:
+    regex: ^ThreeShape\.Obfuscar
     tag: beta
     mode: ContinuousDeployment
     increment: Minor
