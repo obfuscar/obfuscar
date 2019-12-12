@@ -1,0 +1,11 @@
+mode: ContinuousDeployment
+branches:
+  threeshape.obfuscar:
+    tag: beta
+    mode: ContinuousDeployment
+    increment: Minor
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: true
+    tracks-release-branches: true
+ignore:
+  sha: []
