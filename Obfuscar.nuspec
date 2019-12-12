@@ -6,8 +6,8 @@
 		<owners>Lex Li</owners>
 		<licenseUrl>https://github.com/obfuscar/obfuscar/blob/master/LICENSE</licenseUrl>
 		<projectUrl>https://www.obfuscar.com</projectUrl>
-		<id>Threeshape.Obfuscar</id>
-		<title>Threeshape.Obfuscar</title>
+		<id>ThreeShape.Obfuscar</id>
+		<title>ThreeShape.Obfuscar</title>
 		<iconUrl>https://github.com/obfuscar/obfuscar/raw/master/Potion-icon.png</iconUrl>
 		<requireLicenseAcceptance>true</requireLicenseAcceptance>
 		<description>Obfuscar is a basic obfuscator for .NET assemblies. It uses massive overloading to rename metadata in .NET assemblies (including the names of methods, properties, events, fields, types and namespaces) to a minimal set, distinguishable in most cases only by signature.</description>
