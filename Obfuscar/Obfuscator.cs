@@ -413,7 +413,9 @@ namespace Obfuscar
             string skip;
             if (info.ShouldSkip(fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi,
                 Project.Settings.HidePrivateApi,
-                Project.Settings.MarkedOnly, out skip))
+                Project.Settings.MarkedOnly,
+                Project.Settings.SkipSerializableTypes,
+                out skip))
             {
                 Mapping.UpdateField(fieldKey, ObfuscationStatus.Skipped, skip);
                 nameGroup.Add(fieldKey.Name);
@@ -478,7 +480,7 @@ namespace Obfuscar
                     string skip;
                     // rename the class parameters
                     if (info.ShouldSkip(new TypeKey(type), Project.InheritMap, Project.Settings.KeepPublicApi,
-                        Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
+                        Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, Project.Settings.SkipSerializableTypes, out skip))
                         continue;
 
                     int index = 0;
@@ -544,7 +546,7 @@ namespace Obfuscar
 
                     string skip;
                     if (info.ShouldSkip(unrenamedTypeKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                        Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
+                        Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, Project.Settings.SkipSerializableTypes, out skip))
                     {
                         Mapping.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, skip);
 
@@ -863,7 +865,9 @@ namespace Obfuscar
             // skip filtered props
             if (info.ShouldSkip(propKey, Project.InheritMap, Project.Settings.KeepPublicApi,
                 Project.Settings.HidePrivateApi,
-                Project.Settings.MarkedOnly, out skip))
+                Project.Settings.MarkedOnly,
+                Project.Settings.SkipSerializableTypes,
+                out skip))
             {
                 m.Update(ObfuscationStatus.Skipped, skip);
 

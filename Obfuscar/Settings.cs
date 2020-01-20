@@ -41,6 +41,7 @@ namespace Obfuscar
             RenameFields = XmlConvert.ToBoolean(vars.GetValue("RenameFields", "true"));
             RenameProperties = XmlConvert.ToBoolean(vars.GetValue("RenameProperties", "true"));
             RenameEvents = XmlConvert.ToBoolean(vars.GetValue("RenameEvents", "true"));
+            SkipSerializableTypes = XmlConvert.ToBoolean(vars.GetValue("SkipSerializableTypes", "false"));
             KeepPublicApi = XmlConvert.ToBoolean(vars.GetValue("KeepPublicApi", "true"));
             HidePrivateApi = XmlConvert.ToBoolean(vars.GetValue("HidePrivateApi", "true"));
             ReuseNames = XmlConvert.ToBoolean(vars.GetValue("ReuseNames", "true"));
@@ -69,6 +70,8 @@ namespace Obfuscar
         public bool RenameProperties { get; }
 
         public bool RenameEvents { get; }
+
+        public bool SkipSerializableTypes { get; }
 
         public bool KeepPublicApi { get; }
 
