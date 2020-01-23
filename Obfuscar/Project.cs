@@ -198,16 +198,18 @@ namespace Obfuscar
             var modules = reader.Elements("Module");
             foreach (var module in modules)
             {
-                AssemblyInfo info = AssemblyInfo.FromXml(project, module, project.vars);
-                if (info.Exclude)
+                foreach (var info in AssemblyInfo.FromXml(project, module, project.vars))
                 {
-                    project.CopyAssemblyList.Add(info);
-                    break;
-                }
+                    if (info.Exclude)
+                    {
+                        project.CopyAssemblyList.Add(info);
+                        break;
+                    }
 
-                Console.WriteLine("Processing assembly: " + info.Definition.Name.FullName);
-                project.AssemblyList.Add(info);
-                project.assemblyMap[info.Name] = info;
+                    Console.WriteLine("Processing assembly: " + info.Definition.Name.FullName);
+                    project.AssemblyList.Add(info);
+                    project.assemblyMap[info.Name] = info;
+                }
             }
         }
 
