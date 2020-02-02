@@ -10,13 +10,11 @@ namespace Obfuscar
 {
     internal class Filter : IEnumerable<string>
     {
-        private static readonly Regex _patternRegex = new Regex(@"(?<sign>[\+\-])\[(?<pattern>(?>\[(?<c>)|[^\[\]]+|\](?<-c>))*(?(c)(?!)))\]", RegexOptions.Compiled);
-        private static readonly char[] signs = new[] { '+', '-' };
         private static readonly char[] directorySeparators = new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
         private readonly IList<string> inclusions, exclusions;
         private readonly string path;
 
-        private Filter(string path, IList<string> inclusions, IList<string> exclusions)
+        public Filter(string path, IList<string> inclusions, IList<string> exclusions)
         {
             if (string.IsNullOrEmpty(path))
             {
@@ -26,30 +24,6 @@ namespace Obfuscar
             this.path = path;
             this.inclusions = inclusions ?? throw new ArgumentNullException(nameof(inclusions));
             this.exclusions = exclusions ?? throw new ArgumentNullException(nameof(exclusions));
-        }
-
-        public static Filter TryGetFilter(string path, string filter)
-        {
-            if ((filter?.IndexOfAny(signs) ?? -1) == -1)
-            {
-                return null;
-            }
-            var matches = _patternRegex.Matches(filter);
-            if (matches.Count == 0)
-            {
-                return null;
-            }
-            var inclusions = new List<string>();
-            var exclusions = new List<string>();
-            foreach (var match in matches.Cast<Match>())
-            {
-                var sign = match.Groups["sign"].Value[0];
-                var list = sign == '+' ? inclusions : exclusions;
-
-                var pattern = match.Groups["pattern"].Value;
-                list.Add(pattern);
-            }
-            return new Filter(path, inclusions, exclusions);
         }
 
         public IEnumerator<string> GetEnumerator() => GetFiles().GetEnumerator();

@@ -167,6 +167,15 @@ namespace Obfuscar
 
         private static void FromXmlReadNode(XElement reader, Project project)
         {
+            ReadVariables(reader, project);
+            ReadIncludeTags(reader, project);
+            ReadAssemblySearchPath(reader, project);
+            ReadModules(reader, project);
+            ReadModuleGroups(reader, project);
+        }
+
+        private static void ReadVariables(XElement reader, Project project)
+        {
             var settings = reader.Elements("Var");
             foreach (var setting in settings)
             {
@@ -180,36 +189,14 @@ namespace Obfuscar
                         project.vars.Remove(name);
                 }
             }
+        }
 
+        private static void ReadIncludeTags(XElement reader, Project project)
+        {
             var includes = reader.Elements("Include");
             foreach (var include in includes)
             {
                 ReadIncludeTag(include, project, FromXmlReadNode);
-            }
-
-            var searchPaths = reader.Elements("AssemblySearchPath");
-            foreach (var searchPath in searchPaths)
-            {
-                string path =
-                    Environment.ExpandEnvironmentVariables(Helper.GetAttribute(searchPath, "path", project.vars));
-                project.assemblySearchPaths.Add(path);
-            }
-
-            var modules = reader.Elements("Module");
-            foreach (var module in modules)
-            {
-                foreach (var info in AssemblyInfo.FromXml(project, module, project.vars))
-                {
-                    if (info.Exclude)
-                    {
-                        project.CopyAssemblyList.Add(info);
-                        break;
-                    }
-
-                    Console.WriteLine("Processing assembly: " + info.Definition.Name.FullName);
-                    project.AssemblyList.Add(info);
-                    project.assemblyMap[info.Name] = info;
-                }
             }
         }
 
@@ -228,6 +215,72 @@ namespace Obfuscar
             if (includeReader.Root.Name == "Include")
             {
                 readAction(includeReader.Root, project);
+            }
+        }
+
+        private static void ReadAssemblySearchPath(XElement reader, Project project)
+        {
+            var searchPaths = reader.Elements("AssemblySearchPath");
+            foreach (var searchPath in searchPaths)
+            {
+                string path =
+                    Environment.ExpandEnvironmentVariables(Helper.GetAttribute(searchPath, "path", project.vars));
+                project.assemblySearchPaths.Add(path);
+            }
+        }
+
+        private static void ReadModules(XElement reader, Project project)
+        {
+            var modules = reader.Elements("Module");
+            foreach (var module in modules)
+            {
+                var file = Helper.GetAttribute(module, "file", project.vars);
+                if (string.IsNullOrWhiteSpace(file))
+                    throw new InvalidOperationException("Need valid file attribute.");
+                ReadModule(file, module, project);
+            }
+        }
+
+        private static void ReadModuleGroups(XElement reader, Project project)
+        {
+            var modules = reader.Elements("Modules");
+            foreach (var module in modules)
+            {
+                var includes = ReadModuleGroupPattern("IncludeFiles", module, project);
+                if (!includes.Any())
+                {
+                    continue;
+                }
+
+                var excludes = ReadModuleGroupPattern("ExcludeFiles", module, project);
+                var filter = new Filter(project.Settings.InPath, includes, excludes);
+                foreach (var file in filter)
+                {
+                    ReadModule(file, module, project);
+                }
+            }
+        }
+
+        private static List<string> ReadModuleGroupPattern(string name, XElement module, Project project)
+        {
+            return (from i in module.Elements(name)
+                    let value = project.vars.Replace(i.Value)
+                    where !string.IsNullOrWhiteSpace(value)
+                    select value).ToList();
+        }
+
+        private static void ReadModule(string file, XElement module, Project project)
+        {
+            var info = AssemblyInfo.FromXml(project, module, file, project.vars);
+            if (info.Exclude)
+            {
+                project.CopyAssemblyList.Add(info);
+            }
+            else
+            {
+                Console.WriteLine("Processing assembly: " + info.Definition.Name.FullName);
+                project.AssemblyList.Add(info);
+                project.assemblyMap[info.Name] = info;
             }
         }
 
