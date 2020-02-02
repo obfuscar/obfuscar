@@ -75,31 +75,12 @@ namespace Obfuscar
             return def.Name.PublicKeyToken.Length != 0;
         }
 
-        public static IEnumerable<AssemblyInfo> FromXml(Project project, XElement reader, Variables vars)
-        {
-            string val = Helper.GetAttribute(reader, "file", vars);
-            if (string.IsNullOrWhiteSpace(val))
-                throw new InvalidOperationException("Need valid file attribute.");
-            var filter = Filter.TryGetFilter(project.Settings.InPath, val);
-            if (filter != null)
-            {
-                foreach (var file in filter)
-                {
-                    yield return FromXml(project, reader, file, vars);
-                }
-            }
-            else
-            {
-                yield return FromXml(project, reader, val, vars);
-            }
-        }
-
-        private static AssemblyInfo FromXml(Project project, XElement reader, string val, Variables vars)
+        public static AssemblyInfo FromXml(Project project, XElement reader, string file, Variables vars)
         {
             AssemblyInfo info = new AssemblyInfo(project);
 
             // pull out the file attribute, but don't process anything empty
-            info.LoadAssembly(val);
+            info.LoadAssembly(file);
 
             string isExcluded = Helper.GetAttribute(reader, "Exclude", vars);
             if ((isExcluded.Length > 0) && (isExcluded.ToLowerInvariant() == "true"))

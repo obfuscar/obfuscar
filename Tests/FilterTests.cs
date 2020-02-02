@@ -11,21 +11,14 @@ namespace ObfuscarTests
 {
     public class FilterTests
     {
-        [Theory]
-        [InlineData("+[XXX]", true)]
-        [InlineData("-[XXX]", true)]
-        [InlineData("+[XXX] -[YYY]", true)]
-        [InlineData("[XXX]", false)]
-        public void IsFilter(string value, bool expected)
-        {
-            Assert.Equal(expected, Filter.TryGetFilter(Environment.CurrentDirectory, value) != null);
-        }
-
         [Fact]
         public void FullPaths()
         {
             // Arrange
-            var sut = Filter.TryGetFilter(Environment.CurrentDirectory, $"+[{Path.Combine(Environment.CurrentDirectory, "*.*")}]");
+            var sut = new Filter(
+                Environment.CurrentDirectory,
+                new[] { Path.Combine(Environment.CurrentDirectory, "*.*") },
+                new string[0]);
 
             // Act
             var files = sut.ToList();
@@ -41,7 +34,10 @@ namespace ObfuscarTests
         {
             // Arrange
             var backAndForthRelativePath = Path.Combine("..", Path.GetFileName(Environment.CurrentDirectory));
-            var sut = Filter.TryGetFilter(".", $"+[{Path.Combine(backAndForthRelativePath, "*.*")}]");
+            var sut = new Filter(
+                Environment.CurrentDirectory,
+                new[] { Path.Combine(backAndForthRelativePath, "*.*") },
+                new string[0]);
 
             // Act
             var files = sut.ToList();
@@ -60,7 +56,10 @@ namespace ObfuscarTests
             var backAndForthRelativePath = Path.Combine("..", Path.GetFileName(Environment.CurrentDirectory));
             var oneFile = expected[0];
             expected.RemoveAt(0);
-            var sut = Filter.TryGetFilter(".", $"+[{Path.Combine(backAndForthRelativePath, "*.*")}] -[{oneFile}]");
+            var sut = new Filter(
+                Environment.CurrentDirectory,
+                new[] { Path.Combine(backAndForthRelativePath, "*.*") },
+                new[] { oneFile });
 
             // Act
             var files = sut.ToList();
