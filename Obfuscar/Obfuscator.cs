@@ -157,17 +157,20 @@ namespace Obfuscar
                 {
                     foreach (FieldDefinition field in type.Fields)
                     {
-                        if (field.IsPublic && field.FieldType.Resolve().IsEnum)
+                        TypeDefinition fieldType;
+                        if (field.IsPublic && (fieldType = field.FieldType.Resolve()) != null && fieldType.IsEnum)
                             namesInXaml.Add(field.FieldType.FullName);
                     }
                     foreach (PropertyDefinition prop in type.Properties)
                     {
-                        if (prop.IsPublic() && prop.PropertyType.Resolve().IsEnum)
+                        TypeDefinition propType;
+                        if (prop.IsPublic() && (propType = prop.PropertyType.Resolve()) != null && propType.IsEnum)
                             namesInXaml.Add(prop.PropertyType.FullName);
                     }
                     foreach (MethodDefinition method in type.Methods)
                     {
-                        if (method.IsPublic() && method.ReturnType.Resolve().IsEnum)
+                        TypeDefinition returnType;
+                        if (method.IsPublic() && (returnType = method.ReturnType.Resolve()) != null && returnType.IsEnum)
                             namesInXaml.Add(method.ReturnType.FullName);
                     }
                 }
