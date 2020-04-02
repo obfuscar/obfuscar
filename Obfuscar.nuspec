@@ -19,7 +19,7 @@
 		<tags>obfuscation,obfuscator,open source</tags>
 	</metadata>
 	<files>
-		<file src="bin\release\obfuscar.console.exe" target="tools" />
+		<file src="bin\release\net45\obfuscar.console.exe" target="tools" />
 		<file src="build\obfuscar.props" target="build" />
 	</files>
 </package>
