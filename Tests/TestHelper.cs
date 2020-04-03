@@ -35,7 +35,7 @@ namespace ObfuscarTests
 {
     static class TestHelper
     {
-        public static string InputPath = Path.Combine("..", "..", "Input");
+        public static string InputPath = Path.Combine("..", "..", "..", "Input");
 
         private static int count;
 
