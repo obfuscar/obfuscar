@@ -1,4 +1,4 @@
-﻿#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
+#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
@@ -24,24 +24,34 @@
 
 #endregion
 
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using System;
+using System.IO;
+using Xunit;
 
-[assembly: InternalsVisibleTo("ObfuscarTest")]
+namespace ObfuscarTest
+{
+    public class CleanPoolTests
+    {
+        internal void BuildAndObfuscateAssemblies()
+        {
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='ReuseNames' value='true' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Module file='$(InPath){2}AssemblyForCleanPoolClass.dll' />" +
+                @"<Module file='$(InPath){2}AssemblyForCleanPoolInterface.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
-// General Information about an assembly is controlled through the following 
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyCopyright("Copyright © Ryan Williams 2007-2010")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+            TestHelper.BuildAndObfuscate(new[] {"AssemblyForCleanPoolInterface", "AssemblyForCleanPoolClass"}, xml);
+        }
 
-// Setting ComVisible to false makes the types in this assembly not visible 
-// to COM components.  If you need to access a type in this assembly from 
-// COM, set the ComVisible attribute to true on that type.
-[assembly: ComVisible(false)]
-
-// The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("7965f23d-515c-4f93-a7a0-76a416ab54af")]
+        [Fact]
+        public void CheckCleanPool()
+        {
+            BuildAndObfuscateAssemblies();
+        }
+    }
+}

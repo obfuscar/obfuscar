@@ -27,9 +27,9 @@ T4MVC.cs
 /lib/sharpsnmplib.snk
 /gendarme
 
-/Tests/Input/*.dll
-/Tests/Input/*.exe
-/Tests/Output
+/ObfuscarTest/Input/*.dll
+/ObfuscarTest/Input/*.exe
+/ObfuscarTest/Output
 /packages
 /Examples/BasicExample/Final
 /Examples/BasicExample/Obfuscator_Input

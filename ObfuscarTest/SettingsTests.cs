@@ -24,24 +24,39 @@
 
 #endregion
 
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using System.IO;
+using Xunit;
 
-[assembly: InternalsVisibleTo("ObfuscarTest")]
+namespace ObfuscarTest
+{
+    public class SettingsTests
+    {
+        [Fact]
+        public void CheckCannotObfuscateSigned()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='OptimizeMethods' value='false' />" +
+                @"<Module file='$(InPath){2}WpfApplication1.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-// General Information about an assembly is controlled through the following 
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyCopyright("Copyright © Ryan Williams 2007-2010")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+            TestHelper.CleanInput();
 
-// Setting ComVisible to false makes the types in this assembly not visible 
-// to COM components.  If you need to access a type in this assembly from 
-// COM, set the ComVisible attribute to true on that type.
-[assembly: ComVisible(false)]
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            string destFileName = Path.Combine(TestHelper.InputPath, "WpfApplication1.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WpfApplication1.dll"),
+                    destFileName, true);
+            }
 
-// The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("7965f23d-515c-4f93-a7a0-76a416ab54af")]
+            var obfuscator = TestHelper.Obfuscate(xml);
+
+            Assert.False(obfuscator.Project.Settings.Optimize);
+        }
+    }
+}
