@@ -209,7 +209,16 @@ namespace Obfuscar
                     string outName = Path.Combine(outPath, fileName);
                     var parameters = new WriterParameters();
                     if (Project.Settings.RegenerateDebugInfo)
-                        parameters.SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider();
+                    {
+                        if (IsOnWindows)
+                        {
+                            parameters.SymbolWriterProvider = new Mono.Cecil.Cil.PortablePdbWriterProvider();
+                        }
+                        else
+                        {
+                            parameters.SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider();
+                        }
+                    }
 
                     if (info.Definition.Name.HasPublicKey)
                     {
@@ -288,6 +297,14 @@ namespace Obfuscar
             }
 
             TypeNameCache.nameCache.Clear();
+        }
+
+        private bool IsOnWindows {
+            get {
+                // https://stackoverflow.com/a/38795621/11182
+                string windir = Environment.GetEnvironmentVariable("windir");
+                return !string.IsNullOrEmpty(windir) && windir.Contains(@"\") && Directory.Exists(windir);
+            }
         }
 
         private void LogMappings(string name)
