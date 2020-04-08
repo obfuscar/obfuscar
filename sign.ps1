@@ -6,7 +6,7 @@ if(!$foundCert)
 }
 
 Write-Host "Certificate found. Sign the assemblies."
-$signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.17134.0\x64\signtool.exe"
+$signtool = (Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" | Where-Object { Test-Path ($_.FullName + "\x64\signtool.exe") } | Select-Object -Last 1).FullName + "\x64\signtool.exe"
 & $signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a .\bin\release\obfuscar.console.exe | Write-Debug
 
 Write-Host "Verify digital signature."

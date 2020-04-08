@@ -12,13 +12,31 @@ catch
     $instance = Get-VSSetupInstance -All | Select-VSSetupInstance -Latest
     $installDir = $instance.installationPath
     $msBuild = $installDir + '\MSBuild\Current\Bin\MSBuild.exe'
-    if (![System.IO.File]::Exists($msBuild))
+    if (!(Test-Path $msBuild))
     {
         $msBuild = $installDir + '\MSBuild\15.0\Bin\MSBuild.exe'
-        if (![System.IO.File]::Exists($msBuild))
+        if (!(Test-Path $msBuild))
         {
-            Write-Host "MSBuild doesn't exist. Exit."
-            exit 1
+            $instance = Get-VSSetupInstance -All -Prerelease | Select-VSSetupInstance -Latest
+            $installDir = $instance.installationPath
+            $msBuild = $installDir + '\MSBuild\Current\Bin\MSBuild.exe'
+            if (!(Test-Path $msBuild))
+            {
+                $msBuild = $installDir + '\MSBuild\15.0\Bin\MSBuild.exe'
+                if (!(Test-Path $msBuild))
+                {
+                    Write-Host "MSBuild doesn't exist. Exit."
+                    exit 1
+                }
+                else
+                {
+                    Write-Host "Likely on Windows with VS2017 Preview."
+                }
+            }
+            else
+            {
+                Write-Host "Likely on Windows with VS2019 Preview."
+            }
         }
         else
         {
