@@ -2,7 +2,6 @@
   <PropertyGroup>
     <ProjectGuid>{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}</ProjectGuid>
     <FileUpgradeFlags />
-    <IsTestProject>true</IsTestProject>
     <UpgradeBackupLocation />
     <TargetFramework>net461</TargetFramework>
     <PublishUrl>publish\</PublishUrl>
@@ -39,7 +38,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.11.1" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.2" />
     <PackageReference Include="System.CodeDom" Version="4.5.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.console" Version="2.4.1">
