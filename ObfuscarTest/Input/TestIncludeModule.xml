@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<Include>
+  <SkipMethod type='SkipVirtualMethodTest.Interface1' name='Method1' />
+</Include>

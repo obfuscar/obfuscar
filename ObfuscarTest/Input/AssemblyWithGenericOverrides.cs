@@ -1,5 +1,4 @@
-﻿#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-
+#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -21,27 +20,40 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
-
 #endregion
 
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-
-[assembly: InternalsVisibleTo("ObfuscarTest")]
-
-// General Information about an assembly is controlled through the following 
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyCopyright("Copyright © Ryan Williams 2007-2010")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
-
-// Setting ComVisible to false makes the types in this assembly not visible 
-// to COM components.  If you need to access a type in this assembly from 
-// COM, set the ComVisible attribute to true on that type.
-[assembly: ComVisible(false)]
-
-// The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("7965f23d-515c-4f93-a7a0-76a416ab54af")]
+namespace TestClasses
+{
+    public interface IAlpha<T> { }
+    public interface IBeta<T1, T2> { }
+    public class Alpha<T> : IAlpha<T>
+    {
+        public Alpha (T i)
+        {
+            Item = i;
+        }
+        public T Item;
+        public override string ToString ()
+        {
+            return string.Format ("A<{0}>", Item);
+        }
+    }
+    public class Beta<T1, T2> : IBeta<T1, T2>
+    {
+        public override string ToString()
+        {
+            return string.Format ("B<{0}, {1}>", typeof(T1).Name, typeof(T2).Name);
+        }
+    }
+    public static class Generic
+    {
+        public static IAlpha<IBeta<C, int>> Empty<C> ()
+        {
+            return Empty<C, int> ();
+        }
+        public static IAlpha<IBeta<C, D>> Empty<C, D> ()
+        {
+            return new Alpha<IBeta<C, D>> ((IBeta<C, D>) new Beta<C, D> ());
+        }
+    }
+}

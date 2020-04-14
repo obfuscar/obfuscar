@@ -1,5 +1,4 @@
-﻿#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-
+#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -21,27 +20,47 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
-
 #endregion
 
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.ComponentModel;
 
-[assembly: InternalsVisibleTo("ObfuscarTest")]
+namespace TestClasses
+{
+	internal class ClassA
+	{
+		private int property1 = 17;
+		private int property2 = 17;
+		private int propertyA = 17;
 
-// General Information about an assembly is controlled through the following 
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyCopyright("Copyright © Ryan Williams 2007-2010")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+		public int Property1
+		{
+			get { return property1; }
+			set { property1 = value; }
+		}
 
-// Setting ComVisible to false makes the types in this assembly not visible 
-// to COM components.  If you need to access a type in this assembly from 
-// COM, set the ComVisible attribute to true on that type.
-[assembly: ComVisible(false)]
+		public int Property2
+		{
+			get { return property2; }
+			set { property2 = value; }
+		}
 
-// The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("7965f23d-515c-4f93-a7a0-76a416ab54af")]
+		public int PropertyA
+		{
+			get { return propertyA; }
+			set { propertyA = value; }
+		}
+	}
+	internal class ClassB : INotifyPropertyChanged
+	{
+        public event PropertyChangedEventHandler PropertyChanged { add { } remove { } }
+	}
+	internal enum TestEnum { Value1, Value2 }
+	internal class ClassC : ClassB
+	{
+		public TestEnum PropertyB { get; set; }
+		private TestEnum PropertyC { get; set; }
+	}
+}

@@ -1,5 +1,4 @@
-﻿#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-
+#region Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
 /// 
@@ -21,27 +20,20 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 /// </copyright>
-
 #endregion
 
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-[assembly: InternalsVisibleTo("ObfuscarTest")]
-
-// General Information about an assembly is controlled through the following 
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyCopyright("Copyright © Ryan Williams 2007-2010")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
-
-// Setting ComVisible to false makes the types in this assembly not visible 
-// to COM components.  If you need to access a type in this assembly from 
-// COM, set the ComVisible attribute to true on that type.
-[assembly: ComVisible(false)]
-
-// The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("7965f23d-515c-4f93-a7a0-76a416ab54af")]
+namespace TestClasses
+{
+	[Obsolete("Reason Text")]
+	public class ClassA
+	{
+		[Obsolete("Message Text")]
+		protected virtual void Method( bool param )
+		{
+		}
+	}
+}
