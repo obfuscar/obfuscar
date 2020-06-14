@@ -1573,6 +1573,9 @@ namespace Obfuscar
                 if (_disabled)
                     return;
 
+                if (_dataBytes.Count == 0)
+                    return; //Trying to create field of size zero will result in corrupt assembly, therefore skip section completely
+
                 // Now that we know the total size of the byte array, we can update the struct size and store it in the constant field
                 StructType.ClassSize = _dataBytes.Count;
                 for (int i = 0; i < _dataBytes.Count; i++)
