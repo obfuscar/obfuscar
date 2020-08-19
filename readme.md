@@ -35,5 +35,7 @@ If you want to donate to my efforts on this project, please use the following li
 
 # 3Shape fork repo branches
 /ThreeShape.Obfuscar - The version we release and use internally in 3Shape. Should be the target of any internal merge requests.
+
 /3shape - The 3Shape branch which we have sent as a pull request to the fork origin.
+
 /Master - Not to be changed in 3Shape - should be kept in sync with the fork origin.
