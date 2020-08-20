@@ -265,6 +265,13 @@ namespace Obfuscar
                                 info.OutputFileName = outName;
                             }
                         }
+                        else if (!info.Definition.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned))
+                        {
+                            // When an assembly is "delay signed" and no KeyFile or KeyContainer properties were provided,
+                            // keep the obfuscated assembly "delay signed" too.
+                            info.Definition.Write(outName, parameters);
+                            info.OutputFileName = outName;
+                        }
                         else
                         {
                             throw new ObfuscarException($"Obfuscating a signed assembly would result in an invalid assembly:  {info.Name}; use the KeyFile or KeyContainer property to set a key to use");
