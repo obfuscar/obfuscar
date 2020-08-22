@@ -2,14 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
 
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>obfuscar.console</ToolCommandName>
     <PackageOutputPath>..</PackageOutputPath>
 
     <PackageId>Obfuscar.GlobalTool</PackageId>
-    <Version>2.2.26</Version>
+    <Version>2.2.27</Version>
     <Authors>Ryan Williams, and other contributors.</Authors>
     <Company>LeXtudio</Company>
     <Product>Obfuscar Global Tools build</Product>
@@ -22,8 +22,8 @@
     <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2019 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
     <RepositoryType>git</RepositoryType>
     <PackageTags>obfuscar,obfuscation</PackageTags>
-    <AssemblyVersion>2.2.26.0</AssemblyVersion>
-    <FileVersion>2.2.26.0</FileVersion>
+    <AssemblyVersion>2.2.27.0</AssemblyVersion>
+    <FileVersion>2.2.27.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
