@@ -222,16 +222,20 @@ namespace Obfuscar
 
                     if (info.Definition.Name.HasPublicKey)
                     {
+                        // source assembly was signed.
                         if (Project.KeyValue != null)
                         {
+                            // config file contains key container name.
                             info.Definition.Write(outName, parameters);
                             MsNetSigner.SignAssemblyFromKeyContainer(outName, Project.KeyContainerName);
                         }
                         else if (Project.KeyPair != null)
                         {
+                            // config file contains key file.
                             string keyFile = Project.KeyPair;
                             if (string.Equals(keyFile, "auto", StringComparison.OrdinalIgnoreCase))
                             {
+                                // if key file is "auto", resolve key file from assembly's attribute.
                                 var attribute = info.Definition.CustomAttributes
                                     .FirstOrDefault(item => item.AttributeType.FullName == "System.Reflection.AssemblyKeyFileAttribute");
                                 if (attribute != null && attribute?.ConstructorArguments.Count == 1)
@@ -239,26 +243,32 @@ namespace Obfuscar
                                     fileName = attribute.ConstructorArguments[0].Value.ToString();
                                     if (!File.Exists(fileName))
                                     {
+                                        // assume relative path.
                                         keyFile = Path.Combine(Project.Settings.InPath, fileName);
                                     }
                                 }
                             }
 
+                            if (!File.Exists(keyFile))
+                            {
+                                throw new ObfuscarException($"Cannot locate key file: {keyFile}");
+                            }
+
                             var keyPair = File.ReadAllBytes(keyFile);
-                            var strongNameKeyPair = new System.Reflection.StrongNameKeyPair(keyPair);
                             try
                             {
-                                var publicKey = strongNameKeyPair.PublicKey;
-#if NETCOREAPP2_1
-                                throw new PlatformNotSupportedException("Signing is not supported in .NET Core Global Tools build");
-#else
-                                parameters.StrongNameKeyPair = strongNameKeyPair;
+                                parameters.StrongNameKeyBlob = keyPair;
                                 info.Definition.Write(outName, parameters);
                                 info.OutputFileName = outName;
-#endif
                             }
-                            catch (ArgumentException)
+                            catch (Exception)
                             {
+                                parameters.StrongNameKeyBlob = null;
+                                if (info.Definition.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned))
+                                {
+                                    info.Definition.MainModule.Attributes ^= ModuleAttributes.StrongNameSigned;
+                                }
+
                                 // delay sign.
                                 info.Definition.Name.PublicKey = keyPair;
                                 info.Definition.Write(outName, parameters);

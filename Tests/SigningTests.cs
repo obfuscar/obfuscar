@@ -71,16 +71,11 @@ namespace ObfuscarTests
 
             TestHelper.CleanInput();
 
-            var assembly = Path.Combine(TestHelper.InputPath, "AssemblyForSigning2.dll");
-
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            if (!File.Exists(assembly))
-            {
-                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "AssemblyForSigning2.dll"), assembly, true);
-            }
+            TestHelper.BuildAssembly("AssemblyForSigning2", string.Empty, null, false);
 
             var map = TestHelper.Obfuscate(xml).Mapping;
-
+            var assembly = Path.Combine(TestHelper.InputPath, "AssemblyForSigning2.dll");
             AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(assembly);
             Assert.True(inAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
 
