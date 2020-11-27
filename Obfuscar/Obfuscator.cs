@@ -1524,32 +1524,32 @@ namespace Obfuscar
                     TypeAttributes.BeforeFieldInit, systemObjectTypeReference);
 
                 // Add struct for constant byte array data
-                StructType = new TypeDefinition("\0", "",
+                StructType = new TypeDefinition("1", "2",
                     TypeAttributes.ExplicitLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed |
                     TypeAttributes.NestedPrivate, systemValueTypeTypeReference);
                 StructType.PackingSize = 1;
                 NewType.NestedTypes.Add(StructType);
 
                 // Add field with constant string data
-                DataConstantField = new FieldDefinition("\0",
+                DataConstantField = new FieldDefinition("3",
                     FieldAttributes.HasFieldRVA | FieldAttributes.Private | FieldAttributes.Static |
                     FieldAttributes.Assembly, StructType);
                 NewType.Fields.Add(DataConstantField);
 
                 // Add data field where constructor copies the data to
-                DataField = new FieldDefinition("\0\0",
+                DataField = new FieldDefinition("4",
                     FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly,
                     new ArrayType(SystemByteTypeReference));
                 NewType.Fields.Add(DataField);
 
                 // Add string array of deobfuscated strings
-                StringArrayField = new FieldDefinition("\0\0\0",
+                StringArrayField = new FieldDefinition("5",
                     FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly,
                     new ArrayType(SystemStringTypeReference));
                 NewType.Fields.Add(StringArrayField);
 
                 // Add method to extract a string from the byte array. It is called by the indiviual string getter methods we add later to the class.
-                StringGetterMethodDefinition = new MethodDefinition("\0",
+                StringGetterMethodDefinition = new MethodDefinition("6",
                     MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig,
                     SystemStringTypeReference);
                 StringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(SystemIntTypeReference));
