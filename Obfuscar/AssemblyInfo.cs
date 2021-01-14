@@ -868,6 +868,13 @@ namespace Obfuscar
                 return true;
             }
 
+            if (method.Method.Parameters.Any(x => x.CustomAttributes
+                .Any(y => y.AttributeType.FullName == typeof(System.Runtime.CompilerServices.DynamicAttribute).FullName)))
+            {
+                message = "method contains dynamic parameter";
+                return true;
+            }
+
             if (method.Name.StartsWith("Set") || method.Name.StartsWith("Get")) // Check if dependency property accessor
             {
                 var propertyName = method.Name.Substring(3);

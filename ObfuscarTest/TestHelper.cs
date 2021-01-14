@@ -68,6 +68,11 @@ namespace ObfuscarTest
 
             CompilerParameters cp = new CompilerParameters();
             cp.ReferencedAssemblies.Add("System.dll");
+            cp.ReferencedAssemblies.Add("System.Core.dll");
+            cp.ReferencedAssemblies.Add("System.Data.dll");
+            cp.ReferencedAssemblies.Add("System.Runtime.Serialization.dll");
+            cp.ReferencedAssemblies.Add("Microsoft.CSharp.dll");
+            cp.ReferencedAssemblies.Add("netstandard.dll");
             cp.GenerateExecutable = false;
             cp.GenerateInMemory = false;
             cp.TreatWarningsAsErrors = treatWarningsAsErrors;
