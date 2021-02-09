@@ -10,9 +10,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{65D27E
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obfuscar", "Obfuscar\Obfuscar.csproj", "{F28CDDFF-5A7A-413E-809E-15FFB8766E86}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obfuscar.Console", "Console\Obfuscar.Console.csproj", "{275B3EED-7E70-4460-950F-96EDCA099BD4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obfuscar.Console", "Console\Obfuscar.Console.csproj", "{275B3EED-7E70-4460-950F-96EDCA099BD4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObfuscarTest", "ObfuscarTest\ObfuscarTest.csproj", "{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObfuscarTest", "ObfuscarTest\ObfuscarTest.csproj", "{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{3F7BA0FB-E820-42EE-8D94-7FE576E5325F}"
 	ProjectSection(SolutionItems) = preProject
@@ -24,6 +24,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B2A0589A-CCAD-4BA1-97AD-771424706E0D}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		Obfuscar.nuspec = Obfuscar.nuspec
 		test.bat = test.bat
 	EndProjectSection
 EndProject

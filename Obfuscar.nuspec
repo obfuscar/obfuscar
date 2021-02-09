@@ -8,7 +8,7 @@
 		<projectUrl>https://www.obfuscar.com</projectUrl>
 		<id>ThreeShape.Obfuscar</id>
 		<title>ThreeShape.Obfuscar</title>
-		<icon>Potion-icon.png</icon>
+		<iconUrl>https://github.com/obfuscar/obfuscar/raw/master/Potion-icon.png</iconUrl>
 		<requireLicenseAcceptance>true</requireLicenseAcceptance>
 		<description>Obfuscar is a basic obfuscator for .NET assemblies. It uses massive overloading to rename metadata in .NET assemblies (including the names of methods, properties, events, fields, types and namespaces) to a minimal set, distinguishable in most cases only by signature.</description>
 		<summary>Open source obfuscar for .NET and Mono.</summary>
@@ -20,7 +20,7 @@
 	</metadata>
 	<files>
 		<!-- Include everything in \build -->
-    	<file src="build\**" target="build" />        
-    	<file src="bin\release\net45\obfuscar.console.exe" target="tools" />
+    <file src="build\**" target="build" />        
+    <file src="bin\release\net45\obfuscar.console.exe" target="tools" />
 	</files>
 </package>
