@@ -2,14 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
 
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>obfuscar.console</ToolCommandName>
     <PackageOutputPath>..</PackageOutputPath>
 
     <PackageId>Obfuscar.GlobalTool</PackageId>
-    <Version>2.2.22</Version>
+    <Version>2.2.29</Version>
     <Authors>Ryan Williams, and other contributors.</Authors>
     <Company>LeXtudio</Company>
     <Product>Obfuscar Global Tools build</Product>
@@ -17,14 +17,18 @@
     <PackageReleaseNotes>https://github.com/obfuscar/obfuscar/releases</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/obfuscar/obfuscar</RepositoryUrl>
     <PackageProjectUrl>https://github.com/obfuscar/obfuscar</PackageProjectUrl>
-    <PackageIconUrl>https://github.com/obfuscar/obfuscar/raw/master/Potion-icon.png</PackageIconUrl>
-    <PackageLicenseUrl>https://github.com/obfuscar/obfuscar/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageIcon>Potion-icon.png</PackageIcon>
+    <PackageLicense>MIT</PackageLicense>
     <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2019 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
     <RepositoryType>git</RepositoryType>
     <PackageTags>obfuscar,obfuscation</PackageTags>
-    <AssemblyVersion>2.2.22.0</AssemblyVersion>
-    <FileVersion>2.2.22.0</FileVersion>
+    <AssemblyVersion>2.2.29.0</AssemblyVersion>
+    <FileVersion>2.2.29.0</FileVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\Potion-icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Obfuscar\Obfuscar.csproj" />

@@ -256,20 +256,33 @@ namespace Obfuscar
                     string outName = Path.Combine(outPath, fileName);
                     var parameters = new WriterParameters();
                     if (Project.Settings.RegenerateDebugInfo)
-                        parameters.SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider();
+                    {
+                        if (IsOnWindows)
+                        {
+                            parameters.SymbolWriterProvider = new Mono.Cecil.Cil.PortablePdbWriterProvider();
+                        }
+                        else
+                        {
+                            parameters.SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider();
+                        }
+                    }
 
                     if (info.Definition.Name.HasPublicKey)
                     {
+                        // source assembly was signed.
                         if (Project.KeyValue != null)
                         {
+                            // config file contains key container name.
                             info.Definition.Write(outName, parameters);
                             MsNetSigner.SignAssemblyFromKeyContainer(outName, Project.KeyContainerName);
                         }
                         else if (Project.KeyPair != null)
                         {
+                            // config file contains key file.
                             string keyFile = Project.KeyPair;
                             if (string.Equals(keyFile, "auto", StringComparison.OrdinalIgnoreCase))
                             {
+                                // if key file is "auto", resolve key file from assembly's attribute.
                                 var attribute = info.Definition.CustomAttributes
                                     .FirstOrDefault(item => item.AttributeType.FullName == "System.Reflection.AssemblyKeyFileAttribute");
                                 if (attribute != null && attribute?.ConstructorArguments.Count == 1)
@@ -277,26 +290,32 @@ namespace Obfuscar
                                     fileName = attribute.ConstructorArguments[0].Value.ToString();
                                     if (!File.Exists(fileName))
                                     {
+                                        // assume relative path.
                                         keyFile = Path.Combine(Project.Settings.InPath, fileName);
                                     }
                                 }
                             }
 
+                            if (!File.Exists(keyFile))
+                            {
+                                throw new ObfuscarException($"Cannot locate key file: {keyFile}");
+                            }
+
                             var keyPair = File.ReadAllBytes(keyFile);
-                            var strongNameKeyPair = new System.Reflection.StrongNameKeyPair(keyPair);
                             try
                             {
-                                var publicKey = strongNameKeyPair.PublicKey;
-#if NETCOREAPP2_1
-                                throw new PlatformNotSupportedException("Signing is not supported in .NET Core Global Tools build");
-#else
-                                parameters.StrongNameKeyPair = strongNameKeyPair;
+                                parameters.StrongNameKeyBlob = keyPair;
                                 info.Definition.Write(outName, parameters);
                                 info.OutputFileName = outName;
-#endif
                             }
-                            catch (ArgumentException)
+                            catch (Exception)
                             {
+                                parameters.StrongNameKeyBlob = null;
+                                if (info.Definition.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned))
+                                {
+                                    info.Definition.MainModule.Attributes ^= ModuleAttributes.StrongNameSigned;
+                                }
+
                                 // delay sign.
                                 info.Definition.Name.PublicKey = keyPair;
                                 info.Definition.Write(outName, parameters);
@@ -335,6 +354,14 @@ namespace Obfuscar
             }
 
             TypeNameCache.nameCache.Clear();
+        }
+
+        private bool IsOnWindows {
+            get {
+                // https://stackoverflow.com/a/38795621/11182
+                string windir = Environment.GetEnvironmentVariable("windir");
+                return !string.IsNullOrEmpty(windir) && windir.Contains(@"\") && Directory.Exists(windir);
+            }
         }
 
         private void LogMappings(string name)
@@ -1495,7 +1522,7 @@ namespace Obfuscar
                 var module = info.Definition.MainModule;
                 var attribute = new TypeReference("System.Runtime.CompilerServices", "SuppressIldasmAttribute", module,
                     module.TypeSystem.CoreLibrary).Resolve();
-                if (attribute == null)
+                if (attribute == null || attribute.Module != module.TypeSystem.CoreLibrary)
                     return;
 
                 CustomAttribute found = module.CustomAttributes.FirstOrDefault(existing =>
@@ -1599,32 +1626,32 @@ namespace Obfuscar
                     TypeAttributes.BeforeFieldInit, systemObjectTypeReference);
 
                 // Add struct for constant byte array data
-                StructType = new TypeDefinition("\0", "",
+                StructType = new TypeDefinition("1", "2",
                     TypeAttributes.ExplicitLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed |
                     TypeAttributes.NestedPrivate, systemValueTypeTypeReference);
                 StructType.PackingSize = 1;
                 NewType.NestedTypes.Add(StructType);
 
                 // Add field with constant string data
-                DataConstantField = new FieldDefinition("\0",
+                DataConstantField = new FieldDefinition("3",
                     FieldAttributes.HasFieldRVA | FieldAttributes.Private | FieldAttributes.Static |
                     FieldAttributes.Assembly, StructType);
                 NewType.Fields.Add(DataConstantField);
 
                 // Add data field where constructor copies the data to
-                DataField = new FieldDefinition("\0\0",
+                DataField = new FieldDefinition("4",
                     FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly,
                     new ArrayType(SystemByteTypeReference));
                 NewType.Fields.Add(DataField);
 
                 // Add string array of deobfuscated strings
-                StringArrayField = new FieldDefinition("\0\0\0",
+                StringArrayField = new FieldDefinition("5",
                     FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly,
                     new ArrayType(SystemStringTypeReference));
                 NewType.Fields.Add(StringArrayField);
 
                 // Add method to extract a string from the byte array. It is called by the indiviual string getter methods we add later to the class.
-                StringGetterMethodDefinition = new MethodDefinition("\0",
+                StringGetterMethodDefinition = new MethodDefinition("6",
                     MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig,
                     SystemStringTypeReference);
                 StringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(SystemIntTypeReference));
