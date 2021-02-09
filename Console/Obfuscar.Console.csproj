@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  
+
   <Target Name="RepackWithILOnWindows" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT'">
-    <Exec Command="rename Obfuscar.Console.exe Obfuscar.exe" WorkingDirectory="$(TargetDir)" />    
+    <Exec Command="rename Obfuscar.Console.exe Obfuscar.exe" WorkingDirectory="$(TargetDir)" />
     <Exec Command="&quot;$(ILRepack)&quot; /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Newtonsoft.Json.dll" WorkingDirectory="$(TargetDir)" />
     <Exec Command="del Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Obfuscar.exe Newtonsoft.Json.dll" WorkingDirectory="$(TargetDir)" />
   </Target>
-  
+
   <Target Name="RepackWithILOnNonWindows" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' AND '$(OS)' != 'Windows_NT'">
     <Exec Command="mv Obfuscar.Console.exe Obfuscar.exe" WorkingDirectory="$(TargetDir)" />
     <Exec Command="&quot;$(ILRepack)&quot; /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Newtonsoft.Json.dll" WorkingDirectory="$(TargetDir)" />
@@ -17,7 +17,7 @@
     <ProjectGuid>{275B3EED-7E70-4460-950F-96EDCA099BD4}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>Obfuscar</RootNamespace>
-    <TargetFramework>net45</TargetFramework>
+    <TargetFramework>net452</TargetFramework>
     <FileUpgradeFlags />
     <UpgradeBackupLocation />
     <PublishUrl>publish\</PublishUrl>
@@ -68,6 +68,6 @@
   <ItemGroup>
     <PackageReference Include="ILRepack" Version="2.0.18" />
     <PackageReference Include="Mono.Options" Version="6.6.0.161" />
-    <PackageReference Include="Rollbar" Version="3.2.0" />
+    <PackageReference Include="Rollbar" Version="3.14.0" />
   </ItemGroup>
 </Project>

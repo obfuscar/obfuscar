@@ -14,6 +14,8 @@
 
     <!-- Path to Test Adapters -->
     <!--<TestAdaptersPaths>%SystemDrive%\Temp\foo;%SystemDrive%\Temp\bar</TestAdaptersPaths>-->
+
+      <MaxCpuCount>1</MaxCpuCount>
   </RunConfiguration>
 
 </RunSettings>

@@ -75,6 +75,7 @@ namespace ObfuscarTest
             cp.ReferencedAssemblies.Add("netstandard.dll");
             cp.GenerateExecutable = false;
             cp.GenerateInMemory = false;
+            cp.ReferencedAssemblies.Add("System.Runtime.Serialization.dll");
             cp.TreatWarningsAsErrors = treatWarningsAsErrors;
 
             if (!string.IsNullOrEmpty(options))
