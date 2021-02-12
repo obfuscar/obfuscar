@@ -59,6 +59,7 @@ namespace Obfuscar
         private AssemblyDefinition definition;
         private string name;
         private bool skipEnums;
+        private bool skipAllOverride, forceAllOverride;
 
         public bool Exclude { get; set; }
 
@@ -375,6 +376,24 @@ namespace Obfuscar
 
                 if (project.Contains(type))
                     typerefs.Add(type);
+            }
+
+            // Check for assembly level exclude attribute
+            foreach(var customattribute in Definition.CustomAttributes.Where(
+                ca => ca.AttributeType?.FullName == "System.Reflection.ObfuscationAttribute" && ca.HasProperties))
+            {
+                var excludeProp = customattribute.Properties.FirstOrDefault(p => p.Name == "Exclude");
+                var excludeValue = (bool?)excludeProp.Argument.Value;
+                if (excludeValue == true)
+                {
+                    skipAllOverride = true;
+                    Console.WriteLine("Disabling obfuscation of " + Definition.Name + " based on assembly attribute");
+                }
+                else if (excludeValue == false)
+                {
+                    forceAllOverride = true;
+                    Console.WriteLine("Enabling full obfuscation of " + Definition.Name + " based on assembly attribute");
+                }
             }
 
             // Type references in CustomAttributes
@@ -739,6 +758,30 @@ namespace Obfuscar
 
         public List<AssemblyInfo> ReferencedBy { get; } = new List<AssemblyInfo>();
 
+        private bool KeepPublicApi
+        {
+            get
+            {
+                if (skipAllOverride)
+                    return true;
+                if (forceAllOverride)
+                    return false;
+                return project.Settings.KeepPublicApi;
+            }
+        }
+
+        private bool HidePrivateApi
+        {
+            get
+            {
+                if (skipAllOverride)
+                    return false;
+                if (forceAllOverride)
+                    return true;
+                return project.Settings.HidePrivateApi;
+            }
+        }
+
         private bool ShouldSkip(string ns, InheritMap map)
         {
             return skipNamespaces.IsMatch(ns, map);
@@ -781,7 +824,7 @@ namespace Obfuscar
             return false;
         }
 
-        public bool ShouldSkip(TypeKey type, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
+        public bool ShouldSkip(TypeKey type, InheritMap map, bool markedOnly,
             out string message)
         {
             var attribute = type.TypeDefinition.MarkedToRename();
@@ -852,14 +895,14 @@ namespace Obfuscar
             if (type.TypeDefinition.IsTypePublic())
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !HidePrivateApi;
         }
 
-        public bool ShouldSkip(MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
+        public bool ShouldSkip(MethodKey method, InheritMap map,
             bool markedOnly, out string message)
         {
             if (method.Method.IsRuntime)
@@ -904,10 +947,10 @@ namespace Obfuscar
                 }
             }
 
-            return ShouldSkipParams(method, map, keepPublicApi, hidePrivateApi, markedOnly, out message);
+            return ShouldSkipParams(method, map, markedOnly, out message);
         }
 
-        public bool ShouldSkipParams(MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
+        public bool ShouldSkipParams(MethodKey method, InheritMap map,
             bool markedOnly, out string message)
         {
             var attribute = method.Method.MarkedToRename();
@@ -961,11 +1004,11 @@ namespace Obfuscar
             ))
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !HidePrivateApi;
         }
 
         public bool ShouldSkipStringHiding(MethodKey method, InheritMap map, bool projectHideStrings)
@@ -989,7 +1032,7 @@ namespace Obfuscar
             return !projectHideStrings;
         }
 
-        public bool ShouldSkip(FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly, bool typeInXaml,
+        public bool ShouldSkip(FieldKey field, InheritMap map, bool markedOnly, bool typeInXaml,
             out string message)
         {
             // skip runtime methods
@@ -1085,14 +1128,14 @@ namespace Obfuscar
             if (field.Field.IsPublic() && field.DeclaringType.IsTypePublic())
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !HidePrivateApi;
         }
 
-        public bool ShouldSkip(PropertyKey prop, bool typeInXaml, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
+        public bool ShouldSkip(PropertyKey prop, bool typeInXaml, InheritMap map,
             bool markedOnly, out string message)
         {
             if (prop.Property.IsRuntimeSpecialName)
@@ -1178,14 +1221,14 @@ namespace Obfuscar
             ))
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !HidePrivateApi;
         }
 
-        public bool ShouldSkip(EventKey evt, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
+        public bool ShouldSkip(EventKey evt, InheritMap map, bool markedOnly,
             out string message)
         {
             // skip runtime special events
@@ -1247,11 +1290,11 @@ namespace Obfuscar
             ))
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !HidePrivateApi;
         }
 
         /// <summary>

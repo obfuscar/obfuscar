@@ -35,13 +35,23 @@ namespace ObfuscarTest
                 Assert.True(false, $"Unable to compile test assembly:  AssemblyB, {cr.Errors[0].ErrorText}");
         }
 
-        static MethodDefinition FindByName(TypeDefinition typeDef, string name)
+        static MethodDefinition FindMethodByName(TypeDefinition typeDef, string name)
         {
             foreach (MethodDefinition method in typeDef.Methods)
                 if (method.Name == name)
                     return method;
 
             Assert.True(false, string.Format("Expected to find method: {0}", name));
+            return null; // never here
+        }
+
+        PropertyDefinition FindPropertyByName(TypeDefinition typeDef, string name)
+        {
+            foreach (PropertyDefinition property in typeDef.Properties)
+                if (property.Name == name)
+                    return property;
+
+            Assert.True(false, string.Format("Expected to find property: {0}", name));
             return null; // never here
         }
 
@@ -68,7 +78,7 @@ namespace ObfuscarTest
             {
                 TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.InternalClass");
                 ObfuscatedThing classA = map.GetClass(new TypeKey(classAType));
-                var classAmethod1 = FindByName(classAType, "PublicMethod");
+                var classAmethod1 = FindMethodByName(classAType, "PublicMethod");
                 var method = map.GetMethod(new MethodKey(classAmethod1));
 
                 TypeDefinition nestedClassAType = classAType.NestedTypes[0];
@@ -88,7 +98,7 @@ namespace ObfuscarTest
             {
                 TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.InternalClass3");
                 ObfuscatedThing classA = map.GetClass(new TypeKey(classAType));
-                var classAmethod1 = FindByName(classAType, "PublicMethod");
+                var classAmethod1 = FindMethodByName(classAType, "PublicMethod");
                 var method = map.GetMethod(new MethodKey(classAmethod1));
 
                 TypeDefinition nestedClassAType = classAType.NestedTypes[0];
@@ -107,7 +117,7 @@ namespace ObfuscarTest
 
             TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.PublicClass");
             ObfuscatedThing classB = map.GetClass(new TypeKey(classBType));
-            var classBmethod1 = FindByName(classBType, "PublicMethod");
+            var classBmethod1 = FindMethodByName(classBType, "PublicMethod");
             var method2 = map.GetMethod(new MethodKey(classBmethod1));
 
             Assert.True(classB.Status == ObfuscationStatus.Renamed, "PublicClass should have been obfuscated.");
@@ -115,7 +125,7 @@ namespace ObfuscarTest
 
             TypeDefinition classCType = inAssmDef.MainModule.GetType("TestClasses.InternalClass2");
             ObfuscatedThing classC = map.GetClass(new TypeKey(classCType));
-            var classCmethod1 = FindByName(classCType, "PublicMethod");
+            var classCmethod1 = FindMethodByName(classCType, "PublicMethod");
             var method1 = map.GetMethod(new MethodKey(classCmethod1));
 
             TypeDefinition nestedClassBType = classCType.NestedTypes[0];
@@ -132,9 +142,9 @@ namespace ObfuscarTest
             {
                 TypeDefinition classDType = inAssmDef.MainModule.GetType("TestClasses.PublicClass2");
                 ObfuscatedThing classD = map.GetClass(new TypeKey(classDType));
-                var classDmethod1 = FindByName(classDType, "PublicMethod");
+                var classDmethod1 = FindMethodByName(classDType, "PublicMethod");
                 var method3 = map.GetMethod(new MethodKey(classDmethod1));
-                var classDmethod2 = FindByName(classDType, "ProtectedMethod");
+                var classDmethod2 = FindMethodByName(classDType, "ProtectedMethod");
                 var method4 = map.GetMethod(new MethodKey(classDmethod2));
 
                 Assert.True(classD.Status == ObfuscationStatus.Skipped, "PublicClass2 shouldn't have been obfuscated.");
@@ -145,11 +155,11 @@ namespace ObfuscarTest
             {
                 TypeDefinition classDType = inAssmDef.MainModule.GetType("TestClasses.PublicClass3");
                 ObfuscatedThing classD = map.GetClass(new TypeKey(classDType));
-                var classDmethod1 = FindByName(classDType, "PublicMethod");
+                var classDmethod1 = FindMethodByName(classDType, "PublicMethod");
                 var method3 = map.GetMethod(new MethodKey(classDmethod1));
-                var classDmethod2 = FindByName(classDType, "ProtectedMethod");
+                var classDmethod2 = FindMethodByName(classDType, "ProtectedMethod");
                 var method4 = map.GetMethod(new MethodKey(classDmethod2));
-                var classDmethod3 = FindByName(classDType, "PublicMethod2");
+                var classDmethod3 = FindMethodByName(classDType, "PublicMethod2");
                 var method5 = map.GetMethod(new MethodKey(classDmethod3));
 
                 Assert.True(classD.Status == ObfuscationStatus.Skipped, "PublicClass2 shouldn't have been obfuscated.");
@@ -247,7 +257,7 @@ namespace ObfuscarTest
 
             TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.PublicClass");
             ObfuscatedThing classB = map.GetClass(new TypeKey(classBType));
-            var classBmethod1 = FindByName(classBType, "PublicMethod");
+            var classBmethod1 = FindMethodByName(classBType, "PublicMethod");
             var method2 = map.GetMethod(new MethodKey(classBmethod1));
 
             Assert.True(classB.Status == ObfuscationStatus.Renamed, "PublicClass should have been obfuscated.");
@@ -292,7 +302,7 @@ namespace ObfuscarTest
 
             TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.InternalClass");
             ObfuscatedThing classA = map.GetClass(new TypeKey(classAType));
-            var classAmethod1 = FindByName(classAType, "PublicMethod");
+            var classAmethod1 = FindMethodByName(classAType, "PublicMethod");
             var method = map.GetMethod(new MethodKey(classAmethod1));
 
             TypeDefinition nestedClassAType = classAType.NestedTypes[0];
@@ -309,7 +319,7 @@ namespace ObfuscarTest
 
             TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.PublicClass");
             ObfuscatedThing classB = map.GetClass(new TypeKey(classBType));
-            var classBmethod1 = FindByName(classBType, "PublicMethod");
+            var classBmethod1 = FindMethodByName(classBType, "PublicMethod");
             var method2 = map.GetMethod(new MethodKey(classBmethod1));
 
             Assert.True(classB.Status == ObfuscationStatus.Renamed, "PublicClass should have been obfuscated.");
@@ -317,7 +327,7 @@ namespace ObfuscarTest
 
             TypeDefinition classCType = inAssmDef.MainModule.GetType("TestClasses.InternalClass2");
             ObfuscatedThing classC = map.GetClass(new TypeKey(classCType));
-            var classCmethod1 = FindByName(classCType, "PublicMethod");
+            var classCmethod1 = FindMethodByName(classCType, "PublicMethod");
             var method1 = map.GetMethod(new MethodKey(classCmethod1));
 
             TypeDefinition nestedClassBType = classCType.NestedTypes[0];
@@ -335,11 +345,77 @@ namespace ObfuscarTest
 
             TypeDefinition classDType = inAssmDef.MainModule.GetType("TestClasses.PublicClass2");
             ObfuscatedThing classD = map.GetClass(new TypeKey(classDType));
-            var classDmethod1 = FindByName(classDType, "PublicMethod");
+            var classDmethod1 = FindMethodByName(classDType, "PublicMethod");
             var method3 = map.GetMethod(new MethodKey(classDmethod1));
 
             Assert.True(classD.Status == ObfuscationStatus.Skipped, "PublicClass2 shouldn't have been obfuscated.");
             Assert.True(method3.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
+        }
+
+        [Fact]
+        public void CheckAssemblyAttribute()
+        {
+            const string assmName = "AssemblyWithAssemblyAttr";
+
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"				<Obfuscator>" +
+                @"				<Var name='InPath' value='{0}' />" +
+                @"				<Var name='OutPath' value='{1}' />" +
+                @"              <Var name='KeepPublicApi' value='true' />" +
+                @"              <Var name='HidePrivateApi' value='true' />" +
+                @"				<Module file='$(InPath){2}{3}.dll' >" +
+                @"                <SkipType name = 'TestClasses.PublicEnumB' skipFields = 'true' />" +
+                @"                <SkipMethod name = 'PublicMethodB' type = 'TestClasses.PublicClassA' />" +
+                @"                <SkipProperty name = 'PublicPropertyB' type = 'TestClasses.PublicClassA' />" +
+                @"                <SkipType name = 'TestClasses.PublicClassB' skipFields = 'true' skipMethods = 'true' skipProperties = 'true' />" +
+                @"				</Module>" +
+                @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar, assmName);
+
+            var obfuscator = TestHelper.BuildAndObfuscate(assmName, string.Empty, xml);
+            var map = obfuscator.Mapping;
+
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, assmName + ".dll"));
+
+            var enumTypeA = inAssmDef.MainModule.GetType("TestClasses.PublicEnumA");
+            var obfuscatedEnumA = map.GetClass(new TypeKey(enumTypeA));
+            Assert.Equal(ObfuscationStatus.Renamed, obfuscatedEnumA.Status);
+
+            var enumTypeB = inAssmDef.MainModule.GetType("TestClasses.PublicEnumB");
+            var obfuscatedEnumB = map.GetClass(new TypeKey(enumTypeB));
+            Assert.Equal(ObfuscationStatus.Skipped, obfuscatedEnumB.Status);
+
+            var classTypeA = inAssmDef.MainModule.GetType("TestClasses.PublicClassA");
+            var obfuscatedClassA = map.GetClass(new TypeKey(classTypeA));
+            Assert.Equal(ObfuscationStatus.Renamed, obfuscatedClassA.Status);
+
+            var methodA = FindMethodByName(classTypeA, "PublicMethodA");
+            var obfuscatedMethodA = map.GetMethod(new MethodKey(methodA));
+            Assert.Equal(ObfuscationStatus.Renamed, obfuscatedMethodA.Status);
+
+            var methodB = FindMethodByName(classTypeA, "PublicMethodB");
+            var obfuscatedMethodB = map.GetMethod(new MethodKey(methodB));
+            Assert.Equal(ObfuscationStatus.Skipped, obfuscatedMethodB.Status);
+
+            var propertyA = FindPropertyByName(classTypeA, "PublicPropertyA");
+            var obfuscatedPropertyA = map.GetProperty(new PropertyKey(new TypeKey(classTypeA), propertyA));
+            Assert.Equal(ObfuscationStatus.Renamed, obfuscatedPropertyA.Status);
+
+            var propertyB = FindPropertyByName(classTypeA, "PublicPropertyB");
+            var obfuscatedPropertyB = map.GetProperty(new PropertyKey(new TypeKey(classTypeA), propertyB));
+            Assert.Equal(ObfuscationStatus.Skipped, obfuscatedPropertyB.Status);
+
+            var classTypeB = inAssmDef.MainModule.GetType("TestClasses.PublicClassB");
+            var obfuscatedClassB = map.GetClass(new TypeKey(classTypeB));
+            Assert.Equal(ObfuscationStatus.Skipped, obfuscatedClassB.Status);
+
+            methodA = FindMethodByName(classTypeB, "PublicMethodA");
+            obfuscatedMethodA = map.GetMethod(new MethodKey(methodA));
+            Assert.Equal(ObfuscationStatus.Skipped, obfuscatedMethodA.Status);
+
+            propertyA = FindPropertyByName(classTypeB, "PublicPropertyA");
+            obfuscatedPropertyA = map.GetProperty(new PropertyKey(new TypeKey(classTypeB), propertyA));
+            Assert.Equal(ObfuscationStatus.Skipped, obfuscatedPropertyA.Status);
         }
     }
 }

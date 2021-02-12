@@ -202,7 +202,7 @@ namespace Obfuscar
                 if (info.Exclude)
                 {
                     project.CopyAssemblyList.Add(info);
-                    break;
+                    continue;
                 }
 
                 Console.WriteLine("Processing assembly: " + info.Definition.Name.FullName);
@@ -373,7 +373,15 @@ namespace Obfuscar
             // make each assembly's list of member refs
             foreach (AssemblyInfo info in AssemblyList)
             {
-                info.Init();
+                try
+                {
+                    info.Init();
+                }
+                catch
+                {
+                    Console.WriteLine("\nError processing " + info.Definition.FullName);
+                    throw;
+                }
             }
 
             // build inheritance map

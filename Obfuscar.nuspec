@@ -21,6 +21,6 @@
 	<files>
 		<!-- Include everything in \build -->
     <file src="build\**" target="build" />
-    <file src="bin\release\net452\obfuscar.console.exe" target="tools" />
+    <file src="bin\release\net452\obfuscar.console.*" target="tools" />
 	</files>
 </package>
