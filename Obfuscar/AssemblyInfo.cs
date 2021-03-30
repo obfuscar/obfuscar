@@ -430,14 +430,14 @@ namespace Obfuscar
                             continue;
                         }
 
-                        /*var attributeTypeArguments = ca.Value as CustomAttributeArgument[];
+                        var attributeTypeArguments = ca.Value as CustomAttributeArgument[];
                         if (ca.Type.FullName == "System.Type[]" && attributeTypeArguments != null)
                         {
                             foreach (CustomAttributeArgument caArg in attributeTypeArguments)
                             {
                                 typerefs.Add((TypeReference)caArg.Value);
                             }
-                        }*/
+                        }
                     }
                 }
                 customattributes.Clear();

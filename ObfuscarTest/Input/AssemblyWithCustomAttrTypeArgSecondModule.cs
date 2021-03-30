@@ -29,34 +29,10 @@ using System.Text;
 
 namespace TestClasses
 {
-	[CustomAttribute]
-	public class ClassA
-	{
-	}
-
-	internal class CustomAttribute : Attribute
-	{
-		public CustomAttribute(Type typeRef = null)
-		{
-			TypeRef = typeRef;
-		}
-
-		public Type TypeRef { get; private set; }
-	}
-
-	[AttributeUsage(System.AttributeTargets.All, Inherited = false, AllowMultiple = false)]
-    public sealed class WithTypesCustomAttribute : System.Attribute
+    [Obfuscation(Exclude = true, ApplyToMembers = true)]
+    public class ClassB
     {
-        public Type[] Types { get; private set; }
-
-        public WithTypesCustomAttribute(params Type[] types)
-        {
-            Types = types;
-        }
-    }
-
-    public class ClassC
-    {
-        public object Object;
+        [WithTypesCustom(typeof(ClassC))]
+        public object ObjectWithAttr;
     }
 }
