@@ -52,7 +52,7 @@ namespace ObfuscarTest
             var output = BuildAndObfuscate();
             var assmDef = AssemblyDefinition.ReadAssembly(output);
 
-            Assert.Equal(3, assmDef.MainModule.Types.Count);
+            Assert.Equal(5, assmDef.MainModule.Types.Count);
         }
 
         [Fact]
