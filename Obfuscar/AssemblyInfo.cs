@@ -27,12 +27,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Obfuscar.Helpers;
 using System.Xml.Linq;
+using CustomAttributeNamedArgument = Mono.Cecil.CustomAttributeNamedArgument;
+using MethodSemanticsAttributes = Mono.Cecil.MethodSemanticsAttributes;
 
 namespace Obfuscar
 {
@@ -422,7 +425,19 @@ namespace Obfuscar
                     foreach (CustomAttributeArgument ca in customattributearguments)
                     {
                         if (ca.Type.FullName == "System.Type" && ca.Value != null)
+                        {
                             typerefs.Add((TypeReference) ca.Value);
+                            continue;
+                        }
+
+                        /*var attributeTypeArguments = ca.Value as CustomAttributeArgument[];
+                        if (ca.Type.FullName == "System.Type[]" && attributeTypeArguments != null)
+                        {
+                            foreach (CustomAttributeArgument caArg in attributeTypeArguments)
+                            {
+                                typerefs.Add((TypeReference)caArg.Value);
+                            }
+                        }*/
                     }
                 }
                 customattributes.Clear();
