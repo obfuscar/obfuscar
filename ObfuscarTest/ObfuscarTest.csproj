@@ -66,6 +66,7 @@
     <Compile Remove="Input\AssemblyWithClosedOverrideGeneric.cs" />
     <Compile Remove="Input\AssemblyWithCustomAttr.cs" />
     <Compile Remove="Input\AssemblyWithCustomAttrTypeArg.cs" />
+    <Compile Remove="Input\AssemblyWithCustomAttrTypeArgSecondModule.cs" />
     <Compile Remove="Input\AssemblyWithEnums.cs" />
     <Compile Remove="Input\AssemblyWithEvent.cs" />
     <Compile Remove="Input\AssemblyWithEvent2.cs" />

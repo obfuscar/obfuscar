@@ -23,6 +23,7 @@
 #endregion
 
 using System;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Text;
 
@@ -42,4 +43,20 @@ namespace TestClasses
 
 		public Type TypeRef { get; private set; }
 	}
+
+	[AttributeUsage(System.AttributeTargets.All, Inherited = false, AllowMultiple = false)]
+    public sealed class WithTypesCustomAttribute : System.Attribute
+    {
+        public Type[] Types { get; private set; }
+
+        public WithTypesCustomAttribute(params Type[] types)
+        {
+            Types = types;
+        }
+    }
+
+    public class ClassC
+    {
+        public object Object;
+    }
 }
