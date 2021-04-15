@@ -530,7 +530,7 @@ namespace Obfuscar
                 List<Resource> resources = new List<Resource>(library.MainModule.Resources.Count);
                 resources.AddRange(library.MainModule.Resources);
 
-                var xamlFiles = GetXamlDocuments(library);
+                var xamlFiles = GetXamlDocuments(library, Project.Settings.AnalyzeXaml);
                 var namesInXaml = NamesInXaml(xamlFiles);
 
                 // Save the original names of all types because parent (declaring) types of nested types may be already renamed.
@@ -709,9 +709,14 @@ namespace Obfuscar
             return result;
         }
 
-        private List<BamlDocument> GetXamlDocuments(AssemblyDefinition library)
+        private List<BamlDocument> GetXamlDocuments(AssemblyDefinition library, bool analyzeXaml)
         {
             var result = new List<BamlDocument>();
+            if (!analyzeXaml)
+            {
+                return result;
+            }
+
             foreach (Resource res in library.MainModule.Resources)
             {
                 var embed = res as EmbeddedResource;

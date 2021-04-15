@@ -52,6 +52,7 @@ namespace Obfuscar
 
             XmlMapping = XmlConvert.ToBoolean(vars.GetValue("XmlMapping", "false"));
             RegenerateDebugInfo = XmlConvert.ToBoolean(vars.GetValue("RegenerateDebugInfo", "false"));
+            AnalyzeXaml = XmlConvert.ToBoolean(vars.GetValue("AnalyzeXaml", "false"));
         }
 
         public bool RegenerateDebugInfo { get; }
@@ -87,5 +88,7 @@ namespace Obfuscar
         public bool UseUnicodeNames { get; }
 
         public bool UseKoreanNames { get; }
+
+        public bool AnalyzeXaml { get; }
     }
 }
