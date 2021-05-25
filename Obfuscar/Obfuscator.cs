@@ -1387,6 +1387,7 @@ namespace Obfuscar
         {
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
+                info.Definition.CleanAttributes();
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
                 {
                     if (type.FullName == "<Module>")

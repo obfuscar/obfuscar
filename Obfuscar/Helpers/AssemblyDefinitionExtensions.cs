@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace Obfuscar.Helpers
 {
@@ -38,6 +39,38 @@ namespace Obfuscar.Helpers
             }
 
             return null;
+        }
+
+        public static bool MarkedToRename(this AssemblyDefinition assembly)
+        {
+            foreach (var custom in assembly.CustomAttributes)
+            {
+                if (custom.AttributeType.FullName == typeof(ObfuscateAssemblyAttribute).FullName)
+                {
+                    var rename = (bool)(Helper.GetAttributePropertyByName(custom, "AssemblyIsPrivate") ?? true);
+                    return rename;
+                }
+            }
+
+            // IMPORTANT: assume it should be renamed.
+            return true;
+        }
+
+        public static bool CleanAttributes(this AssemblyDefinition assembly)
+        {
+            for (int i = 0; i < assembly.CustomAttributes.Count; i++)
+            {
+                CustomAttribute custom = assembly.CustomAttributes[i];
+                if (custom.AttributeType.FullName == typeof(ObfuscateAssemblyAttribute).FullName)
+                {
+                    if ((bool)(Helper.GetAttributePropertyByName(custom, "StripAfterObfuscation") ?? true))
+                    {
+                        assembly.CustomAttributes.Remove(custom);
+                    }
+                }
+            }
+
+            return true;
         }
     }
 }

@@ -233,12 +233,13 @@ namespace ObfuscarTests
             Assert.True(method2.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
 
             AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(obfuscator.Project.AssemblyList[0].OutputFileName);
+            Assert.False(outAssmDef.CustomAttributes.Count > 2, "obfuscation attribute on assembly should have been removed.");
             TypeDefinition classTypeRenamed = outAssmDef.MainModule.Types[2];
             Assert.False(classTypeRenamed.CustomAttributes.Count == 2, "obfuscation attribute on type should have been removed.");
             MethodDefinition testMethod = classTypeRenamed.Methods.First(_ => _.Name == "Test");
-            Assert.False(testMethod.HasCustomAttributes, "obfuscattion attribute on method should have been removed.");
+            Assert.False(testMethod.HasCustomAttributes, "obfuscation attribute on method should have been removed.");
             MethodDefinition test2Method = classTypeRenamed.Methods.First(_ => _.Name == "Test2");
-            Assert.True(test2Method.HasCustomAttributes, "obfuscattion attribute on method should not have been removed.");
+            Assert.True(test2Method.HasCustomAttributes, "obfuscation attribute on method should not have been removed.");
 
             PropertyDefinition token = classTypeRenamed.Properties[0];
             Assert.Equal("access_token", token.CustomAttributes[0].Properties[0].Argument.Value);

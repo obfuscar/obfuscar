@@ -545,6 +545,11 @@ namespace Obfuscar
                 return _cached;
             }
 
+            if (!definition.MarkedToRename())
+            {
+                return new TypeDefinition[0];
+            }
+
             try
             {
                 var result = definition.MainModule.GetAllTypes();

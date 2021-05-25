@@ -26,6 +26,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+[assembly: System.Reflection.ObfuscateAssembly(true, StripAfterObfuscation = true)]
+
 namespace TestClasses
 {
     public enum TestEnum
