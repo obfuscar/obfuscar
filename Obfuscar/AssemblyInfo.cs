@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,12 +27,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Obfuscar.Helpers;
 using System.Xml.Linq;
+using CustomAttributeNamedArgument = Mono.Cecil.CustomAttributeNamedArgument;
+using MethodSemanticsAttributes = Mono.Cecil.MethodSemanticsAttributes;
 
 namespace Obfuscar
 {
@@ -59,6 +62,7 @@ namespace Obfuscar
         private AssemblyDefinition definition;
         private string name;
         private bool skipEnums;
+        private bool skipAllOverride, forceAllOverride;
 
         public bool Exclude { get; set; }
 
@@ -377,6 +381,24 @@ namespace Obfuscar
                     typerefs.Add(type);
             }
 
+            // Check for assembly level exclude attribute
+            foreach(var customattribute in Definition.CustomAttributes.Where(
+                ca => ca.AttributeType?.FullName == "System.Reflection.ObfuscationAttribute" && ca.HasProperties))
+            {
+                var excludeProp = customattribute.Properties.FirstOrDefault(p => p.Name == "Exclude");
+                var excludeValue = (bool?)excludeProp.Argument.Value;
+                if (excludeValue == true)
+                {
+                    skipAllOverride = true;
+                    Console.WriteLine("Disabling obfuscation of " + Definition.Name + " based on assembly attribute");
+                }
+                else if (excludeValue == false)
+                {
+                    forceAllOverride = true;
+                    Console.WriteLine("Enabling full obfuscation of " + Definition.Name + " based on assembly attribute");
+                }
+            }
+
             // Type references in CustomAttributes
             List<CustomAttribute> customattributes = new List<CustomAttribute>();
             customattributes.AddRange(this.Definition.CustomAttributes);
@@ -403,7 +425,19 @@ namespace Obfuscar
                     foreach (CustomAttributeArgument ca in customattributearguments)
                     {
                         if (ca.Type.FullName == "System.Type" && ca.Value != null)
+                        {
                             typerefs.Add((TypeReference) ca.Value);
+                            continue;
+                        }
+
+                        var attributeTypeArguments = ca.Value as CustomAttributeArgument[];
+                        if (ca.Type.FullName == "System.Type[]" && attributeTypeArguments != null)
+                        {
+                            foreach (CustomAttributeArgument caArg in attributeTypeArguments)
+                            {
+                                typerefs.Add((TypeReference)caArg.Value);
+                            }
+                        }
                     }
                 }
                 customattributes.Clear();
@@ -618,7 +652,8 @@ namespace Obfuscar
                     return false;
                 }
 
-                return !(memberref is CallSite);
+                return true;
+                //return !(memberref is CallSite); // Is never CallSite
             }
 
             return false;
@@ -738,6 +773,30 @@ namespace Obfuscar
 
         public List<AssemblyInfo> ReferencedBy { get; } = new List<AssemblyInfo>();
 
+        private bool KeepPublicApi
+        {
+            get
+            {
+                if (skipAllOverride)
+                    return true;
+                if (forceAllOverride)
+                    return false;
+                return project.Settings.KeepPublicApi;
+            }
+        }
+
+        private bool HidePrivateApi
+        {
+            get
+            {
+                if (skipAllOverride)
+                    return false;
+                if (forceAllOverride)
+                    return true;
+                return project.Settings.HidePrivateApi;
+            }
+        }
+
         private bool ShouldSkip(string ns, InheritMap map)
         {
             return skipNamespaces.IsMatch(ns, map);
@@ -780,7 +839,7 @@ namespace Obfuscar
             return false;
         }
 
-        public bool ShouldSkip(TypeKey type, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
+        public bool ShouldSkip(TypeKey type, InheritMap map, bool markedOnly,
             out string message)
         {
             var attribute = type.TypeDefinition.MarkedToRename();
@@ -798,7 +857,7 @@ namespace Obfuscar
 
             if (forceTypes.IsMatch(type, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({type})";
                 return false;
             }
 
@@ -808,9 +867,31 @@ namespace Obfuscar
                 return false;
             }
 
+            if (type.TypeDefinition.BaseType?.FullName == "System.Windows.Controls.DataTemplateSelector")
+            {
+                // Mono.Cecil should find this type in the BAML so it would be excluded, but for some reason it doesn't
+                message = $"DataTemplateSelector";
+                return true;
+            }
+
+            // Exclude Serializable classes. For some reason all static classes have IsSerializable set so we need to ignore those.
+            if (type.TypeDefinition.IsSerializable && type.TypeDefinition.Fields.Any(f => !f.IsStatic))
+            {
+                message = "Serializable";
+                return true;
+            }
+
+            if (type.TypeDefinition.CustomAttributes.Any(a =>
+                a.AttributeType.FullName == "System.Runtime.Serialization.DataContractAttribute" &&
+                a.Properties.All(p => p.Name != "Name")))
+            {
+                message = "unnamed DataContract";
+                return true;
+            }
+
             if (skipTypes.IsMatch(type, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({type})";
                 return true;
             }
 
@@ -829,20 +910,38 @@ namespace Obfuscar
             if (type.TypeDefinition.IsTypePublic())
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !HidePrivateApi;
         }
 
-        public bool ShouldSkip(MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
+        public bool ShouldSkip(MethodKey method, InheritMap map,
             bool markedOnly, out string message)
         {
             if (method.Method.IsRuntime)
             {
                 message = "runtime method";
                 return true;
+            }
+
+            if (method.Method.Parameters.Any(x => x.CustomAttributes
+                .Any(y => y.AttributeType.FullName == typeof(System.Runtime.CompilerServices.DynamicAttribute).FullName)))
+            {
+                message = "method contains dynamic parameter";
+                return true;
+            }
+
+            if (method.Name.StartsWith("Set") || method.Name.StartsWith("Get")) // Check if dependency property accessor
+            {
+                var propertyName = method.Name.Substring(3);
+                if (method.DeclaringType.Fields.Any(f => f.FieldType.FullName == "System.Windows.DependencyProperty" &&
+                    f.Name.Contains(propertyName)))
+                {
+                    message = "DependencyProperty accessor";
+                    return true;
+                }
             }
 
             if (method.Method.IsSpecialName)
@@ -863,10 +962,10 @@ namespace Obfuscar
                 }
             }
 
-            return ShouldSkipParams(method, map, keepPublicApi, hidePrivateApi, markedOnly, out message);
+            return ShouldSkipParams(method, map, markedOnly, out message);
         }
 
-        public bool ShouldSkipParams(MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
+        public bool ShouldSkipParams(MethodKey method, InheritMap map,
             bool markedOnly, out string message)
         {
             var attribute = method.Method.MarkedToRename();
@@ -892,7 +991,7 @@ namespace Obfuscar
 
             if (ShouldForce(method.TypeKey, TypeAffectFlags.AffectMethod, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({method.TypeKey})";
                 return false;
             }
 
@@ -904,7 +1003,7 @@ namespace Obfuscar
 
             if (ShouldSkip(method.TypeKey, TypeAffectFlags.AffectMethod, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({method.TypeKey})";
                 return true;
             }
 
@@ -920,11 +1019,11 @@ namespace Obfuscar
             ))
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !HidePrivateApi;
         }
 
         public bool ShouldSkipStringHiding(MethodKey method, InheritMap map, bool projectHideStrings)
@@ -948,13 +1047,19 @@ namespace Obfuscar
             return !projectHideStrings;
         }
 
-        public bool ShouldSkip(FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
+        public bool ShouldSkip(FieldKey field, InheritMap map, bool markedOnly, bool typeInXaml,
             out string message)
         {
             // skip runtime methods
             if ((field.Field.IsRuntimeSpecialName && field.Field.Name == "value__"))
             {
                 message = "special name";
+                return true;
+            }
+
+            if (field.Type == "System.Windows.DependencyProperty")
+            {
+                message = "DependencyProperty";
                 return true;
             }
 
@@ -980,7 +1085,7 @@ namespace Obfuscar
 
             if (ShouldForce(field.TypeKey, TypeAffectFlags.AffectField, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({field.TypeKey})";
                 return false;
             }
 
@@ -990,9 +1095,21 @@ namespace Obfuscar
                 return false;
             }
 
+            if (typeInXaml && field.Field.IsPublic())
+            {
+                message = "filtered by BAML/INotifyPropertyChanged";
+                return true;
+            }
+
+            if (field.DeclaringType.BaseType?.FullName == "System.Attribute")
+            {
+                message = "declaring type is an Attribute";
+                return true;
+            }
+
             if (ShouldSkip(field.TypeKey, TypeAffectFlags.AffectField, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({field.TypeKey})";
                 return true;
             }
 
@@ -1008,17 +1125,32 @@ namespace Obfuscar
                 return true;
             }
 
+            // Exclude serializable field
+            if (!field.Field.IsStatic && !field.Field.IsNotSerialized && field.DeclaringType.IsSerializable &&
+                field.Field.CustomAttributes.All(a => a.AttributeType.FullName != "System.Runtime.CompilerServices.CompilerGeneratedAttribute"))
+            {
+                message = "declaring type is Serializable";
+                return true;
+            }
+
+            if (field.Field.CustomAttributes.Any(a => a.AttributeType.FullName == "System.Runtime.Serialization.DataMemberAttribute" &&
+                a.Properties.All(p => p.Name != "Name")))
+            {
+                message = "unnamed DataMember";
+                return true;
+            }
+
             if (field.Field.IsPublic() && field.DeclaringType.IsTypePublic())
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !HidePrivateApi;
         }
 
-        public bool ShouldSkip(PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
+        public bool ShouldSkip(PropertyKey prop, bool typeInXaml, InheritMap map,
             bool markedOnly, out string message)
         {
             if (prop.Property.IsRuntimeSpecialName)
@@ -1049,7 +1181,7 @@ namespace Obfuscar
 
             if (ShouldForce(prop.TypeKey, TypeAffectFlags.AffectProperty, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({prop.TypeKey})";
                 return false;
             }
 
@@ -1061,13 +1193,39 @@ namespace Obfuscar
 
             if (ShouldSkip(prop.TypeKey, TypeAffectFlags.AffectProperty, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({prop.TypeKey})";
                 return true;
             }
 
             if (skipProperties.IsMatch(prop, map))
             {
                 message = "property rule in configuration";
+                return true;
+            }
+
+            if (typeInXaml && prop.Property.IsPublic())
+            {
+                message = "filtered by BAML";
+                return true;
+            }
+
+            if (prop.Property.IsPublic() && prop.DeclaringType.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged"))
+            {
+                message = "declaring type implements INotifyPropertyChanged";
+                return true;
+            }
+
+            if (prop.Type == "System.Windows.DataTemplate" &&
+                prop.DeclaringType.BaseType?.FullName == "System.Windows.Controls.DataTemplateSelector")
+            {
+                message = "DataTemplateSelector/DataTemplate";
+                return true;
+            }
+
+            if (prop.Property.CustomAttributes.Any(a => a.AttributeType.FullName == "System.Runtime.Serialization.DataMemberAttribute" &&
+                a.Properties.All(p => p.Name != "Name")))
+            {
+                message = "unnamed DataMember";
                 return true;
             }
 
@@ -1078,14 +1236,14 @@ namespace Obfuscar
             ))
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !HidePrivateApi;
         }
 
-        public bool ShouldSkip(EventKey evt, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
+        public bool ShouldSkip(EventKey evt, InheritMap map, bool markedOnly,
             out string message)
         {
             // skip runtime special events
@@ -1118,7 +1276,7 @@ namespace Obfuscar
 
             if (ShouldForce(evt.TypeKey, TypeAffectFlags.AffectEvent, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({evt.TypeKey})";
                 return false;
             }
 
@@ -1130,7 +1288,7 @@ namespace Obfuscar
 
             if (ShouldSkip(evt.TypeKey, TypeAffectFlags.AffectEvent, map))
             {
-                message = "type rule in configuration";
+                message = $"type rule in configuration ({evt.TypeKey})";
                 return true;
             }
 
@@ -1147,11 +1305,11 @@ namespace Obfuscar
             ))
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !HidePrivateApi;
         }
 
         /// <summary>

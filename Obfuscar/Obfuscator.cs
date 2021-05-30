@@ -111,23 +111,26 @@ namespace Obfuscar
             LogOutput("Hiding strings...\n");
             HideStrings();
 
-            LogOutput("Renaming:  fields...");
-            RenameFields();
+            LogOutput("Renaming:\n");
+            var namesInXaml = CollectTypesFromXaml();
 
-            LogOutput("Parameters...");
+            LogOutput("Fields...\n");
+            RenameFields(namesInXaml);
+
+            LogOutput("Parameters...\n");
             RenameParams();
 
-            LogOutput("Properties...");
-            RenameProperties();
+            LogOutput("Properties...\n");
+            RenameProperties(namesInXaml);
 
-            LogOutput("Events...");
+            LogOutput("Events...\n");
             RenameEvents();
 
-            LogOutput("Methods...");
+            LogOutput("Methods...\n");
             RenameMethods();
 
-            LogOutput("Types...");
-            RenameTypes();
+            LogOutput("Types...\n");
+            RenameTypes(namesInXaml);
 
             PostProcessing();
 
@@ -142,12 +145,56 @@ namespace Obfuscar
             LogOutput("Done.\n");
         }
 
+        internal HashSet<string> CollectTypesFromXaml()
+        {
+            var xamlFiles = Project.AssemblyList.SelectMany(info => GetXamlDocuments(info.Definition));
+            var namesInXaml = NamesInXaml(xamlFiles);
+
+            foreach (var info in Project.AssemblyList)
+            {
+                // Extend with enums used in public interface of the types directly mentioned in XAML
+                foreach (var type in info.GetAllTypeDefinitions().Where(t => namesInXaml.Contains(t.FullName)))
+                {
+                    foreach (FieldDefinition field in type.Fields)
+                    {
+                        TypeDefinition fieldType;
+                        if (field.IsPublic && (fieldType = field.FieldType.Resolve()) != null && fieldType.IsEnum)
+                            namesInXaml.Add(field.FieldType.FullName);
+                    }
+                    foreach (PropertyDefinition prop in type.Properties)
+                    {
+                        TypeDefinition propType;
+                        if (prop.IsPublic() && (propType = prop.PropertyType.Resolve()) != null && propType.IsEnum)
+                            namesInXaml.Add(prop.PropertyType.FullName);
+                    }
+                    foreach (MethodDefinition method in type.Methods)
+                    {
+                        TypeDefinition returnType;
+                        if (method.IsPublic() && (returnType = method.ReturnType.Resolve()) != null && returnType.IsEnum)
+                            namesInXaml.Add(method.ReturnType.FullName);
+                    }
+                }
+
+                // Extend with enums used in public properties on types implementing INotifyPropertyChanged
+                foreach (var type in info.GetAllTypeDefinitions().
+                    Where(t => t.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged")))
+                {
+                    foreach (PropertyDefinition prop in type.Properties)
+                    {
+                        TypeDefinition propType;
+                        if (prop.IsPublic() && (propType = prop.PropertyType.Resolve()) != null && propType.IsEnum)
+                            namesInXaml.Add(prop.PropertyType.FullName);
+                    }
+                }
+            }
+
+            return namesInXaml;
+        }
+
         public static Obfuscator CreateFromXml(string xml)
         {
             var document = XDocument.Load(new StringReader(xml));
-            {
-                return new Obfuscator(document);
-            }
+            return new Obfuscator(document);
         }
 
         internal Project Project { get; set; }
@@ -159,9 +206,9 @@ namespace Obfuscar
             // make sure everything looks good
             Project.CheckSettings();
             if (Project.Settings.UseUnicodeNames)
-                NameMaker.UseUnicodeChars = true;
+                NameMaker.Instance.UseUnicodeChars = true;
             if (Project.Settings.UseKoreanNames)
-                NameMaker.UseKoreanChars = true;
+                NameMaker.Instance.UseKoreanChars = true;
 
             LogOutput("Loading assemblies...");
             LogOutput("Extra framework folders: ");
@@ -288,11 +335,6 @@ namespace Obfuscar
                 }
                 catch (Exception e)
                 {
-                    if (throwException)
-                    {
-                        throw;
-                    }
-
                     LogOutput(string.Format("\nFailed to save {0}", fileName));
                     LogOutput(string.Format("\n{0}: {1}", e.GetType().Name, e.Message));
                     var match = Regex.Match(e.Message, @"Failed to resolve\s+(?<name>[^\s]+)");
@@ -302,6 +344,11 @@ namespace Obfuscar
                         LogOutput(string.Format("\n{0} might be one of:", name));
                         LogMappings(name);
                         LogOutput("\nHint: you might need to add a SkipType for an enum above.");
+                    }
+
+                    if (throwException)
+                    {
+                        throw;
                     }
                 }
             }
@@ -382,7 +429,7 @@ namespace Obfuscar
         /// <summary>
         /// Renames fields in the project.
         /// </summary>
-        public void RenameFields()
+        public void RenameFields(HashSet<string> namesInXaml)
         {
             if (!Project.Settings.RenameFields)
             {
@@ -403,17 +450,19 @@ namespace Obfuscar
 
                     var nameGroups = new Dictionary<string, NameGroup>();
 
+                    var typeInXaml = namesInXaml.Contains(type.FullName);
+
                     // rename field, grouping according to signature
                     foreach (FieldDefinition field in type.Fields)
                     {
-                        ProcessField(field, typeKey, nameGroups, info);
+                        ProcessField(field, typeKey, nameGroups, info, typeInXaml);
                     }
                 }
             }
         }
 
         private void ProcessField(FieldDefinition field, TypeKey typeKey, Dictionary<string, NameGroup> nameGroups,
-            AssemblyInfo info)
+            AssemblyInfo info, bool typeInXaml)
         {
             string sig = field.FieldType.FullName;
             var fieldKey = new FieldKey(typeKey, sig, field.Name, field);
@@ -421,9 +470,7 @@ namespace Obfuscar
 
             // skip filtered fields
             string skip;
-            if (info.ShouldSkip(fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                Project.Settings.HidePrivateApi,
-                Project.Settings.MarkedOnly, out skip))
+            if (info.ShouldSkip(fieldKey, Project.InheritMap, Project.Settings.MarkedOnly, typeInXaml, out skip))
             {
                 Mapping.UpdateField(fieldKey, ObfuscationStatus.Skipped, skip);
                 nameGroup.Add(fieldKey.Name);
@@ -432,7 +479,7 @@ namespace Obfuscar
 
             var newName = Project.Settings.ReuseNames
                 ? nameGroup.GetNext()
-                : NameMaker.UniqueName(_uniqueMemberNameIndex++);
+                : NameMaker.Instance.UniqueName(_uniqueMemberNameIndex++);
 
             RenameField(info, fieldKey, field, newName);
             nameGroup.Add(newName);
@@ -441,7 +488,7 @@ namespace Obfuscar
         private void RenameField(AssemblyInfo info, FieldKey fieldKey, FieldDefinition field, string newName)
         {
             // find references, rename them, then rename the field itself
-            foreach (AssemblyInfo reference in info.ReferencedBy)
+            foreach (var reference in info.ReferencedBy)
             {
                 for (int i = 0; i < reference.UnrenamedReferences.Count;)
                 {
@@ -487,13 +534,12 @@ namespace Obfuscar
 
                     string skip;
                     // rename the class parameters
-                    if (info.ShouldSkip(new TypeKey(type), Project.InheritMap, Project.Settings.KeepPublicApi,
-                        Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
+                    if (info.ShouldSkip(new TypeKey(type), Project.InheritMap, Project.Settings.MarkedOnly, out skip))
                         continue;
 
                     int index = 0;
                     foreach (GenericParameter param in type.GenericParameters)
-                        param.Name = NameMaker.UniqueName(index++);
+                        param.Name = NameMaker.Instance.UniqueName(index++);
                 }
             }
         }
@@ -502,8 +548,7 @@ namespace Obfuscar
         {
             MethodKey methodkey = new MethodKey(method);
             string skip;
-            if (info.ShouldSkipParams(methodkey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
+            if (info.ShouldSkipParams(methodkey, Project.InheritMap, Project.Settings.MarkedOnly, out skip))
                 return;
 
             foreach (ParameterDefinition param in method.Parameters)
@@ -513,13 +558,13 @@ namespace Obfuscar
             int index = 0;
             foreach (GenericParameter param in method.GenericParameters)
                 if (param.CustomAttributes.Count == 0)
-                    param.Name = NameMaker.UniqueName(index++);
+                    param.Name = NameMaker.Instance.UniqueName(index++);
         }
 
         /// <summary>
         /// Renames types and resources in the project.
         /// </summary>
-        public void RenameTypes()
+        public void RenameTypes(HashSet<string> namesInXaml)
         {
             //var typerenamemap = new Dictionary<string, string> (); // For patching the parameters of typeof(xx) attribute constructors
             foreach (AssemblyInfo info in Project.AssemblyList)
@@ -529,9 +574,6 @@ namespace Obfuscar
                 // make a list of the resources that can be renamed
                 List<Resource> resources = new List<Resource>(library.MainModule.Resources.Count);
                 resources.AddRange(library.MainModule.Resources);
-
-                var xamlFiles = GetXamlDocuments(library, Project.Settings.AnalyzeXaml);
-                var namesInXaml = NamesInXaml(xamlFiles);
 
                 // Save the original names of all types because parent (declaring) types of nested types may be already renamed.
                 // The names are used for the mappings file.
@@ -553,8 +595,7 @@ namespace Obfuscar
                     string fullName = type.FullName;
 
                     string skip;
-                    if (info.ShouldSkip(unrenamedTypeKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                        Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
+                    if (info.ShouldSkip(unrenamedTypeKey, Project.InheritMap, Project.Settings.MarkedOnly, out skip))
                     {
                         Mapping.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, skip);
 
@@ -579,7 +620,7 @@ namespace Obfuscar
 
                     if (namesInXaml.Contains(type.FullName))
                     {
-                        Mapping.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, "filtered by BAML");
+                        Mapping.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, "filtered by BAML/INotifyPropertyChanged");
 
                         // go through the list of resources, remove ones that would be renamed
                         for (int i = 0; i < resources.Count;)
@@ -589,7 +630,7 @@ namespace Obfuscar
                             if (Path.GetFileNameWithoutExtension(resName) == fullName)
                             {
                                 resources.RemoveAt(i);
-                                Mapping.AddResource(resName, ObfuscationStatus.Skipped, "filtered by BAML");
+                                Mapping.AddResource(resName, ObfuscationStatus.Skipped, "filtered by BAML/INotifyPropertyChanged");
                             }
                             else
                             {
@@ -605,19 +646,19 @@ namespace Obfuscar
                     if (type.IsNested)
                     {
                         ns = "";
-                        name = NameMaker.UniqueNestedTypeName(type.DeclaringType.NestedTypes.IndexOf(type));
+                        name = NameMaker.Instance.UniqueNestedTypeName(type.DeclaringType.NestedTypes.IndexOf(type));
                     }
                     else
                     {
                         if (Project.Settings.ReuseNames)
                         {
-                            name = NameMaker.UniqueTypeName(typeIndex);
-                            ns = NameMaker.UniqueNamespace(typeIndex);
+                            name = NameMaker.Instance.UniqueTypeName(typeIndex);
+                            ns = NameMaker.Instance.UniqueNamespace(typeIndex);
                         }
                         else
                         {
-                            name = NameMaker.UniqueName(_uniqueTypeNameIndex);
-                            ns = NameMaker.UniqueNamespace(_uniqueTypeNameIndex);
+                            name = NameMaker.Instance.UniqueName(_uniqueTypeNameIndex);
+                            ns = NameMaker.Instance.UniqueNamespace(_uniqueTypeNameIndex);
                             _uniqueTypeNameIndex++;
                         }
                     }
@@ -688,11 +729,9 @@ namespace Obfuscar
             }
         }
 
-        private HashSet<string> NamesInXaml(List<BamlDocument> xamlFiles)
+        private HashSet<string> NamesInXaml(IEnumerable<BamlDocument> xamlFiles)
         {
             var result = new HashSet<string>();
-            if (xamlFiles.Count == 0)
-                return result;
 
             foreach (var doc in xamlFiles)
             {
@@ -829,7 +868,7 @@ namespace Obfuscar
             return nameGroup;
         }
 
-        public void RenameProperties()
+        public void RenameProperties(HashSet<string> namesInXaml)
         {
             // do nothing if it was requested not to rename
             if (!Project.Settings.RenameProperties)
@@ -848,12 +887,14 @@ namespace Obfuscar
 
                     TypeKey typeKey = new TypeKey(type);
 
+                    var typeInXaml = namesInXaml.Contains(type.FullName);
+
                     int index = 0;
                     List<PropertyDefinition> propsToDrop = new List<PropertyDefinition>();
                     // ReSharper disable once LoopCanBeConvertedToQuery
                     foreach (PropertyDefinition prop in type.Properties)
                     {
-                        index = ProcessProperty(typeKey, prop, info, type, index, propsToDrop);
+                        index = ProcessProperty(typeKey, prop, info, type, typeInXaml, index, propsToDrop);
                     }
 
                     foreach (PropertyDefinition prop in propsToDrop)
@@ -867,18 +908,20 @@ namespace Obfuscar
             }
         }
 
-        private int ProcessProperty(TypeKey typeKey, PropertyDefinition prop, AssemblyInfo info, TypeDefinition type,
+        private int ProcessProperty(TypeKey typeKey, PropertyDefinition prop, AssemblyInfo info, TypeDefinition type, bool typeInXaml,
             int index,
             List<PropertyDefinition> propsToDrop)
         {
             PropertyKey propKey = new PropertyKey(typeKey, prop);
             ObfuscatedThing m = Mapping.GetProperty(propKey);
+            if (m.Status == ObfuscationStatus.Skipped)
+            {
+                return index;
+            }
 
             string skip;
             // skip filtered props
-            if (info.ShouldSkip(propKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                Project.Settings.HidePrivateApi,
-                Project.Settings.MarkedOnly, out skip))
+            if (info.ShouldSkip(propKey, typeInXaml, Project.InheritMap, Project.Settings.MarkedOnly, out skip))
             {
                 m.Update(ObfuscationStatus.Skipped, skip);
 
@@ -893,6 +936,18 @@ namespace Obfuscar
                     ForceSkip(prop.SetMethod, "skip by property");
                 }
 
+                var group = Project.InheritMap.GetPropertyGroup(propKey);
+                if (group != null)
+                {
+                    foreach (var item in group.Properties)
+                    {
+                        if (Mapping.GetProperty(item).Status != ObfuscationStatus.Skipped)
+                        {
+                            Mapping.UpdateProperty(item, ObfuscationStatus.Skipped, $"base class or interface skipped: {prop.FullName} {skip}");
+                        }
+                    }
+                }
+
                 return index;
             }
 
@@ -903,10 +958,14 @@ namespace Obfuscar
                 m.Update(ObfuscationStatus.Skipped, "public setter of a custom attribute");
                 // no problem when the getter or setter methods are renamed by RenameMethods()
             }
+            else if (prop.DeclaringType.IsSerializable)
+            {
+                m.Update(ObfuscationStatus.Skipped, "declaring type is Serializable");
+            }
             else if (prop.CustomAttributes.Count > 0)
             {
                 // If a property has custom attributes we don't remove the property but rename it instead.
-                var newName = NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
+                var newName = NameMaker.Instance.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
                 RenameProperty(info, propKey, prop, newName);
             }
             else
@@ -990,9 +1049,7 @@ namespace Obfuscar
 
             string skip;
             // skip filtered events
-            if (info.ShouldSkip(evtKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                Project.Settings.HidePrivateApi,
-                Project.Settings.MarkedOnly, out skip))
+            if (info.ShouldSkip(evtKey, Project.InheritMap, Project.Settings.MarkedOnly, out skip))
             {
                 m.Update(ObfuscationStatus.Skipped, skip);
 
@@ -1047,7 +1104,10 @@ namespace Obfuscar
                         }
                     }
                 }
+            }
 
+            foreach (AssemblyInfo info in Project.AssemblyList)
+            {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
                 {
                     if (type.FullName == "<Module>")
@@ -1115,8 +1175,7 @@ namespace Obfuscar
 
             // skip filtered methods
             string skiprename;
-            var toDo = info.ShouldSkip(methodKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skiprename);
+            var toDo = info.ShouldSkip(methodKey, Project.InheritMap, Project.Settings.MarkedOnly, out skiprename);
             if (!toDo)
                 skiprename = null;
             // update status for skipped non-virtual methods immediately...status for
@@ -1126,9 +1185,14 @@ namespace Obfuscar
                 if (skiprename != null)
                 {
                     m.Update(ObfuscationStatus.Skipped, skiprename);
+                    return;
                 }
+                if (Project.InheritMap.GetMethodGroup(methodKey) == null ||
+                    !method.Parameters.Any(p => p.ParameterType is GenericParameter))
+                    return;
 
-                return;
+                // If the method has generic arguments we need to group it with overloads in the same class so they are renamed the same
+                // way, otherwise the call site updating may fail to choose the right overload. Therefore we continue as if it was virtual.
             }
 
             // if we need to skip the method or we don't yet have a name planned for a method, rename it
@@ -1159,15 +1223,22 @@ namespace Obfuscar
             {
                 // group is not yet named
 
-                // counts are grouping according to signature
-                ParamSig sig = new ParamSig(method);
-
-                // get name groups for classes in the group
-                NameGroup[] nameGroups = GetNameGroups(baseSigNames, @group.Methods, sig);
-
                 if (@group.External)
                 {
                     skipRename = "external base class or interface";
+                }
+
+                if (skipRename == null)
+                {
+                    foreach (MethodKey m in group.Methods)
+                    {
+                        var current = Mapping.GetMethod(m);
+                        if (current.Status == ObfuscationStatus.Skipped)
+                        {
+                            skipRename = $"base class or interface skipped: {m.Method.FullName} {current.StatusText}";
+                            break;
+                        }
+                    }
                 }
 
                 // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
@@ -1175,27 +1246,38 @@ namespace Obfuscar
                 {
                     // for an external group, we can't rename.  just use the method
                     // name as group name
-                    groupName = method.Name;
+                    //groupName = method.Name;
+                    foreach (MethodKey m in @group.Methods)
+                    {
+                        if (Mapping.GetMethod(m).Status != ObfuscationStatus.Skipped)
+                        {
+                            Mapping.UpdateMethod(m, ObfuscationStatus.Skipped, skipRename);
+                        }
+                    }
                 }
                 else
                 {
+                    // counts are grouping according to signature
+                    ParamSig sig = new ParamSig(method, true);
+
+                    // get name groups for classes in the group
+                    NameGroup[] nameGroups = GetNameGroups(baseSigNames, @group.Methods, sig);
+
                     // for an internal group, get next unused name
                     groupName = NameGroup.GetNext(nameGroups);
-                }
+                    @group.Name = groupName;
 
-                @group.Name = groupName;
-
-                // set up methods to be renamed
-                foreach (MethodKey m in @group.Methods)
-                    if (skipRename == null)
+                    // set up methods to be renamed
+                    foreach (MethodKey m in @group.Methods)
+                    {
                         Mapping.UpdateMethod(m, ObfuscationStatus.WillRename, groupName);
-                    else
-                        Mapping.UpdateMethod(m, ObfuscationStatus.Skipped, skipRename);
+                    }
 
-                // make sure the classes' name groups are updated
-                foreach (NameGroup t in nameGroups)
-                {
-                    t.Add(groupName);
+                    // make sure the classes' name groups are updated
+                    foreach (NameGroup t in nameGroups)
+                    {
+                        t.Add(groupName);
+                    }
                 }
             }
             else if (skipRename != null)
@@ -1206,7 +1288,13 @@ namespace Obfuscar
                 Debug.Assert(!@group.External,
                     "Group's external flag should have been handled when the group was created, " +
                     "and all methods in the group should already be marked skipped.");
-                Mapping.UpdateMethod(methodKey, ObfuscationStatus.Skipped, skipRename);
+                foreach (MethodKey m in @group.Methods)
+                {
+                    if (Mapping.GetMethod(m).Status != ObfuscationStatus.Skipped)
+                    {
+                        Mapping.UpdateMethod(m, ObfuscationStatus.Skipped, skipRename);
+                    }
+                }
 
                 var message =
                     new StringBuilder(
@@ -1218,7 +1306,10 @@ namespace Obfuscar
                     message.AppendFormat("{0}->{1}:{2}", item, state.Status, state.StatusText).AppendLine();
                 }
 
-                throw new ObfuscarException(message.ToString());
+                if (Project.Settings.AbortOnInconsistentState)
+                    throw new ObfuscarException(message.ToString());
+
+                LogOutput("Warning: " + message.ToString());
             }
             else
             {
@@ -1282,7 +1373,7 @@ namespace Obfuscar
         private string GetNewName(Dictionary<ParamSig, NameGroup> sigNames, MethodDefinition method)
         {
             // counts are grouping according to signature
-            ParamSig sig = new ParamSig(method);
+            ParamSig sig = new ParamSig(method, true);
 
             NameGroup nameGroup = GetNameGroup(sigNames, sig);
 
@@ -1313,7 +1404,7 @@ namespace Obfuscar
 
             var generics = new List<GenericInstanceMethod>();
 
-            foreach (AssemblyInfo reference in references)
+            foreach(var reference in references)
             {
                 for (int i = 0; i < reference.UnrenamedReferences.Count;)
                 {
@@ -1329,7 +1420,8 @@ namespace Obfuscar
                             }
                             else
                             {
-                                generics.Add(generic);
+                                lock (generics)
+                                    generics.Add(generic);
                             }
 
                             reference.UnrenamedReferences.RemoveAt(i);
@@ -1425,15 +1517,25 @@ namespace Obfuscar
                 var module = info.Definition.MainModule;
                 var attribute = new TypeReference("System.Runtime.CompilerServices", "SuppressIldasmAttribute", module,
                     module.TypeSystem.CoreLibrary).Resolve();
-                if (attribute == null || attribute.Module != module.TypeSystem.CoreLibrary)
-                    return;
+
+                if (attribute == null)
+                {
+                    LogOutput($"Failed to resolve SuppressIldasmAttribute inside {module.Name}");
+                    continue;
+                }
+
+                // Something like this was added in the master repo, but it doesn't work
+                //if (attribute == null || attribute.Module.TypeSystem.CoreLibrary.Name != module.TypeSystem.CoreLibrary.Name) return;
 
                 CustomAttribute found = module.CustomAttributes.FirstOrDefault(existing =>
                     existing.Constructor.DeclaringType.FullName == attribute.FullName);
 
                 //Only add if it's not there already
                 if (found != null)
+                {
+                    LogOutput($"SuppressIldasmAttribute already exists for {module.Name}");
                     continue;
+                }
 
                 //Add one
                 var add = module.ImportReference(attribute.GetConstructors().FirstOrDefault(item => !item.HasParameters));
@@ -1681,7 +1783,7 @@ namespace Obfuscar
                         MethodDefinition individualStringMethodDefinition;
                         if (!_methodByString.TryGetValue(str, out individualStringMethodDefinition))
                         {
-                            string methodName = NameMaker.UniqueName(_nameIndex++);
+                            string methodName = NameMaker.Instance.UniqueName(_nameIndex++);
 
                             // Add the string to the data array
                             byte[] stringBytes = Encoding.UTF8.GetBytes(str);

@@ -30,10 +30,12 @@ using System.Text;
 
 namespace Obfuscar
 {
-    static class NameMaker
+    class NameMaker
     {
-        static string uniqueChars;
-        static int numUniqueChars;
+        internal static NameMaker Instance { get; } = new NameMaker();
+
+        string uniqueChars;
+        int numUniqueChars;
         const string defaultChars = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
 
         const string unicodeChars = "\u00A0\u1680" +
@@ -45,9 +47,9 @@ namespace Obfuscar
                                     "\u2061\u2062\u2063\u2064\u206A\u206B\u206C\u206D\u206E\u206F" +
                                     "\u3000";
 
-        private static readonly string koreanChars;
+        private readonly string koreanChars;
 
-        static NameMaker()
+        internal NameMaker()
         {
             string lUnicode = unicodeChars;
             for (int i = 0; i < lUnicode.Length; i++)
@@ -74,7 +76,7 @@ namespace Obfuscar
             UseKoreanChars = false;
         }
 
-        private static void ShuffleArray<T>(IList<T> list, Random rnd)
+        private void ShuffleArray<T>(IList<T> list, Random rnd)
         {
             int n = list.Count;
             while (n > 1)
@@ -87,7 +89,7 @@ namespace Obfuscar
             }
         }
 
-        public static bool UseUnicodeChars
+        public bool UseUnicodeChars
         {
             get { return uniqueChars == unicodeChars; }
             set
@@ -101,7 +103,7 @@ namespace Obfuscar
             }
         }
 
-        public static bool UseKoreanChars
+        public bool UseKoreanChars
         {
             get { return unicodeChars == koreanChars; }
             set
@@ -115,12 +117,12 @@ namespace Obfuscar
             }
         }
 
-        public static string UniqueName(int index)
+        public string UniqueName(int index)
         {
             return UniqueName(index, null);
         }
 
-        public static string UniqueName(int index, string sep)
+        public string UniqueName(int index, string sep)
         {
             // optimization for simple case
             if (index < numUniqueChars)
@@ -148,17 +150,17 @@ namespace Obfuscar
             return builder.ToString();
         }
 
-        public static string UniqueNestedTypeName(int index)
+        public string UniqueNestedTypeName(int index)
         {
             return UniqueName(index, null);
         }
 
-        public static string UniqueTypeName(int index)
+        public string UniqueTypeName(int index)
         {
             return UniqueName(index % numUniqueChars, ".");
         }
 
-        public static string UniqueNamespace(int index)
+        public string UniqueNamespace(int index)
         {
             return UniqueName(index / numUniqueChars, ".");
         }

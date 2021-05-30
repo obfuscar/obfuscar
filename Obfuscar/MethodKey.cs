@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,6 +25,7 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 using Mono.Cecil;
 
 namespace Obfuscar
@@ -131,16 +132,27 @@ namespace Obfuscar
         // taken from https://github.com/mono/mono/blob/master/mcs/tools/linker/Mono.Linker.Steps/TypeMapStep.cs
         internal static bool MethodMatch(MethodDefinition candidate, MethodReference method)
         {
+            if (candidate == null && method == null)
+            {
+                return true;
+            }
+
+            if (candidate == null || method == null)
+            {
+                return false;
+            }
+
             //if (!candidate.IsVirtual)
             //    return false;
 
-            if (candidate.Name != method.Name)
+            if (candidate.Parameters.Count != method.Parameters.Count)
+                return false;
+
+            var expandedName = $"{candidate.DeclaringType.FullName}.{candidate.Name}";
+            if (candidate.Name != method.Name && expandedName != ToGenerelGenericMemberName(method.Name))
                 return false;
 
             if (!TypeMatch(candidate.ReturnType, method.ReturnType))
-                return false;
-
-            if (candidate.Parameters.Count != method.Parameters.Count)
                 return false;
 
             for (int i = 0; i < candidate.Parameters.Count; i++)
@@ -148,6 +160,35 @@ namespace Obfuscar
                     return false;
 
             return true;
+        }
+
+        // Convert member names from Type<T>.Member to Type`1.Member form
+        static string ToGenerelGenericMemberName(string memberName)
+        {
+            int iEnd;
+            if ((iEnd = memberName.IndexOf(">.")) < 0)
+                return memberName;
+            int iStart = memberName.IndexOf("<");
+            int genericArgumentCount = 1;
+            int level = 0;
+            for (int i = iStart + 1; i < iEnd; i++)
+            {
+                switch (memberName[i])
+                {
+                    case '<':
+                        level++;
+                        break;
+                    case '>':
+                        level--;
+                        break;
+                    case ',':
+                        if (level == 0)
+                            genericArgumentCount++;
+                        break;
+                }
+            }
+            Debug.Assert(level == 0);
+            return memberName = memberName.Substring(0, iStart) + $"`{genericArgumentCount}" + memberName.Substring(iEnd + 1);
         }
 
         private static bool TypeMatch(IModifierType a, IModifierType b)

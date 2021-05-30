@@ -26,6 +26,7 @@
 
 using System;
 using Mono.Cecil;
+using Obfuscar.Helpers;
 
 namespace Obfuscar
 {
@@ -106,6 +107,14 @@ namespace Obfuscar
         public override string ToString()
         {
             return string.Format("[{0}]{1} {2}::{3}", TypeKey.Scope, Type, TypeKey.Fullname, Name);
+        }
+
+        internal static bool PropertyMatch(PropertyDefinition candidate, PropertyDefinition property)
+        {
+            return (MethodKey.MethodMatch(candidate.GetMethod, property.GetMethod)
+                && MethodKey.MethodMatch(candidate.SetMethod, property.SetMethod))
+                || (MethodKey.MethodMatch(property.GetMethod, candidate.GetMethod)
+                && MethodKey.MethodMatch(property.SetMethod, candidate.SetMethod));
         }
     }
 }

@@ -1,0 +1,14 @@
+mode: ContinuousDeployment
+branches:
+  ThreeShape.Obfuscar:
+    regex: ^ThreeShape\.Obfuscar
+    source-branches: ['master']
+    is-source-branch-for: ['feature', 'hotfix', 'support']
+    tag: beta
+    mode: ContinuousDeployment
+    increment: Minor
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: true
+    tracks-release-branches: true
+ignore:
+  sha: []
