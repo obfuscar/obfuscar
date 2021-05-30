@@ -69,7 +69,7 @@ namespace ObfuscarTest
             TypeDefinition classAType = inAssmDef.MainModule.GetType("WpfApplication1.MainWindow");
             var obfuscated = map.GetClass(new TypeKey(classAType));
             Assert.True(ObfuscationStatus.Skipped == obfuscated.Status, "WpfApplication1.MainWindow should have been skipped");
-            Assert.Equal("filtered by BAML", obfuscated.StatusText);
+            Assert.Equal("filtered by BAML/INotifyPropertyChanged", obfuscated.StatusText);
         }
     }
 }
