@@ -60,7 +60,7 @@ namespace ObfuscarTests
 
             Obfuscar.IPredicate<Obfuscar.PropertyKey> tester;
 
-            // check differnt kinds of name
+            // check different kinds of name
             tester = new Obfuscar.PropertyTester("property", "ns.name", "public", null);
             Assert.True(tester.Test(key), "Tester should handle strings.");
             tester = new Obfuscar.PropertyTester("pr*ty", "ns.name", "public", null);
@@ -70,7 +70,7 @@ namespace ObfuscarTests
             tester = new Obfuscar.PropertyTester(new Regex("p.*y"), "ns.name", "public", null);
             Assert.True(tester.Test(key), "Tester should handle regular expressions.");
 
-            // check differnt kinds of type name
+            // check different kinds of type name
             tester = new Obfuscar.PropertyTester("property", "ns.n*e", "public", null);
             Assert.True(tester.Test(key), "Tester should handle type wildcards.");
             tester = new Obfuscar.PropertyTester("property", "^ns\\.n.*e", "public", null);
@@ -87,7 +87,7 @@ namespace ObfuscarTests
 
             Obfuscar.IPredicate<Obfuscar.MethodKey> tester;
 
-            // check differnt kinds of name
+            // check different kinds of name
             tester = new Obfuscar.MethodTester("method", "ns.name", "", "");
             Assert.True(tester.Test(key), "Tester should handle strings.");
             tester = new Obfuscar.MethodTester("me*od", "ns.name", "", "");
@@ -97,7 +97,7 @@ namespace ObfuscarTests
             tester = new Obfuscar.MethodTester(new Regex("me.*od"), "ns.name", "", "");
             Assert.True(tester.Test(key), "Tester should handle regular expressions.");
 
-            // check differnt kinds of type name
+            // check different kinds of type name
             tester = new Obfuscar.MethodTester("method", "ns.n*e", "", "");
             Assert.True(tester.Test(key), "Tester should handle type wildcards.");
             tester = new Obfuscar.MethodTester("method", "^ns\\.n.*e", "", "");
@@ -117,7 +117,7 @@ namespace ObfuscarTests
 
             Obfuscar.IPredicate<Obfuscar.FieldKey> tester;
 
-            // check differnt kinds of name
+            // check different kinds of name
             tester = new Obfuscar.FieldTester("field", "ns.name", "", "", "", "", false, false);
             Assert.True(tester.Test(key), "Tester should handle strings.");
             tester = new Obfuscar.FieldTester("f*d", "ns.name", "", "", "", "", false, false);
@@ -127,7 +127,7 @@ namespace ObfuscarTests
             tester = new Obfuscar.FieldTester(new Regex("f.*d"), "ns.name", "", "", "", "", false, false);
             Assert.True(tester.Test(key), "Tester should handle regular expressions.");
 
-            // check differnt kinds of type name
+            // check different kinds of type name
             tester = new Obfuscar.FieldTester("field", "ns.n*e", "", "", "", "", false, false);
             Assert.True(tester.Test(key), "Tester should handle type wildcards.");
             tester = new Obfuscar.FieldTester("field", "^ns\\.n.*e", "", "", "", "", false, false);
@@ -144,7 +144,7 @@ namespace ObfuscarTests
 
             Obfuscar.IPredicate<Obfuscar.EventKey> tester;
 
-            // check differnt kinds of name
+            // check different kinds of name
             tester = new Obfuscar.EventTester("event", "ns.name", "", "");
             Assert.True(tester.Test(key), "Tester should handle strings.");
             tester = new Obfuscar.EventTester("e*t", "ns.name", "", "");
@@ -154,7 +154,7 @@ namespace ObfuscarTests
             tester = new Obfuscar.EventTester(new Regex("e.*t"), "ns.name", "", "");
             Assert.True(tester.Test(key), "Tester should handle regular expressions.");
 
-            // check differnt kinds of type name
+            // check different kinds of type name
             tester = new Obfuscar.EventTester("event", "ns.n*e", "", "");
             Assert.True(tester.Test(key), "Tester should handle type wildcards.");
             tester = new Obfuscar.EventTester("event", "^ns\\.n.*e", "", "");

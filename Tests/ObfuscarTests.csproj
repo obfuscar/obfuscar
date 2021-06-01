@@ -56,6 +56,32 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="Input\AssemblyA.cs" />
+    <None Include="Input\AssemblyB.cs" />
+    <None Include="Input\AssemblyForCleanPoolClass.cs" />
+    <None Include="Input\AssemblyForCleanPoolInterface.cs" />
+    <None Include="Input\AssemblyForSigning.cs" />
+    <None Include="Input\AssemblyForSigning2.cs" />
+    <None Include="Input\AssemblyWithAttrs.cs" />
+    <None Include="Input\AssemblyWithClosedOverrideGeneric.cs" />
+    <None Include="Input\AssemblyWithCustomAttr.cs" />
+    <None Include="Input\AssemblyWithCustomAttrTypeArg.cs" />
+    <None Include="Input\AssemblyWithEnums.cs" />
+    <None Include="Input\AssemblyWithEvents.cs" />
+    <None Include="Input\AssemblyWithGenericOverrides.cs" />
+    <None Include="Input\AssemblyWithGenericOverrides2.cs" />
+    <None Include="Input\AssemblyWithInterfaces.cs" />
+    <None Include="Input\AssemblyWithInterfaces2.cs" />
+    <None Include="Input\AssemblyWithNestedTypes.cs" />
+    <None Include="Input\AssemblyWithNestedTypes2.cs" />
+    <None Include="Input\AssemblyWithOverrides.cs" />
+    <None Include="Input\AssemblyWithProperties.cs" />
+    <None Include="Input\AssemblyWithSpecializedGenerics.cs" />
+    <None Include="Input\AssemblyWithStrings.cs" />
+    <None Include="Input\AssemblyWithTypes.cs" />
+    <None Include="Input\AssemblyWithTypesAttrs.cs" />
+    <None Include="Input\AssemblyWithTypesAttrs2.cs" />
+    <None Include="Input\AssemblyWithTypesAttrs3.cs" />
     <Compile Include="AssemblyHelper.cs" />
     <Compile Include="InterfaceTests.cs" />
     <Compile Include="SettingsTests.cs" />

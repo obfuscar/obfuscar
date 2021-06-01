@@ -36,6 +36,7 @@ namespace TestClasses
 
     [System.Reflection.ObfuscationAttribute(Exclude=false, ApplyToMembers=true, StripAfterObfuscation = true)]
     [System.Runtime.Serialization.DataContract]
+    [System.Serializable]
     public class PublicClass
     {
         public virtual void PublicMethod()
@@ -54,5 +55,14 @@ namespace TestClasses
 
         [System.Runtime.Serialization.DataMember(Name = "token_type")]
         public long TestLong { get; set; }
+
+        private int TestPrivateProperty { get; set; }
+
+        public int TestNonSerializedProperty { get; set; }
+
+        public int TestSerializedField;
+
+        [NonSerialized]
+        public int TestNonSerializedField;
     }
 }

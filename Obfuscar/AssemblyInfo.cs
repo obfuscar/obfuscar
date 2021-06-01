@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -781,8 +781,14 @@ namespace Obfuscar
         }
 
         public bool ShouldSkip(TypeKey type, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
-            out string message)
+            bool skipSerializableTypes, out string message)
         {
+            if (skipSerializableTypes && type.TypeDefinition.IsSerializable)
+            {
+                message = "SkipSerializableTypes option in configuration";
+                return true;
+            }
+
             var attribute = type.TypeDefinition.MarkedToRename();
             if (attribute != null)
             {
@@ -949,8 +955,18 @@ namespace Obfuscar
         }
 
         public bool ShouldSkip(FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
-            out string message)
+            bool skipSerializableTypes, out string message)
         {
+            if (skipSerializableTypes && field.DeclaringType.IsSerializable)
+            {
+                bool nonSerialized = field.FieldAttributes.HasFlag(FieldAttributes.NotSerialized);
+                if (!nonSerialized)
+                {
+                    message = "SkipSerializableTypes option in configuration";
+                    return true;
+                }
+            }
+
             // skip runtime methods
             if ((field.Field.IsRuntimeSpecialName && field.Field.Name == "value__"))
             {
@@ -1019,8 +1035,14 @@ namespace Obfuscar
         }
 
         public bool ShouldSkip(PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
-            bool markedOnly, out string message)
+            bool markedOnly, bool skipSerializableTypes, out string message)
         {
+            if (skipSerializableTypes && prop.DeclaringType.IsSerializable)
+            {
+                message = "SkipSerializableTypes option in configuration";
+                return true;
+            }
+
             if (prop.Property.IsRuntimeSpecialName)
             {
                 message = "runtime special name";
