@@ -46,6 +46,7 @@ namespace Obfuscar
             ReuseNames = XmlConvert.ToBoolean(vars.GetValue("ReuseNames", "true"));
             UseUnicodeNames = XmlConvert.ToBoolean(vars.GetValue("UseUnicodeNames", "false"));
             UseKoreanNames = XmlConvert.ToBoolean(vars.GetValue("UseKoreanNames", "false"));
+            UseDebugVersionNames = XmlConvert.ToBoolean(vars.GetValue("UseDebugVersionNames", "false"));
             HideStrings = XmlConvert.ToBoolean(vars.GetValue("HideStrings", "true"));
             Optimize = XmlConvert.ToBoolean(vars.GetValue("OptimizeMethods", "true"));
             SuppressIldasm = XmlConvert.ToBoolean(vars.GetValue("SuppressIldasm", "true"));
@@ -88,6 +89,11 @@ namespace Obfuscar
         public bool UseUnicodeNames { get; }
 
         public bool UseKoreanNames { get; }
+
+        /// <summary>
+        /// Try to keep it readable for debug purposes (obfuscate/rename it but keep names similar to what was before obfuscation)
+        /// </summary>
+        public bool UseDebugVersionNames { get; }
 
         public bool AbortOnInconsistentState { get; }
     }
