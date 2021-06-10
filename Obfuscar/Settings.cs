@@ -54,6 +54,7 @@ namespace Obfuscar
 
             XmlMapping = XmlConvert.ToBoolean(vars.GetValue("XmlMapping", "false"));
             RegenerateDebugInfo = XmlConvert.ToBoolean(vars.GetValue("RegenerateDebugInfo", "false"));
+            AnalyzeXaml = XmlConvert.ToBoolean(vars.GetValue("AnalyzeXaml", "false"));
         }
 
         public bool RegenerateDebugInfo { get; }
@@ -94,6 +95,8 @@ namespace Obfuscar
         /// Try to keep it readable for debug purposes (obfuscate/rename it but keep names similar to what was before obfuscation)
         /// </summary>
         public bool UseDebugVersionNames { get; }
+
+        public bool AnalyzeXaml { get; }
 
         public bool AbortOnInconsistentState { get; }
     }

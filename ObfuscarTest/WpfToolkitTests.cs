@@ -55,6 +55,7 @@ namespace ObfuscarTest
                 @"<Var name='KeyFile' value='$(InPath){2}SigningKey.snk' />" +
                 @"<Var name='HidePrivateApi' value='true' />" +
                 @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Var name='AnalyzeXaml' value='true' />" +
                 @"<Module file='$(InPath){2}System.Windows.Controls.DataVisualization.Toolkit.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 

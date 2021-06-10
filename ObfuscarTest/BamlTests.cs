@@ -43,6 +43,8 @@ namespace ObfuscarTest
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Var name='AnalyzeXaml' value='true' />" +
                 @"<Module file='$(InPath){2}WpfApplication1.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
@@ -66,7 +68,8 @@ namespace ObfuscarTest
 
             TypeDefinition classAType = inAssmDef.MainModule.GetType("WpfApplication1.MainWindow");
             var obfuscated = map.GetClass(new TypeKey(classAType));
-            Assert.True(obfuscated.Status == ObfuscationStatus.Skipped);
+            Assert.True(ObfuscationStatus.Skipped == obfuscated.Status, "WpfApplication1.MainWindow should have been skipped");
+            Assert.Equal("filtered by BAML/INotifyPropertyChanged", obfuscated.StatusText);
         }
     }
 }

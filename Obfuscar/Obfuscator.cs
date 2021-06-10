@@ -147,7 +147,7 @@ namespace Obfuscar
 
         internal HashSet<string> CollectTypesFromXaml()
         {
-            var xamlFiles = Project.AssemblyList.SelectMany(info => GetXamlDocuments(info.Definition));
+            var xamlFiles = Project.AssemblyList.SelectMany(info => GetXamlDocuments(info.Definition, Project.Settings.AnalyzeXaml));
             var namesInXaml = NamesInXaml(xamlFiles);
 
             foreach (var info in Project.AssemblyList)
@@ -750,9 +750,14 @@ namespace Obfuscar
             return result;
         }
 
-        private List<BamlDocument> GetXamlDocuments(AssemblyDefinition library)
+        private List<BamlDocument> GetXamlDocuments(AssemblyDefinition library, bool analyzeXaml)
         {
             var result = new List<BamlDocument>();
+            if (!analyzeXaml)
+            {
+                return result;
+            }
+
             foreach (Resource res in library.MainModule.Resources)
             {
                 var embed = res as EmbeddedResource;
