@@ -26,6 +26,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Obfuscar
@@ -74,6 +75,9 @@ namespace Obfuscar
             koreanChars = new string(chars.ToArray());
 
             UseKoreanChars = false;
+
+            // inherit global debug model obfuscation settings
+            UseDebugVersionNames = Instance?.UseDebugVersionNames ?? false; // null possible when we create first Instance
         }
 
         private void ShuffleArray<T>(IList<T> list, Random rnd)
@@ -117,16 +121,20 @@ namespace Obfuscar
             }
         }
 
-        public string UniqueName(int index)
-        {
-            return UniqueName(index, null);
-        }
+        /// <summary>
+        /// Try to keep it readable for debug purposes (obfuscate/rename it but keep names similar to what was before obfuscation)
+        /// </summary>
+        public bool UseDebugVersionNames { get; set; }
 
-        public string UniqueName(int index, string sep)
+        public string UniqueName(int index, string sep, string originalName)
         {
+            var postfix = string.IsNullOrEmpty(originalName) || !UseDebugVersionNames
+                ? string.Empty
+                : "_" + originalName.Split('.', '>').Last();
+
             // optimization for simple case
             if (index < numUniqueChars)
-                return uniqueChars[index].ToString();
+                return uniqueChars[index].ToString() + postfix;
 
             Stack<char> stack = new Stack<char>();
 
@@ -147,22 +155,22 @@ namespace Obfuscar
                 builder.Append(stack.Pop());
             }
 
-            return builder.ToString();
+            return builder.ToString() + postfix;
         }
 
-        public string UniqueNestedTypeName(int index)
+        public string UniqueNestedTypeName(int index, string originalName)
         {
-            return UniqueName(index, null);
+            return UniqueName(index, null, originalName);
         }
 
-        public string UniqueTypeName(int index)
+        public string UniqueTypeName(int index, string originalName)
         {
-            return UniqueName(index % numUniqueChars, ".");
+            return UniqueName(index % numUniqueChars, ".", originalName);
         }
 
-        public string UniqueNamespace(int index)
+        public string UniqueNamespace(int index, string originalName)
         {
-            return UniqueName(index / numUniqueChars, ".");
+            return UniqueName(index / numUniqueChars, ".", originalName);
         }
     }
 }

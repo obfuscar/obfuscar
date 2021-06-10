@@ -209,6 +209,8 @@ namespace Obfuscar
                 NameMaker.Instance.UseUnicodeChars = true;
             if (Project.Settings.UseKoreanNames)
                 NameMaker.Instance.UseKoreanChars = true;
+            if (Project.Settings.UseDebugVersionNames)
+                NameMaker.Instance.UseDebugVersionNames = true;
 
             LogOutput("Loading assemblies...");
             LogOutput("Extra framework folders: ");
@@ -478,8 +480,8 @@ namespace Obfuscar
             }
 
             var newName = Project.Settings.ReuseNames
-                ? nameGroup.GetNext()
-                : NameMaker.Instance.UniqueName(_uniqueMemberNameIndex++);
+                ? nameGroup.GetNext(field.Name)
+                : NameMaker.Instance.UniqueName(_uniqueMemberNameIndex++, null, field.Name);
 
             RenameField(info, fieldKey, field, newName);
             nameGroup.Add(newName);
@@ -539,7 +541,7 @@ namespace Obfuscar
 
                     int index = 0;
                     foreach (GenericParameter param in type.GenericParameters)
-                        param.Name = NameMaker.Instance.UniqueName(index++);
+                        param.Name = NameMaker.Instance.UniqueName(index++, null, param.Name);
                 }
             }
         }
@@ -558,7 +560,7 @@ namespace Obfuscar
             int index = 0;
             foreach (GenericParameter param in method.GenericParameters)
                 if (param.CustomAttributes.Count == 0)
-                    param.Name = NameMaker.Instance.UniqueName(index++);
+                    param.Name = NameMaker.Instance.UniqueName(index++, null, param.Name);
         }
 
         /// <summary>
@@ -646,19 +648,19 @@ namespace Obfuscar
                     if (type.IsNested)
                     {
                         ns = "";
-                        name = NameMaker.Instance.UniqueNestedTypeName(type.DeclaringType.NestedTypes.IndexOf(type));
+                        name = NameMaker.Instance.UniqueNestedTypeName(type.DeclaringType.NestedTypes.IndexOf(type), type.Name);
                     }
                     else
                     {
                         if (Project.Settings.ReuseNames)
                         {
-                            name = NameMaker.Instance.UniqueTypeName(typeIndex);
-                            ns = NameMaker.Instance.UniqueNamespace(typeIndex);
+                            name = NameMaker.Instance.UniqueTypeName(typeIndex, type.Name);
+                            ns = NameMaker.Instance.UniqueNamespace(typeIndex, type.Name);
                         }
                         else
                         {
-                            name = NameMaker.Instance.UniqueName(_uniqueTypeNameIndex);
-                            ns = NameMaker.Instance.UniqueNamespace(_uniqueTypeNameIndex);
+                            name = NameMaker.Instance.UniqueName(_uniqueTypeNameIndex, null, type.Name);
+                            ns = NameMaker.Instance.UniqueNamespace(_uniqueTypeNameIndex, type.Name);
                             _uniqueTypeNameIndex++;
                         }
                     }
@@ -960,7 +962,8 @@ namespace Obfuscar
             else if (prop.CustomAttributes.Count > 0)
             {
                 // If a property has custom attributes we don't remove the property but rename it instead.
-                var newName = NameMaker.Instance.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
+                var newName = NameMaker.Instance.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++,
+                    null, prop.Name);
                 RenameProperty(info, propKey, prop, newName);
             }
             else
@@ -1259,7 +1262,7 @@ namespace Obfuscar
                     NameGroup[] nameGroups = GetNameGroups(baseSigNames, @group.Methods, sig);
 
                     // for an internal group, get next unused name
-                    groupName = NameGroup.GetNext(nameGroups);
+                    groupName = NameGroup.GetNext(nameGroups, method.Name);
                     @group.Name = groupName;
 
                     // set up methods to be renamed
@@ -1372,7 +1375,7 @@ namespace Obfuscar
 
             NameGroup nameGroup = GetNameGroup(sigNames, sig);
 
-            string newName = nameGroup.GetNext();
+            string newName = nameGroup.GetNext(method.Name);
 
             // make sure the name groups is updated
             nameGroup.Add(newName);
@@ -1778,7 +1781,7 @@ namespace Obfuscar
                         MethodDefinition individualStringMethodDefinition;
                         if (!_methodByString.TryGetValue(str, out individualStringMethodDefinition))
                         {
-                            string methodName = NameMaker.Instance.UniqueName(_nameIndex++);
+                            string methodName = NameMaker.Instance.UniqueName(_nameIndex++, null, "StringReplacedWithCall");
 
                             // Add the string to the data array
                             byte[] stringBytes = Encoding.UTF8.GetBytes(str);

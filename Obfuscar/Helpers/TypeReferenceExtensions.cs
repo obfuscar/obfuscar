@@ -68,10 +68,10 @@ namespace Obfuscar.Helpers
             for (int i = 0; i < type.GenericParameters.Count; i++)
             {
                 GenericParameter genericName = type.GenericParameters[i];
-                genericName.Name = nameMaker.UniqueName(i);
+                genericName.Name = nameMaker.UniqueName(i, null, genericName.Name);
             }
 
-            type.GetElementType().Name = nameMaker.UniqueName(type.GenericParameters.Count);
+            type.GetElementType().Name = nameMaker.UniqueName(type.GenericParameters.Count, null, type.Name);
             return type.Name;
         }
     }
