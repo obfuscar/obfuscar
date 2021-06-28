@@ -179,6 +179,8 @@ namespace Obfuscar
                     else
                         project.vars.Remove(name);
                 }
+                else
+                    throw new ArgumentNullException("name");
             }
 
             var includes = reader.Elements("Include");
