@@ -250,6 +250,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckMarkedOnly2()
         {
+            string outputPath = TestHelper.OutputPath;
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"				<Obfuscator>" +
@@ -260,7 +261,7 @@ namespace ObfuscarTests
                 @"                <Var name='MarkedOnly' value='true' />" +
                 @"				<Module file='$(InPath){2}AssemblyWithTypesAttrs.dll'>" +
                 @"				</Module>" +
-                @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+                @"				</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
             var obfuscator = TestHelper.BuildAndObfuscate("AssemblyWithTypesAttrs", string.Empty, xml);
             var map = obfuscator.Mapping;
@@ -288,12 +289,18 @@ namespace ObfuscarTests
                 "Nested class shouldn't have been obfuscated");
 
             TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.PublicClass");
+            Assert.True(classBType.HasCustomAttributes, "Obfuscation attribute must exist");
             ObfuscatedThing classB = map.GetClass(new TypeKey(classBType));
             var classBmethod1 = FindByName(classBType, "PublicMethod");
             var method2 = map.GetMethod(new MethodKey(classBmethod1));
 
             Assert.True(classB.Status == ObfuscationStatus.Renamed, "PublicClass should have been obfuscated.");
             Assert.True(method2.Status == ObfuscationStatus.Renamed, "PublicMethod should have been obfuscated.");
+
+            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, assmName));
+            TypeDefinition renamed = outAssmDef.MainModule.GetType(classB.StatusText.Substring(assmName.Length - 4 + 2));
+            Assert.False(renamed.HasCustomAttributes, "Obfuscation attribute must not exist");
 
             TypeDefinition classCType = inAssmDef.MainModule.GetType("TestClasses.InternalClass2");
             ObfuscatedThing classC = map.GetClass(new TypeKey(classCType));
