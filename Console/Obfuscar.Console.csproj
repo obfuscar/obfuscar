@@ -9,7 +9,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Obfuscar</RootNamespace>
     <AssemblyName>Obfuscar.Console</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <UpgradeBackupLocation>

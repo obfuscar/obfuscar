@@ -40,3 +40,4 @@ T4MVC.cs
 .idea/
 .vs
 /local
+nuget.exe
