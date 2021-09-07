@@ -85,6 +85,7 @@
     <Compile Remove="Input\AssemblyWithTypesAttrs.cs" />
     <Compile Remove="Input\AssemblyWithTypesAttrs2.cs" />
     <Compile Remove="Input\AssemblyWithTypesAttrs3.cs" />
+    <Compile Remove="Input\AttributeWithGenericTypeParam.cs" />
     <Compile Remove="Input\SkipVirtualMethodTest.cs" />
     <Compile Remove="Input\SkipMethodWithDynamicParameterTest.cs" />
   </ItemGroup>
