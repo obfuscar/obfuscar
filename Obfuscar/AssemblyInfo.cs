@@ -426,7 +426,7 @@ namespace Obfuscar
                     {
                         if (ca.Type.FullName == "System.Type" && ca.Value != null)
                         {
-                            typerefs.Add((TypeReference) ca.Value);
+                            AddTypeDefFromAttribute(typerefs, (TypeReference)ca.Value);
                             continue;
                         }
 
@@ -435,7 +435,7 @@ namespace Obfuscar
                         {
                             foreach (CustomAttributeArgument caArg in attributeTypeArguments)
                             {
-                                typerefs.Add((TypeReference)caArg.Value);
+                                AddTypeDefFromAttribute(typerefs, (TypeReference)caArg.Value);
                             }
                         }
                     }
@@ -446,6 +446,21 @@ namespace Obfuscar
             unrenamedTypeReferences = new List<TypeReference>(typerefs);
 
             initialized = true;
+        }
+
+        /// <summary>
+        /// Due to the unknown reason TypeReference inside Generic parameters inside attributes
+        /// Are unique references that differ from the same type TypeReferences in other places.
+        /// Thus we need to add generic arguments for types used as attribute constructor parameters.
+        /// </summary>
+        private void AddTypeDefFromAttribute(HashSet<TypeReference> typerefs, TypeReference type)
+        {
+            typerefs.Add(type);
+            if (type is GenericInstanceType gt)
+            {
+                foreach (var p in gt.GenericArguments)
+                    AddTypeDefFromAttribute(typerefs, p);
+            }
         }
 
         private class Graph
