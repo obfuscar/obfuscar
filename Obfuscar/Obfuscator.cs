@@ -1447,17 +1447,30 @@ namespace Obfuscar
 
         private class StringSqueeze
         {
-            private TypeDefinition NewType { get; set; }
+            /// <summary>
+            /// Store the class to generate so we can generate it later on.
+            /// </summary>
+            private class StringSqueezeData
+            {
+                public TypeDefinition NewType { get; set; }
 
-            private TypeDefinition StructType { get; set; }
+                public TypeDefinition StructType { get; set; }
 
-            private FieldDefinition DataConstantField { get; set; }
+                public FieldDefinition DataConstantField { get; set; }
 
-            private FieldDefinition DataField { get; set; }
+                public FieldDefinition DataField { get; set; }
 
-            private FieldDefinition StringArrayField { get; set; }
+                public FieldDefinition StringArrayField { get; set; }
 
-            private MethodDefinition StringGetterMethodDefinition { get; set; }
+                public MethodDefinition StringGetterMethodDefinition { get; set; }
+
+                public int NameIndex { get; set; }
+
+                public int StringIndex { get; set; }
+
+                // Array of bytes receiving the obfuscated strings in UTF8 format.
+                public List<byte> DataBytes { get; } = new List<byte>();
+            }
 
             private TypeReference SystemStringTypeReference { get; set; }
 
@@ -1467,17 +1480,20 @@ namespace Obfuscar
 
             private TypeReference SystemIntTypeReference { get; set; }
 
-            private MethodReference Method3 { get; set; }
+            private TypeReference SystemObjectTypeReference { get; set; }
 
-            private int _stringIndex;
+            private TypeReference SystemValueTypeTypeReference { get; set; }
+
+            private MethodReference InitializeArrayMethod { get; set; }
+
+            private TypeDefinition EncodingTypeDefinition { get; set; }
+
+            private readonly List<StringSqueezeData> newDatas = new List<StringSqueezeData>();
+
+            private StringSqueezeData mostRecentData;
 
             private readonly Dictionary<string, MethodDefinition> _methodByString =
                 new Dictionary<string, MethodDefinition>();
-
-            private int _nameIndex;
-
-            // Array of bytes receiving the obfuscated strings in UTF8 format.
-            private readonly List<byte> _dataBytes = new List<byte>();
 
             private readonly AssemblyDefinition _library;
             private bool _initialized;
@@ -1497,88 +1513,122 @@ namespace Obfuscar
                 var library = _library;
 
                 // We get the most used type references
-                var systemObjectTypeReference = library.MainModule.TypeSystem.Object;
                 SystemVoidTypeReference = library.MainModule.TypeSystem.Void;
                 SystemStringTypeReference = library.MainModule.TypeSystem.String;
-                var systemValueTypeTypeReference = new TypeReference("System", "ValueType", library.MainModule,
-                    library.MainModule.TypeSystem.CoreLibrary);
                 SystemByteTypeReference = library.MainModule.TypeSystem.Byte;
                 SystemIntTypeReference = library.MainModule.TypeSystem.Int32;
-                var encoding = new TypeReference("System.Text", "Encoding", library.MainModule,
+                SystemObjectTypeReference = library.MainModule.TypeSystem.Object;
+                SystemValueTypeTypeReference = new TypeReference("System", "ValueType", library.MainModule,
+                    library.MainModule.TypeSystem.CoreLibrary);
+
+                var runtimeHelpers = new TypeReference("System.Runtime.CompilerServices", "RuntimeHelpers",
+                    library.MainModule, library.MainModule.TypeSystem.CoreLibrary).Resolve();
+                InitializeArrayMethod = library.MainModule.ImportReference(
+                    runtimeHelpers.Methods.FirstOrDefault(method => method.Name == "InitializeArray"));
+
+                EncodingTypeDefinition = new TypeReference("System.Text", "Encoding", library.MainModule,
                     library.MainModule.TypeSystem.CoreLibrary).Resolve();
-                if (encoding == null)
+
+                if (EncodingTypeDefinition == null)
                 {
                     _disabled = true;
                     return;
                 }
+            }
 
-                var method1 =
-                    library.MainModule.ImportReference(encoding.Methods.FirstOrDefault(method => method.Name == "get_UTF8"));
-                var method2 = library.MainModule.ImportReference(encoding.Methods.FirstOrDefault(method =>
-                    method.FullName ==
-                    "System.String System.Text.Encoding::GetString(System.Byte[],System.Int32,System.Int32)"));
-                var runtimeHelpers = new TypeReference("System.Runtime.CompilerServices", "RuntimeHelpers",
-                    library.MainModule, library.MainModule.TypeSystem.CoreLibrary).Resolve();
-                Method3 = library.MainModule.ImportReference(
-                    runtimeHelpers.Methods.FirstOrDefault(method => method.Name == "InitializeArray"));
+            private StringSqueezeData GetNewType()
+            {
+                StringSqueezeData data;
 
-                // New static class with a method for each unique string we substitute.
-                NewType = new TypeDefinition(
-                    "<PrivateImplementationDetails>{" + Guid.NewGuid().ToString().ToUpper() + "}",
-                    Guid.NewGuid().ToString().ToUpper(),
-                    TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass |
-                    TypeAttributes.BeforeFieldInit, systemObjectTypeReference);
+                if (mostRecentData != null && mostRecentData.StringIndex < 65_000 /* maximum number of methods per class allowed by the CLR */)
+                {
+                    data = mostRecentData;
+                }
+                else
+                {
+                    var library = _library;
 
-                // Add struct for constant byte array data
-                StructType = new TypeDefinition("1", "2",
-                    TypeAttributes.ExplicitLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed |
-                    TypeAttributes.NestedPrivate, systemValueTypeTypeReference);
-                StructType.PackingSize = 1;
-                NewType.NestedTypes.Add(StructType);
+                    var encodingGetUtf8Method =
+                        library.MainModule.ImportReference(EncodingTypeDefinition.Methods.FirstOrDefault(method => method.Name == "get_UTF8"));
+                    var encodingGetStringMethod = library.MainModule.ImportReference(EncodingTypeDefinition.Methods.FirstOrDefault(method =>
+                        method.FullName ==
+                        "System.String System.Text.Encoding::GetString(System.Byte[],System.Int32,System.Int32)"));
 
-                // Add field with constant string data
-                DataConstantField = new FieldDefinition("3",
-                    FieldAttributes.HasFieldRVA | FieldAttributes.Private | FieldAttributes.Static |
-                    FieldAttributes.Assembly, StructType);
-                NewType.Fields.Add(DataConstantField);
+                    // New static class with a method for each unique string we substitute.
+                    string guid = Guid.NewGuid().ToString().ToUpper();
 
-                // Add data field where constructor copies the data to
-                DataField = new FieldDefinition("4",
-                    FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly,
-                    new ArrayType(SystemByteTypeReference));
-                NewType.Fields.Add(DataField);
+                    TypeDefinition newType = new TypeDefinition(
+                        "<PrivateImplementationDetails>{" + guid + "}",
+                        Guid.NewGuid().ToString().ToUpper(),
+                        TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass |
+                        TypeAttributes.BeforeFieldInit, SystemObjectTypeReference);
 
-                // Add string array of deobfuscated strings
-                StringArrayField = new FieldDefinition("5",
-                    FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly,
-                    new ArrayType(SystemStringTypeReference));
-                NewType.Fields.Add(StringArrayField);
+                    // Add struct for constant byte array data
+                    TypeDefinition structType = new TypeDefinition("1{" + guid + "}", "2",
+                        TypeAttributes.ExplicitLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed |
+                        TypeAttributes.NestedPrivate, SystemValueTypeTypeReference);
+                    structType.PackingSize = 1;
+                    newType.NestedTypes.Add(structType);
 
-                // Add method to extract a string from the byte array. It is called by the indiviual string getter methods we add later to the class.
-                StringGetterMethodDefinition = new MethodDefinition("6",
-                    MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig,
-                    SystemStringTypeReference);
-                StringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(SystemIntTypeReference));
-                StringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(SystemIntTypeReference));
-                StringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(SystemIntTypeReference));
-                StringGetterMethodDefinition.Body.Variables.Add(new VariableDefinition(SystemStringTypeReference));
-                ILProcessor worker3 = StringGetterMethodDefinition.Body.GetILProcessor();
+                    // Add field with constant string data
+                    FieldDefinition dataConstantField = new FieldDefinition("3",
+                        FieldAttributes.HasFieldRVA | FieldAttributes.Private | FieldAttributes.Static |
+                        FieldAttributes.Assembly, structType);
+                    newType.Fields.Add(dataConstantField);
 
-                worker3.Emit(OpCodes.Call, method1);
-                worker3.Emit(OpCodes.Ldsfld, DataField);
-                worker3.Emit(OpCodes.Ldarg_1);
-                worker3.Emit(OpCodes.Ldarg_2);
-                worker3.Emit(OpCodes.Callvirt, method2);
-                worker3.Emit(OpCodes.Stloc_0);
+                    // Add data field where constructor copies the data to
+                    FieldDefinition dataField = new FieldDefinition("4",
+                        FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly,
+                        new ArrayType(SystemByteTypeReference));
+                    newType.Fields.Add(dataField);
 
-                worker3.Emit(OpCodes.Ldsfld, StringArrayField);
-                worker3.Emit(OpCodes.Ldarg_0);
-                worker3.Emit(OpCodes.Ldloc_0);
-                worker3.Emit(OpCodes.Stelem_Ref);
+                    // Add string array of deobfuscated strings
+                    FieldDefinition stringArrayField = new FieldDefinition("5",
+                        FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly,
+                        new ArrayType(SystemStringTypeReference));
+                    newType.Fields.Add(stringArrayField);
 
-                worker3.Emit(OpCodes.Ldloc_0);
-                worker3.Emit(OpCodes.Ret);
-                NewType.Methods.Add(StringGetterMethodDefinition);
+                    // Add method to extract a string from the byte array. It is called by the indiviual string getter methods we add later to the class.
+                    MethodDefinition stringGetterMethodDefinition = new MethodDefinition("6",
+                        MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig,
+                        SystemStringTypeReference);
+                    stringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(SystemIntTypeReference));
+                    stringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(SystemIntTypeReference));
+                    stringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(SystemIntTypeReference));
+                    stringGetterMethodDefinition.Body.Variables.Add(new VariableDefinition(SystemStringTypeReference));
+                    ILProcessor worker3 = stringGetterMethodDefinition.Body.GetILProcessor();
+
+                    worker3.Emit(OpCodes.Call, encodingGetUtf8Method);
+                    worker3.Emit(OpCodes.Ldsfld, dataField);
+                    worker3.Emit(OpCodes.Ldarg_1);
+                    worker3.Emit(OpCodes.Ldarg_2);
+                    worker3.Emit(OpCodes.Callvirt, encodingGetStringMethod);
+                    worker3.Emit(OpCodes.Stloc_0);
+
+                    worker3.Emit(OpCodes.Ldsfld, stringArrayField);
+                    worker3.Emit(OpCodes.Ldarg_0);
+                    worker3.Emit(OpCodes.Ldloc_0);
+                    worker3.Emit(OpCodes.Stelem_Ref);
+
+                    worker3.Emit(OpCodes.Ldloc_0);
+                    worker3.Emit(OpCodes.Ret);
+                    newType.Methods.Add(stringGetterMethodDefinition);
+
+                    data = new StringSqueezeData()
+                            { NewType = newType
+                            , DataConstantField = dataConstantField
+                            , DataField = dataField
+                            , StringArrayField = stringArrayField
+                            , StringGetterMethodDefinition = stringGetterMethodDefinition
+                            , StructType = structType
+                            };
+
+                    newDatas.Add(data);
+
+                    mostRecentData = data;
+                }
+
+                return data;
             }
 
             public void Squeeze()
@@ -1589,64 +1639,67 @@ namespace Obfuscar
                 if (_disabled)
                     return;
 
-                // Now that we know the total size of the byte array, we can update the struct size and store it in the constant field
-                StructType.ClassSize = _dataBytes.Count;
-                for (int i = 0; i < _dataBytes.Count; i++)
-                    _dataBytes[i] = (byte) (_dataBytes[i] ^ (byte) i ^ 0xAA);
-                DataConstantField.InitialValue = _dataBytes.ToArray();
+                foreach (StringSqueezeData data in newDatas)
+                {
+                    // Now that we know the total size of the byte array, we can update the struct size and store it in the constant field
+                    data.StructType.ClassSize = data.DataBytes.Count;
+                    for (int i = 0; i < data.DataBytes.Count; i++)
+                        data.DataBytes[i] = (byte) (data.DataBytes[i] ^ (byte) i ^ 0xAA);
+                    data.DataConstantField.InitialValue = data.DataBytes.ToArray();
 
-                // Add static constructor which initializes the dataField from the constant data field
-                MethodDefinition ctorMethodDefinition = new MethodDefinition(".cctor",
-                    MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig |
-                    MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, SystemVoidTypeReference);
-                NewType.Methods.Add(ctorMethodDefinition);
-                ctorMethodDefinition.Body = new MethodBody(ctorMethodDefinition);
-                ctorMethodDefinition.Body.Variables.Add(new VariableDefinition(SystemIntTypeReference));
+                    // Add static constructor which initializes the dataField from the constant data field
+                    MethodDefinition ctorMethodDefinition = new MethodDefinition(".cctor",
+                        MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig |
+                        MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, SystemVoidTypeReference);
+                    data.NewType.Methods.Add(ctorMethodDefinition);
+                    ctorMethodDefinition.Body = new MethodBody(ctorMethodDefinition);
+                    ctorMethodDefinition.Body.Variables.Add(new VariableDefinition(SystemIntTypeReference));
 
-                ILProcessor worker2 = ctorMethodDefinition.Body.GetILProcessor();
-                worker2.Emit(OpCodes.Ldc_I4, _stringIndex);
-                worker2.Emit(OpCodes.Newarr, SystemStringTypeReference);
-                worker2.Emit(OpCodes.Stsfld, StringArrayField);
+                    ILProcessor worker2 = ctorMethodDefinition.Body.GetILProcessor();
+                    worker2.Emit(OpCodes.Ldc_I4, data.StringIndex);
+                    worker2.Emit(OpCodes.Newarr, SystemStringTypeReference);
+                    worker2.Emit(OpCodes.Stsfld, data.StringArrayField);
 
 
-                worker2.Emit(OpCodes.Ldc_I4, _dataBytes.Count);
-                worker2.Emit(OpCodes.Newarr, SystemByteTypeReference);
-                worker2.Emit(OpCodes.Dup);
-                worker2.Emit(OpCodes.Ldtoken, DataConstantField);
-                worker2.Emit(OpCodes.Call, Method3);
-                worker2.Emit(OpCodes.Stsfld, DataField);
+                    worker2.Emit(OpCodes.Ldc_I4, data.DataBytes.Count);
+                    worker2.Emit(OpCodes.Newarr, SystemByteTypeReference);
+                    worker2.Emit(OpCodes.Dup);
+                    worker2.Emit(OpCodes.Ldtoken, data.DataConstantField);
+                    worker2.Emit(OpCodes.Call, InitializeArrayMethod);
+                    worker2.Emit(OpCodes.Stsfld, data.DataField);
 
-                worker2.Emit(OpCodes.Ldc_I4_0);
-                worker2.Emit(OpCodes.Stloc_0);
+                    worker2.Emit(OpCodes.Ldc_I4_0);
+                    worker2.Emit(OpCodes.Stloc_0);
 
-                Instruction backlabel1 = worker2.Create(OpCodes.Br_S, ctorMethodDefinition.Body.Instructions[0]);
-                worker2.Append(backlabel1);
-                Instruction label2 = worker2.Create(OpCodes.Ldsfld, DataField);
-                worker2.Append(label2);
-                worker2.Emit(OpCodes.Ldloc_0);
-                worker2.Emit(OpCodes.Ldsfld, DataField);
-                worker2.Emit(OpCodes.Ldloc_0);
-                worker2.Emit(OpCodes.Ldelem_U1);
-                worker2.Emit(OpCodes.Ldloc_0);
-                worker2.Emit(OpCodes.Xor);
-                worker2.Emit(OpCodes.Ldc_I4, 0xAA);
-                worker2.Emit(OpCodes.Xor);
-                worker2.Emit(OpCodes.Conv_U1);
-                worker2.Emit(OpCodes.Stelem_I1);
-                worker2.Emit(OpCodes.Ldloc_0);
-                worker2.Emit(OpCodes.Ldc_I4_1);
-                worker2.Emit(OpCodes.Add);
-                worker2.Emit(OpCodes.Stloc_0);
-                backlabel1.Operand = worker2.Create(OpCodes.Ldloc_0);
-                worker2.Append((Instruction) backlabel1.Operand);
-                worker2.Emit(OpCodes.Ldsfld, DataField);
-                worker2.Emit(OpCodes.Ldlen);
-                worker2.Emit(OpCodes.Conv_I4);
-                worker2.Emit(OpCodes.Clt);
-                worker2.Emit(OpCodes.Brtrue, label2);
-                worker2.Emit(OpCodes.Ret);
+                    Instruction backlabel1 = worker2.Create(OpCodes.Br_S, ctorMethodDefinition.Body.Instructions[0]);
+                    worker2.Append(backlabel1);
+                    Instruction label2 = worker2.Create(OpCodes.Ldsfld, data.DataField);
+                    worker2.Append(label2);
+                    worker2.Emit(OpCodes.Ldloc_0);
+                    worker2.Emit(OpCodes.Ldsfld, data.DataField);
+                    worker2.Emit(OpCodes.Ldloc_0);
+                    worker2.Emit(OpCodes.Ldelem_U1);
+                    worker2.Emit(OpCodes.Ldloc_0);
+                    worker2.Emit(OpCodes.Xor);
+                    worker2.Emit(OpCodes.Ldc_I4, 0xAA);
+                    worker2.Emit(OpCodes.Xor);
+                    worker2.Emit(OpCodes.Conv_U1);
+                    worker2.Emit(OpCodes.Stelem_I1);
+                    worker2.Emit(OpCodes.Ldloc_0);
+                    worker2.Emit(OpCodes.Ldc_I4_1);
+                    worker2.Emit(OpCodes.Add);
+                    worker2.Emit(OpCodes.Stloc_0);
+                    backlabel1.Operand = worker2.Create(OpCodes.Ldloc_0);
+                    worker2.Append((Instruction) backlabel1.Operand);
+                    worker2.Emit(OpCodes.Ldsfld, data.DataField);
+                    worker2.Emit(OpCodes.Ldlen);
+                    worker2.Emit(OpCodes.Conv_I4);
+                    worker2.Emit(OpCodes.Clt);
+                    worker2.Emit(OpCodes.Brtrue, label2);
+                    worker2.Emit(OpCodes.Ret);
 
-                _library.MainModule.Types.Add(NewType);
+                    _library.MainModule.Types.Add(data.NewType);
+                }
             }
 
             public void ProcessStrings(MethodDefinition method,
@@ -1682,13 +1735,15 @@ namespace Obfuscar
                         MethodDefinition individualStringMethodDefinition;
                         if (!_methodByString.TryGetValue(str, out individualStringMethodDefinition))
                         {
-                            string methodName = NameMaker.UniqueName(_nameIndex++);
+                            StringSqueezeData data = GetNewType();
+
+                            string methodName = NameMaker.UniqueName(data.NameIndex++);
 
                             // Add the string to the data array
                             byte[] stringBytes = Encoding.UTF8.GetBytes(str);
-                            int start = _dataBytes.Count;
-                            _dataBytes.AddRange(stringBytes);
-                            int count = _dataBytes.Count - start;
+                            int start = data.DataBytes.Count;
+                            data.DataBytes.AddRange(stringBytes);
+                            int count = data.DataBytes.Count - start;
 
                             // Add a method for this string to our new class
                             individualStringMethodDefinition = new MethodDefinition(
@@ -1698,27 +1753,27 @@ namespace Obfuscar
                             individualStringMethodDefinition.Body = new MethodBody(individualStringMethodDefinition);
                             ILProcessor worker4 = individualStringMethodDefinition.Body.GetILProcessor();
 
-                            worker4.Emit(OpCodes.Ldsfld, StringArrayField);
-                            worker4.Emit(OpCodes.Ldc_I4, _stringIndex);
+                            worker4.Emit(OpCodes.Ldsfld, data.StringArrayField);
+                            worker4.Emit(OpCodes.Ldc_I4, data.StringIndex);
                             worker4.Emit(OpCodes.Ldelem_Ref);
                             worker4.Emit(OpCodes.Dup);
                             Instruction label20 = worker4.Create(
                                 OpCodes.Brtrue_S,
-                                StringGetterMethodDefinition.Body.Instructions[0]);
+                                data.StringGetterMethodDefinition.Body.Instructions[0]);
                             worker4.Append(label20);
                             worker4.Emit(OpCodes.Pop);
-                            worker4.Emit(OpCodes.Ldc_I4, _stringIndex);
+                            worker4.Emit(OpCodes.Ldc_I4, data.StringIndex);
                             worker4.Emit(OpCodes.Ldc_I4, start);
                             worker4.Emit(OpCodes.Ldc_I4, count);
-                            worker4.Emit(OpCodes.Call, StringGetterMethodDefinition);
+                            worker4.Emit(OpCodes.Call, data.StringGetterMethodDefinition);
 
                             label20.Operand = worker4.Create(OpCodes.Ret);
                             worker4.Append((Instruction)label20.Operand);
 
-                            NewType.Methods.Add(individualStringMethodDefinition);
+                            data.NewType.Methods.Add(individualStringMethodDefinition);
                             _methodByString.Add(str, individualStringMethodDefinition);
 
-                            _stringIndex++;
+                            mostRecentData.StringIndex++;
                         }
 
                         // Replace Ldstr with Call
