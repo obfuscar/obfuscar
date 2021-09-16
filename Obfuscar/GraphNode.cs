@@ -166,7 +166,7 @@ namespace Obfuscar
         {
             foreach (var method in type.TypeDefinition.Methods)
             {
-                if (method.IsPublic || method.IsFamily)
+                if ((method.IsPublic || method.IsFamily) && !methods.Contains(method))
                 {
                     // IMPORTANT: Add such methods, as they are also part of this class.
                     methods.Add(method);
