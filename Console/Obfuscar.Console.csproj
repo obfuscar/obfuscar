@@ -100,7 +100,7 @@
       <Version>2.0.18</Version>
     </PackageReference>
     <PackageReference Include="Mono.Options">
-      <Version>6.6.0.161</Version>
+      <Version>6.12.0.148</Version>
     </PackageReference>
     <PackageReference Include="Mono.Options" Version="6.6.0.161" />
     <PackageReference Include="Rollbar">
