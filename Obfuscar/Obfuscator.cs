@@ -246,6 +246,10 @@ namespace Obfuscar
                                         // assume relative path.
                                         keyFile = Path.Combine(Project.Settings.InPath, fileName);
                                     }
+                                    else
+                                    {
+                                       keyFile = fileName;
+                                    }
                                 }
                             }
 
