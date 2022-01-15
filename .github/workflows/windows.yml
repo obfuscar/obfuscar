@@ -1,0 +1,21 @@
+name: Windows
+
+on: [push, pull_request]
+
+jobs:
+
+  windows:
+
+    runs-on: windows-2022
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Submodule
+      shell: cmd
+      run: git submodule update --init --recursive
+    - name: Build
+      shell: cmd
+      run: dist.pack.bat
+    - name: Test
+      shell: cmd
+      run: test.bat
