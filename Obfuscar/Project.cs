@@ -365,11 +365,14 @@ namespace Obfuscar
         /// </summary>
         public void CheckSettings()
         {
-            foreach (string assemblySearchPath in assemblySearchPaths)
+            for (int i = 0; i < assemblySearchPaths.Count; i++)
             {
+                string assemblySearchPath = assemblySearchPaths[i];
                 if (!Directory.Exists(assemblySearchPath))
-                    throw new ObfuscarException("Path specified by AssemblySearchPath must exist:" +
-                                                assemblySearchPath);
+                {
+                    //throw new ObfuscarException($"Path specified by AssemblySearchPath must exist:{assemblySearchPath}");
+                    assemblySearchPaths.Remove(assemblySearchPath);
+                }
             }
 
             if (!Directory.Exists(Settings.InPath))
