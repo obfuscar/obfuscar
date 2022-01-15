@@ -57,7 +57,7 @@ namespace ObfuscarTests
         }
 
         [Fact]
-        public void CheckSignAttribute()
+        public void CheckSignAttributeWithAutoFallbackFindingSNK()
         {
             string outputPath = TestHelper.OutputPath;
             string xml = string.Format(
@@ -82,6 +82,51 @@ namespace ObfuscarTests
             AssemblyDefinition outAssmDef =
                 AssemblyDefinition.ReadAssembly(Path.Combine(outputPath, "AssemblyForSigning2.dll"));
             Assert.True(outAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
+        }
+
+        [Fact]
+        public void CheckSignAttributeWithAutoFindingSNKFirst()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='.' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeyFile' value='auto' />" +
+                @"<Module file='{0}{2}AssemblyForSigning2.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.CleanInput();
+
+            // copy snk to same folder as our assembly
+            string snkFile = Path.Combine(TestHelper.InputPath, @"SigningKey.snk");
+            string target = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SigningKey.snk");
+
+            try
+            {
+                if (!File.Exists(target))
+                    File.Copy(snkFile, target);
+
+                // build it with the keyfile option (embeds the public key, and signs the assembly)
+                TestHelper.BuildAssembly("AssemblyForSigning2", string.Empty, null, false);
+
+
+                var map = TestHelper.Obfuscate(xml).Mapping;
+                var assembly = Path.Combine(TestHelper.InputPath, "AssemblyForSigning2.dll");
+                AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(assembly);
+                Assert.True(inAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
+
+                AssemblyDefinition outAssmDef =
+                    AssemblyDefinition.ReadAssembly(Path.Combine(outputPath, "AssemblyForSigning2.dll"));
+                Assert.True(outAssmDef.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned));
+            }
+            finally
+            {
+                if (File.Exists(target))
+                    File.Delete(target);
+            }
+            
         }
 
         // [Fact] //no longer valid due to Cecil changes
