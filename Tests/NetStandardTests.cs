@@ -94,7 +94,10 @@ namespace ObfuscarTests
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='SuppressIldasm' value='false' />" +
                 @"<Var name='HideStrings' value='false' />" +
+                @"<AssemblySearchPath path='C:\Program Files\' />" +
                 @"<AssemblySearchPath path='C:\Program Files\dotnet\sdk\NuGetFallbackFolder\microsoft.netcore.app\2.0.0\ref\netcoreapp2.0\' />" +
+                @"<AssemblySearchPath path='C:\Program Files\dotnet\' />" +
+                @"<AssemblySearchPath path='C:\Program Files\dotnet\sdk\' />" +
                 @"<Module file='$(InPath){2}NetStandard20.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
