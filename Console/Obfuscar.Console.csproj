@@ -17,7 +17,7 @@
     <ProjectGuid>{275B3EED-7E70-4460-950F-96EDCA099BD4}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>Obfuscar</RootNamespace>
-    <TargetFramework>net452</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <FileUpgradeFlags />
     <UpgradeBackupLocation />
     <PublishUrl>publish\</PublishUrl>

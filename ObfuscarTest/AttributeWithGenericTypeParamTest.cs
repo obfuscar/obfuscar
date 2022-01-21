@@ -65,7 +65,7 @@ namespace ObfuscarTest
                 // expect only 1 attribute param like List<ClassA>
                 .Single();
 
-            Assert.True(attr.FullName.Contains("List"));
+            Assert.Contains("List", attr.FullName);
             Assert.False(attr.FullName.Contains("ClassA"), "Reference to the ClassA has not been updated");
         }
     }

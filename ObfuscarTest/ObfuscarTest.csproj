@@ -3,7 +3,7 @@
     <ProjectGuid>{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}</ProjectGuid>
     <FileUpgradeFlags />
     <UpgradeBackupLocation />
-    <TargetFramework>net461</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>

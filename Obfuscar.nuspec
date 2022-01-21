@@ -14,13 +14,13 @@
 		<summary>Open source obfuscar for .NET and Mono.</summary>
 		<developmentDependency>true</developmentDependency>
 		<releaseNotes>https://github.com/obfuscar/obfuscar/releases</releaseNotes>
-		<copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2021 Calvin Rien, Lex Li, RemObjects and other contributors.</copyright>
+		<copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2022 Calvin Rien, Lex Li, RemObjects and other contributors.</copyright>
 		<language>en-US</language>
 		<tags>obfuscation,obfuscator,open source</tags>
 	</metadata>
 	<files>
 		<!-- Include everything in \build -->
     <file src="build\**" target="build" />
-    <file src="bin\release\net452\obfuscar.console.*" target="tools" />
+    <file src="bin\release\net48\obfuscar.console.*" target="tools" />
 	</files>
 </package>

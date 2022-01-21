@@ -390,12 +390,12 @@ namespace Obfuscar
                 if (excludeValue == true)
                 {
                     skipAllOverride = true;
-                    Console.WriteLine("Disabling obfuscation of " + Definition.Name + " based on assembly attribute");
+                    Console.WriteLine("Disabling obfuscation of " + Definition.Name.Name + " based on assembly attribute");
                 }
                 else if (excludeValue == false)
                 {
                     forceAllOverride = true;
-                    Console.WriteLine("Enabling full obfuscation of " + Definition.Name + " based on assembly attribute");
+                    Console.WriteLine("Enabling full obfuscation of " + Definition.Name.Name + " based on assembly attribute");
                 }
             }
 
@@ -977,6 +977,12 @@ namespace Obfuscar
                 }
             }
 
+            if (method.DeclaringType.ImplementsInterface("System.Windows.IInputElement"))
+            {
+                message = "declaring type is WPF control";
+                return true;
+            }
+
             return ShouldSkipParams(method, map, markedOnly, out message);
         }
 
@@ -1227,6 +1233,12 @@ namespace Obfuscar
             if (prop.Property.IsPublic() && prop.DeclaringType.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged"))
             {
                 message = "declaring type implements INotifyPropertyChanged";
+                return true;
+            }
+
+            if (prop.DeclaringType.ImplementsInterface("System.Windows.IInputElement"))
+            {
+                message = "declaring type is WPF control";
                 return true;
             }
 

@@ -71,8 +71,16 @@ namespace Obfuscar
 
         public bool RenameEvents { get; }
 
+        /// <summary>
+        /// True to exclude public API from obfuscation, false to obfuscate public API.
+        /// This will be overridden by the Exclude parameter in any assembly level Obfusscation attribute.
+        /// </summary>
         public bool KeepPublicApi { get; }
 
+        /// <summary>
+        /// True to obfuscate private members, false not to obfuscate.
+        /// This will be overridden by the Exclude parameter in any assembly level Obfusscation attribute.
+        /// </summary>
         public bool HidePrivateApi { get; }
 
         public bool ReuseNames { get; }
