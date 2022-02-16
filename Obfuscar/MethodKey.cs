@@ -166,7 +166,7 @@ namespace Obfuscar
         static string ToGenerelGenericMemberName(string memberName)
         {
             int iEnd;
-            if ((iEnd = memberName.IndexOf(">.")) < 0)
+            if ((iEnd = memberName.LastIndexOf(">.")) < 0)
                 return memberName;
             int iStart = memberName.IndexOf("<");
             int genericArgumentCount = 1;
@@ -182,7 +182,7 @@ namespace Obfuscar
                         level--;
                         break;
                     case ',':
-                        if (level == 0)
+                        if (level != 0)
                             genericArgumentCount++;
                         break;
                 }
