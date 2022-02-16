@@ -177,7 +177,9 @@ namespace Obfuscar
 
                 // Extend with enums used in public properties on types implementing INotifyPropertyChanged
                 foreach (var type in info.GetAllTypeDefinitions().
-                    Where(t => t.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged")))
+                    Where(t => 
+                        t.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged") ||
+                        t.HeirsImplementsInterface(Project.AssemblyList, "System.ComponentModel.INotifyPropertyChanged")))
                 {
                     foreach (PropertyDefinition prop in type.Properties)
                     {
