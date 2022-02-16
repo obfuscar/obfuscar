@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Caching;
 
@@ -122,6 +123,20 @@ namespace Obfuscar.Helpers
                 type = type.BaseType?.Resolve();
             }
             return false;
+        }
+
+        public static bool HeirsImplementsInterface(this TypeDefinition type, IEnumerable<AssemblyInfo> assemblies, string interfaceName)
+        {
+            //TODO: add unit test
+            var inheritedWpfTypes = assemblies
+                .Select(assembly => assembly
+                    .GetAllTypeDefinitions()
+                    .Where(assemblyType =>
+                        assemblyType.IsClass &&
+                        assemblyType.BaseType.Resolve() == type &&
+                        assemblyType.ImplementsInterface(interfaceName)));
+
+            return inheritedWpfTypes.Any();
         }
     }
 }

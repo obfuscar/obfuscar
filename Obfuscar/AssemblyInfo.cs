@@ -1236,6 +1236,12 @@ namespace Obfuscar
                 return true;
             }
 
+            if (prop.Property.IsPublic() && prop.DeclaringType.HeirsImplementsInterface(project.AssemblyList, "System.ComponentModel.INotifyPropertyChanged"))
+            {
+                message = "declaring type heirs implements INotifyPropertyChanged";
+                return true;
+            }
+
             if (prop.DeclaringType.ImplementsInterface("System.Windows.IInputElement"))
             {
                 message = "declaring type is WPF control";
