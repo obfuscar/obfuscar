@@ -39,7 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Input\AssemblyWithAssemblyAttr.cs" />
-    <None Include="Input\AssemblyWithHeirsInterfaces.cs" />
+    <None Include="Input\AssemblyWithHeirsInheritedInterfaces.cs" />
     <None Include="Input\AssemblyWithInheritedInterfaces.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -80,7 +80,7 @@
     <Compile Remove="Input\AssemblyWithEvents.cs" />
     <Compile Remove="Input\AssemblyWithGenericOverrides.cs" />
     <Compile Remove="Input\AssemblyWithGenericOverrides2.cs" />
-    <Compile Remove="Input\AssemblyWithHeirsInterfaces.cs" />
+    <Compile Remove="Input\AssemblyWithHeirsInheritedInterfaces.cs" />
     <Compile Remove="Input\AssemblyWithInheritedInterfaces.cs" />
     <Compile Remove="Input\AssemblyWithInterfaces.cs" />
     <Compile Remove="Input\AssemblyWithInterfaces2.cs" />

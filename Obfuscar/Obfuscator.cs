@@ -179,7 +179,7 @@ namespace Obfuscar
                 foreach (var type in info.GetAllTypeDefinitions().
                     Where(t => 
                         t.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged") ||
-                        t.HeirsImplementsInterface(Project.AssemblyList, "System.ComponentModel.INotifyPropertyChanged")))
+                        t.HeirsImplementsInterface("System.ComponentModel.INotifyPropertyChanged", Project.AssemblyList)))
                 {
                     foreach (PropertyDefinition prop in type.Properties)
                     {

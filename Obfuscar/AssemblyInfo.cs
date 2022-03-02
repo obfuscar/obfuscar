@@ -1236,9 +1236,9 @@ namespace Obfuscar
                 return true;
             }
 
-            if (prop.Property.IsPublic() && prop.DeclaringType.HeirsImplementsInterface(project.AssemblyList, "System.ComponentModel.INotifyPropertyChanged"))
+            if (prop.Property.IsPublic() && prop.DeclaringType.HeirsImplementsInterface("System.ComponentModel.INotifyPropertyChanged", project.AssemblyList))
             {
-                message = "declaring type heirs implements INotifyPropertyChanged";
+                message = "declaring type heir(s) implements INotifyPropertyChanged";
                 return true;
             }
 

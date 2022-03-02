@@ -8,7 +8,7 @@ namespace Obfuscar.Helpers
 {
     internal static class TypeDefinitionExtensions
     {
-        static public bool IsTypePublic(this TypeDefinition type)
+        public static bool IsTypePublic(this TypeDefinition type)
         {
             if (type.DeclaringType == null)
                 return type.IsPublic;
@@ -125,16 +125,40 @@ namespace Obfuscar.Helpers
             return false;
         }
 
-        public static bool HeirsImplementsInterface(this TypeDefinition type, IEnumerable<AssemblyInfo> assemblies, string interfaceName)
+        public static bool HeirsImplementsInterface(this TypeDefinition type, string interfaceName, IEnumerable<AssemblyInfo> assemblies)
         {
-            //TODO: add unit test
-            var inheritedWpfTypes = assemblies
-                .Select(assembly => assembly
-                    .GetAllTypeDefinitions()
-                    .Where(assemblyType =>
-                        assemblyType.IsClass &&
-                        assemblyType.BaseType.Resolve() == type &&
-                        assemblyType.ImplementsInterface(interfaceName)));
+            var classTypes = assemblies
+                .SelectMany(assembly => assembly.GetAllTypeDefinitions());
+
+            return HeirsImplementsInterface(type, interfaceName, classTypes);
+        }
+        internal static bool HeirsImplementsInterface(this TypeDefinition type, string interfaceName, params AssemblyDefinition[] assemblies)
+        {
+            return type.HeirsImplementsInterface(interfaceName, assemblies.AsEnumerable());
+        }
+        internal static bool HeirsImplementsInterface(this TypeDefinition type, string interfaceName, IEnumerable<AssemblyDefinition> assemblyDefinitions)
+        {
+            var classTypes = assemblyDefinitions
+                .SelectMany(assemblyType => assemblyType.MainModule.GetTypes());
+
+            return HeirsImplementsInterface(type, interfaceName, classTypes);
+        }
+        internal static bool HeirsImplementsInterface(this TypeDefinition type, string interfaceName, IEnumerable<TypeDefinition> typeDefinitions)
+        {
+            if (type == null) throw new ArgumentNullException(nameof(type));
+
+            var classTypes = typeDefinitions
+                .Where(assemblyType => assemblyType.IsClass);
+
+            var inheritedTypes = classTypes
+                .Where(classType =>
+                {
+                    var baseType = classType.BaseType?.Resolve();
+                    return type.FullName == baseType?.FullName;
+                });
+
+            var inheritedWpfTypes = inheritedTypes
+                .Where(assemblyType => assemblyType.ImplementsInterface(interfaceName));
 
             return inheritedWpfTypes.Any();
         }

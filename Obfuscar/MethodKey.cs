@@ -163,7 +163,7 @@ namespace Obfuscar
         }
 
         // Convert member names from Type<T>.Member to Type`1.Member form
-        static string ToGenerelGenericMemberName(string memberName)
+        internal static string ToGenerelGenericMemberName(string memberName)
         {
             int iEnd;
             if ((iEnd = memberName.LastIndexOf(">.")) < 0)

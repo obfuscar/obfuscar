@@ -10,37 +10,38 @@ namespace ObfuscarTest
 {
     public class ImplementsInterfaceTests
     {
-        Obfuscator BuildAndObfuscateAssemblies(string name)
-        {
-            string xml = string.Format(
+        private string CreateTestConfiguration(string csFileName) =>
+            string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='KeepPublicApi' value='true' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
                 @"<Var name='HidePrivateApi' value='true' />" +
                 @"<Module file='$(InPath){2}{3}.dll' />" +
-                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar, name);
+                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar, csFileName);
 
-            return TestHelper.BuildAndObfuscate(name, string.Empty, xml);
+        Obfuscator BuildAndLoad(string csFileName)
+        {
+            var xml = CreateTestConfiguration(csFileName);
+            TestHelper.BuildAssembly(csFileName, string.Empty);
+            return Obfuscator.CreateFromXml(xml);
         }
 
         [Theory]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.X", "TestClasses.A")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Y", "TestClasses.E")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Z", "TestClasses.A")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.ImplementsINotifyPropertyChanged", "TestClasses.A")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.BaseImplementsINotifyPropertyChanged", "TestClasses.A")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.NotImplementsINotifyPropertyChanged", "TestClasses.H")]
         public void Should_detect_non_generic_interface_is_implemented_if_part_of_nested_inherited_interfaces(
-            string testCodeFileNameWithoutExtension, string testAssemblyFileName,
-            string mainClassName, string interfaceName)
+            string testCodeFileNameWithoutExtension, string mainClassName, string interfaceName)
         {
             //Arrange
-            var item = BuildAndObfuscateAssemblies(testCodeFileNameWithoutExtension);
+            var _ = BuildAndLoad(testCodeFileNameWithoutExtension);
 
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, testAssemblyFileName));
-            using (_ = AssemblyDefinition.ReadAssembly(Path.Combine(item.Project.Settings.OutPath, testAssemblyFileName)))
+            using (var inputAssemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, $"{testCodeFileNameWithoutExtension}.dll")))
             {
                 //Act
-                var mainClassType = assemblyDefinition.MainModule.GetType(mainClassName);
+                var mainClassType = inputAssemblyDefinition.MainModule.GetType(mainClassName);
                 var mainClassImplementsInterface = mainClassType.ImplementsInterface(interfaceName);
 
                 //Assert
@@ -52,22 +53,22 @@ namespace ObfuscarTest
         }
 
         [Theory(Skip = "No support or need to detect generic interfaces currently. Implementation is only used for skipping non generic interfaces.")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.X", "TestClasses.C<int>")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.X", "TestClasses.D<int>")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Z", "TestClasses.C<int>")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Z", "TestClasses.D<int>")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.ImplementsINotifyPropertyChanged", "TestClasses.C<int>")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.ImplementsINotifyPropertyChanged", "TestClasses.E<int>")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.BaseImplementsINotifyPropertyChanged", "TestClasses.C<int>")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.BaseImplementsINotifyPropertyChanged", "TestClasses.E<int>")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.NotImplementsINotifyPropertyChanged", "TestClasses.J<int>")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.NotImplementsINotifyPropertyChanged", "TestClasses.L<int>")]
         public void Should_detect_generic_interface_is_implemented_if_part_of_nested_inherited_interfaces(
-            string testAssemblyFileNameWithoutExtension, string testAssemblyFileName,
-            string mainClassName, string interfaceName)
+            string testCodeFileNameWithoutExtension, string mainClassName, string interfaceName)
         {
             //Arrange
-            var item = BuildAndObfuscateAssemblies(testAssemblyFileNameWithoutExtension);
+            var _ = BuildAndLoad(testCodeFileNameWithoutExtension);
 
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, testAssemblyFileName));
-            using (_ = AssemblyDefinition.ReadAssembly(Path.Combine(item.Project.Settings.OutPath, testAssemblyFileName)))
+            using (var inputAssemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, $"{testCodeFileNameWithoutExtension}.dll")))
             {
                 //Act
-                var mainClassType = assemblyDefinition.MainModule.GetType(mainClassName);
+                var mainClassType = inputAssemblyDefinition.MainModule.GetType(mainClassName);
                 var mainClassImplementsInterface = mainClassType.ImplementsInterface(interfaceName);
 
                 //Assert
@@ -79,20 +80,18 @@ namespace ObfuscarTest
         }
 
         [Theory]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.X", "System.ComponentModel.INotifyPropertyChanged")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Z", "System.ComponentModel.INotifyPropertyChanged")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.ImplementsINotifyPropertyChanged", "System.ComponentModel.INotifyPropertyChanged")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.BaseImplementsINotifyPropertyChanged", "System.ComponentModel.INotifyPropertyChanged")]
         public void Should_detect_INotifyPropertyChanged_interface_is_implemented_if_part_of_nested_inherited_interfaces(
-            string testAssemblyFileNameWithoutExtension, string testAssemblyFileName,
-            string mainClassName, string interfaceName)
+            string testCodeFileNameWithoutExtension, string mainClassName, string interfaceName)
         {
             //Arrange
-            var item = BuildAndObfuscateAssemblies(testAssemblyFileNameWithoutExtension);
+            var _ = BuildAndLoad(testCodeFileNameWithoutExtension);
 
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, testAssemblyFileName));
-            using (_ = AssemblyDefinition.ReadAssembly(Path.Combine(item.Project.Settings.OutPath, testAssemblyFileName)))
+            using (var inputAssemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, $"{testCodeFileNameWithoutExtension}.dll")))
             {
                 //Act
-                var mainClassType = assemblyDefinition.MainModule.GetType(mainClassName);
+                var mainClassType = inputAssemblyDefinition.MainModule.GetType(mainClassName);
                 var mainClassImplementsInterface = mainClassType.ImplementsInterface(interfaceName);
 
                 //Assert
@@ -104,19 +103,17 @@ namespace ObfuscarTest
         }
 
         [Theory]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Y", "System.ComponentModel.INotifyPropertyChanged")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.NotImplementsINotifyPropertyChanged", "System.ComponentModel.INotifyPropertyChanged")]
         public void Should_not_detect_INotifyPropertyChanged_interface_is_implemented_if_not_part_of_nested_inherited_interfaces(
-            string testAssemblyFileNameWithoutExtension, string testAssemblyFileName,
-            string mainClassName, string interfaceName)
+            string testCodeFileNameWithoutExtension, string mainClassName, string interfaceName)
         {
             //Arrange
-            var item = BuildAndObfuscateAssemblies(testAssemblyFileNameWithoutExtension);
+            var _ = BuildAndLoad(testCodeFileNameWithoutExtension);
 
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, testAssemblyFileName));
-            using (_ = AssemblyDefinition.ReadAssembly(Path.Combine(item.Project.Settings.OutPath, testAssemblyFileName)))
+            using (var inputAssemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, $"{testCodeFileNameWithoutExtension}.dll")))
             {
                 //Act
-                var mainClassType = assemblyDefinition.MainModule.GetType(mainClassName);
+                var mainClassType = inputAssemblyDefinition.MainModule.GetType(mainClassName);
                 var mainClassImplementsInterface = mainClassType.ImplementsInterface(interfaceName);
 
                 //Assert
@@ -128,26 +125,19 @@ namespace ObfuscarTest
         }
 
         [Theory]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.X", "TestClasses.B")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.X", "TestClasses.E")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.X", "TestClasses.F")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Y", "TestClasses.B")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Y", "TestClasses.F")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Z", "TestClasses.B")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Z", "TestClasses.E")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Z", "TestClasses.F")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.ImplementsINotifyPropertyChanged", "TestClasses.B")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.BaseImplementsINotifyPropertyChanged", "TestClasses.B")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.NotImplementsINotifyPropertyChanged", "TestClasses.I")]
         public void Should_not_detect_non_generic_interface_is_implemented_if_not_part_of_nested_inherited_interfaces(
-            string testAssemblyFileNameWithoutExtension, string testAssemblyFileName,
-            string mainClassName, string interfaceName)
+            string testCodeFileNameWithoutExtension, string mainClassName, string interfaceName)
         {
             //Arrange
-            var item = BuildAndObfuscateAssemblies(testAssemblyFileNameWithoutExtension);
+            var _ = BuildAndLoad(testCodeFileNameWithoutExtension);
 
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, testAssemblyFileName));
-            using (_ = AssemblyDefinition.ReadAssembly(Path.Combine(item.Project.Settings.OutPath, testAssemblyFileName)))
+            using (var inputAssemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, $"{testCodeFileNameWithoutExtension}.dll")))
             {
                 //Act
-                var mainClassType = assemblyDefinition.MainModule.GetType(mainClassName);
+                var mainClassType = inputAssemblyDefinition.MainModule.GetType(mainClassName);
                 var mainClassImplementsInterface = mainClassType.ImplementsInterface(interfaceName);
 
                 //Assert
@@ -159,24 +149,19 @@ namespace ObfuscarTest
         }
 
         [Theory(Skip = "No support or need to detect generic interfaces currently. Implementation is only used for skipping non generic interfaces.")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.X", "TestClasses.G<int>")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.X", "TestClasses.H<int>")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Y", "TestClasses.G<int>")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Y", "TestClasses.H<int>")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Z", "TestClasses.G<int>")]
-        [InlineData("AssemblyWithInheritedInterfaces", "AssemblyWithInheritedInterfaces.dll", "TestClasses.Z", "TestClasses.H<int>")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.ImplementsINotifyPropertyChanged", "TestClasses.D<int>")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.BaseImplementsINotifyPropertyChanged", "TestClasses.D<int>")]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.NotImplementsINotifyPropertyChanged", "TestClasses.K<int>")]
         public void Should_not_detect_generic_interface_is_implemented_if_not_part_of_nested_inherited_interfaces(
-            string testAssemblyFileNameWithoutExtension, string testAssemblyFileName,
-            string mainClassName, string interfaceName)
+            string testCodeFileNameWithoutExtension, string mainClassName, string interfaceName)
         {
             //Arrange
-            var item = BuildAndObfuscateAssemblies(testAssemblyFileNameWithoutExtension);
+            var _ = BuildAndLoad(testCodeFileNameWithoutExtension);
 
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, testAssemblyFileName));
-            using (_ = AssemblyDefinition.ReadAssembly(Path.Combine(item.Project.Settings.OutPath, testAssemblyFileName)))
+            using (var inputAssemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, $"{testCodeFileNameWithoutExtension}.dll")))
             {
                 //Act
-                var mainClassType = assemblyDefinition.MainModule.GetType(mainClassName);
+                var mainClassType = inputAssemblyDefinition.MainModule.GetType(mainClassName);
                 var mainClassImplementsInterface = mainClassType.ImplementsInterface(interfaceName);
 
                 //Assert
