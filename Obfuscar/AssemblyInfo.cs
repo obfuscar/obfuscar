@@ -1230,13 +1230,13 @@ namespace Obfuscar
                 return true;
             }
 
-            if (prop.Property.IsPublic() && prop.DeclaringType.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged"))
+            if (prop.Property.IsAccessible() && prop.DeclaringType.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged"))
             {
                 message = "declaring type implements INotifyPropertyChanged";
                 return true;
             }
 
-            if (prop.Property.IsPublic() && prop.DeclaringType.HeirsImplementsInterface("System.ComponentModel.INotifyPropertyChanged", project.AssemblyList))
+            if (prop.Property.IsAccessible() && prop.DeclaringType.HeirsImplementsInterface("System.ComponentModel.INotifyPropertyChanged", project.AssemblyList)) 
             {
                 message = "declaring type heir(s) implements INotifyPropertyChanged";
                 return true;

@@ -18,5 +18,21 @@ namespace Obfuscar.Helpers
         {
             return propertyDefinition.IsGetterPublic() || propertyDefinition.IsSetterPublic();
         }
+
+        public static bool IsGetterAccessible(this PropertyDefinition propertyDefinition)
+        {
+            return propertyDefinition.GetMethod.IsAccessible();
+        }
+
+        public static bool IsSetterAccessible(this PropertyDefinition propertyDefinition)
+        {
+            return propertyDefinition.SetMethod.IsAccessible();
+        }
+
+        public static bool IsAccessible(this PropertyDefinition propertyDefinition)
+        {
+            return propertyDefinition.IsSetterAccessible() ||
+                   propertyDefinition.IsGetterAccessible();
+        }
     }
 }
