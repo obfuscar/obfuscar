@@ -112,16 +112,16 @@ namespace Obfuscar
             HideStrings();
 
             LogOutput("Renaming:\n");
-            var namesInXaml = CollectTypesFromXaml();
+            var typeNamesInXaml = CollectTypesFromXaml();
 
             LogOutput("Fields...\n");
-            RenameFields(namesInXaml);
+            RenameFields(typeNamesInXaml);
 
             LogOutput("Parameters...\n");
             RenameParams();
 
             LogOutput("Properties...\n");
-            RenameProperties(namesInXaml);
+            RenameProperties(typeNamesInXaml);
 
             LogOutput("Events...\n");
             RenameEvents();
@@ -130,7 +130,7 @@ namespace Obfuscar
             RenameMethods();
 
             LogOutput("Types...\n");
-            RenameTypes(namesInXaml);
+            RenameTypes(typeNamesInXaml);
 
             PostProcessing();
 
@@ -148,49 +148,49 @@ namespace Obfuscar
         internal HashSet<string> CollectTypesFromXaml()
         {
             var xamlFiles = Project.AssemblyList.SelectMany(info => GetXamlDocuments(info.Definition));
-            var namesInXaml = NamesInXaml(xamlFiles);
+            var typeNamesInXaml = TypeNamesInXaml(xamlFiles).ToHashSet();
 
+            void AddToNamesInXamlIfRequired(TypeReference type)
+            {
+                var typeDefinition = type.Resolve();
+                if (typeDefinition != null && typeDefinition.IsEnum)
+                    typeNamesInXaml.Add(typeDefinition.FullName);
+            }
+
+            //Extend with all enum types which are referenced in XAML or is part of any type with relations to INotifyPropertyChange implementation
             foreach (var info in Project.AssemblyList)
             {
-                // Extend with enums used in public interface of the types directly mentioned in XAML
-                foreach (var type in info.GetAllTypeDefinitions().Where(t => namesInXaml.Contains(t.FullName)))
+                // Extend with enum fields, properties and methods of the types directly mentioned in XAML
+                foreach (var type in info.GetAllTypeDefinitions().Where(t => typeNamesInXaml.Contains(t.FullName)))
                 {
-                    foreach (FieldDefinition field in type.Fields)
+                    foreach (var field in type.Fields.Where(field => field.IsAccessible()))
                     {
-                        TypeDefinition fieldType;
-                        if (field.IsPublic && (fieldType = field.FieldType.Resolve()) != null && fieldType.IsEnum)
-                            namesInXaml.Add(field.FieldType.FullName);
+                        AddToNamesInXamlIfRequired(field.FieldType);
                     }
-                    foreach (PropertyDefinition prop in type.Properties)
+                    foreach (var prop in type.Properties.Where(prop => prop.IsAccessible()))
                     {
-                        TypeDefinition propType;
-                        if (prop.IsPublic() && (propType = prop.PropertyType.Resolve()) != null && propType.IsEnum)
-                            namesInXaml.Add(prop.PropertyType.FullName);
+                        AddToNamesInXamlIfRequired(prop.PropertyType);
                     }
-                    foreach (MethodDefinition method in type.Methods)
+                    foreach (var method in type.Methods.Where(method => method.IsAccessible()))
                     {
-                        TypeDefinition returnType;
-                        if (method.IsPublic() && (returnType = method.ReturnType.Resolve()) != null && returnType.IsEnum)
-                            namesInXaml.Add(method.ReturnType.FullName);
+                        AddToNamesInXamlIfRequired(method.ReturnType);
                     }
                 }
 
-                // Extend with enums used in public properties on types implementing INotifyPropertyChanged
+                // Extend with enum properties which is being used in any relations to types implementing INotifyPropertyChanged
                 foreach (var type in info.GetAllTypeDefinitions().
-                    Where(t => 
+                    Where(t =>
                         t.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged") ||
                         t.HeirsImplementsInterface("System.ComponentModel.INotifyPropertyChanged", Project.AssemblyList)))
                 {
-                    foreach (PropertyDefinition prop in type.Properties)
+                    foreach (var prop in type.Properties.Where(prop => prop.IsAccessible()))
                     {
-                        TypeDefinition propType;
-                        if (prop.IsPublic() && (propType = prop.PropertyType.Resolve()) != null && propType.IsEnum)
-                            namesInXaml.Add(prop.PropertyType.FullName);
+                        AddToNamesInXamlIfRequired(prop.PropertyType);
                     }
                 }
             }
 
-            return namesInXaml;
+            return typeNamesInXaml;
         }
 
         public static Obfuscator CreateFromXml(string xml)
@@ -731,7 +731,7 @@ namespace Obfuscar
             }
         }
 
-        private HashSet<string> NamesInXaml(IEnumerable<BamlDocument> xamlFiles)
+        private HashSet<string> TypeNamesInXaml(IEnumerable<BamlDocument> xamlFiles)
         {
             var result = new HashSet<string>();
 
