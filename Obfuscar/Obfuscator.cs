@@ -163,15 +163,15 @@ namespace Obfuscar
                 // Extend with enum fields, properties and methods of the types directly mentioned in XAML
                 foreach (var type in info.GetAllTypeDefinitions().Where(t => typeNamesInXaml.Contains(t.FullName)))
                 {
-                    foreach (var field in type.Fields.Where(field => field.IsAccessible()))
+                    foreach (var field in type.Fields.Where(field => field.IsPublicOrInternal()))
                     {
                         AddToNamesInXamlIfRequired(field.FieldType);
                     }
-                    foreach (var prop in type.Properties.Where(prop => prop.IsAccessible()))
+                    foreach (var prop in type.Properties.Where(prop => prop.IsPublicOrInternal()))
                     {
                         AddToNamesInXamlIfRequired(prop.PropertyType);
                     }
-                    foreach (var method in type.Methods.Where(method => method.IsAccessible()))
+                    foreach (var method in type.Methods.Where(method => method.IsPublicOrInternal()))
                     {
                         AddToNamesInXamlIfRequired(method.ReturnType);
                     }
@@ -183,7 +183,7 @@ namespace Obfuscar
                         t.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged") ||
                         t.HeirsImplementsInterface("System.ComponentModel.INotifyPropertyChanged", Project.AssemblyList)))
                 {
-                    foreach (var prop in type.Properties.Where(prop => prop.IsAccessible()))
+                    foreach (var prop in type.Properties.Where(prop => prop.IsPublicOrInternal()))
                     {
                         AddToNamesInXamlIfRequired(prop.PropertyType);
                     }

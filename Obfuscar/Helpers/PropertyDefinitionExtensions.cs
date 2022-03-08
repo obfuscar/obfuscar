@@ -19,20 +19,20 @@ namespace Obfuscar.Helpers
             return propertyDefinition.IsGetterPublic() || propertyDefinition.IsSetterPublic();
         }
 
-        public static bool IsGetterAccessible(this PropertyDefinition propertyDefinition)
+        public static bool IsGetterPublicOrInternal(this PropertyDefinition propertyDefinition)
         {
-            return propertyDefinition.GetMethod.IsAccessible();
+            return propertyDefinition.GetMethod.IsPublicOrInternal();
         }
 
-        public static bool IsSetterAccessible(this PropertyDefinition propertyDefinition)
+        public static bool IsSetterPublicOrInternal(this PropertyDefinition propertyDefinition)
         {
-            return propertyDefinition.SetMethod.IsAccessible();
+            return propertyDefinition.SetMethod.IsPublicOrInternal();
         }
 
-        public static bool IsAccessible(this PropertyDefinition propertyDefinition)
+        public static bool IsPublicOrInternal(this PropertyDefinition propertyDefinition)
         {
-            return propertyDefinition.IsSetterAccessible() ||
-                   propertyDefinition.IsGetterAccessible();
+            return propertyDefinition.IsSetterPublicOrInternal() ||
+                   propertyDefinition.IsGetterPublicOrInternal();
         }
     }
 }

@@ -1118,7 +1118,7 @@ namespace Obfuscar
                 return false;
             }
 
-            if (typeInXaml && field.Field.IsPublic())
+            if (typeInXaml && field.Field.IsPublicOrInternal())
             {
                 message = "filtered by BAML/INotifyPropertyChanged";
                 return true;
@@ -1226,19 +1226,19 @@ namespace Obfuscar
                 return true;
             }
 
-            if (typeInXaml && prop.Property.IsPublic())
+            if (typeInXaml && prop.Property.IsPublicOrInternal())
             {
                 message = "filtered by BAML";
                 return true;
             }
 
-            if (prop.Property.IsAccessible() && prop.DeclaringType.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged"))
+            if (prop.Property.IsPublicOrInternal() && prop.DeclaringType.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged"))
             {
                 message = "declaring type implements INotifyPropertyChanged";
                 return true;
             }
 
-            if (prop.Property.IsAccessible() && prop.DeclaringType.HeirsImplementsInterface("System.ComponentModel.INotifyPropertyChanged", project.AssemblyList)) 
+            if (prop.Property.IsPublicOrInternal() && prop.DeclaringType.HeirsImplementsInterface("System.ComponentModel.INotifyPropertyChanged", project.AssemblyList)) 
             {
                 message = "declaring type heir(s) implements INotifyPropertyChanged";
                 return true;
