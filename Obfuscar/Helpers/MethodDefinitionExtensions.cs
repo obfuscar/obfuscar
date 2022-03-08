@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using Newtonsoft.Json.Linq;
 
 namespace Obfuscar.Helpers
 {
@@ -21,18 +22,24 @@ namespace Obfuscar.Helpers
             FamORAssem 0x0005 Accessibly by sub-types anywhere, plus anyone in assembly
             Public 0x0006 Accessibly by anyone who has visibility to this scope
 
+            See more in Mono.Cecil.MethodAttributes flags enum 
+            and Mono.Cecil.MethodAttributes.GetMaskedAttributes calls in Mono.Cecil.MethodDefinition
+
             TODO: look into mono-tools for Gendarme.Framework.Rocks regarding IsVisible - combined with our IsFamily or IsFamilyOrAssembly for properties or in general could be a good solution.
         */
-        public static bool IsAccessible(this MethodDefinition method)
+        /// <summary> Detect if method is accessible as public or internal </summary>
+        public static bool IsPublicOrInternal(this MethodDefinition method)
         {
             return method != null &&
                    !method.IsCompilerControlled &&
-                   !method.IsPrivate &&
-                   (method.IsPublic ||
-                    method.IsAssembly ||
-                    method.IsFamily ||
-                    method.IsFamilyAndAssembly ||
-                    method.IsFamilyOrAssembly);
+                   !method.IsPrivate &&                 //private
+                   (
+                       method.IsPublic ||               //public
+                       method.IsAssembly ||             //internal
+                       //method.IsFamily ||             //protected
+                       method.IsFamilyAndAssembly ||
+                       method.IsFamilyOrAssembly
+                   );
         }
     }
 }

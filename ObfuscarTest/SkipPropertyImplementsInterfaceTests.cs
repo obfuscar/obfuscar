@@ -27,17 +27,21 @@ namespace ObfuscarTest
         }
 
         [Theory]
-        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.ImplementsINotifyPropertyChanged", "PublicProperty")]
-        public void Should_skip_public_property_when_INotifyPropertyChanged_interface_is_implemented_if_part_of_nested_inherited_interfaces(
-            string testCodeFileNameWithoutExtension, string mainClassName, params string[] propertyNames)
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.ImplementsINotifyPropertyChanged", "PublicProperty", "InternalProperty")]
+        public void
+            Should_skip_accessible_properties_when_INotifyPropertyChanged_interface_is_implemented_if_part_of_nested_inherited_interfaces(
+                string testCodeFileNameWithoutExtension, string mainClassName, params string[] propertyNames)
         {
             //Arrange
 
             //Act
             var item = BuildAndObfuscateAssemblies(testCodeFileNameWithoutExtension);
 
-            using (var inputAssemblyDefinition = AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath, $"{testCodeFileNameWithoutExtension}.dll")))
-            using (_ = AssemblyDefinition.ReadAssembly(Path.Combine(item.Project.Settings.OutPath, $"{testCodeFileNameWithoutExtension}.dll")))
+            using (var inputAssemblyDefinition =
+                   AssemblyDefinition.ReadAssembly(Path.Combine(TestHelper.InputPath,
+                       $"{testCodeFileNameWithoutExtension}.dll")))
+            using (_ = AssemblyDefinition.ReadAssembly(Path.Combine(item.Project.Settings.OutPath,
+                       $"{testCodeFileNameWithoutExtension}.dll")))
             {
                 //Act
                 var mainClassType = inputAssemblyDefinition.MainModule.GetType(mainClassName);
@@ -55,9 +59,9 @@ namespace ObfuscarTest
             }
         }
 
-        [Theory(Skip = "Why is non public properties skipped for classes with heirs implementing INotifyPropertyChanged interface. Properties are detected public due to getter and/or setter IsFamily.")]
-        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.ImplementsINotifyPropertyChanged", "ProtectedProperty", "InternalProperty", "PrivateProperty")]
-        public void Should_not_skip_non_public_property_when_INotifyPropertyChanged_interface_is_implemented_if_part_of_nested_inherited_interfaces(
+        [Theory]
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.ImplementsINotifyPropertyChanged", "ProtectedProperty", "PrivateProperty")]
+        public void Should_not_skip_inaccessible_properties_when_INotifyPropertyChanged_interface_is_implemented_if_part_of_nested_inherited_interfaces(
             string testCodeFileNameWithoutExtension, string mainClassName, params string[] propertyNames)
         {
             //Arrange
@@ -85,8 +89,8 @@ namespace ObfuscarTest
         }
 
         [Theory]
-        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.NotImplementsINotifyPropertyChanged", "PublicProperty")]
-        public void Should_not_skip_public_property_when_INotifyPropertyChanged_interface_is_not_implemented_if_part_of_nested_inherited_interfaces(
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.NotImplementsINotifyPropertyChanged", "PublicProperty", "InternalProperty")]
+        public void Should_not_skip_accessible_properties_when_INotifyPropertyChanged_interface_is_not_implemented_if_part_of_nested_inherited_interfaces(
             string testCodeFileNameWithoutExtension, string mainClassName, params string[] propertyNames)
         {
             //Arrange
@@ -114,8 +118,8 @@ namespace ObfuscarTest
         }
 
         [Theory]
-        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.NotImplementsINotifyPropertyChanged", "ProtectedProperty", "InternalProperty", "PrivateProperty")]
-        public void Should_not_skip_non_public_property_when_INotifyPropertyChanged_interface_is_not_implemented_if_part_of_nested_inherited_interfaces(
+        [InlineData("AssemblyWithInheritedInterfaces", "TestClasses.NotImplementsINotifyPropertyChanged", "ProtectedProperty", "PrivateProperty")]
+        public void Should_not_skip_inaccessible_property_when_INotifyPropertyChanged_interface_is_not_implemented_if_part_of_nested_inherited_interfaces(
             string testCodeFileNameWithoutExtension, string mainClassName, params string[] propertyNames)
         {
             //Arrange

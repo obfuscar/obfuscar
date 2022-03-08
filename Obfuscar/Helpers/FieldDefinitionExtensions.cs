@@ -21,18 +21,24 @@ namespace Obfuscar.Helpers
             FamORAssem 0x0005 Accessibly by sub-types anywhere, plus anyone in assembly
             Public 0x0006 Accessibly by anyone who has visibility to this scope
 
+            See more in Mono.Cecil.MethodAttributes flags enum 
+            and Mono.Cecil.MethodAttributes.GetMaskedAttributes calls in Mono.Cecil.MethodDefinition
+
             TODO: look into mono-tools for Gendarme.Framework.Rocks regarding IsVisible - combined with our IsFamily or IsFamilyOrAssembly for properties or in general could be a good solution.
         */
-        public static bool IsAccessible(this FieldDefinition field)
+        /// <summary> Detect if method is accessible as public or internal </summary>
+        public static bool IsPublicOrInternal(this FieldDefinition field)
         {
             return field != null &&
                    !field.IsCompilerControlled &&
-                   !field.IsPrivate &&
-                   (field.IsPublic ||
-                    field.IsAssembly ||
-                    field.IsFamily ||
-                    field.IsFamilyAndAssembly ||
-                    field.IsFamilyOrAssembly);
+                   !field.IsPrivate &&                 //private
+                   (
+                       field.IsPublic ||               //public
+                       field.IsAssembly ||             //internal
+                       //field.IsFamily ||             //protected
+                       field.IsFamilyAndAssembly ||
+                       field.IsFamilyOrAssembly
+                   );
         }
     }
 }

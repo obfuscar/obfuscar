@@ -20,28 +20,28 @@ namespace TestClasses
         public int PublicProperty { get { return 1; } }
         protected int ProtectedProperty { get { return 2; } }
         internal int InternalProperty { get { return 3; } }
-        protected int PrivateProperty { get { return 4; } }
+        private int PrivateProperty { get { return 4; } }
     }
     public abstract class HeirToAbstractBaseClassNotImplementsINotifyPropertyChanged
     {
         public int PublicProperty { get { return 1; } }
         protected int ProtectedProperty { get { return 2; } }
         internal int InternalProperty { get { return 3; } }
-        protected int PrivateProperty { get { return 4; } }
+        private int PrivateProperty { get { return 4; } }
     }
     public class HeirToNonAbstractBaseClassImplementsINotifyPropertyChanged
     {
         public int PublicProperty { get { return 1; } }
         protected int ProtectedProperty { get { return 2; } }
         internal int InternalProperty { get { return 3; } }
-        protected int PrivateProperty { get { return 4; } }
+        private int PrivateProperty { get { return 4; } }
     }
     public class HeirToNonAbstractBaseClassNotImplementsINotifyPropertyChanged
     {
         public int PublicProperty { get { return 1; } }
         protected int ProtectedProperty { get { return 2; } }
         internal int InternalProperty { get { return 3; } }
-        protected int PrivateProperty { get { return 4; } }
+        private int PrivateProperty { get { return 4; } }
     }
 
     public class V : HeirToAbstractBaseClassImplementsINotifyPropertyChanged, E<int>
