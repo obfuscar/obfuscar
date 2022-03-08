@@ -39,8 +39,10 @@ using MethodSemanticsAttributes = Mono.Cecil.MethodSemanticsAttributes;
 
 namespace Obfuscar
 {
-    class AssemblyInfo
+    internal class AssemblyInfo
     {
+        internal const string KeepPublicApiOptionInConfiguration = "KeepPublicApi option in configuration";
+
         private readonly Project project;
         private readonly PredicateCollection<string> skipNamespaces = new PredicateCollection<string>();
         private readonly PredicateCollection<TypeKey> skipTypes = new PredicateCollection<TypeKey>();
@@ -924,7 +926,7 @@ namespace Obfuscar
 
             if (type.TypeDefinition.IsTypePublic())
             {
-                message = "KeepPublicApi option in configuration";
+                message = KeepPublicApiOptionInConfiguration;
                 return KeepPublicApi;
             }
 
@@ -1039,7 +1041,7 @@ namespace Obfuscar
                 map.GetMethodGroup(method)?.Methods.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
             ))
             {
-                message = "KeepPublicApi option in configuration";
+                message = KeepPublicApiOptionInConfiguration;
                 return KeepPublicApi;
             }
 
@@ -1163,7 +1165,7 @@ namespace Obfuscar
 
             if (field.Field.IsPublic() && field.DeclaringType.IsTypePublic())
             {
-                message = "KeepPublicApi option in configuration";
+                message = KeepPublicApiOptionInConfiguration;
                 return KeepPublicApi;
             }
 
@@ -1268,7 +1270,7 @@ namespace Obfuscar
                 prop.Property.SetMethod != null && map.GetMethodGroup(new MethodKey(prop.Property.SetMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
             ))
             {
-                message = "KeepPublicApi option in configuration";
+                message = KeepPublicApiOptionInConfiguration;
                 return KeepPublicApi;
             }
 
@@ -1337,7 +1339,7 @@ namespace Obfuscar
                 evt.Event.RemoveMethod != null && map.GetMethodGroup(new MethodKey(evt.Event.RemoveMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
             ))
             {
-                message = "KeepPublicApi option in configuration";
+                message = KeepPublicApiOptionInConfiguration;
                 return KeepPublicApi;
             }
 
