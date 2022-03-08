@@ -24,11 +24,9 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
-using Obfuscar;
 using Xunit;
 
 namespace ObfuscarTest
@@ -58,9 +56,10 @@ namespace ObfuscarTest
                 delegate(TypeDefinition typeDef) { return typeDef.Name == typeName; },
                 delegate(TypeDefinition typeDef)
                 {
-                    Assert.Equal(expected.Length, typeDef.Properties.Count);
+                    Assert.Equal(expected.Length + notExpected.Length, typeDef.Properties.Count);
                     // expected.Length == 1 ? "Type should have 1 property (others dropped by default)." :
                     // String.Format ("Type should have {0} properties (others dropped by default).", expected.Length));
+                    // 2022-08-03 changes: properties are no longer dropped but renamed.
 
                     foreach (PropertyDefinition prop in typeDef.Properties)
                     {
@@ -182,11 +181,13 @@ namespace ObfuscarTest
             string[] expected = new string[]
             {
                 "PropertyB",
+                "PropertyE",
             };
 
             string[] notExpected = new string[]
             {
                 "PropertyC",
+                "PropertyD",
             };
 
             CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), "B", expected, notExpected);

@@ -896,10 +896,10 @@ namespace Obfuscar
 
                     foreach (PropertyDefinition prop in propsToDrop)
                     {
-                        PropertyKey propKey = new PropertyKey(typeKey, prop);
-                        ObfuscatedThing m = Mapping.GetProperty(propKey);
-                        m.Update(ObfuscationStatus.Renamed, "dropped");
-                        type.Properties.Remove(prop);
+                        //only rename property to avoid method getter issues
+                        var propKey = new PropertyKey(typeKey, prop);
+                        var newName = NameMaker.Instance.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
+                        RenameProperty(info, propKey, prop, newName);
                     }
                 }
             }
