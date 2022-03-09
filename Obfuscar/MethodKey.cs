@@ -180,10 +180,17 @@ namespace Obfuscar
                         break;
                     case '>':
                         level--;
+                        
+                        //if still within generic or nested generic type listings
+                        if (level >= 0)
+                            genericArgumentCount++;
+                        
                         break;
                     case ',':
+                        //if next generic type within generic type listing nested or not
                         if (level != 0)
                             genericArgumentCount++;
+
                         break;
                 }
             }
