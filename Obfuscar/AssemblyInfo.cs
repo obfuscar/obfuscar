@@ -42,6 +42,7 @@ namespace Obfuscar
     internal class AssemblyInfo
     {
         internal const string KeepPublicApiOptionInConfiguration = "KeepPublicApi option in configuration";
+        internal const string AssemblyAttribute = "attribute";
 
         private readonly Project project;
         private readonly PredicateCollection<string> skipNamespaces = new PredicateCollection<string>();
@@ -862,7 +863,7 @@ namespace Obfuscar
             var attribute = type.TypeDefinition.MarkedToRename();
             if (attribute != null)
             {
-                message = "attribute";
+                message = AssemblyAttribute;
                 return !attribute.Value;
             }
 
@@ -995,7 +996,7 @@ namespace Obfuscar
             // skip runtime methods
             if (attribute != null)
             {
-                message = "attribute";
+                message = AssemblyAttribute;
                 return !attribute.Value;
             }
 
@@ -1089,7 +1090,7 @@ namespace Obfuscar
             var attribute = field.Field.MarkedToRename();
             if (attribute != null)
             {
-                message = "attribute";
+                message = AssemblyAttribute;
                 return !attribute.Value;
             }
 
@@ -1185,7 +1186,7 @@ namespace Obfuscar
             var attribute = prop.Property.MarkedToRename();
             if (attribute != null)
             {
-                message = "attribute";
+                message = AssemblyAttribute;
                 return !attribute.Value;
             }
 
@@ -1292,7 +1293,7 @@ namespace Obfuscar
             // skip runtime methods
             if (attribute != null)
             {
-                message = "attribute";
+                message = AssemblyAttribute;
                 return !attribute.Value;
             }
 
