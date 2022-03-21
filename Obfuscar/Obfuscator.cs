@@ -1303,17 +1303,11 @@ namespace Obfuscar
                     message.AppendFormat("{0}->{1}:{2}", item, state.Status, state.StatusText).AppendLine();
                 }
 
-                //if not skipped by KeepPublicApi option in configuration or by Obfuscate/Obfuscation attribute
-                if (!@group.Methods.Select(m => Mapping.GetMethod(m)).All(m =>
-                        m.Status == ObfuscationStatus.Skipped && (
-                            m.StatusText == AssemblyInfo.KeepPublicApiOptionInConfiguration ||
-                            m.StatusText == AssemblyInfo.AssemblyAttribute)))
-                {
-                    if (Project.Settings.AbortOnInconsistentState)
-                        throw new ObfuscarException(message.ToString());
+                if (Project.Settings.AbortOnInconsistentState)
+                    throw new ObfuscarException(message.ToString());
 
+                if (Project.Settings.LogRecoveredInconsistentState)
                     LogOutput("Warning: " + message.ToString());
-                }
             }
             else
             {

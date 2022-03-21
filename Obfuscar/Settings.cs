@@ -50,6 +50,7 @@ namespace Obfuscar
             Optimize = XmlConvert.ToBoolean(vars.GetValue("OptimizeMethods", "true"));
             SuppressIldasm = XmlConvert.ToBoolean(vars.GetValue("SuppressIldasm", "true"));
             AbortOnInconsistentState = XmlConvert.ToBoolean(vars.GetValue("AbortOnInconsistentState", "true"));
+            LogRecoveredInconsistentState = XmlConvert.ToBoolean(vars.GetValue("LogRecoveredInconsistentState", "true"));
 
             XmlMapping = XmlConvert.ToBoolean(vars.GetValue("XmlMapping", "false"));
             RegenerateDebugInfo = XmlConvert.ToBoolean(vars.GetValue("RegenerateDebugInfo", "false"));
@@ -98,5 +99,7 @@ namespace Obfuscar
         public bool UseKoreanNames { get; }
 
         public bool AbortOnInconsistentState { get; }
+
+        public bool LogRecoveredInconsistentState { get; }
     }
 }
