@@ -111,8 +111,14 @@ namespace Obfuscar
             LogOutput("Hiding strings...\n");
             HideStrings();
 
-            LogOutput("Renaming:\n");
+            LogOutput($"Collecting XAML referenced types\n");
             var typeNamesInXaml = CollectTypesFromXaml();
+            var allPropertyTypesRelatedToNpc = CollectTypesRelatedToNpc();
+            var allTypeNamesRelatedToNpcOrInXaml = typeNamesInXaml
+                .Union(allPropertyTypesRelatedToNpc)
+                .ToHashSet();
+
+            LogOutput("Renaming:\n");
 
             LogOutput("Fields...\n");
             RenameFields(typeNamesInXaml);
@@ -121,7 +127,7 @@ namespace Obfuscar
             RenameParams();
 
             LogOutput("Properties...\n");
-            RenameProperties(typeNamesInXaml);
+            RenameProperties(allTypeNamesRelatedToNpcOrInXaml);
 
             LogOutput("Events...\n");
             RenameEvents();
@@ -176,21 +182,44 @@ namespace Obfuscar
                         AddToNamesInXamlIfRequired(method.ReturnType);
                     }
                 }
-
-                // Extend with enum properties which is being used in any relations to types implementing INotifyPropertyChanged
-                foreach (var type in info.GetAllTypeDefinitions().
-                    Where(t =>
-                        t.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged") ||
-                        t.HeirsImplementsInterface("System.ComponentModel.INotifyPropertyChanged", Project.AssemblyList)))
-                {
-                    foreach (var prop in type.Properties.Where(prop => prop.IsPublicOrInternal()))
-                    {
-                        AddToNamesInXamlIfRequired(prop.PropertyType);
-                    }
-                }
             }
 
+            // Extend with enum property types which are being used in any relations to types implementing INotifyPropertyChanged
+            bool PublicOrInternalEnumPropertyFilter(PropertyDefinition property) =>
+                property.IsPublicOrInternal() && (property.PropertyType.Resolve()?.IsEnum ?? false);
+            var allTypeNamesRelatedToNpc = CollectTypesRelatedToNpc();
+            var allEnumTypeNamesRelatedToNpc = Project.AssemblyList
+                .SelectMany(assembly => assembly.GetAllTypeDefinitions())
+                .SelectMany(type => type.Properties.Where(PublicOrInternalEnumPropertyFilter))
+                .Where(property => allTypeNamesRelatedToNpc.Contains(property.DeclaringType.FullName))
+                .Select(property => property.PropertyType.Resolve().FullName);
+            typeNamesInXaml = typeNamesInXaml
+                .Union(allEnumTypeNamesRelatedToNpc)
+                .ToHashSet();
+
             return typeNamesInXaml;
+        }
+        
+        internal HashSet<string> CollectTypesRelatedToNpc()
+        {
+            //all non <Module> assembly types
+            var allTypes = Project.AssemblyList
+                .SelectMany(assemblyInfo => assemblyInfo.GetAllTypeDefinitions())
+                .Where(type => type.FullName != "<Module>")
+                .ToHashSet();
+            
+            var npcTypeFullName = typeof(System.ComponentModel.INotifyPropertyChanged).FullName;
+
+            //find all npc related classes
+            var npcClasses = allTypes.ImplementsInterface(npcTypeFullName);
+            var npcBaseClasses = allTypes.HeirsImplementsInterface(npcTypeFullName, allTypes);
+            var allNpcClasses = npcClasses.Union(npcBaseClasses).ToHashSet();
+
+            var allTypeNamesRelatedToNpc = allNpcClasses
+                .Select(type => type.FullName)
+                .ToHashSet();
+
+            return allTypeNamesRelatedToNpc;
         }
 
         public static Obfuscator CreateFromXml(string xml)
@@ -891,7 +920,8 @@ namespace Obfuscar
                     // ReSharper disable once LoopCanBeConvertedToQuery
                     foreach (PropertyDefinition prop in type.Properties)
                     {
-                        index = ProcessProperty(typeKey, prop, info, type, typeInXaml, index, propsToDrop);
+                        var declaringTypeInXaml = namesInXaml.Contains(new PropertyKey(typeKey, prop).DeclaringType.FullName);
+                        index = ProcessProperty(typeKey, prop, info, type, typeInXaml, declaringTypeInXaml, index, propsToDrop);
                     }
 
                     foreach (PropertyDefinition prop in propsToDrop)
@@ -905,9 +935,8 @@ namespace Obfuscar
             }
         }
 
-        private int ProcessProperty(TypeKey typeKey, PropertyDefinition prop, AssemblyInfo info, TypeDefinition type, bool typeInXaml,
-            int index,
-            List<PropertyDefinition> propsToDrop)
+        private int ProcessProperty(TypeKey typeKey, PropertyDefinition prop, AssemblyInfo info, TypeDefinition type, 
+            bool typeInXaml, bool declaringTypeInXaml, int index, List<PropertyDefinition> propsToDrop)
         {
             PropertyKey propKey = new PropertyKey(typeKey, prop);
             ObfuscatedThing m = Mapping.GetProperty(propKey);
@@ -918,7 +947,7 @@ namespace Obfuscar
 
             string skip;
             // skip filtered props
-            if (info.ShouldSkip(propKey, typeInXaml, Project.InheritMap, Project.Settings.MarkedOnly, out skip))
+            if (info.ShouldSkip(propKey, typeInXaml, declaringTypeInXaml, Project.InheritMap, Project.Settings.MarkedOnly, out skip))
             {
                 m.Update(ObfuscationStatus.Skipped, skip);
 

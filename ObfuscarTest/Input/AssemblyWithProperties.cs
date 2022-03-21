@@ -62,4 +62,11 @@ namespace TestClasses
         protected TestEnum PropertyD { get; set; }
         internal TestEnum PropertyE { get; set; }
     }
+    internal class ClassD : ClassB
+    {
+        public int PropertyB { get; set; }
+        private int PropertyC { get; set; }
+        protected int PropertyD { get; set; }
+        internal int PropertyE { get; set; }
+    }
 }

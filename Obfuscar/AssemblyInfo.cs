@@ -1174,8 +1174,8 @@ namespace Obfuscar
             return !HidePrivateApi;
         }
 
-        public bool ShouldSkip(PropertyKey prop, bool typeInXaml, InheritMap map,
-            bool markedOnly, out string message)
+        public bool ShouldSkip(PropertyKey prop, bool typeInXaml, bool declaringTypeInXaml,
+            InheritMap map, bool markedOnly, out string message)
         {
             if (prop.Property.IsRuntimeSpecialName)
             {
@@ -1233,15 +1233,9 @@ namespace Obfuscar
                 return true;
             }
 
-            if (prop.Property.IsPublicOrInternal() && prop.DeclaringType.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged"))
+            if (declaringTypeInXaml && prop.Property.IsPublicOrInternal())
             {
-                message = "declaring type implements INotifyPropertyChanged";
-                return true;
-            }
-
-            if (prop.Property.IsPublicOrInternal() && prop.DeclaringType.HeirsImplementsInterface("System.ComponentModel.INotifyPropertyChanged", project.AssemblyList)) 
-            {
-                message = "declaring type heir(s) implements INotifyPropertyChanged";
+                message = "filtered by BAML";
                 return true;
             }
 

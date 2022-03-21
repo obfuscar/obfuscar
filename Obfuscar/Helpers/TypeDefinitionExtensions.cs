@@ -114,6 +114,9 @@ namespace Obfuscar.Helpers
 
         public static bool ImplementsInterface(this TypeDefinition type, string interfaceName)
         {
+            if (type == null) throw new ArgumentNullException(nameof(type));
+            if (interfaceName == null) throw new ArgumentNullException(nameof(interfaceName));
+
             while (type != null)
             {
                 if (type.Interfaces.Any(i => i.InterfaceType.FullName == interfaceName))
@@ -124,43 +127,61 @@ namespace Obfuscar.Helpers
             }
             return false;
         }
+        public static ISet<TypeDefinition> ImplementsInterface(this IEnumerable<TypeDefinition> types, string interfaceName)
+        {
+            if (types == null) throw new ArgumentNullException(nameof(types));
+
+            return types
+                .Where(type => type.ImplementsInterface(interfaceName))
+                .ToHashSet();
+        }
 
         public static bool HeirsImplementsInterface(this TypeDefinition type, string interfaceName, IEnumerable<AssemblyInfo> assemblies)
         {
-            var classTypes = assemblies
+            if (assemblies == null) throw new ArgumentNullException(nameof(assemblies));
+
+            var typeDefinitions = assemblies
                 .SelectMany(assembly => assembly.GetAllTypeDefinitions());
 
-            return HeirsImplementsInterface(type, interfaceName, classTypes);
-        }
-        internal static bool HeirsImplementsInterface(this TypeDefinition type, string interfaceName, params AssemblyDefinition[] assemblies)
-        {
-            return type.HeirsImplementsInterface(interfaceName, assemblies.AsEnumerable());
-        }
-        internal static bool HeirsImplementsInterface(this TypeDefinition type, string interfaceName, IEnumerable<AssemblyDefinition> assemblyDefinitions)
-        {
-            var classTypes = assemblyDefinitions
-                .SelectMany(assemblyType => assemblyType.MainModule.GetTypes());
-
-            return HeirsImplementsInterface(type, interfaceName, classTypes);
+            return HeirsImplementsInterface(type, interfaceName, typeDefinitions);
         }
         internal static bool HeirsImplementsInterface(this TypeDefinition type, string interfaceName, IEnumerable<TypeDefinition> typeDefinitions)
         {
-            if (type == null) throw new ArgumentNullException(nameof(type));
+            return HeirsImplementsInterface(new[] { type }, interfaceName, typeDefinitions).Any();
+        }
+        internal static ISet<TypeDefinition> HeirsImplementsInterface(this ICollection<TypeDefinition> types, string interfaceName, IEnumerable<TypeDefinition> typeDefinitions)
+        {
+            if (types == null) throw new ArgumentNullException(nameof(types));
+            if (interfaceName == null) throw new ArgumentNullException(nameof(interfaceName));
+            if (typeDefinitions == null) throw new ArgumentNullException(nameof(typeDefinitions));
 
-            var classTypes = typeDefinitions
-                .Where(assemblyType => assemblyType.IsClass);
+            var typeNames = types
+                .Select(type => type.FullName)
+                .Distinct()
+                .ToDictionary(type => type, type => false);
 
-            var inheritedTypes = classTypes
-                .Where(classType =>
+            var typeDefinitionsImplementInterface = typeDefinitions.ImplementsInterface(interfaceName);
+            
+            foreach (var type in typeDefinitionsImplementInterface)
+            {
+                var baseType = type.BaseType?.Resolve();
+                while (baseType != null)
                 {
-                    var baseType = classType.BaseType?.Resolve();
-                    return type.FullName == baseType?.FullName;
-                });
+                    if (typeNames.ContainsKey(baseType.FullName))
+                    {
+                        typeNames[baseType.FullName] = true;
+                        break;
+                    }
 
-            var inheritedWpfTypes = inheritedTypes
-                .Where(assemblyType => assemblyType.ImplementsInterface(interfaceName));
+                    baseType = baseType.BaseType?.Resolve();
+                }
+            }
 
-            return inheritedWpfTypes.Any();
+            var inheritedTypesImplementInterface = types
+                .Where(type => typeNames[type.FullName])
+                .ToHashSet();
+
+            return inheritedTypesImplementInterface;
         }
     }
 }

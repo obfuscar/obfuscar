@@ -29,7 +29,7 @@ using System.IO;
 using System.CodeDom.Compiler;
 using Xunit;
 using System.Text;
-using System.Collections.Generic;
+using System.Linq;
 
 namespace ObfuscarTest
 {
@@ -113,13 +113,19 @@ namespace ObfuscarTest
 
             if (hideStrings)
                 obfuscator.HideStrings();
-            var namesInXaml = obfuscator.CollectTypesFromXaml();
-            obfuscator.RenameFields(namesInXaml);
+
+            var typeNamesInXaml = obfuscator.CollectTypesFromXaml();
+            var allPropertyTypesRelatedToNpc = obfuscator.CollectTypesRelatedToNpc();
+            var allTypeNamesRelatedToNpcOrInXaml = typeNamesInXaml
+                .Union(allPropertyTypesRelatedToNpc)
+                .ToHashSet();
+
+            obfuscator.RenameFields(typeNamesInXaml);
             obfuscator.RenameParams();
-            obfuscator.RenameProperties(namesInXaml);
+            obfuscator.RenameProperties(allTypeNamesRelatedToNpcOrInXaml);
             obfuscator.RenameEvents();
             obfuscator.RenameMethods();
-            obfuscator.RenameTypes(namesInXaml);
+            obfuscator.RenameTypes(typeNamesInXaml);
             obfuscator.PostProcessing();
             obfuscator.SaveAssemblies(true);
 
