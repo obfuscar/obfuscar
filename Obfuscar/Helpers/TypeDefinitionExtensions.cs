@@ -149,6 +149,11 @@ namespace Obfuscar.Helpers
         {
             return HeirsImplementsInterface(new[] { type }, interfaceName, typeDefinitions).Any();
         }
+        /// <summary> Detect types which has heirs implementing a specific interface </summary>
+        /// <param name="types">The types to check</param>
+        /// <param name="interfaceName">The name of the interface to detect implementations of.</param>
+        /// <param name="typeDefinitions">The types used to check inheritance to the <paramref name="types"/> to check</param>
+        /// <returns>The <paramref name="types"/> which heirs in <paramref name="typeDefinitions"/> which implements the <paramref name="interfaceName"></paramref></returns>
         internal static ISet<TypeDefinition> HeirsImplementsInterface(this ICollection<TypeDefinition> types, string interfaceName, IEnumerable<TypeDefinition> typeDefinitions)
         {
             if (types == null) throw new ArgumentNullException(nameof(types));

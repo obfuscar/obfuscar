@@ -199,7 +199,9 @@ namespace Obfuscar
 
             return typeNamesInXaml;
         }
-        
+
+        /// <summary> Collect all names of types which implements or has an heir which implements <see cref="System.ComponentModel.INotifyPropertyChanged"/></summary>
+        /// <returns>All names of types which implements or has an heir which implements <see cref="System.ComponentModel.INotifyPropertyChanged"/></returns>
         internal HashSet<string> CollectTypesRelatedToNpc()
         {
             //all non <Module> assembly types
