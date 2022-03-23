@@ -188,8 +188,7 @@ namespace Obfuscar
             bool PublicOrInternalEnumPropertyFilter(PropertyDefinition property) =>
                 property.IsPublicOrInternal() && (property.PropertyType.Resolve()?.IsEnum ?? false);
             var allTypeNamesRelatedToNpc = CollectTypesRelatedToNpc();
-            var allEnumTypeNamesRelatedToNpc = Project.AssemblyList
-                .SelectMany(assembly => assembly.GetAllTypeDefinitions())
+            var allEnumTypeNamesRelatedToNpc = CollectAllTypes()
                 .SelectMany(type => type.Properties.Where(PublicOrInternalEnumPropertyFilter))
                 .Where(property => allTypeNamesRelatedToNpc.Contains(property.DeclaringType.FullName))
                 .Select(property => property.PropertyType.Resolve().FullName);
@@ -200,15 +199,25 @@ namespace Obfuscar
             return typeNamesInXaml;
         }
 
-        /// <summary> Collect all names of types which implements or has an heir which implements <see cref="System.ComponentModel.INotifyPropertyChanged"/></summary>
-        /// <returns>All names of types which implements or has an heir which implements <see cref="System.ComponentModel.INotifyPropertyChanged"/></returns>
-        internal HashSet<string> CollectTypesRelatedToNpc()
+        /// <summary> Collect all types except &gt;Module&lt; </summary>
+        /// <returns>All types </returns>
+        internal HashSet<TypeDefinition> CollectAllTypes()
         {
             //all non <Module> assembly types
             var allTypes = Project.AssemblyList
                 .SelectMany(assemblyInfo => assemblyInfo.GetAllTypeDefinitions())
                 .Where(type => type.FullName != "<Module>")
                 .ToHashSet();
+
+            return allTypes;
+        }
+
+        /// <summary> Collect all names of types which implements or has an heir which implements <see cref="System.ComponentModel.INotifyPropertyChanged"/></summary>
+        /// <returns>All names of types which implements or has an heir which implements <see cref="System.ComponentModel.INotifyPropertyChanged"/></returns>
+        internal HashSet<string> CollectTypesRelatedToNpc()
+        {
+            //all non <Module> assembly types
+            var allTypes = CollectAllTypes();
             
             var npcTypeFullName = typeof(System.ComponentModel.INotifyPropertyChanged).FullName;
 
