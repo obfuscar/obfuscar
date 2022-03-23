@@ -191,7 +191,8 @@ namespace Obfuscar
             var allEnumTypeNamesRelatedToNpc = CollectAllTypes()
                 .SelectMany(type => type.Properties.Where(PublicOrInternalEnumPropertyFilter))
                 .Where(property => allTypeNamesRelatedToNpc.Contains(property.DeclaringType.FullName))
-                .Select(property => property.PropertyType.Resolve().FullName);
+                .Select(property => property.PropertyType.Resolve()?.FullName)
+                .Where(propertyTypeName => propertyTypeName != null);
             typeNamesInXaml = typeNamesInXaml
                 .Union(allEnumTypeNamesRelatedToNpc)
                 .ToHashSet();
