@@ -1174,7 +1174,7 @@ namespace Obfuscar
             return !HidePrivateApi;
         }
 
-        public bool ShouldSkip(PropertyKey prop, bool typeInXaml, bool declaringTypeInXaml,
+        public bool ShouldSkip(PropertyKey prop, bool declaringTypeRelatedToNpcOrInXaml,
             InheritMap map, bool markedOnly, out string message)
         {
             if (prop.Property.IsRuntimeSpecialName)
@@ -1227,13 +1227,7 @@ namespace Obfuscar
                 return true;
             }
 
-            if (typeInXaml && prop.Property.IsPublicOrInternal())
-            {
-                message = "filtered by BAML";
-                return true;
-            }
-
-            if (declaringTypeInXaml && prop.Property.IsPublicOrInternal())
+            if (declaringTypeRelatedToNpcOrInXaml && prop.Property.IsPublicOrInternal())
             {
                 message = "filtered by BAML";
                 return true;

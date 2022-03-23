@@ -896,7 +896,7 @@ namespace Obfuscar
             return nameGroup;
         }
 
-        public void RenameProperties(HashSet<string> namesInXaml)
+        public void RenameProperties(HashSet<string> allTypeNamesRelatedToNpcOrInXaml)
         {
             // do nothing if it was requested not to rename
             if (!Project.Settings.RenameProperties)
@@ -915,15 +915,14 @@ namespace Obfuscar
 
                     TypeKey typeKey = new TypeKey(type);
 
-                    var typeInXaml = namesInXaml.Contains(type.FullName);
+                    var typeNamesRelatedToNpcOrInXaml = allTypeNamesRelatedToNpcOrInXaml.Contains(type.FullName);
 
                     int index = 0;
                     List<PropertyDefinition> propsToDrop = new List<PropertyDefinition>();
                     // ReSharper disable once LoopCanBeConvertedToQuery
                     foreach (PropertyDefinition prop in type.Properties)
                     {
-                        var declaringTypeInXaml = namesInXaml.Contains(new PropertyKey(typeKey, prop).DeclaringType.FullName);
-                        index = ProcessProperty(typeKey, prop, info, type, typeInXaml, declaringTypeInXaml, index, propsToDrop);
+                        index = ProcessProperty(typeKey, prop, info, type, typeNamesRelatedToNpcOrInXaml, index, propsToDrop);
                     }
 
                     foreach (PropertyDefinition prop in propsToDrop)
@@ -938,7 +937,7 @@ namespace Obfuscar
         }
 
         private int ProcessProperty(TypeKey typeKey, PropertyDefinition prop, AssemblyInfo info, TypeDefinition type, 
-            bool typeInXaml, bool declaringTypeInXaml, int index, List<PropertyDefinition> propsToDrop)
+            bool declaringTypeRelatedToNpcOrInXaml, int index, List<PropertyDefinition> propsToDrop)
         {
             PropertyKey propKey = new PropertyKey(typeKey, prop);
             ObfuscatedThing m = Mapping.GetProperty(propKey);
@@ -949,7 +948,7 @@ namespace Obfuscar
 
             string skip;
             // skip filtered props
-            if (info.ShouldSkip(propKey, typeInXaml, declaringTypeInXaml, Project.InheritMap, Project.Settings.MarkedOnly, out skip))
+            if (info.ShouldSkip(propKey, declaringTypeRelatedToNpcOrInXaml, Project.InheritMap, Project.Settings.MarkedOnly, out skip))
             {
                 m.Update(ObfuscationStatus.Skipped, skip);
 
