@@ -9,13 +9,13 @@ using Obfuscar;
 namespace ObfuscarTest.FluentAssertions.Mono.Cecil
 {
     /// <summary>
-    /// <see cref="TypeDefinition"/> assertions based on <inheritdoc cref="ReferenceTypeAssertions{TSubject,TAssertions}"/>
+    /// <see cref="PropertyDefinition"/> assertions based on <inheritdoc cref="ReferenceTypeAssertions{TSubject,TAssertions}"/>
     /// </summary>
-    public class FieldDefinitionAssertions : ReferenceTypeAssertions<FieldDefinition, FieldDefinitionAssertions>
+    public class PropertyDefinitionAssertions : ReferenceTypeAssertions<PropertyDefinition, PropertyDefinitionAssertions>
     {
         /// <summary> Constructor </summary>
         /// <param name="instance">The instance to assert.</param>
-        public FieldDefinitionAssertions(FieldDefinition instance)
+        public PropertyDefinitionAssertions(PropertyDefinition instance)
             : base(instance)
         { }
 
@@ -34,23 +34,23 @@ namespace ObfuscarTest.FluentAssertions.Mono.Cecil
         /// </param>
         /// <param name="map">The obfuscation map to use for lookup.</param>
         /// <param name="status">The obfuscation status to compare with.</param>
-        internal AndConstraint<FieldDefinitionAssertions> HaveObfuscationStatus(
+        internal AndConstraint<PropertyDefinitionAssertions> HaveObfuscationStatus(
             ObfuscationMap map, ObfuscationStatus status, 
             string because = "", params object[] becauseArgs)
         {
             Execute.Assertion.AddReportable("status",
                 () => Subject != null
-                    ? map.GetField(new FieldKey(Subject))?.Status.ToString()
+                    ? map.GetProperty(new PropertyKey(new TypeKey(Subject.DeclaringType), Subject))?.Status.ToString()
                     : null);
 
             Execute.Assertion
                 .BecauseOf(because, becauseArgs)
-                .ForCondition(map.GetField(new FieldKey(Subject))?.Status == status)
+                .ForCondition(map.GetProperty(new PropertyKey(new TypeKey(Subject.DeclaringType), Subject))?.Status == status)
                 .FailWith("Expected {context:" + Identifier + "} " +
-                          "for field {0} to have obfuscation status {1} but found status {status}.",
+                          "for property {0} to have obfuscation status {1} but found status {status}.",
                     Subject, status);
 
-            return new AndConstraint<FieldDefinitionAssertions>(this);
+            return new AndConstraint<PropertyDefinitionAssertions>(this);
         }
 
         /// <summary>
@@ -65,23 +65,23 @@ namespace ObfuscarTest.FluentAssertions.Mono.Cecil
         /// </param>
         /// <param name="map">The obfuscation map to use for lookup.</param>
         /// <param name="status">The obfuscation statuses to compare with.</param>
-        internal AndConstraint<FieldDefinitionAssertions> HaveObfuscationStatus(
+        internal AndConstraint<PropertyDefinitionAssertions> HaveObfuscationStatus(
             ObfuscationMap map, IEnumerable<ObfuscationStatus> status,
             string because = "", params object[] becauseArgs)
         {
             Execute.Assertion.AddReportable("status",
                 () => Subject != null
-                    ? map.GetField(new FieldKey(Subject))?.Status.ToString()
+                    ? map.GetProperty(new PropertyKey(new TypeKey(Subject.DeclaringType), Subject))?.Status.ToString()
                     : null);
 
             Execute.Assertion
                 .BecauseOf(because, becauseArgs)
-                .ForCondition(status.Any(s => map.GetField(new FieldKey(Subject))?.Status != s))
+                .ForCondition(status.Any(s => map.GetProperty(new PropertyKey(new TypeKey(Subject.DeclaringType), Subject))?.Status != s))
                 .FailWith("Expected {context:" + Identifier + "} " +
-                          "for field {0} to have any of obfuscation status {1} but found status {status}.",
+                          "for property {0} to have any of obfuscation status {1} but found status {status}.",
                     Subject, status);
 
-            return new AndConstraint<FieldDefinitionAssertions>(this);
+            return new AndConstraint<PropertyDefinitionAssertions>(this);
         }
 
         /// <summary>
@@ -96,23 +96,23 @@ namespace ObfuscarTest.FluentAssertions.Mono.Cecil
         /// </param>
         /// <param name="map">The obfuscation map to use for lookup.</param>
         /// <param name="status">The obfuscation status to compare with.</param>
-        internal AndConstraint<FieldDefinitionAssertions> NotHaveObfuscationStatus(
+        internal AndConstraint<PropertyDefinitionAssertions> NotHaveObfuscationStatus(
             ObfuscationMap map, ObfuscationStatus status,
             string because = "", params object[] becauseArgs)
         {
             Execute.Assertion.AddReportable("status",
                 () => Subject != null
-                    ? map.GetField(new FieldKey(Subject))?.Status.ToString()
+                    ? map.GetProperty(new PropertyKey(new TypeKey(Subject.DeclaringType), Subject))?.Status.ToString()
                     : null);
 
             Execute.Assertion
                 .BecauseOf(because, becauseArgs)
-                .ForCondition(map.GetField(new FieldKey(Subject))?.Status != status)
+                .ForCondition(map.GetProperty(new PropertyKey(new TypeKey(Subject.DeclaringType), Subject))?.Status != status)
                 .FailWith("Expected {context:" + Identifier + "} " + 
-                          "for field not to have obfuscation status {1} but found status {status}.",
+                          "for property {0} not to have obfuscation status {1} but found status {status}.",
                     Subject, status);
 
-            return new AndConstraint<FieldDefinitionAssertions>(this);
+            return new AndConstraint<PropertyDefinitionAssertions>(this);
         }
 
         /// <summary>
@@ -127,23 +127,23 @@ namespace ObfuscarTest.FluentAssertions.Mono.Cecil
         /// </param>
         /// <param name="map">The obfuscation map to use for lookup.</param>
         /// <param name="status">The obfuscation statuses to compare with.</param>
-        internal AndConstraint<FieldDefinitionAssertions> NotHaveObfuscationStatus(
+        internal AndConstraint<PropertyDefinitionAssertions> NotHaveObfuscationStatus(
             ObfuscationMap map, IEnumerable<ObfuscationStatus> status,
             string because = "", params object[] becauseArgs)
         {
             Execute.Assertion.AddReportable("status",
                 () => Subject != null
-                    ? map.GetField(new FieldKey(Subject))?.Status.ToString()
+                    ? map.GetProperty(new PropertyKey(new TypeKey(Subject.DeclaringType), Subject))?.Status.ToString()
                     : null);
 
             Execute.Assertion
                 .BecauseOf(because, becauseArgs)
-                .ForCondition(status.All(s => map.GetField(new FieldKey(Subject))?.Status != s))
+                .ForCondition(status.All(s => map.GetProperty(new PropertyKey(new TypeKey(Subject.DeclaringType), Subject))?.Status != s))
                 .FailWith("Expected {context:" + Identifier + "} " +
-                          "for field {0} not to have and of obfuscation statuses {1} but found status {status}.",
+                          "for property {0} not to have and of obfuscation statuses {1} but found status {status}.",
                     Subject, status);
 
-            return new AndConstraint<FieldDefinitionAssertions>(this);
+            return new AndConstraint<PropertyDefinitionAssertions>(this);
         }
     }
 }

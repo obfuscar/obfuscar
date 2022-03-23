@@ -56,6 +56,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Obfuscar\Obfuscar.csproj" />
+    <ProjectReference Include="..\ObfuscarTest.FluentAssertions\ObfuscarTest.FluentAssertions.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="TestIncludeModule.xml" />

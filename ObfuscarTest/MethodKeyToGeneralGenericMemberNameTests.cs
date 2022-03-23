@@ -1,9 +1,4 @@
-using System;
-using System.Linq;
-using System.Reflection;
-using System.Web.UI.HtmlControls;
 using FluentAssertions;
-using Mono.Cecil;
 using Obfuscar;
 using Xunit;
 
