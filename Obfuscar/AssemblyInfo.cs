@@ -1229,7 +1229,7 @@ namespace Obfuscar
 
             if (declaringTypeRelatedToNpcOrInXaml && prop.Property.IsPublicOrInternal())
             {
-                message = "filtered by BAML";
+                message = "filtered by BAML or INotifyPropertyChanged";
                 return true;
             }
 
