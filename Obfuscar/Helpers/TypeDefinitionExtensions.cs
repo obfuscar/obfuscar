@@ -127,13 +127,12 @@ namespace Obfuscar.Helpers
             }
             return false;
         }
-        public static ISet<TypeDefinition> ImplementsInterface(this IEnumerable<TypeDefinition> types, string interfaceName)
+        public static IEnumerable<TypeDefinition> ImplementsInterface(this IEnumerable<TypeDefinition> types, string interfaceName)
         {
             if (types == null) throw new ArgumentNullException(nameof(types));
 
             return types
-                .Where(type => type.ImplementsInterface(interfaceName))
-                .ToHashSet();
+                .Where(type => type.ImplementsInterface(interfaceName));
         }
 
         public static bool HeirsImplementsInterface(this TypeDefinition type, string interfaceName, IEnumerable<AssemblyInfo> assemblies)
@@ -154,7 +153,7 @@ namespace Obfuscar.Helpers
         /// <param name="interfaceName">The name of the interface to detect implementations of.</param>
         /// <param name="typeDefinitions">The types used to check inheritance to the <paramref name="types"/> to check</param>
         /// <returns>The <paramref name="types"/> which heirs in <paramref name="typeDefinitions"/> which implements the <paramref name="interfaceName"></paramref></returns>
-        internal static ISet<TypeDefinition> HeirsImplementsInterface(this ICollection<TypeDefinition> types, string interfaceName, IEnumerable<TypeDefinition> typeDefinitions)
+        internal static IEnumerable<TypeDefinition> HeirsImplementsInterface(this ICollection<TypeDefinition> types, string interfaceName, IEnumerable<TypeDefinition> typeDefinitions)
         {
             if (types == null) throw new ArgumentNullException(nameof(types));
             if (interfaceName == null) throw new ArgumentNullException(nameof(interfaceName));
@@ -163,7 +162,7 @@ namespace Obfuscar.Helpers
             var typeNames = types
                 .Select(type => type.FullName)
                 .Distinct()
-                .ToDictionary(type => type, type => false);
+                .ToDictionary(typeName => typeName, typeName => false);
 
             var typeDefinitionsImplementInterface = typeDefinitions.ImplementsInterface(interfaceName);
             
@@ -183,8 +182,7 @@ namespace Obfuscar.Helpers
             }
 
             var inheritedTypesImplementInterface = types
-                .Where(type => typeNames[type.FullName])
-                .ToHashSet();
+                .Where(type => typeNames[type.FullName]);
 
             return inheritedTypesImplementInterface;
         }
