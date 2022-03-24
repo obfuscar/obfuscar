@@ -149,7 +149,7 @@ namespace Obfuscar
                 return false;
 
             var expandedName = $"{candidate.DeclaringType.FullName}.{candidate.Name}";
-            if (candidate.Name != method.Name && expandedName != ToGenerelGenericMemberName(method.Name))
+            if (candidate.Name != method.Name && expandedName != ToGeneralGenericMemberName(method.Name))
                 return false;
 
             if (!TypeMatch(candidate.ReturnType, method.ReturnType))
@@ -163,10 +163,10 @@ namespace Obfuscar
         }
 
         // Convert member names from Type<T>.Member to Type`1.Member form
-        static string ToGenerelGenericMemberName(string memberName)
+        internal static string ToGeneralGenericMemberName(string memberName)
         {
             int iEnd;
-            if ((iEnd = memberName.IndexOf(">.")) < 0)
+            if ((iEnd = memberName.LastIndexOf(">.")) < 0)
                 return memberName;
             int iStart = memberName.IndexOf("<");
             int genericArgumentCount = 1;
@@ -182,8 +182,10 @@ namespace Obfuscar
                         level--;
                         break;
                     case ',':
+                        //if next generic type within first generic type listing
                         if (level == 0)
                             genericArgumentCount++;
+
                         break;
                 }
             }

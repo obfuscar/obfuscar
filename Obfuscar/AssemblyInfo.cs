@@ -39,8 +39,11 @@ using MethodSemanticsAttributes = Mono.Cecil.MethodSemanticsAttributes;
 
 namespace Obfuscar
 {
-    class AssemblyInfo
+    internal class AssemblyInfo
     {
+        internal const string KeepPublicApiOptionInConfiguration = "KeepPublicApi option in configuration";
+        internal const string AssemblyAttribute = "attribute";
+
         private readonly Project project;
         private readonly PredicateCollection<string> skipNamespaces = new PredicateCollection<string>();
         private readonly PredicateCollection<TypeKey> skipTypes = new PredicateCollection<TypeKey>();
@@ -860,7 +863,7 @@ namespace Obfuscar
             var attribute = type.TypeDefinition.MarkedToRename();
             if (attribute != null)
             {
-                message = "attribute";
+                message = AssemblyAttribute;
                 return !attribute.Value;
             }
 
@@ -924,7 +927,7 @@ namespace Obfuscar
 
             if (type.TypeDefinition.IsTypePublic())
             {
-                message = "KeepPublicApi option in configuration";
+                message = KeepPublicApiOptionInConfiguration;
                 return KeepPublicApi;
             }
 
@@ -993,7 +996,7 @@ namespace Obfuscar
             // skip runtime methods
             if (attribute != null)
             {
-                message = "attribute";
+                message = AssemblyAttribute;
                 return !attribute.Value;
             }
 
@@ -1039,7 +1042,7 @@ namespace Obfuscar
                 map.GetMethodGroup(method)?.Methods.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
             ))
             {
-                message = "KeepPublicApi option in configuration";
+                message = KeepPublicApiOptionInConfiguration;
                 return KeepPublicApi;
             }
 
@@ -1087,7 +1090,7 @@ namespace Obfuscar
             var attribute = field.Field.MarkedToRename();
             if (attribute != null)
             {
-                message = "attribute";
+                message = AssemblyAttribute;
                 return !attribute.Value;
             }
 
@@ -1116,7 +1119,7 @@ namespace Obfuscar
                 return false;
             }
 
-            if (typeInXaml && field.Field.IsPublic())
+            if (typeInXaml && field.Field.IsPublicOrInternal())
             {
                 message = "filtered by BAML/INotifyPropertyChanged";
                 return true;
@@ -1163,7 +1166,7 @@ namespace Obfuscar
 
             if (field.Field.IsPublic() && field.DeclaringType.IsTypePublic())
             {
-                message = "KeepPublicApi option in configuration";
+                message = KeepPublicApiOptionInConfiguration;
                 return KeepPublicApi;
             }
 
@@ -1171,8 +1174,8 @@ namespace Obfuscar
             return !HidePrivateApi;
         }
 
-        public bool ShouldSkip(PropertyKey prop, bool typeInXaml, InheritMap map,
-            bool markedOnly, out string message)
+        public bool ShouldSkip(PropertyKey prop, bool declaringTypeRelatedToNpcOrInXaml,
+            InheritMap map, bool markedOnly, out string message)
         {
             if (prop.Property.IsRuntimeSpecialName)
             {
@@ -1183,7 +1186,7 @@ namespace Obfuscar
             var attribute = prop.Property.MarkedToRename();
             if (attribute != null)
             {
-                message = "attribute";
+                message = AssemblyAttribute;
                 return !attribute.Value;
             }
 
@@ -1224,15 +1227,9 @@ namespace Obfuscar
                 return true;
             }
 
-            if (typeInXaml && prop.Property.IsPublic())
+            if (declaringTypeRelatedToNpcOrInXaml && prop.Property.IsPublicOrInternal())
             {
-                message = "filtered by BAML";
-                return true;
-            }
-
-            if (prop.Property.IsPublic() && prop.DeclaringType.ImplementsInterface("System.ComponentModel.INotifyPropertyChanged"))
-            {
-                message = "declaring type implements INotifyPropertyChanged";
+                message = "filtered by BAML or INotifyPropertyChanged";
                 return true;
             }
 
@@ -1262,7 +1259,7 @@ namespace Obfuscar
                 prop.Property.SetMethod != null && map.GetMethodGroup(new MethodKey(prop.Property.SetMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
             ))
             {
-                message = "KeepPublicApi option in configuration";
+                message = KeepPublicApiOptionInConfiguration;
                 return KeepPublicApi;
             }
 
@@ -1284,7 +1281,7 @@ namespace Obfuscar
             // skip runtime methods
             if (attribute != null)
             {
-                message = "attribute";
+                message = AssemblyAttribute;
                 return !attribute.Value;
             }
 
@@ -1331,7 +1328,7 @@ namespace Obfuscar
                 evt.Event.RemoveMethod != null && map.GetMethodGroup(new MethodKey(evt.Event.RemoveMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
             ))
             {
-                message = "KeepPublicApi option in configuration";
+                message = KeepPublicApiOptionInConfiguration;
                 return KeepPublicApi;
             }
 

@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Caching;
 
@@ -7,7 +8,7 @@ namespace Obfuscar.Helpers
 {
     internal static class TypeDefinitionExtensions
     {
-        static public bool IsTypePublic(this TypeDefinition type)
+        public static bool IsTypePublic(this TypeDefinition type)
         {
             if (type.DeclaringType == null)
                 return type.IsPublic;
@@ -113,6 +114,9 @@ namespace Obfuscar.Helpers
 
         public static bool ImplementsInterface(this TypeDefinition type, string interfaceName)
         {
+            if (type == null) throw new ArgumentNullException(nameof(type));
+            if (interfaceName == null) throw new ArgumentNullException(nameof(interfaceName));
+
             while (type != null)
             {
                 if (type.Interfaces.Any(i => i.InterfaceType.FullName == interfaceName))
@@ -122,6 +126,65 @@ namespace Obfuscar.Helpers
                 type = type.BaseType?.Resolve();
             }
             return false;
+        }
+        public static IEnumerable<TypeDefinition> ImplementsInterface(this IEnumerable<TypeDefinition> types, string interfaceName)
+        {
+            if (types == null) throw new ArgumentNullException(nameof(types));
+
+            return types
+                .Where(type => type.ImplementsInterface(interfaceName));
+        }
+
+        public static bool HeirsImplementsInterface(this TypeDefinition type, string interfaceName, IEnumerable<AssemblyInfo> assemblies)
+        {
+            if (assemblies == null) throw new ArgumentNullException(nameof(assemblies));
+
+            var typeDefinitions = assemblies
+                .SelectMany(assembly => assembly.GetAllTypeDefinitions());
+
+            return HeirsImplementsInterface(type, interfaceName, typeDefinitions);
+        }
+        internal static bool HeirsImplementsInterface(this TypeDefinition type, string interfaceName, IEnumerable<TypeDefinition> typeDefinitions)
+        {
+            return HeirsImplementsInterface(new[] { type }, interfaceName, typeDefinitions).Any();
+        }
+        /// <summary> Detect types which has heirs implementing a specific interface </summary>
+        /// <param name="types">The types to check</param>
+        /// <param name="interfaceName">The name of the interface to detect implementations of.</param>
+        /// <param name="typeDefinitions">The types used to check inheritance to the <paramref name="types"/> to check</param>
+        /// <returns>The <paramref name="types"/> which heirs in <paramref name="typeDefinitions"/> which implements the <paramref name="interfaceName"></paramref></returns>
+        internal static IEnumerable<TypeDefinition> HeirsImplementsInterface(this ICollection<TypeDefinition> types, string interfaceName, IEnumerable<TypeDefinition> typeDefinitions)
+        {
+            if (types == null) throw new ArgumentNullException(nameof(types));
+            if (interfaceName == null) throw new ArgumentNullException(nameof(interfaceName));
+            if (typeDefinitions == null) throw new ArgumentNullException(nameof(typeDefinitions));
+
+            var typeNames = types
+                .Select(type => type.FullName)
+                .Distinct()
+                .ToDictionary(typeName => typeName, typeName => false);
+
+            var typeDefinitionsImplementInterface = typeDefinitions.ImplementsInterface(interfaceName);
+            
+            foreach (var type in typeDefinitionsImplementInterface)
+            {
+                var baseType = type.BaseType?.Resolve();
+                while (baseType != null)
+                {
+                    if (typeNames.ContainsKey(baseType.FullName))
+                    {
+                        typeNames[baseType.FullName] = true;
+                        break;
+                    }
+
+                    baseType = baseType.BaseType?.Resolve();
+                }
+            }
+
+            var inheritedTypesImplementInterface = types
+                .Where(type => typeNames[type.FullName]);
+
+            return inheritedTypesImplementInterface;
         }
     }
 }

@@ -22,45 +22,51 @@
 /// </copyright>
 #endregion
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.ComponentModel;
 
 namespace TestClasses
 {
-	internal class ClassA
-	{
-		private int property1 = 17;
-		private int property2 = 17;
-		private int propertyA = 17;
+    internal class ClassA
+    {
+        private int property1 = 17;
+        private int property2 = 17;
+        private int propertyA = 17;
 
-		public int Property1
-		{
-			get { return property1; }
-			set { property1 = value; }
-		}
+        public int Property1
+        {
+            get { return property1; }
+            set { property1 = value; }
+        }
 
-		public int Property2
-		{
-			get { return property2; }
-			set { property2 = value; }
-		}
+        public int Property2
+        {
+            get { return property2; }
+            set { property2 = value; }
+        }
 
-		public int PropertyA
-		{
-			get { return propertyA; }
-			set { propertyA = value; }
-		}
-	}
-	internal class ClassB : INotifyPropertyChanged
-	{
+        public int PropertyA
+        {
+            get { return propertyA; }
+            set { propertyA = value; }
+        }
+    }
+    internal class ClassB : INotifyPropertyChanged
+    {
         public event PropertyChangedEventHandler PropertyChanged { add { } remove { } }
-	}
-	internal enum TestEnum { Value1, Value2 }
-	internal class ClassC : ClassB
-	{
-		public TestEnum PropertyB { get; set; }
-		private TestEnum PropertyC { get; set; }
-	}
+    }
+    internal enum TestEnum { Value1, Value2 }
+    internal class ClassC : ClassB
+    {
+        public TestEnum PropertyB { get; set; }
+        private TestEnum PropertyC { get; set; }
+        protected TestEnum PropertyD { get; set; }
+        internal TestEnum PropertyE { get; set; }
+    }
+    internal class ClassD : ClassB
+    {
+        public int PropertyB { get; set; }
+        private int PropertyC { get; set; }
+        protected int PropertyD { get; set; }
+        internal int PropertyE { get; set; }
+    }
 }

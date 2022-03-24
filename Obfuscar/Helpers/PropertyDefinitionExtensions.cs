@@ -18,5 +18,21 @@ namespace Obfuscar.Helpers
         {
             return propertyDefinition.IsGetterPublic() || propertyDefinition.IsSetterPublic();
         }
+
+        public static bool IsGetterPublicOrInternal(this PropertyDefinition propertyDefinition)
+        {
+            return propertyDefinition.GetMethod.IsPublicOrInternal();
+        }
+
+        public static bool IsSetterPublicOrInternal(this PropertyDefinition propertyDefinition)
+        {
+            return propertyDefinition.SetMethod.IsPublicOrInternal();
+        }
+
+        public static bool IsPublicOrInternal(this PropertyDefinition propertyDefinition)
+        {
+            return propertyDefinition.IsSetterPublicOrInternal() ||
+                   propertyDefinition.IsGetterPublicOrInternal();
+        }
     }
 }

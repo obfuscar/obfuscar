@@ -24,11 +24,9 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
-using Obfuscar;
 using Xunit;
 
 namespace ObfuscarTest
@@ -54,13 +52,14 @@ namespace ObfuscarTest
                 notExpectedMethods[i * 2 + 1] = "set_" + notExpected[i];
             }
 
-            AssemblyHelper.CheckAssembly(name, 4, expectedMethods, notExpectedMethods,
+            AssemblyHelper.CheckAssembly(name, 5, expectedMethods, notExpectedMethods,
                 delegate(TypeDefinition typeDef) { return typeDef.Name == typeName; },
                 delegate(TypeDefinition typeDef)
                 {
-                    Assert.Equal(expected.Length, typeDef.Properties.Count);
+                    Assert.Equal(expected.Length + notExpected.Length, typeDef.Properties.Count);
                     // expected.Length == 1 ? "Type should have 1 property (others dropped by default)." :
                     // String.Format ("Type should have {0} properties (others dropped by default).", expected.Length));
+                    // 2022-08-03 changes: properties are no longer dropped but renamed.
 
                     foreach (PropertyDefinition prop in typeDef.Properties)
                     {
@@ -91,8 +90,7 @@ namespace ObfuscarTest
 
             string[] expected = new string[0];
 
-            string[] notExpected = new string[]
-            {
+            string[] notExpected = {
                 "Property1",
                 "Property2",
                 "PropertyA"
@@ -118,13 +116,11 @@ namespace ObfuscarTest
 
             TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
 
-            string[] expected = new string[]
-            {
+            string[] expected = {
                 "Property2"
             };
 
-            string[] notExpected = new string[]
-            {
+            string[] notExpected = {
                 "Property1",
                 "PropertyA"
             };
@@ -149,14 +145,12 @@ namespace ObfuscarTest
 
             TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
 
-            string[] expected = new string[]
-            {
+            string[] expected = {
                 "Property1",
                 "Property2"
             };
 
-            string[] notExpected = new string[]
-            {
+            string[] notExpected = {
                 "PropertyA"
             };
 
@@ -179,17 +173,46 @@ namespace ObfuscarTest
 
             TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
 
-            string[] expected = new string[]
-            {
+            string[] expected = {
                 "PropertyB",
+                "PropertyE",
             };
 
-            string[] notExpected = new string[]
-            {
+            string[] notExpected = {
                 "PropertyC",
+                "PropertyD",
             };
 
             CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), "B", expected, notExpected);
+        }
+
+        [Fact]
+        public void Should_skip_public_and_internal_properties_in_types_in_relations_with_implementations_of_INotifyPropertyChanged()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithProperties.dll'>" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
+
+            string[] expected = {
+                "PropertyB",
+                "PropertyE",
+            };
+
+            string[] notExpected = {
+                "PropertyC",
+                "PropertyD",
+            };
+
+            CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), "b", expected, notExpected);
         }
     }
 }

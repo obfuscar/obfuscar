@@ -280,7 +280,7 @@ namespace ObfuscarTest
             {
             };
 
-            CheckEnums(Path.Combine(outputPath, "AssemblyWithProperties.dll"), 4, expected, notExpected);
+            CheckEnums(Path.Combine(outputPath, "AssemblyWithProperties.dll"), 5, expected, notExpected);
         }
     }
 }

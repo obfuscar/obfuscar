@@ -38,6 +38,12 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Input\AssemblyWithAssemblyAttr.cs" />
+    <None Include="Input\AssemblyWithHeirsInheritedInterfaces.cs" />
+    <None Include="Input\AssemblyWithInheritedInterfaces.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" Version="6.5.1" />
     <PackageReference Include="Mono.Cecil" Version="0.11.3" />
     <PackageReference Include="System.CodeDom" Version="4.5.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
@@ -50,6 +56,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Obfuscar\Obfuscar.csproj" />
+    <ProjectReference Include="..\ObfuscarTest.FluentAssertions\ObfuscarTest.FluentAssertions.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="TestIncludeModule.xml" />
@@ -62,6 +69,7 @@
     <Compile Remove="Input\AssemblyForCleanPoolInterface.cs" />
     <Compile Remove="Input\AssemblyForSigning.cs" />
     <Compile Remove="Input\AssemblyForSigning2.cs" />
+    <Compile Remove="Input\AssemblyWithAssemblyAttr.cs" />
     <Compile Remove="Input\AssemblyWithAttrs.cs" />
     <Compile Remove="Input\AssemblyWithClosedOverrideGeneric.cs" />
     <Compile Remove="Input\AssemblyWithCustomAttr.cs" />
@@ -73,6 +81,8 @@
     <Compile Remove="Input\AssemblyWithEvents.cs" />
     <Compile Remove="Input\AssemblyWithGenericOverrides.cs" />
     <Compile Remove="Input\AssemblyWithGenericOverrides2.cs" />
+    <Compile Remove="Input\AssemblyWithHeirsInheritedInterfaces.cs" />
+    <Compile Remove="Input\AssemblyWithInheritedInterfaces.cs" />
     <Compile Remove="Input\AssemblyWithInterfaces.cs" />
     <Compile Remove="Input\AssemblyWithInterfaces2.cs" />
     <Compile Remove="Input\AssemblyWithNestedTypes.cs" />
