@@ -1,5 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Import and sign obfuscar executable not running local: triggeredBy_username is set on build agent -->
+  <PropertyGroup>
+    <TrueValue>true</TrueValue>
+    <IsLocalRun Condition="'$(triggeredBy_username)' == ''">$(TrueValue)</IsLocalRun>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)\BuildTools\ThreeShape.MSBuild.ObfuscateAndSign\build\ThreeShape.MSBuild.ObfuscateAndSign.targets" Condition="'$(IsLocalRun)' == '$(TrueValue)'" />
+  <Target Name="SignObfuscarConsoleExecutableAssembly" AfterTargets="Build" Condition="'$(IsLocalRun)' == '$(TrueValue)'">
+    <Message Text="Signing Obfuscar console executable assembly" Importance="high" />
+    <SignFile FileToSign="$(TargetDir)\Obfuscar.Console.exe" SigningCompany="3Shape" />
+  </Target>
+
   <Target Name="RepackWithILOnWindows" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT'">
     <Exec Command="rename Obfuscar.Console.exe Obfuscar.exe" WorkingDirectory="$(TargetDir)" />
     <Exec Command="&quot;$(ILRepack)&quot; /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Newtonsoft.Json.dll" WorkingDirectory="$(TargetDir)" />
