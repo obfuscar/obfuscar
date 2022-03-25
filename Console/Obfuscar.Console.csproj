@@ -3,10 +3,10 @@
   <!-- Import and sign obfuscar executable not running local: triggeredBy_username is set on build agent -->
   <PropertyGroup>
     <TrueValue>true</TrueValue>
-    <IsLocalRun Condition="'$(triggeredBy_username)' == ''">$(TrueValue)</IsLocalRun>
+    <IsLocalRun Condition="'$(JENKINS_URL)' == ''">$(TrueValue)</IsLocalRun>
   </PropertyGroup>
-  <Import Project="$(SolutionDir)\BuildTools\ThreeShape.MSBuild.ObfuscateAndSign\build\ThreeShape.MSBuild.ObfuscateAndSign.targets" Condition="'$(IsLocalRun)' == '$(TrueValue)'" />
-  <Target Name="SignObfuscarConsoleExecutableAssembly" AfterTargets="Build" Condition="'$(IsLocalRun)' == '$(TrueValue)'">
+  <Import Project="$(SolutionDir)\BuildTools\ThreeShape.MSBuild.ObfuscateAndSign\build\ThreeShape.MSBuild.ObfuscateAndSign.targets" Condition="'$(IsLocalRun)' != '$(TrueValue)'" />
+  <Target Name="SignObfuscarConsoleExecutableAssembly" AfterTargets="Build" Condition="'$(IsLocalRun)' != '$(TrueValue)'">
     <Message Text="Signing Obfuscar console executable assembly" Importance="high" />
     <SignFile FileToSign="$(TargetDir)\Obfuscar.Console.exe" SigningCompany="3Shape" />
   </Target>
