@@ -29,6 +29,8 @@ using System.IO;
 using System.CodeDom.Compiler;
 using Xunit;
 using System.Text;
+using Microsoft.CodeDom.Providers.DotNetCompilerPlatform;
+using System.Reflection;
 
 namespace ObfuscarTests
 {
@@ -48,22 +50,23 @@ namespace ObfuscarTests
             // clean out inputPath
             try
             {
-                //foreach (string file in Directory.GetFiles(InputPath, "*.dll"))
-                //File.Delete(file);
+                foreach (string file in Directory.GetFiles(InputPath, "*.dll"))
+                File.Delete(file);
             }
             catch
             {
             }
         }
 
-        public static void BuildAssembly(string name, string suffix = null)
+        public static void BuildAssembly(string name, string suffix)
         {
             BuildAssembly(name, suffix, null);
         }
 
         public static void BuildAssembly(string name, string suffix = null, string options = null, bool treatWarningsAsErrors = true)
         {
-            Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider();
+            string RoslynPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "roslyn", "csc.exe");
+            var provider = new CSharpCodeProvider(new ProviderOptions(RoslynPath, 0));
 
             CompilerParameters cp = new CompilerParameters();
             cp.GenerateExecutable = false;

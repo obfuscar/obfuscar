@@ -47,6 +47,7 @@ namespace ObfuscarTests
                 @"  <Include path='$(InPath){2}TestInclude.xml' />" +
                 @"  <Module file='$(InPath){2}AssemblyWithProperties.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+            TestHelper.BuildAssembly("AssemblyWithProperties");
 
             string destFileName = Path.Combine(TestHelper.InputPath, "TestInclude.xml");
             if (!File.Exists(destFileName))
