@@ -27,4 +27,12 @@ namespace TestClasses
     public class Alpha : IAlpha
     {
     }
+
+    public class F1 : F1.IF2
+    {
+        interface IF2
+        {
+
+        }
+    }
 }

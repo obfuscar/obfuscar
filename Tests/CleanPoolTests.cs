@@ -41,6 +41,7 @@ namespace ObfuscarTests
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='ReuseNames' value='true' />" +
                 @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
                 @"<Module file='$(InPath){2}AssemblyForCleanPoolClass.dll' />" +
                 @"<Module file='$(InPath){2}AssemblyForCleanPoolInterface.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
