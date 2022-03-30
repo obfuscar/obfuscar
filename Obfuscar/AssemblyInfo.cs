@@ -504,6 +504,35 @@ namespace Obfuscar
 
                     if (toRemove.Count == 0)
                     {
+                        // Find the loop one
+                        foreach (var node in pool)
+                        {
+                            if (IsLoop(node))
+                            {
+                                toRemove.Add(node);
+                                if (result.Contains(node.Item))
+                                    continue;
+
+                                result.Add(node.Item);
+                            }
+                        }
+
+                        bool IsLoop(Node<TypeDefinition> node)
+                        {
+                            foreach (var nodeParent in node.Parents)
+                            {
+                                if (nodeParent.Parents.Any(n => ReferenceEquals(n, node)))
+                                {
+                                    return true;
+                                }
+                            }
+
+                            return false;
+                        }
+                    }
+
+                    if (toRemove.Count == 0)
+                    {
                         Console.Error.WriteLine("Still in pool:");
                         foreach (var node in pool)
                         {
