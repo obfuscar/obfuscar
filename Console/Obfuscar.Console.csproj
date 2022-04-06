@@ -1,20 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Import and sign obfuscar executable if not running local: JENKINS_URL is set on build agent -->
+  <!-- Import and sign obfuscar console executable if not running local: JENKINS_URL is set on build agent -->
   <PropertyGroup>
     <TrueValue>true</TrueValue>
     <IsLocalRun Condition="'$(JENKINS_URL)' == ''">$(TrueValue)</IsLocalRun>
   </PropertyGroup>
   <Import Project="$(SolutionDir)\BuildTools\ThreeShape.MSBuild.ObfuscateAndSign\build\ThreeShape.MSBuild.ObfuscateAndSign.targets" Condition="'$(IsLocalRun)' != '$(TrueValue)'" />
-  <Target Name="SignObfuscarConsoleExecutableAssembly" Condition="'$(IsLocalRun)' != '$(TrueValue)'">
+  <Target Name="SignObfuscarConsoleExecutableAssembly" AfterTargets="RepackWithILOnWindows;RepackWithILOnNonWindows" Condition="'$(IsLocalRun)' != '$(TrueValue)'">
     <Message Text="Signing Obfuscar console executable assembly" Importance="high" />
     <SignFile FileToSign="$(TargetDir)\Obfuscar.Console.exe" SigningCompany="3Shape" />
-  </Target>
-  <Target Name="SignObfuscarConsoleExecutableAssemblyOnWindows" AfterTargets="RepackWithILOnWindows">
-    <CallTarget Targets="SignObfuscarConsoleExecutableAssembly" />
-  </Target>
-  <Target Name="SignObfuscarConsoleExecutableAssemblyOnNonWindows" AfterTargets="RepackWithILOnNonWindows">
-    <CallTarget Targets="SignObfuscarConsoleExecutableAssembly" />
   </Target>
 
   <Target Name="RepackWithILOnWindows" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT'">
