@@ -2,7 +2,7 @@ Obfuscar
 ========
 
 [![NuGet Version](https://img.shields.io/nuget/v/Obfuscar.svg?style=flat-square)](https://www.nuget.org/packages/Obfuscar/)
-[![Build status](https://img.shields.io/appveyor/ci/lextm/obfuscar/master.svg?label=appvejor&style=flat-square)](https://ci.appveyor.com/project/lextm/obfuscar)
+[![Build status](https://img.shields.io/github/workflow/status/obfuscar/obfuscar/Windows?style=flat-square)](https://github.com/obfuscar/obfuscar/actions/workflows/windows.yml)
 
 The project logo cames from [Legendora Icon](http://raindropmemory.deviantart.com/art/Legendora-Icon-Set-118999011) by 
 [Teekatas Suwannakrua](http://raindropmemory.deviantart.com/).
