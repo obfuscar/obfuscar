@@ -34,7 +34,9 @@ namespace Obfuscar
     {
         static string uniqueChars;
         static int numUniqueChars;
-        const string defaultChars = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
+        //const string defaultChars = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
+
+        const string defaultChars = "abcdefghijklmnopqrstuvwxyz";
 
         const string unicodeChars = "\u00A0\u1680" +
                                     "\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u2010\u2011\u2012\u2013\u2014\u2015" +
