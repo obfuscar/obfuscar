@@ -35,8 +35,6 @@ using Rollbar.DTOs;
 
 namespace Obfuscar
 {
-    [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification =
-        "Reviewed. Suppression is OK here.")]
     internal static class Program
     {
         private static void ShowHelp(OptionSet optionSet)
@@ -49,8 +47,6 @@ namespace Obfuscar
             optionSet.WriteOptionDescriptions(Console.Out);
         }
 
-        [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification =
-            "Reviewed. Suppression is OK here.")]
         private static int Main(string[] args)
         {
             bool showHelp = false;
@@ -134,18 +130,16 @@ namespace Obfuscar
         {
             Console.WriteLine("Note that Rollbar API is enabled by default to collect crashes. If you want to opt out, please run with -s switch");
             var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            RollbarLocator.RollbarInstance.Configure(
-                new RollbarConfig("1dd3cf880c5a46eeb4338dbea73f9620")
+            var config = new RollbarInfrastructureConfig("1dd3cf880c5a46eeb4338dbea73f9620", "production");
+            var options = new RollbarPayloadAdditionOptions
+            {
+                Person = new Person(version)
                 {
-                    Environment = "production",
-                    Transform = payload =>
-                    {
-                        payload.Data.Person = new Person(version)
-                        {
-                            UserName = $"{version}"
-                        };
-                    }
-                });
+                    UserName = $"{version}"
+                }
+            };
+            config.RollbarLoggerConfig.RollbarPayloadAdditionOptions.Reconfigure(options);
+            RollbarInfrastructure.Instance.Init(config);
 
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
