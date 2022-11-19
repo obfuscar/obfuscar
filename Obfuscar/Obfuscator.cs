@@ -1532,19 +1532,19 @@ namespace Obfuscar
                 SystemValueTypeTypeReference = new TypeReference("System", "ValueType", library.MainModule,
                     library.MainModule.TypeSystem.CoreLibrary);
 
-                var runtimeHelpers = new TypeReference("System.Runtime.CompilerServices", "RuntimeHelpers",
-                    library.MainModule, library.MainModule.TypeSystem.CoreLibrary).Resolve();
-                InitializeArrayMethod = library.MainModule.ImportReference(
-                    runtimeHelpers.Methods.FirstOrDefault(method => method.Name == "InitializeArray"));
-
                 EncodingTypeDefinition = new TypeReference("System.Text", "Encoding", library.MainModule,
                     library.MainModule.TypeSystem.CoreLibrary).Resolve();
-
                 if (EncodingTypeDefinition == null)
                 {
                     _disabled = true;
                     return;
                 }
+
+                // IMPORTANT: this runtime helpers resolution must be after encoding resolution. 
+                var runtimeHelpers = new TypeReference("System.Runtime.CompilerServices", "RuntimeHelpers",
+                    library.MainModule, library.MainModule.TypeSystem.CoreLibrary).Resolve();
+                InitializeArrayMethod = library.MainModule.ImportReference(
+                    runtimeHelpers.Methods.FirstOrDefault(method => method.Name == "InitializeArray"));
             }
 
             private StringSqueezeData GetNewType()
