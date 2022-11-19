@@ -24,6 +24,7 @@
 
 #endregion
 
+using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
 using Xunit;
@@ -95,7 +96,7 @@ namespace ObfuscarTests
 
             Assert.Equal(3, expected.Fields.Count);
 
-            Assert.Equal(6, expected.Methods.Count);
+            Assert.Equal(4, expected.Methods.Count - 2); // 4 strings. 2 methods are not hidden strings.
         }
 
         [Fact]
@@ -207,6 +208,42 @@ namespace ObfuscarTests
             Assert.Equal(3, expected.Fields.Count);
 
             Assert.Equal(4, expected.Methods.Count);
+        }
+
+        [Fact]
+        public void CheckHideStringsClassExistsWithManyStrings()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HideStrings' value='true' />" +
+                @"<Module file='$(InPath){2}ManyStrings.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.BuildAndObfuscate("ManyStrings", string.Empty, xml, true);
+            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "ManyStrings.dll"));
+
+            Assert.Equal(4, assmDef.MainModule.Types.Count);
+
+            var expected = new List<TypeDefinition>();
+            foreach (var type in assmDef.MainModule.Types)
+            {
+                if (type.FullName.Contains("PrivateImplementation"))
+                {
+                    expected.Add(type);
+                }
+            }
+
+            Assert.NotEmpty(expected);
+
+            Assert.Equal(3, expected[0].Fields.Count);
+            Assert.Equal(3, expected[1].Fields.Count);
+
+            Assert.Equal(65530, expected[0].Methods.Count + expected[1].Methods.Count - expected.Count * 2); // 65530 strings. 2 methods of each types are not hidden strings.
         }
     }
 }

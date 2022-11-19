@@ -1,0 +1,22 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace TestClasses
+{
+	public class PublicClass
+	{
+		public void PublicMethod()
+		{
+        <#
+            for(int i = 0; i < 65530; i++)
+            {
+        #>
+            string string<#= i #> = "Hello!<#= i #>";
+            Console.WriteLine(string<#= i #>);
+        <#
+            }
+        #>
+        }
+	}
+}
