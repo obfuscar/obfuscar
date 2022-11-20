@@ -1824,7 +1824,7 @@ namespace Obfuscar
             {
                 uint dummy;
                 if (!StrongNameSignatureGeneration(assemblyname, keyname, null, 0, IntPtr.Zero, out dummy))
-                    throw new Exception("Unable to sign assembly using key from key container - " + keyname);
+                    throw new ObfuscarException("Unable to sign assembly using key from key container - " + keyname);
             }
         }
     }
