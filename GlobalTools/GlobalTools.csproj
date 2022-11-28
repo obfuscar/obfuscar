@@ -9,7 +9,7 @@
     <PackageOutputPath>..</PackageOutputPath>
 
     <PackageId>Obfuscar.GlobalTool</PackageId>
-    <Version>2.2.35</Version>
+    <Version>2.2.36</Version>
     <Authors>Ryan Williams, and other contributors.</Authors>
     <Company>LeXtudio</Company>
     <Product>Obfuscar Global Tools build</Product>
@@ -22,8 +22,8 @@
     <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2019 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
     <RepositoryType>git</RepositoryType>
     <PackageTags>obfuscar,obfuscation</PackageTags>
-    <AssemblyVersion>2.2.35.0</AssemblyVersion>
-    <FileVersion>2.2.35.0</FileVersion>
+    <AssemblyVersion>2.2.36.0</AssemblyVersion>
+    <FileVersion>2.2.36.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
