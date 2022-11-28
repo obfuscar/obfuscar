@@ -158,10 +158,7 @@ namespace Obfuscar
 
             // make sure everything looks good
             Project.CheckSettings();
-            if (Project.Settings.UseUnicodeNames)
-                NameMaker.UseUnicodeChars = true;
-            if (Project.Settings.UseKoreanNames)
-                NameMaker.UseKoreanChars = true;
+            NameMaker.DetermineChars(Project.Settings);
 
             LogOutput("Loading assemblies...");
             LogOutput("Extra framework folders: ");

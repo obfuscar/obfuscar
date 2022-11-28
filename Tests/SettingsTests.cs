@@ -24,6 +24,7 @@
 
 #endregion
 
+using Obfuscar;
 using System.IO;
 using Xunit;
 
@@ -57,6 +58,105 @@ namespace ObfuscarTests
             var obfuscator = TestHelper.Obfuscate(xml);
 
             Assert.False(obfuscator.Project.Settings.Optimize);
+            Assert.Equal("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz", NameMaker.UniqueChars);
+        }
+
+        [Fact]
+        public void CheckUnicodeNames()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='OptimizeMethods' value='false' />" +
+                @"<Var name='UseUnicodeNames' value='true' />" +
+                @"<Module file='$(InPath){2}WpfApplication1.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.CleanInput();
+
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            string destFileName = Path.Combine(TestHelper.InputPath, "WpfApplication1.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WpfApplication1.dll"),
+                    destFileName, true);
+            }
+
+            var obfuscator = TestHelper.Obfuscate(xml);
+
+            Assert.False(obfuscator.Project.Settings.Optimize);
+            const string unicodeChars = "\u00A0\u1680" +
+                            "\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u2010\u2011\u2012\u2013\u2014\u2015" +
+                            "\u2022\u2024\u2025\u2027\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u202F" +
+                            "\u2032\u2035\u2033\u2036\u203E" +
+                            "\u2047\u2048\u2049\u204A\u204B\u204C\u204D\u204E\u204F\u2050\u2051\u2052\u2053\u2054\u2055\u2056\u2057\u2058\u2059" +
+                            "\u205A\u205B\u205C\u205D\u205E\u205F\u2060" +
+                            "\u2061\u2062\u2063\u2064\u206A\u206B\u206C\u206D\u206E\u206F" +
+                            "\u3000";
+            Assert.Equal(unicodeChars, NameMaker.UniqueChars);
+        }
+
+        [Fact]
+        public void CheckKoreanNames()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='OptimizeMethods' value='false' />" +
+                @"<Var name='UseKoreanNames' value='true' />" +
+                @"<Module file='$(InPath){2}WpfApplication1.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.CleanInput();
+
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            string destFileName = Path.Combine(TestHelper.InputPath, "WpfApplication1.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WpfApplication1.dll"),
+                    destFileName, true);
+            }
+
+            var obfuscator = TestHelper.Obfuscate(xml);
+
+            Assert.False(obfuscator.Project.Settings.Optimize);
+            Assert.Equal(NameMaker.KoreanChars, NameMaker.UniqueChars);
+        }
+
+        [Fact]
+        public void CheckCustomNames()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='OptimizeMethods' value='false' />" +
+                @"<Var name='CustomChars' value='abcdefghijklmn' />" +
+                @"<Module file='$(InPath){2}WpfApplication1.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.CleanInput();
+
+            // build it with the keyfile option (embeds the public key, and signs the assembly)
+            string destFileName = Path.Combine(TestHelper.InputPath, "WpfApplication1.dll");
+            if (!File.Exists(destFileName))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "WpfApplication1.dll"),
+                    destFileName, true);
+            }
+
+            var obfuscator = TestHelper.Obfuscate(xml);
+
+            Assert.False(obfuscator.Project.Settings.Optimize);
+            Assert.Equal("abcdefghijklmn", NameMaker.UniqueChars);
         }
     }
 }

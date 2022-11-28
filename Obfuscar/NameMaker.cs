@@ -49,17 +49,6 @@ namespace Obfuscar
 
         static NameMaker()
         {
-            string lUnicode = unicodeChars;
-            for (int i = 0; i < lUnicode.Length; i++)
-            {
-                for (int j = i + 1; j < lUnicode.Length; j++)
-                {
-                    System.Diagnostics.Debug.Assert(lUnicode[i] != lUnicode[j], "Duplicate Char");
-                }
-            }
-
-            UseUnicodeChars = false;
-
             // Fill the char array used for renaming with characters
             // from Hangul (Korean) unicode character set.
             var chars = new List<char>(128);
@@ -70,8 +59,6 @@ namespace Obfuscar
 
             ShuffleArray(chars, rnd);
             koreanChars = new string(chars.ToArray());
-
-            UseKoreanChars = false;
         }
 
         private static void ShuffleArray<T>(IList<T> list, Random rnd)
@@ -81,38 +68,18 @@ namespace Obfuscar
             {
                 n--;
                 int k = rnd.Next(n + 1);
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
+                (list[n], list[k]) = (list[k], list[n]);
             }
         }
 
-        public static bool UseUnicodeChars
+        public static string UniqueChars
         {
-            get { return uniqueChars == unicodeChars; }
-            set
-            {
-                if (value)
-                    uniqueChars = unicodeChars;
-                else
-                    uniqueChars = defaultChars;
-
-                numUniqueChars = uniqueChars.Length;
-            }
+            get { return uniqueChars; }            
         }
 
-        public static bool UseKoreanChars
+        public static string KoreanChars
         {
-            get { return unicodeChars == koreanChars; }
-            set
-            {
-                if (value)
-                    uniqueChars = koreanChars;
-                else
-                    uniqueChars = defaultChars;
-
-                numUniqueChars = uniqueChars.Length;
-            }
+            get { return koreanChars; }
         }
 
         public static string UniqueName(int index)
@@ -161,6 +128,36 @@ namespace Obfuscar
         public static string UniqueNamespace(int index)
         {
             return UniqueName(index / numUniqueChars, ".");
+        }
+
+        internal static void DetermineChars(Settings settings)
+        {
+            if (!string.IsNullOrWhiteSpace(settings.CustomChars))
+            {
+                uniqueChars = settings.CustomChars;
+            }
+            else if (settings.UseUnicodeNames)
+            {
+                uniqueChars = unicodeChars;
+            }
+            else if (settings.UseKoreanNames)
+            {
+                uniqueChars = koreanChars;
+            }
+            else
+            {
+                uniqueChars = defaultChars;
+            }
+
+            numUniqueChars = uniqueChars.Length;
+            string lUnicode = uniqueChars;
+            for (int i = 0; i < lUnicode.Length; i++)
+            {
+                for (int j = i + 1; j < lUnicode.Length; j++)
+                {
+                    System.Diagnostics.Debug.Assert(lUnicode[i] != lUnicode[j], "Duplicate Char");
+                }
+            }
         }
     }
 }
