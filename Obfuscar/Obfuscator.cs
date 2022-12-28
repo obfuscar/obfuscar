@@ -220,13 +220,7 @@ namespace Obfuscar
                     if (info.Definition.Name.HasPublicKey)
                     {
                         // source assembly was signed.
-                        if (Project.KeyValue != null)
-                        {
-                            // config file contains key container name.
-                            info.Definition.Write(outName, parameters);
-                            MsNetSigner.SignAssemblyFromKeyContainer(outName, Project.KeyContainerName);
-                        }
-                        else if (Project.KeyPair != null)
+                        if (Project.KeyPair != null)
                         {
                             // config file contains key file.
                             string keyFile = Project.KeyPair;
@@ -275,6 +269,12 @@ namespace Obfuscar
                                 info.Definition.Write(outName, parameters);
                                 info.OutputFileName = outName;
                             }
+                        }
+                        else if (Project.KeyValue != null)
+                        {
+                            // config file contains key container name.
+                            info.Definition.Write(outName, parameters);
+                            MsNetSigner.SignAssemblyFromKeyContainer(outName, Project.KeyContainerName);
                         }
                         else if (!info.Definition.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned))
                         {
