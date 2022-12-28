@@ -29,7 +29,7 @@ if (!(Test-Path $nuget))
 & $nuget pack
 
 Set-Location .\GlobalTools
-& dotnet pack
+& dotnet pack -c Release
 Set-Location ..
 
 Write-Host "Sign NuGet packages."
