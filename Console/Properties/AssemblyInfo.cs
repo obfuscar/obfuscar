@@ -9,3 +9,4 @@ using System.Reflection;
 [assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
+[assembly: AssemblyProduct("Obfuscar")]

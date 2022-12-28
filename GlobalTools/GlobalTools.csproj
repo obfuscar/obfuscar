@@ -9,7 +9,6 @@
     <PackageOutputPath>..</PackageOutputPath>
 
     <PackageId>Obfuscar.GlobalTool</PackageId>
-    <Version>2.2.36</Version>
     <Authors>Ryan Williams, and other contributors.</Authors>
     <Company>LeXtudio</Company>
     <Product>Obfuscar Global Tools build</Product>
@@ -19,11 +18,9 @@
     <PackageProjectUrl>https://github.com/obfuscar/obfuscar</PackageProjectUrl>
     <PackageIcon>Potion-icon.png</PackageIcon>
     <PackageLicense>MIT</PackageLicense>
-    <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2019 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
+    <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2022 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
     <RepositoryType>git</RepositoryType>
     <PackageTags>obfuscar,obfuscation</PackageTags>
-    <AssemblyVersion>2.2.36.0</AssemblyVersion>
-    <FileVersion>2.2.36.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,6 +33,9 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Options" Version="6.12.0.148" />
+    <PackageReference Include="GitVersion.MsBuild" Version="5.11.1">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

@@ -10,13 +10,6 @@
     <RootNamespace>Obfuscar</RootNamespace>
     <AssemblyName>Obfuscar.Console</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -66,9 +59,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\ThirdParty\SharedAssemblyInfo.cs">
-      <Link>Properties\SharedAssemblyInfo.cs</Link>
-    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
   </ItemGroup>
@@ -84,18 +74,6 @@
     <None Include="lextudio.snk" />
   </ItemGroup>
   <ItemGroup>
-    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="ILRepack">
       <Version>2.0.18</Version>
     </PackageReference>
@@ -107,6 +85,9 @@
       <Version>5.2.0</Version>
     </PackageReference>
     <PackageReference Include="Rollbar" Version="3.5.0" />
+    <PackageReference Include="GitVersion.MsBuild" Version="5.11.1">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT' ">
