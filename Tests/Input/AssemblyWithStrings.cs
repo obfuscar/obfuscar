@@ -47,4 +47,24 @@ namespace TestClasses
 			return "class2" + test;
 		}
 	}
+
+    public class PublicClass3
+    {
+        private string test = "";
+
+        public string Test()
+        {
+            return "class3" + test;
+        }
+    }
+
+    public class PublicClass4
+    {
+        private string test = string.Empty;
+
+        public string Test()
+        {
+            return "class4" + test;
+        }
+    }
 }
