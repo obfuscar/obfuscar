@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
 
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>obfuscar.console</ToolCommandName>
@@ -18,7 +18,7 @@
     <PackageProjectUrl>https://github.com/obfuscar/obfuscar</PackageProjectUrl>
     <PackageIcon>Potion-icon.png</PackageIcon>
     <PackageLicense>MIT</PackageLicense>
-    <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2022 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
+    <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2023 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
     <RepositoryType>git</RepositoryType>
     <PackageTags>obfuscar,obfuscation</PackageTags>
   </PropertyGroup>
@@ -33,7 +33,7 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Options" Version="6.12.0.148" />
-    <PackageReference Include="GitVersion.MsBuild" Version="5.11.1">
+    <PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
   </ItemGroup>

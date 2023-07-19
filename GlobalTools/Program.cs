@@ -40,7 +40,7 @@ namespace Obfuscar
         private static void ShowHelp(OptionSet optionSet)
         {
             Console.WriteLine("Obfuscar for .NET Core is available at https://www.obfuscar.com");
-            Console.WriteLine("(C) 2007-2022, Ryan Williams and other contributors.");
+            Console.WriteLine("(C) 2007-2023, Ryan Williams and other contributors.");
             Console.WriteLine();
             Console.WriteLine("obfuscar [Options] [project_file] [project_file]");
             Console.WriteLine("Options:");
