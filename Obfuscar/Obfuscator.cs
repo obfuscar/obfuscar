@@ -733,40 +733,72 @@ namespace Obfuscar
 
                 Stream s = embed.GetResourceStream();
                 s.Position = 0;
-                ResourceReader reader;
+
                 try
                 {
-                    reader = new ResourceReader(s);
+                    ResourceReader reader = new ResourceReader(s);
+
+                    foreach (DictionaryEntry entry in reader.Cast<DictionaryEntry>().OrderBy(e => e.Key.ToString()))
+                    {
+                        if (entry.Key.ToString().EndsWith(".baml", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Stream stream;
+                            var value = entry.Value as Stream;
+                            if (value != null)
+                                stream = value;
+                            else if (entry.Value is byte[])
+                                stream = new MemoryStream((byte[])entry.Value);
+                            else
+                                continue;
+
+                            try
+                            {
+                                result.Add(BamlReader.ReadDocument(stream, CancellationToken.None));
+                            }
+                            catch (ArgumentException)
+                            {
+                            }
+                            catch (FileNotFoundException)
+                            {
+                            }
+                        }
+                    }
+                }
+                catch (NotSupportedException)
+                {
+                    s.Position = 0;
+
+                    System.Resources.Extensions.DeserializingResourceReader reader = new System.Resources.Extensions.DeserializingResourceReader(s);
+
+                    foreach (DictionaryEntry entry in reader.Cast<DictionaryEntry>().OrderBy(e => e.Key.ToString()))
+                    {
+                        if (entry.Key.ToString().EndsWith(".baml", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Stream stream;
+                            var value = entry.Value as Stream;
+                            if (value != null)
+                                stream = value;
+                            else if (entry.Value is byte[])
+                                stream = new MemoryStream((byte[])entry.Value);
+                            else
+                                continue;
+
+                            try
+                            {
+                                result.Add(BamlReader.ReadDocument(stream, CancellationToken.None));
+                            }
+                            catch (ArgumentException)
+                            {
+                            }
+                            catch (FileNotFoundException)
+                            {
+                            }
+                        }
+                    }
                 }
                 catch (ArgumentException)
                 {
                     continue;
-                }
-
-                foreach (DictionaryEntry entry in reader.Cast<DictionaryEntry>().OrderBy(e => e.Key.ToString()))
-                {
-                    if (entry.Key.ToString().EndsWith(".baml", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Stream stream;
-                        var value = entry.Value as Stream;
-                        if (value != null)
-                            stream = value;
-                        else if (entry.Value is byte[])
-                            stream = new MemoryStream((byte[]) entry.Value);
-                        else
-                            continue;
-
-                        try
-                        {
-                            result.Add(BamlReader.ReadDocument(stream, CancellationToken.None));
-                        }
-                        catch (ArgumentException)
-                        {
-                        }
-                        catch (FileNotFoundException)
-                        {
-                        }
-                    }
                 }
             }
 
