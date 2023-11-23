@@ -33,6 +33,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using Obfuscar.Helpers;
 using System.Xml.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Obfuscar
 {
@@ -76,10 +77,10 @@ namespace Obfuscar
         }
 
         public string KeyContainerName = null;
-        private string keyPair;
+        private byte[] keyPair;
         private RSA keyValue;
 
-        public string KeyPair
+        public byte[] KeyPair
         {
             get
             {
@@ -92,9 +93,26 @@ namespace Obfuscar
                 if (lKeyFileName == null && lKeyContainerName == null)
                     return null;
                 if (lKeyFileName != null && lKeyContainerName != null)
-                    throw new ObfuscarException("'Key file' and 'Key container' properties cann't be setted together.");                               
+                    throw new ObfuscarException("'Key file' and 'Key container' properties cann't be setted together.");
 
-                return keyPair = vars.GetValue("KeyFile", null);
+                try
+                {
+                    if (Path.GetExtension(lKeyFileName)?.Equals(".pfx", StringComparison.InvariantCultureIgnoreCase) ?? false)
+                    {
+                        keyPair = GetStrongNameKeyPairFromPfx(lKeyFileName, vars.GetValue("KeyFilePassword", null));
+                    }
+                    else
+                    {
+                        keyPair = File.ReadAllBytes(vars.GetValue("KeyFile", null));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new ObfuscarException(
+                        String.Format("Failure loading key file \"{0}\"", vars.GetValue("KeyFile", null)), ex);
+                }
+
+                return keyPair;
             }
         }
 
@@ -476,6 +494,24 @@ namespace Obfuscar
             }
 
             return typeDef;
+        }
+
+        private static byte[] GetStrongNameKeyPairFromPfx(string pfxFile, string password)
+        {
+            X509Certificate2Collection certs = new X509Certificate2Collection();
+            certs.Import(pfxFile, password, X509KeyStorageFlags.Exportable);
+            if (certs.Count == 0)
+                throw new ArgumentException("Invalid certificate", nameof(pfxFile));
+
+            //not clear, but we may need to have only one key and that should be the provider https://msdn.microsoft.com/en-us/library/aa730868(vs.80).aspx
+
+            foreach (X509Certificate2 cert in certs)
+            {
+                if (cert.PrivateKey is RSACryptoServiceProvider provider)
+                    return provider.ExportCspBlob(true);
+            }
+
+            throw new ArgumentException("Invalid private key certificate", nameof(pfxFile));
         }
     }
 }
