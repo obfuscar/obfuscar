@@ -4,7 +4,7 @@ Obfuscar
 [![NuGet Version](https://img.shields.io/nuget/v/Obfuscar.svg?style=flat-square)](https://www.nuget.org/packages/Obfuscar/)
 [![Build status](https://img.shields.io/appveyor/ci/lextm/obfuscar/master.svg?label=appvejor&style=flat-square)](https://ci.appveyor.com/project/lextm/obfuscar)
 
-The project logo cames from [Legendora Icon](http://raindropmemory.deviantart.com/art/Legendora-Icon-Set-118999011) by 
+The project logo cames from [Legendora Icon](http://raindropmemory.deviantart.com/art/Legendora-Icon-Set-118999011) by
 [Teekatas Suwannakrua](http://raindropmemory.deviantart.com/).
 
 Maintained and supported by [LeXtudio](https://lextudio.com/).
@@ -17,7 +17,7 @@ Obfuscar is an open source .NET obfuscator released under MIT license. It provid
 # Get Started
 [Documentation section](http://docs.obfuscar.com/) contains most information you need, and also a detailed history of this project all through the years.
 
-This tool has been heavily in Lex Li's personal project ([#SNMP Pro](https://www.sharpsnmp.com/)). 
+This tool has been heavily in Lex Li's personal project ([#SNMP Pro](https://www.sharpsnmp.com/)).
 
 # Issues
 If you have a patch to contribute, a feature to request, or a bug to report, please post to the [Issue Tracker](https://github.com/obfuscar/obfuscar/issues).
@@ -39,3 +39,6 @@ If you want to donate to my efforts on this project, please use the following li
 /3shape - The 3Shape branch which we have sent as a pull request to the fork origin.
 
 /Master - Not to be changed in 3Shape - should be kept in sync with the fork origin.
+
+
+Build link: https://jenkins.3shape.local/job/obfuscar/

@@ -282,5 +282,33 @@ namespace ObfuscarTest
 
             CheckEnums(Path.Combine(outputPath, "AssemblyWithProperties.dll"), 5, expected, notExpected);
         }
+
+        [Fact]
+        public void CheckSkipEnumBySerializable()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Module file='$(InPath){2}AssemblyWithSerializableEnum.dll'>" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.BuildAndObfuscate("AssemblyWithSerializableEnum", string.Empty, xml);
+
+            string[] expected = new string[]
+            {
+                "Value1",
+                "Value2",
+            };
+
+            string[] notExpected = new string[]
+            {
+            };
+
+            CheckEnums(Path.Combine(outputPath, "AssemblyWithSerializableEnum.dll"), 1, expected, notExpected);
+        }
     }
 }

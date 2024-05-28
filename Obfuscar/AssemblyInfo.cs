@@ -1150,7 +1150,8 @@ namespace Obfuscar
             }
 
             // Exclude serializable field
-            if (!field.Field.IsStatic && !field.Field.IsNotSerialized && field.DeclaringType.IsSerializable &&
+            if (field.DeclaringType.IsSerializable && !field.Field.IsNotSerialized &&
+                (!field.Field.IsStatic || field.DeclaringType.IsEnum) &&
                 field.Field.CustomAttributes.All(a => a.AttributeType.FullName != "System.Runtime.CompilerServices.CompilerGeneratedAttribute"))
             {
                 message = "declaring type is Serializable";

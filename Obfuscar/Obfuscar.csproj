@@ -9,7 +9,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.11.3" />
+    <PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
     <PackageReference Include="Rollbar" Version="3.14.0" />
     <PackageReference Include="System.Runtime.Caching" Version="5.0.0" />
   </ItemGroup>

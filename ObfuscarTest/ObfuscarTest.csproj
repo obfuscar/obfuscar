@@ -43,9 +43,9 @@
     <None Include="Input\AssemblyWithInheritedInterfaces.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" Version="6.5.1" />
-    <PackageReference Include="Mono.Cecil" Version="0.11.3" />
-    <PackageReference Include="System.CodeDom" Version="4.5.0" />
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
+    <PackageReference Include="System.CodeDom" Version="4.7.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.console" Version="2.4.1">
       <PrivateAssets>all</PrivateAssets>

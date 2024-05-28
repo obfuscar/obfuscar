@@ -68,15 +68,16 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\ThirdParty\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Obfuscar\Obfuscar.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="lextudio.snk" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="ILRepack" Version="2.0.18" />
     <PackageReference Include="Mono.Options" Version="6.6.0.161" />
     <PackageReference Include="Rollbar" Version="3.14.0" />
