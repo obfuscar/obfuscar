@@ -33,11 +33,13 @@ namespace Obfuscar
 {
     class NameGroup : IEnumerable<string>
     {
+        Random _random = new Random();
+
         HashSet<string> names = new HashSet<string>();
 
         public string GetNext()
         {
-            int index = 0;
+            int index = _random.Next(20);
             string name;
             for (;;)
             {

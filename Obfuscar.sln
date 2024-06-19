@@ -35,6 +35,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Baml", "Baml\Baml.csproj", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObfuscarTest.FluentAssertions", "ObfuscarTest.FluentAssertions\ObfuscarTest.FluentAssertions.csproj", "{F608F808-617E-4F16-8C9D-E6A6A401A5EB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObfuscarTestNet", "ObfuscarTestNet\ObfuscarTestNet.csproj", "{463CE737-FEBF-4B48-96AF-374B9D2D1A11}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -195,6 +197,30 @@ Global
 		{F608F808-617E-4F16-8C9D-E6A6A401A5EB}.winphone_Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F608F808-617E-4F16-8C9D-E6A6A401A5EB}.winphone_Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F608F808-617E-4F16-8C9D-E6A6A401A5EB}.winphone_Release|Any CPU.Build.0 = Release|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.net_2_0_Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.net_2_0_Debug|Any CPU.Build.0 = Debug|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.net_2_0_Release|Any CPU.ActiveCfg = Release|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.net_2_0_Release|Any CPU.Build.0 = Release|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.net_3_5_Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.net_3_5_Debug|Any CPU.Build.0 = Debug|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.net_3_5_Release|Any CPU.ActiveCfg = Release|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.net_3_5_Release|Any CPU.Build.0 = Release|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.net_4_0_Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.net_4_0_Debug|Any CPU.Build.0 = Debug|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.net_4_0_Release|Any CPU.ActiveCfg = Release|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.net_4_0_Release|Any CPU.Build.0 = Release|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.silverlight_Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.silverlight_Debug|Any CPU.Build.0 = Debug|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.silverlight_Release|Any CPU.ActiveCfg = Release|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.silverlight_Release|Any CPU.Build.0 = Release|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.winphone_Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.winphone_Debug|Any CPU.Build.0 = Debug|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.winphone_Release|Any CPU.ActiveCfg = Release|Any CPU
+		{463CE737-FEBF-4B48-96AF-374B9D2D1A11}.winphone_Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -29,6 +29,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("ObfuscarTest")]
+[assembly: InternalsVisibleTo("ObfuscarTestNet")]
 [assembly: InternalsVisibleTo("ObfuscarTest.FluentAssertions")]
 
 // General Information about an assembly is controlled through the following 
