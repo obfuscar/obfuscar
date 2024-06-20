@@ -86,6 +86,12 @@ namespace Obfuscar
         {
             AssemblyInfo info = new AssemblyInfo(project);
 
+            // Anonymous type obfuscation does not work
+            info.skipTypes.Add(new TypeTester("*AnonymousType*", TypeAffectFlags.AffectProperty | TypeAffectFlags.AffectMethod | 
+                TypeAffectFlags.AffectField | TypeAffectFlags.AffectEvent | TypeAffectFlags.AffectString, "", "", null, null));
+            // The collection expression syntax [] will generate a readonly array type in the IL which fail across assemblies if obfuscated
+            info.skipTypes.Add(new TypeTester("*__ReadOnlyArray*", TypeAffectFlags.AffectField, "", "", null, null));
+
             // pull out the file attribute, but don't process anything empty
             string val = Helper.GetAttribute(reader, "file", vars);
             if (val.Length > 0)

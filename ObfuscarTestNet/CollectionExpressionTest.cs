@@ -20,12 +20,8 @@ namespace ObfuscarTest
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='KeepPublicApi' value='false' />" +
-                @"<Module file='$(InPath){2}AssemblyWithCollectionArgument.dll'>" +
-//                @"  <SkipType name=""*__ReadOnlyArray*"" skipProperties=""true"" skipMethods=""true"" skipFields=""true"" />" +
-                @"</Module>" +
-//                @"<Module file='$(InPath){2}AssemblyWithCollectionExpression.dll'>" +
-                @"  <SkipType name=""*__ReadOnlyArray*"" skipProperties=""true"" skipMethods=""true"" skipFields=""true"" />" +
-                @"</Module>" +
+                @"<Module file='$(InPath){2}AssemblyWithCollectionArgument.dll'/>" +
+                @"<Module file='$(InPath){2}AssemblyWithCollectionExpression.dll'/>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
             var output = TestHelper.BuildAndObfuscate(["AssemblyWithCollectionArgument", "AssemblyWithCollectionExpression"], xml);

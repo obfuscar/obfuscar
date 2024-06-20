@@ -28,7 +28,7 @@ T4MVC.cs
 
 /ObfuscarTest/Input/*.dll
 /ObfuscarTest/Input/*.exe
-/ObfuscarTest/Output
+/ObfuscarTestNet/Input/*.dll
 /packages
 /Examples/BasicExample/Final
 /Examples/BasicExample/Obfuscator_Input
