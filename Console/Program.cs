@@ -31,8 +31,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Mono.Options;
-using Rollbar;
-using Rollbar.DTOs;
 
 namespace Obfuscar
 {
@@ -41,7 +39,7 @@ namespace Obfuscar
         private static void ShowHelp(OptionSet optionSet)
         {
             Console.WriteLine("Obfuscar is available at https://www.obfuscar.com");
-            Console.WriteLine("(C) 2007-2023, Ryan Williams and other contributors.");
+            Console.WriteLine("(C) 2007-2024, Ryan Williams and other contributors.");
             Console.WriteLine();
             Console.WriteLine("obfuscar [Options] [project_file] [project_file]");
             Console.WriteLine("Options:");
@@ -52,11 +50,9 @@ namespace Obfuscar
         {
             bool showHelp = false;
             bool showVersion = false;
-            bool suppress = false;
 
             OptionSet p = new OptionSet()
                 .Add("h|?|help", "Print this help information.", delegate(string v) { showHelp = v != null; })
-                .Add("s|suppress", "Suppress Rollbar crash report.", delegate(string v) { suppress = v != null; })
                 .Add("V|version", "Display version number of this application.",
                     delegate(string v) { showVersion = v != null; });
 
@@ -95,11 +91,6 @@ namespace Obfuscar
                 return 1;
             }
 
-            if (!suppress)
-            {
-                RegisterRollbar();
-            }
-
             int start = Environment.TickCount;
             foreach (var project in extra)
             {
@@ -125,37 +116,6 @@ namespace Obfuscar
             }
 
             return 0;
-        }
-
-        private static void RegisterRollbar()
-        {
-            Console.WriteLine("Note that Rollbar API is enabled by default to collect crashes. If you want to opt out, please run with -s switch");
-            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            var config = new RollbarInfrastructureConfig("1dd3cf880c5a46eeb4338dbea73f9620", "production");
-            var options = new RollbarPayloadAdditionOptions
-            {
-                Person = new Person(version)
-                {
-                    UserName = $"{version}"
-                }
-            };
-            config.RollbarLoggerConfig.RollbarPayloadAdditionOptions.Reconfigure(options);
-            RollbarInfrastructure.Instance.Init(config);
-
-            Application.ThreadException += (sender, args) =>
-            {
-                RollbarLocator.RollbarInstance.Error(args.Exception);
-            };
-
-            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
-            {
-                RollbarLocator.RollbarInstance.Error(args.ExceptionObject as System.Exception);
-            };
-
-            TaskScheduler.UnobservedTaskException += (sender, args) =>
-            {
-                RollbarLocator.RollbarInstance.Error(args.Exception);
-            };
         }
     }
 }

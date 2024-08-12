@@ -1,12 +1,16 @@
-$foundCert = Test-Certificate -Cert Cert:\CurrentUser\my\8ef9a86dfd4bd0b4db313d55c4be8b837efa7b77 -User
-if(!$foundCert)
-{
-    Write-Host "Certificate doesn't exist. Exit."
-    exit
+if ($env:CI -eq "true") {
+    exit 0
+}
+
+$cert = Get-ChildItem -Path Cert:\CurrentUser\My -CodeSigningCert | Select-Object -First 1
+if ($null -eq $cert) {
+    Write-Host "No code signing certificate found in MY store. Exit."
+    exit 1
 }
 
 Write-Host "Certificate found. Sign the assemblies."
-$signtool = ${Env:ProgramFiles(x86)} + "\Microsoft SDKs\ClickOnce\SignTool\signtool.exe"
+$signtool = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Windows Kits" -Recurse -Filter "signtool.exe" | Select-Object -First 1 -ExpandProperty FullName
+
 & $signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a .\bin\release\obfuscar.console.exe | Write-Debug
 
 Write-Host "Verify digital signature."
