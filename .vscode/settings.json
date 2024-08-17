@@ -1,4 +1,3 @@
 {
-    "dotnet.defaultSolution": "Obfuscar.sln",
-    "dotnet.preferCSharpExtension": true
+    "dotnet.defaultSolution": "Obfuscar.NETCore.sln",
 }
