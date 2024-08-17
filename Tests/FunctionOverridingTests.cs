@@ -168,6 +168,21 @@ namespace ObfuscarTests
                 Assert.True(classAEntry.StatusText != classBEntry.StatusText,
                     "Both methods shouldn't have been renamed to the same thing.");
             }
+
+            {
+                TypeDefinition classType = inAssmDef.MainModule.GetType("TestClasses.ClassH");
+                MethodDefinition classMethod = FindByName(classType, "GetObjectData");
+
+                ObfuscatedThing classEntry = map.GetMethod(new MethodKey(classMethod));
+
+                Assert.True(
+                    classEntry.Status == ObfuscationStatus.Skipped,
+                    "GetObjectData method should have been skipped.");
+
+                Assert.Equal("Both methods should have been renamed to the same thing.",
+                    classEntry.StatusText
+                    );
+            }
         }
 
         [Fact]
