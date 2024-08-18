@@ -1,7 +1,5 @@
 using Mono.Cecil;
 using Obfuscar;
-using System;
-using System.CodeDom.Compiler;
 using System.IO;
 using System.Linq;
 using Xunit;
@@ -13,26 +11,7 @@ namespace ObfuscarTests
         public ObfuscationAttributeTests()
         {
             TestHelper.CleanInput();
-
-            Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider();
-
-            CompilerParameters cp = new CompilerParameters();
-            cp.GenerateExecutable = false;
-            cp.GenerateInMemory = false;
-            cp.TreatWarningsAsErrors = true;
-
-            string assemblyAPath = Path.Combine(TestHelper.InputPath, "AssemblyA.dll");
-            cp.OutputAssembly = assemblyAPath;
-            CompilerResults cr =
-                provider.CompileAssemblyFromFile(cp, Path.Combine(TestHelper.InputPath, "AssemblyA.cs"));
-            if (cr.Errors.Count > 0)
-                Assert.Fail($"Unable to compile test assembly:  AssemblyA, {cr.Errors[0].ErrorText}");
-
-            cp.ReferencedAssemblies.Add(assemblyAPath);
-            cp.OutputAssembly = Path.Combine(TestHelper.InputPath, "AssemblyB.dll");
-            cr = provider.CompileAssemblyFromFile(cp, Path.Combine(TestHelper.InputPath, "AssemblyB.cs"));
-            if (cr.Errors.Count > 0)
-                Assert.Fail($"Unable to compile test assembly:  AssemblyB, {cr.Errors[0].ErrorText}");
+            TestHelper.BuildAssemblies("AssemblyA", "AssemblyB");
         }
 
         static MethodDefinition FindByName(TypeDefinition typeDef, string name)

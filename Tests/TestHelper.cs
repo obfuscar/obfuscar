@@ -24,6 +24,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -87,6 +88,12 @@ namespace ObfuscarTests
             var dataContractRefLocation = typeof(DataContractAttribute).GetTypeInfo().Assembly.Location;
             var dataContractReference = MetadataReference.CreateFromFile(dataContractRefLocation);
 
+            var consoleRefLocation = typeof(Console).GetTypeInfo().Assembly.Location;
+            var consoleReference = MetadataReference.CreateFromFile(consoleRefLocation);
+
+            var attributeRefLocation = Path.Combine(Path.GetDirectoryName(systemRefLocation), "System.Runtime.dll");           
+            var attributeReference = MetadataReference.CreateFromFile(attributeRefLocation);
+
             // Configure compilation options with the key file if provided
             var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
 
@@ -107,6 +114,8 @@ namespace ObfuscarTests
               .WithOptions(compilationOptions)
               .AddReferences(systemReference)
               .AddReferences(dataContractReference)
+              .AddReferences(consoleReference)
+              .AddReferences(attributeReference)
               .AddSyntaxTrees(tree);
             foreach (var option in references ?? new List<string>())
             {

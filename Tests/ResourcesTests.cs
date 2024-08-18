@@ -48,6 +48,10 @@ namespace ObfuscarTests
         [Fact]
         public void CheckGeneric()
         {
+#if NETCOREAPP
+            // IMPORANT: this is not not applicable for .NET Core
+            return;
+#endif
             string outputPath = TestHelper.OutputPath;
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
