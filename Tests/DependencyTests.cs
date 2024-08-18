@@ -52,7 +52,7 @@ namespace ObfuscarTests
                 cp.OutputAssembly = assemblyAPath;
                 cr = provider.CompileAssemblyFromFile(cp, Path.Combine(TestHelper.InputPath, "AssemblyA.cs"));
                 if (cr.Errors.Count > 0)
-                    Assert.True(false, "Unable to compile test assembly:  AssemblyA");
+                    Assert.Fail("Unable to compile test assembly:  AssemblyA");
             }
 
             cp.ReferencedAssemblies.Add(assemblyAPath);
@@ -65,7 +65,7 @@ namespace ObfuscarTests
             cp.OutputAssembly = fileName;
             cr = provider.CompileAssemblyFromFile(cp, Path.Combine(TestHelper.InputPath, "AssemblyB.cs"));
             if (cr.Errors.Count > 0)
-                Assert.True(false, "Unable to compile test assembly:  AssemblyB");
+                Assert.Fail("Unable to compile test assembly:  AssemblyB");
         }
 
         [Fact]

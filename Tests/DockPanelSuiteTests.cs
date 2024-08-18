@@ -40,7 +40,7 @@ namespace ObfuscarTests
                 if (method.FullName == name)
                     return method;
 
-            Assert.True(false, string.Format("Expected to find method: {0}", name));
+            Assert.Fail(string.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 
@@ -60,7 +60,6 @@ namespace ObfuscarTests
 
             TestHelper.CleanInput();
 
-            // build it with the keyfile option (embeds the public key, and signs the assembly)
             string destFileName = Path.Combine(TestHelper.InputPath, "WeifenLuo.WinFormsUI.Docking.dll");
             if (!File.Exists(destFileName))
             {
@@ -70,10 +69,10 @@ namespace ObfuscarTests
 
             var map = TestHelper.Obfuscate(xml).Mapping;
 
-            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+            AssemblyDefinition inAssemblyDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(TestHelper.InputPath, "WeifenLuo.WinFormsUI.Docking.dll"));
 
-            TypeDefinition classAType = inAssmDef.MainModule.GetType(
+            TypeDefinition classAType = inAssemblyDef.MainModule.GetType(
                 "WeifenLuo.WinFormsUI.Docking.AutoHideStripBase/TabCollection/<System.Collections.Generic.IEnumerable<WeifenLuo.WinFormsUI.Docking.AutoHideStripBase.Tab>.GetEnumerator>d__0");
             var type = map.GetClass(new TypeKey(classAType));
             Assert.True(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
@@ -95,7 +94,6 @@ namespace ObfuscarTests
 
             TestHelper.CleanInput();
 
-            // build it with the keyfile option (embeds the public key, and signs the assembly)
             string destFileName = Path.Combine(TestHelper.InputPath, "WeifenLuo.WinFormsUI.Docking.dll");
             if (!File.Exists(destFileName))
             {

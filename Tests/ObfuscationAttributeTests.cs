@@ -26,13 +26,13 @@ namespace ObfuscarTests
             CompilerResults cr =
                 provider.CompileAssemblyFromFile(cp, Path.Combine(TestHelper.InputPath, "AssemblyA.cs"));
             if (cr.Errors.Count > 0)
-                Assert.True(false, $"Unable to compile test assembly:  AssemblyA, {cr.Errors[0].ErrorText}");
+                Assert.Fail($"Unable to compile test assembly:  AssemblyA, {cr.Errors[0].ErrorText}");
 
             cp.ReferencedAssemblies.Add(assemblyAPath);
             cp.OutputAssembly = Path.Combine(TestHelper.InputPath, "AssemblyB.dll");
             cr = provider.CompileAssemblyFromFile(cp, Path.Combine(TestHelper.InputPath, "AssemblyB.cs"));
             if (cr.Errors.Count > 0)
-                Assert.True(false, $"Unable to compile test assembly:  AssemblyB, {cr.Errors[0].ErrorText}");
+                Assert.Fail($"Unable to compile test assembly:  AssemblyB, {cr.Errors[0].ErrorText}");
         }
 
         static MethodDefinition FindByName(TypeDefinition typeDef, string name)
@@ -41,7 +41,7 @@ namespace ObfuscarTests
                 if (method.Name == name)
                     return method;
 
-            Assert.True(false, string.Format("Expected to find method: {0}", name));
+            Assert.Fail(string.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 
