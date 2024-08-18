@@ -179,9 +179,7 @@ namespace ObfuscarTests
                     classEntry.Status == ObfuscationStatus.Skipped,
                     "GetObjectData method should have been skipped.");
 
-                Assert.Equal("Both methods should have been renamed to the same thing.",
-                    classEntry.StatusText
-                    );
+                Assert.Equal("external base class or interface", classEntry.StatusText);
             }
         }
 

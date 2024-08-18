@@ -53,7 +53,7 @@ namespace ObfuscarTests
                 @"				<Obfuscator>" +
                 @"				<Var name='InPath' value='{0}' />" +
                 @"				<Var name='OutPath' value='{1}' />" +
-                @"             <Var name='HidePrivateApi' value='true' />" +
+                @"              <Var name='HidePrivateApi' value='true' />" +
                 @"				<Module file='$(InPath){2}AssemblyWithTypesAttrs.dll'>" +
                 @"				</Module>" +
                 @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
