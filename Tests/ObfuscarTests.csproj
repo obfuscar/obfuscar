@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net6.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>    
+    <TargetFrameworks Condition="'$(MSBuildVersion)' >= '17.9'">$(TargetFrameworks);net9.0</TargetFrameworks> 
+    <TargetFrameworks Condition="'$(OS)' == 'Windows'">$(TargetFrameworks);net472</TargetFrameworks>
     <AssemblyName>ObfuscarTests</AssemblyName>
     <RootNamespace>ObfuscarTests</RootNamespace>
     <EnableDefaultItems>false</EnableDefaultItems> <!-- Disable automatic inclusion of files -->
