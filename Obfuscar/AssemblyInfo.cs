@@ -808,8 +808,7 @@ namespace Obfuscar
             return false;
         }
 
-        public bool ShouldSkip(TypeKey type, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
-            out string message)
+        public bool ShouldSkip(TypeKey type, InheritMap map, Settings settings, out string message)
         {
             var attribute = type.TypeDefinition.MarkedToRename();
             if (attribute != null)
@@ -818,7 +817,7 @@ namespace Obfuscar
                 return !attribute.Value;
             }
 
-            if (markedOnly)
+            if (settings.MarkedOnly)
             {
                 message = "MarkedOnly option in configuration";
                 return true;
@@ -857,15 +856,14 @@ namespace Obfuscar
             if (type.TypeDefinition.IsTypePublic())
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return settings.KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !settings.HidePrivateApi;
         }
 
-        public bool ShouldSkip(MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
-            bool markedOnly, out string message)
+        public bool ShouldSkip(MethodKey method, InheritMap map, Settings settings, out string message)
         {
             if (method.Method.IsRuntime)
             {
@@ -891,11 +889,10 @@ namespace Obfuscar
                 }
             }
 
-            return ShouldSkipParams(method, map, keepPublicApi, hidePrivateApi, markedOnly, out message);
+            return ShouldSkipParams(method, map, settings, out message);
         }
 
-        public bool ShouldSkipParams(MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
-            bool markedOnly, out string message)
+        public bool ShouldSkipParams(MethodKey method, InheritMap map, Settings settings, out string message)
         {
             var attribute = method.Method.MarkedToRename();
             // skip runtime methods
@@ -912,7 +909,7 @@ namespace Obfuscar
                 return !parent.Value;
             }
 
-            if (markedOnly)
+            if (settings.MarkedOnly)
             {
                 message = "MarkedOnly option in configuration";
                 return true;
@@ -948,11 +945,11 @@ namespace Obfuscar
             ))
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return settings.KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !settings.HidePrivateApi;
         }
 
         public bool ShouldSkipStringHiding(MethodKey method, InheritMap map, bool projectHideStrings)
@@ -976,8 +973,7 @@ namespace Obfuscar
             return !projectHideStrings;
         }
 
-        public bool ShouldSkip(FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
-            out string message)
+        public bool ShouldSkip(FieldKey field, InheritMap map, Settings settings, out string message)
         {
             // skip runtime methods
             if ((field.Field.IsRuntimeSpecialName && field.Field.Name == "value__"))
@@ -1000,7 +996,7 @@ namespace Obfuscar
                 return !parent.Value;
             }
 
-            if (markedOnly)
+            if (settings.MarkedOnly)
             {
                 message = "MarkedOnly option in configuration";
                 return true;
@@ -1039,15 +1035,14 @@ namespace Obfuscar
             if (field.Field.IsPublic() && field.DeclaringType.IsTypePublic())
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return settings.KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !settings.HidePrivateApi;
         }
 
-        public bool ShouldSkip(PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
-            bool markedOnly, out string message)
+        public bool ShouldSkip(PropertyKey prop, InheritMap map, Settings settings, out string message)
         {
             if (prop.Property.IsRuntimeSpecialName)
             {
@@ -1069,7 +1064,7 @@ namespace Obfuscar
                 return !parent.Value;
             }
 
-            if (markedOnly)
+            if (settings.MarkedOnly)
             {
                 message = "MarkedOnly option in configuration";
                 return true;
@@ -1106,15 +1101,14 @@ namespace Obfuscar
             ))
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return settings.KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !settings.HidePrivateApi;
         }
 
-        public bool ShouldSkip(EventKey evt, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
-            out string message)
+        public bool ShouldSkip(EventKey evt, InheritMap map, Settings settings, out string message)
         {
             // skip runtime special events
             if (evt.Event.IsRuntimeSpecialName)
@@ -1138,7 +1132,7 @@ namespace Obfuscar
                 return !parent.Value;
             }
 
-            if (markedOnly)
+            if (settings.MarkedOnly)
             {
                 message = "MarkedOnly option in configuration";
                 return true;
@@ -1175,11 +1169,11 @@ namespace Obfuscar
             ))
             {
                 message = "KeepPublicApi option in configuration";
-                return keepPublicApi;
+                return settings.KeepPublicApi;
             }
 
             message = "HidePrivateApi option in configuration";
-            return !hidePrivateApi;
+            return !settings.HidePrivateApi;
         }
 
         /// <summary>

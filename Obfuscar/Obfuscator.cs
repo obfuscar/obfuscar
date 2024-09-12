@@ -429,9 +429,7 @@ namespace Obfuscar
 
             // skip filtered fields
             string skip;
-            if (info.ShouldSkip(fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                Project.Settings.HidePrivateApi,
-                Project.Settings.MarkedOnly, out skip))
+            if (info.ShouldSkip(fieldKey, Project.InheritMap, Project.Settings, out skip))
             {
                 Mapping.UpdateField(fieldKey, ObfuscationStatus.Skipped, skip);
                 nameGroup.Add(fieldKey.Name);
@@ -495,8 +493,7 @@ namespace Obfuscar
 
                     string skip;
                     // rename the class parameters
-                    if (info.ShouldSkip(new TypeKey(type), Project.InheritMap, Project.Settings.KeepPublicApi,
-                        Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
+                    if (info.ShouldSkip(new TypeKey(type), Project.InheritMap, Project.Settings, out skip))
                         continue;
 
                     int index = 0;
@@ -510,8 +507,7 @@ namespace Obfuscar
         {
             MethodKey methodkey = new MethodKey(method);
             string skip;
-            if (info.ShouldSkipParams(methodkey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
+            if (info.ShouldSkipParams(methodkey, Project.InheritMap, Project.Settings, out skip))
                 return;
 
             foreach (ParameterDefinition param in method.Parameters)
@@ -561,8 +557,7 @@ namespace Obfuscar
                     string fullName = type.FullName;
 
                     string skip;
-                    if (info.ShouldSkip(unrenamedTypeKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                        Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
+                    if (info.ShouldSkip(unrenamedTypeKey, Project.InheritMap, Project.Settings, out skip))
                     {
                         Mapping.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, skip);
 
@@ -884,9 +879,7 @@ namespace Obfuscar
 
             string skip;
             // skip filtered props
-            if (info.ShouldSkip(propKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                Project.Settings.HidePrivateApi,
-                Project.Settings.MarkedOnly, out skip))
+            if (info.ShouldSkip(propKey, Project.InheritMap, Project.Settings, out skip))
             {
                 m.Update(ObfuscationStatus.Skipped, skip);
 
@@ -998,9 +991,7 @@ namespace Obfuscar
 
             string skip;
             // skip filtered events
-            if (info.ShouldSkip(evtKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                Project.Settings.HidePrivateApi,
-                Project.Settings.MarkedOnly, out skip))
+            if (info.ShouldSkip(evtKey, Project.InheritMap, Project.Settings, out skip))
             {
                 m.Update(ObfuscationStatus.Skipped, skip);
 
@@ -1123,8 +1114,7 @@ namespace Obfuscar
 
             // skip filtered methods
             string skiprename;
-            var toDo = info.ShouldSkip(methodKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skiprename);
+            var toDo = info.ShouldSkip(methodKey, Project.InheritMap, Project.Settings, out skiprename);
             if (!toDo)
                 skiprename = null;
             // update status for skipped non-virtual methods immediately...status for
