@@ -859,6 +859,12 @@ namespace Obfuscar
                 return settings.KeepPublicApi;
             }
 
+            if (type.TypeDefinition.IsTypeInternal())
+            {
+                message = "KeepInternalApi option in configuration";
+                return settings.KeepInternalApi;
+            }
+
             message = "HidePrivateApi option in configuration";
             return !settings.HidePrivateApi;
         }
@@ -946,6 +952,12 @@ namespace Obfuscar
             {
                 message = "KeepPublicApi option in configuration";
                 return settings.KeepPublicApi;
+            }
+
+            if (method.Method.IsInternal() || method.DeclaringType.IsTypeInternal())
+            {
+                message = "KeepInternalApi option in configuration";
+                return settings.KeepInternalApi;
             }
 
             message = "HidePrivateApi option in configuration";
@@ -1038,6 +1050,12 @@ namespace Obfuscar
                 return settings.KeepPublicApi;
             }
 
+            if (field.Field.IsInternal() || field.DeclaringType.IsTypeInternal())
+            {
+                message = "KeepInternalApi option in configuration";
+                return settings.KeepInternalApi;
+            }
+
             message = "HidePrivateApi option in configuration";
             return !settings.HidePrivateApi;
         }
@@ -1104,6 +1122,12 @@ namespace Obfuscar
                 return settings.KeepPublicApi;
             }
 
+            if (prop.Property.IsInternal() || prop.DeclaringType.IsTypeInternal())
+            {
+                message = "KeepInternalApi option in configuration";
+                return settings.KeepInternalApi;
+            }
+            
             message = "HidePrivateApi option in configuration";
             return !settings.HidePrivateApi;
         }
@@ -1170,6 +1194,12 @@ namespace Obfuscar
             {
                 message = "KeepPublicApi option in configuration";
                 return settings.KeepPublicApi;
+            }
+
+            if (evt.Event.IsInternal() || evt.DeclaringType.IsTypeInternal())
+            {
+                message = "KeepInternalApi option in configuration";
+                return settings.KeepInternalApi;
             }
 
             message = "HidePrivateApi option in configuration";

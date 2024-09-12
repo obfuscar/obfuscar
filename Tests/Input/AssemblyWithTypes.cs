@@ -52,6 +52,9 @@ namespace TestClasses
 		public void PublicMethod()
 		{ }
 
+		internal void InternalMethod()
+		{ }
+
 		protected void ProtectedMethod()
 		{ }
 
@@ -59,6 +62,18 @@ namespace TestClasses
 		{ }
 
 		protected internal void ProtectedInternalMethod()
+		{ }
+	}
+
+	public static class PublicStaticClass
+	{
+		internal static void InternalStaticMethod()
+		{ }
+	}
+
+	internal static class InternalStaticClass
+	{
+		public static void PublicStaticMethod()
 		{ }
 	}
 }
@@ -71,6 +86,10 @@ namespace TestClasses1
 		{ }
 
 		public class PublicNestedClass
+		{
+		}
+
+		internal class InternalNestedClass
 		{
 		}
 	}

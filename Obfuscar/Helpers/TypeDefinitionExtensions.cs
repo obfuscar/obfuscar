@@ -17,6 +17,16 @@ namespace Obfuscar.Helpers
 
             return false;
         }
+        
+        public static bool IsTypeInternal(this TypeDefinition type)
+        {
+            // A non-nested, non-public type can only be internal,
+            // as private types would not be accessible and thus don't compile
+            if (!type.IsNested)
+                return type.IsNotPublic;
+            
+            return type.IsNestedAssembly || type.IsNestedFamilyOrAssembly;
+        }
 
         private static CacheItemPolicy policy = new CacheItemPolicy {SlidingExpiration = TimeSpan.FromMinutes(5)};
 

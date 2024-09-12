@@ -30,12 +30,15 @@ namespace TestClasses
 {
 	public class ClassA
 	{
-		internal class NestedClassA
+		private class NestedClassA
 		{
 		}
-		public class NestedClassB
+		internal class NestedClassB
 		{
-			public class NestedClassC
+		}
+		public class NestedClassC
+		{
+			public class NestedClassD
 			{				
 			}
 		}

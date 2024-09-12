@@ -8,5 +8,10 @@ namespace Obfuscar.Helpers
         {
             return method != null && (method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly);
         }
+        
+        public static bool IsInternal(this MethodDefinition method)
+        {
+            return method != null && method.IsAssembly;
+        }
     }
 }

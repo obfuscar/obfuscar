@@ -88,8 +88,45 @@ namespace ObfuscarTests
             HashSet<string> typesToFind = new HashSet<string>();
             typesToFind.Add("TestClasses.ClassA");
             typesToFind.Add("TestClasses.ClassA/A");
+            typesToFind.Add("TestClasses.ClassA/a");
+            typesToFind.Add("TestClasses.ClassA/NestedClassC");
+            typesToFind.Add("TestClasses.ClassA/NestedClassC/NestedClassD");
+
+            AssemblyHelper.CheckAssembly(Path.Combine(outputPath, "AssemblyWithNestedTypes2.dll"), 1,
+                delegate { return true; },
+                delegate(TypeDefinition typeDef)
+                {
+                    Assert.True(typesToFind.Contains(typeDef.ToString()),
+                        string.Format("Type {0} not expected.", typeDef.ToString()));
+                    typesToFind.Remove(typeDef.ToString());
+                });
+            Assert.True(typesToFind.Count == 0, "Not all types found.");
+        }
+
+        [Fact]
+        public void CheckKeepInternal()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepInternalApi' value='true' />" +
+                @"<Var name='KeepPublicApi' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithNestedTypes2.dll'>" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.BuildAndObfuscate("AssemblyWithNestedTypes2", string.Empty, xml);
+
+            HashSet<string> typesToFind = new HashSet<string>();
+            typesToFind.Add("TestClasses.ClassA");
+            typesToFind.Add("TestClasses.ClassA/A");
             typesToFind.Add("TestClasses.ClassA/NestedClassB");
-            typesToFind.Add("TestClasses.ClassA/NestedClassB/NestedClassC");
+            typesToFind.Add("TestClasses.ClassA/NestedClassC");
+            typesToFind.Add("TestClasses.ClassA/NestedClassC/NestedClassD");
 
             AssemblyHelper.CheckAssembly(Path.Combine(outputPath, "AssemblyWithNestedTypes2.dll"), 1,
                 delegate { return true; },

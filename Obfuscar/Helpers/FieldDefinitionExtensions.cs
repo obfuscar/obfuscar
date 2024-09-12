@@ -8,5 +8,10 @@ namespace Obfuscar.Helpers
         {
             return field != null && (field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly);
         }
+        
+        public static bool IsInternal(this FieldDefinition field)
+        {
+            return field != null && field.IsAssembly;
+        }
     }
 }

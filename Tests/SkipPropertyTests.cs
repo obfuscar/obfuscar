@@ -101,6 +101,34 @@ namespace ObfuscarTests
         }
 
         [Fact]
+        public void CheckKeepInternalProperties()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepInternalApi' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithProperties.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
+
+            string[] expected = new string[]
+            {
+                "Property1",
+                "Property2",
+                "PropertyA"
+            };
+
+            string[] notExpected = new string[0];
+
+            CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), 1, expected, notExpected);
+        }
+
+        [Fact]
         public void CheckSkipPropertyByName()
         {
             string outputPath = TestHelper.OutputPath;

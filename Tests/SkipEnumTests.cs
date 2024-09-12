@@ -89,6 +89,34 @@ namespace ObfuscarTests
         }
 
         [Fact]
+        public void CheckKeepInternalEnums()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepInternalApi' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithEnums.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml);
+
+            string[] expected = new string[]
+            {
+                "Value1",
+                "Value2",
+                "ValueA"
+            };
+
+            string[] notExpected = new string[0];
+
+            CheckEnums(Path.Combine(outputPath, "AssemblyWithEnums.dll"), 2, expected, notExpected);
+        }
+
+        [Fact]
         public void CheckSkipEnumsByName()
         {
             string outputPath = TestHelper.OutputPath;

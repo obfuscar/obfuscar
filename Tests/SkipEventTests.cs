@@ -128,6 +128,34 @@ namespace ObfuscarTests
         }
 
         [Fact]
+        public void CheckKeepInternalEvents()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepInternalApi' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithEvents.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.BuildAndObfuscate("AssemblyWithEvents", string.Empty, xml);
+
+            string[] expected = new string[]
+            {
+                "Event1",
+                "Event2",
+                "EventA"
+            };
+
+            string[] notExpected = new string[0];
+
+            CheckEvents(Path.Combine(outputPath, "AssemblyWithEvents.dll"), 1, expected, notExpected);
+        }
+
+        [Fact]
         public void CheckSkipEventsByName()
         {
             string outputPath = TestHelper.OutputPath;
