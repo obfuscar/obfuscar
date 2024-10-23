@@ -23,7 +23,7 @@ if ($null -eq $cert) {
 }
 
 Write-Host "Certificate found. Sign the assemblies."
-$signtool = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Windows Kits" -Recurse -Filter "signtool.exe" | Select-Object -First 1 -ExpandProperty FullName
+$signtool = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Windows Kits", "${env:ProgramFiles(x86)}\Microsoft SDKs" -Recurse -Filter "signtool.exe" | Select-Object -First 1 -ExpandProperty FullName
 
 & $signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a .\console\bin\release\net462\obfuscar.console.exe | Write-Debug
 

@@ -4,8 +4,9 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Obfuscar</RootNamespace>
     <ApplicationIcon>..\Raindropmemory-Legendora-Potion.ico</ApplicationIcon>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
+    <GitVersionTargetFramework>net6.0</GitVersionTargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Obfuscar\Obfuscar.csproj" />
