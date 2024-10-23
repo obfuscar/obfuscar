@@ -19,6 +19,9 @@
     <PackageReference Include="Mono.Options">
       <Version>6.12.0.148</Version>
     </PackageReference>
+    <PackageReference Include="GitVersion.MsBuild" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT' ">
