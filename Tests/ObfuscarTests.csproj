@@ -53,6 +53,7 @@
     <Compile Include="TestClasses2.cs" />
     <Compile Include="TestClasses.cs" />
     <Compile Include="UnityTests.cs" />
+    <Compile Include="UnmanagedGenericsTests.cs" />
     <Compile Include="VariablesTests.cs" />
     <Compile Include="WildcardTests.cs" />
     <Compile Include="ObfuscationAttributeTests.cs" />
