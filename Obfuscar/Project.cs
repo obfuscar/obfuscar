@@ -392,7 +392,7 @@ namespace Obfuscar
                 }
                 catch (IOException e)
                 {
-                    throw new ObfuscarException("Could not create path specified by OutPath:  " + Settings.OutPath, e);
+                    throw new ObfuscarException("Could not create path specified by OutPath: " + Settings.OutPath, e);
                 }
             }
         }

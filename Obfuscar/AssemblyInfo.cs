@@ -711,7 +711,7 @@ namespace Obfuscar
             }
             catch (System.IO.IOException e)
             {
-                throw new ObfuscarException("Unable to find assembly:  " + filename, e);
+                throw new ObfuscarException("Unable to find assembly: " + filename, e);
             }
         }
 

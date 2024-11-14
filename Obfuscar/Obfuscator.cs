@@ -85,7 +85,7 @@ namespace Obfuscar
             }
             catch (IOException e)
             {
-                throw new ObfuscarException("Unable to read specified project file:  " + projfile, e);
+                throw new ObfuscarException("Unable to read specified project file: " + projfile, e);
             }
             catch (System.Xml.XmlException e)
             {
