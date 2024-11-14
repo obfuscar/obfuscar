@@ -26,7 +26,6 @@
 
 using Mono.Cecil;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -38,7 +37,6 @@ namespace Obfuscar
 {
     class Project
     {
-        private const string SPECIALVAR_PROJECTFILEDIRECTORY = "ProjectFileDirectory";
         public List<AssemblyInfo> AssemblyList { get; } = new List<AssemblyInfo>();
         public List<AssemblyInfo> CopyAssemblyList { get; } = new List<AssemblyInfo>();
 
@@ -59,7 +57,7 @@ namespace Obfuscar
         {
             get
             {
-                return vars.GetValue("ExtraFrameworkFolders", "").Split(new char[] {Path.PathSeparator},
+                return vars.GetValue(Settings.VariableExtraFrameworkFolders, "").Split(new char[] {Path.PathSeparator},
                     StringSplitOptions.RemoveEmptyEntries);
             }
         }
@@ -84,17 +82,21 @@ namespace Obfuscar
             get
             {
                 if (keyPair != null)
+                {
                     return keyPair;
+                }
 
-                var lKeyFileName = vars.GetValue("KeyFile", null);
-                var lKeyContainerName = vars.GetValue("KeyContainer", null);
+                var lKeyFileName = vars.GetValue(Settings.VariableKeyFile, null);
+                var lKeyContainerName = vars.GetValue(Settings.VariableKeyContainer, null);
 
-                if (lKeyFileName == null && lKeyContainerName == null)
+                if (string.IsNullOrEmpty(lKeyFileName) && string.IsNullOrEmpty(lKeyContainerName))
                     return null;
-                if (lKeyFileName != null && lKeyContainerName != null)
-                    throw new ObfuscarException("'Key file' and 'Key container' properties cann't be setted together.");                               
+                if (!string.IsNullOrEmpty(lKeyFileName) && !string.IsNullOrEmpty(lKeyContainerName))
+                    throw new ObfuscarException($"'{Settings.VariableKeyFile}' and '{Settings.VariableKeyContainer}' variables cann't be setted together.");
 
-                return keyPair = vars.GetValue("KeyFile", null);
+                keyPair = lKeyFileName;
+
+                return keyPair;
             }
         }
 
@@ -110,15 +112,16 @@ namespace Obfuscar
                 if (Type.GetType("System.MonoType") != null)
                     throw new ObfuscarException("Key containers are not supported for Mono.");
 
-                var lKeyFileName = vars.GetValue("KeyFile", null);
-                var lKeyContainerName = vars.GetValue("KeyContainer", null);
+                var lKeyFileName = vars.GetValue(Settings.VariableKeyFile, null);
+                var lKeyContainerName = vars.GetValue(Settings.VariableKeyContainer, null);
 
-                if (lKeyFileName == null && lKeyContainerName == null)
+                if (string.IsNullOrEmpty(lKeyFileName) && string.IsNullOrEmpty(lKeyContainerName))
                     return null;
-                if (lKeyFileName != null && lKeyContainerName != null)
-                    throw new ObfuscarException("'Key file' and 'Key container' properties cann't be setted together.");
+                if (!string.IsNullOrEmpty(lKeyFileName) && !string.IsNullOrEmpty(lKeyContainerName))
+                    throw new ObfuscarException($"'{Settings.VariableKeyFile}' and '{Settings.VariableKeyContainer}' variables cann't be setted together.");
 
-                KeyContainerName = vars.GetValue("KeyContainer", null);
+                KeyContainerName = lKeyContainerName;
+
                 if (KeyContainerName != null)
                 {
                     CspParameters cp = new CspParameters();
@@ -127,8 +130,10 @@ namespace Obfuscar
                     keyValue = new RSACryptoServiceProvider(cp);
                     return keyValue;
                 }
-
-                return null;
+                else
+                {
+                    return null;
+                }
             }
         }
 
@@ -152,8 +157,7 @@ namespace Obfuscar
         {
             Project project = new Project();
 
-            project.vars.Add(SPECIALVAR_PROJECTFILEDIRECTORY,
-                string.IsNullOrEmpty(projectFileDirectory) ? "." : projectFileDirectory);
+            project.vars.Add(Settings.SpecialVariableProjectFileDirectory, string.IsNullOrEmpty(projectFileDirectory) ? "." : projectFileDirectory);
 
             if (reader.Root.Name != "Obfuscator")
             {
