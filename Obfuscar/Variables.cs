@@ -74,7 +74,7 @@ namespace Obfuscar
                 if (vars.TryGetValue(variable, out replacement))
                     formatted.Append(this.Replace(replacement));
                 else
-                    throw new ObfuscarException("Unable to replace variable:  " + variable);
+                    throw new ObfuscarException("Unable to replace variable: " + variable);
 
                 lastMatch = m.Index + m.Length;
             }
