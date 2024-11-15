@@ -25,24 +25,27 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.CodeDom.Compiler;
-using Xunit;
-using System.Text;
-using Microsoft.CodeDom.Providers.DotNetCompilerPlatform;
 using System.Reflection;
+using System.Runtime.Serialization;
+
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
+using Xunit;
 
 namespace ObfuscarTests
 {
     static class TestHelper
     {
-        public static string InputPath = Path.Combine("..", "..", "Input");
+        public static string InputPath = Path.Combine("..", "..", "..", "Input");
 
         private static int count;
 
         public static string OutputPath
         {
-            get { return Path.Combine("..", "..", "Output", (count++).ToString()); }
+            get { return Path.Combine("..", "..", "..", "Output", (count++).ToString()); }
         }
 
         public static void CleanInput()
@@ -63,20 +66,8 @@ namespace ObfuscarTests
             BuildAssembly(name, suffix, null);
         }
 
-        public static void BuildAssembly(string name, string suffix = null, string options = null, bool treatWarningsAsErrors = true)
+        public static void BuildAssembly(string name, string suffix = null, List<string> references = null, string keyFile = null, bool delaySign = false, bool treatWarningsAsErrors = true)
         {
-            string RoslynPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "roslyn", "csc.exe");
-            var provider = new CSharpCodeProvider(new ProviderOptions(RoslynPath, 0));
-
-            CompilerParameters cp = new CompilerParameters();
-            cp.GenerateExecutable = false;
-            cp.GenerateInMemory = false;
-            cp.ReferencedAssemblies.Add("System.Runtime.Serialization.dll");
-            cp.TreatWarningsAsErrors = treatWarningsAsErrors;
-
-            if (!string.IsNullOrEmpty(options))
-                cp.CompilerOptions = options;
-
             string dllName = string.IsNullOrEmpty(suffix) ? name : name + suffix;
 
             string fileName = GetAssemblyPath(dllName);
@@ -85,21 +76,68 @@ namespace ObfuscarTests
                 return;
             }
 
-            cp.OutputAssembly = fileName;
-            CompilerResults cr = provider.CompileAssemblyFromFile(cp, Path.Combine(InputPath, name + ".cs"));
-            if (cr.Errors.HasErrors)
+            string code = File.ReadAllText(Path.Combine(InputPath, name + ".cs"));
+            // IMPORTANT: force to C# 10 to avoid extra attributes in assemblies. dotnet/runtime#76032
+            var tree = SyntaxFactory.ParseSyntaxTree(code, new CSharpParseOptions(LanguageVersion.CSharp10));
+
+            // Detect the file location for the library that defines the object type
+            var systemRefLocation = typeof(object).GetTypeInfo().Assembly.Location;
+            // Create a reference to the library
+            var systemReference = MetadataReference.CreateFromFile(systemRefLocation);
+
+            var dataContractRefLocation = typeof(DataContractAttribute).GetTypeInfo().Assembly.Location;
+            var dataContractReference = MetadataReference.CreateFromFile(dataContractRefLocation);
+
+            var consoleRefLocation = typeof(Console).GetTypeInfo().Assembly.Location;
+            var consoleReference = MetadataReference.CreateFromFile(consoleRefLocation);
+
+            var attributeRefLocation = Path.Combine(Path.GetDirectoryName(systemRefLocation), "System.Runtime.dll");           
+            var attributeReference = MetadataReference.CreateFromFile(attributeRefLocation);
+
+            // Configure compilation options with the key file if provided
+            var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+
+            if (!string.IsNullOrEmpty(keyFile))
             {
-                Assert.True(false, "Unable to compile test assembly:  " + dllName + ":" + cr.Errors[0].ErrorText);
+                var fullPath = Path.GetFullPath(keyFile);
+                compilationOptions = compilationOptions.WithCryptoKeyFile(fullPath)
+                    .WithStrongNameProvider(new DesktopStrongNameProvider());
+                if (delaySign)
+                {
+                    compilationOptions = compilationOptions.WithDelaySign(true);
+                }
             }
+
+            // A single, immutable invocation to the compiler
+            // to produce a library
+            var compilation = CSharpCompilation.Create(dllName)
+              .WithOptions(compilationOptions)
+              .AddReferences(systemReference)
+              .AddReferences(dataContractReference)
+              .AddReferences(consoleReference)
+              .AddReferences(attributeReference)
+              .AddSyntaxTrees(tree);
+            foreach (var option in references ?? new List<string>())
+            {
+                compilation = compilation.AddReferences(MetadataReference.CreateFromFile(option));
+            }
+
+            EmitResult compilationResult = compilation.Emit(fileName);
+            if (compilationResult.Success)
+            {
+                return;
+            }
+
+            Assert.Fail("Unable to compile test assembly: " + dllName + ": " + compilationResult.Diagnostics[0].GetMessage());
         }
 
         public static void BuildAssemblies(params string[] names)
         {
-            var options = new StringBuilder();
+            var options = new List<string>();
             foreach (var name in names)
             {
-                BuildAssembly(name, options: options.ToString());
-                options.Append(string.Format(" /reference:{0}", GetAssemblyPath(name)));
+                BuildAssembly(name, null, options);
+                options.Add(GetAssemblyPath(name));
             }
         }
 
@@ -138,7 +176,7 @@ namespace ObfuscarTests
 
         private static string GetAssemblyPath(string name)
         {
-            return Path.Combine(InputPath, name + ".dll");
+            return Path.GetFullPath(Path.Combine(InputPath, name + ".dll"));
         }
     }
 }

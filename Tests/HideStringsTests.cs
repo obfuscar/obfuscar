@@ -33,6 +33,8 @@ namespace ObfuscarTests
 {
     public class HideStringsTests
     {
+        int TotalStringCount = 10;
+
         [Fact]
         public void CheckHideStringsClassDoesNotExist()
         {
@@ -96,7 +98,7 @@ namespace ObfuscarTests
 
             Assert.Equal(3, expected.Fields.Count);
 
-            Assert.Equal(7, expected.Methods.Count - 2); // 7 strings. 2 methods are not hidden strings.
+            Assert.Equal(TotalStringCount, expected.Methods.Count - 2); // Total strings. 2 methods are not hidden strings.
         }
 
         [Fact]
@@ -133,7 +135,7 @@ namespace ObfuscarTests
 
             Assert.Equal(3, expected.Fields.Count);
 
-            Assert.Equal(7, expected.Methods.Count);
+            Assert.Equal(TotalStringCount - 2, expected.Methods.Count - 2);
         }
 
         [Fact]
@@ -170,7 +172,7 @@ namespace ObfuscarTests
 
             Assert.Equal(3, expected.Fields.Count);
 
-            Assert.Equal(4, expected.Methods.Count);
+            Assert.Equal(2, expected.Methods.Count - 2);
         }
 
         [Fact]
@@ -207,7 +209,7 @@ namespace ObfuscarTests
 
             Assert.Equal(3, expected.Fields.Count);
 
-            Assert.Equal(4, expected.Methods.Count);
+            Assert.Equal(2, expected.Methods.Count - 2);
         }
 
         [Fact]
@@ -245,5 +247,44 @@ namespace ObfuscarTests
 
             Assert.Equal(65530, expected[0].Methods.Count + expected[1].Methods.Count - expected.Count * 2); // 65530 strings. 2 methods of each types are not hidden strings.
         }
+
+        [Fact]
+        public void CheckHideStringsMethodSkip()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HideStrings' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithStrings.dll'>" +
+                @"  <SkipStringHiding type='TestClasses.PublicClass4' name='TestAsync3' />" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true);
+            AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "AssemblyWithStrings.dll"));
+
+            Assert.Equal(6, assmDef.MainModule.Types.Count);
+
+            TypeDefinition expected = null;
+            foreach (var type in assmDef.MainModule.Types)
+            {
+                if (type.FullName.Contains("PrivateImplementation"))
+                {
+                    expected = type;
+                }
+            }
+
+            Assert.NotNull(expected);
+
+            Assert.Equal(3, expected.Fields.Count);
+
+            // IMPORTANT: strings in async void methods are actually moved by the compiler to the MoveNext method of the state machine, so cannot be easily skipped by rules.
+            Assert.Equal(TotalStringCount, expected.Methods.Count - 2);
+        }
+
     }
 }

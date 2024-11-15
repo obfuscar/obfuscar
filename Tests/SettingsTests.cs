@@ -35,6 +35,10 @@ namespace ObfuscarTests
         [Fact]
         public void CheckCannotObfuscateSigned()
         {
+#if NETCOREAPP
+            // IMPORANT: this is not not applicable for .NET Core
+            return;
+#endif
             string outputPath = TestHelper.OutputPath;
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
@@ -64,6 +68,10 @@ namespace ObfuscarTests
         [Fact]
         public void CheckUnicodeNames()
         {
+#if NETCOREAPP
+            // IMPORANT: this is not not applicable for .NET Core
+            return;
+#endif
             string outputPath = TestHelper.OutputPath;
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
@@ -102,6 +110,10 @@ namespace ObfuscarTests
         [Fact]
         public void CheckKoreanNames()
         {
+#if NETCOREAPP
+            // IMPORANT: this is not not applicable for .NET Core
+            return;
+#endif
             string outputPath = TestHelper.OutputPath;
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
@@ -132,6 +144,10 @@ namespace ObfuscarTests
         [Fact]
         public void CheckCustomNames()
         {
+#if NETCOREAPP
+            // IMPORANT: this is not not applicable for .NET Core
+            return;
+#endif
             string outputPath = TestHelper.OutputPath;
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +

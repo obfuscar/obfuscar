@@ -1,7 +1,5 @@
 using Mono.Cecil;
 using Obfuscar;
-using System;
-using System.CodeDom.Compiler;
 using System.IO;
 using System.Linq;
 using Xunit;
@@ -13,26 +11,7 @@ namespace ObfuscarTests
         public ObfuscationAttributeTests()
         {
             TestHelper.CleanInput();
-
-            Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider();
-
-            CompilerParameters cp = new CompilerParameters();
-            cp.GenerateExecutable = false;
-            cp.GenerateInMemory = false;
-            cp.TreatWarningsAsErrors = true;
-
-            string assemblyAPath = Path.Combine(TestHelper.InputPath, "AssemblyA.dll");
-            cp.OutputAssembly = assemblyAPath;
-            CompilerResults cr =
-                provider.CompileAssemblyFromFile(cp, Path.Combine(TestHelper.InputPath, "AssemblyA.cs"));
-            if (cr.Errors.Count > 0)
-                Assert.True(false, $"Unable to compile test assembly:  AssemblyA, {cr.Errors[0].ErrorText}");
-
-            cp.ReferencedAssemblies.Add(assemblyAPath);
-            cp.OutputAssembly = Path.Combine(TestHelper.InputPath, "AssemblyB.dll");
-            cr = provider.CompileAssemblyFromFile(cp, Path.Combine(TestHelper.InputPath, "AssemblyB.cs"));
-            if (cr.Errors.Count > 0)
-                Assert.True(false, $"Unable to compile test assembly:  AssemblyB, {cr.Errors[0].ErrorText}");
+            TestHelper.BuildAssemblies("AssemblyA", "AssemblyB");
         }
 
         static MethodDefinition FindByName(TypeDefinition typeDef, string name)
@@ -41,7 +20,7 @@ namespace ObfuscarTests
                 if (method.Name == name)
                     return method;
 
-            Assert.True(false, string.Format("Expected to find method: {0}", name));
+            Assert.Fail(string.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 
@@ -53,7 +32,7 @@ namespace ObfuscarTests
                 @"				<Obfuscator>" +
                 @"				<Var name='InPath' value='{0}' />" +
                 @"				<Var name='OutPath' value='{1}' />" +
-                @"             <Var name='HidePrivateApi' value='true' />" +
+                @"              <Var name='HidePrivateApi' value='true' />" +
                 @"				<Module file='$(InPath){2}AssemblyWithTypesAttrs.dll'>" +
                 @"				</Module>" +
                 @"				</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);

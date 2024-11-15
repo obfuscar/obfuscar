@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using System.Text;
 
 namespace TestClasses
@@ -92,4 +93,12 @@ namespace TestClasses
 
     public class CA : IA { public string PropA { get { return "A"; } } }
     public class CB : CA, IB { public string PropB { get { return "B"; } } }
+
+	internal class ClassH : ISerializable
+	{
+		public void GetObjectData(SerializationInfo info, StreamingContext context)
+		{
+			throw new NotImplementedException();
+		}
+	}
 }

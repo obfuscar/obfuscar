@@ -25,46 +25,64 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace TestClasses
 {
 	public class PublicClass1
 	{
-		private string test = "test1";
+		private string test = "test1"; // hidden 1
 
 		public string PublicMethod()
 		{
-			return "class1" + test;
+			return "class1" + test; // hidden 2
 		}
 	}
 
 	public class PublicClass2
 	{
-		private string test = "test2";
+		private string test = "test2"; // hidden 3
 
 		public string Test()
 		{
-			return "class2" + test;
+			return "class2" + test; // hidden 4
 		}
 	}
 
     public class PublicClass3
     {
-        private string test = "";
+        private string test = ""; // hidden 5
 
         public string Test()
         {
-            return "class3" + test;
+            return "class3" + test; // hidden 6
         }
     }
 
     public class PublicClass4
     {
-        private string test = string.Empty;
+        private string test = string.Empty; // not hidden
 
         public string Test()
         {
-            return "class4" + test;
+            return "class4" + test; // hidden 7
+        }
+
+        public async Task<string> TestAsync()
+        {
+            return await Task.FromResult("class4-async" + test); // hidden 8
+        }
+
+        public Task<string> TestAsync2()
+        {
+            string fff = "fsdfsdfd"; // hidden 9
+            return null;
+        }
+
+        public async void TestAsync3()
+        {
+            string fff = "fsdfsdfd333"; // hidden 10
+            return;
         }
     }
 }

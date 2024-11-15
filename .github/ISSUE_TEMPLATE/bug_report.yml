@@ -1,0 +1,67 @@
+name: Bug Report
+description: Create a report to help us improve
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before moving on you should have performed enough troubleshooting to rule out common issues. For example,
+        
+        * compared the behavior with other obfuscation tools.
+        * reviewed [FAQs](https://docs.lextudio.com/obfuscar/support/faq) and other [documentation](https://docs.lextudio.com/obfuscar).
+        * reviewed other [common issues](https://github.com/obfuscar/obfuscar/issues?q=is:issue+label:%22faq+candidate%22+).
+        
+        If troubleshooting does not reveal very useful information or you need further assistance, please fill out the bug report below.
+        
+        To report an issue privately (such as security vulnerabilities), please write to [us](mailto:support@lextudio.com).
+        
+        Thanks for taking the time!
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Tell us what you expected to happen.
+      placeholder: Tell us what you expected to happen.
+      value: "I expected this,"
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Tell us what you see!
+      placeholder: Tell us what you see!
+      value: "But a bug happened like this,"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Detailed steps
+      description: Detailed steps to reproduce the problem.
+      placeholder: Detailed steps to reproduce the problem.
+      value: "The steps are,"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Obfuscar version information
+      description: What version(s) of Obfuscar are you using? You need to also point out whether you are using the global tool build.
+      placeholder: xxx.0.0
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system information
+      description: What version(s) of operating system(s) are you using?
+      placeholder: Windows, macOS, and/or Linux? What version(s)?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output (optional)
+      description: Please copy and paste any relevant log output (for example, the error messages showed in the console). This will be automatically formatted into code, so no need for backticks. If the log is very long, attach the contents as text files.
+      render: shell

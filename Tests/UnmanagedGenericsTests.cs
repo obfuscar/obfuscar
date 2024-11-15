@@ -24,7 +24,6 @@
 
 #endregion
 
-using System;
 using System.IO;
 using Mono.Cecil;
 using Xunit;
@@ -32,7 +31,7 @@ using Obfuscar;
 
 namespace ObfuscarTests
 {
-    public class SpecializedGenericsTests
+    public class UnmanagedGenericsTests
     {
         Obfuscator BuildAndObfuscateAssemblies()
         {
@@ -43,10 +42,12 @@ namespace ObfuscarTests
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='ReuseNames' value='false' />" +
                 @"<Var name='HidePrivateApi' value='true' />" +
-                @"<Module file='$(InPath){2}AssemblyWithSpecializedGenerics.dll' />" +
+                @"<Module file='$(InPath){2}AssemblyWithUnmanagedGenerics.dll'>" +
+                @"  <SkipType name='System.Runtime.CompilerServices.IsUnmanagedAttribute' />" +
+                @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
-            return TestHelper.BuildAndObfuscate("AssemblyWithSpecializedGenerics", string.Empty, xml);
+            return TestHelper.BuildAndObfuscate("AssemblyWithUnmanagedGenerics", string.Empty, xml);
         }
 
         MethodDefinition FindByName(TypeDefinition typeDef, string name)
@@ -65,7 +66,7 @@ namespace ObfuscarTests
             Obfuscator item = BuildAndObfuscateAssemblies();
             ObfuscationMap map = item.Mapping;
 
-            string assmName = "AssemblyWithSpecializedGenerics.dll";
+            string assmName = "AssemblyWithUnmanagedGenerics.dll";
 
             AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(TestHelper.InputPath, assmName));
@@ -74,43 +75,21 @@ namespace ObfuscarTests
                 Path.Combine(item.Project.Settings.OutPath, assmName));
 
             {
-                TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.ClassA`1");
-                MethodDefinition classAmethod2 = FindByName(classAType, "Method2");
+                TypeDefinition classAType = inAssmDef.MainModule.GetType("System.Runtime.CompilerServices.IsUnmanagedAttribute");
+                ObfuscatedThing classAEntry = map.GetClass(new TypeKey(classAType));
 
-                TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.ClassB");
-                MethodDefinition classBmethod2 = FindByName(classBType, "Method2");
-
-                ObfuscatedThing classAEntry = map.GetMethod(new MethodKey(classAmethod2));
-                ObfuscatedThing classBEntry = map.GetMethod(new MethodKey(classBmethod2));
-
-                Assert.True(
-                    classAEntry.Status == ObfuscationStatus.Renamed &&
-                    classBEntry.Status == ObfuscationStatus.Renamed,
-                    "Both methods should have been renamed.");
-
-                Assert.True(
-                    classAEntry.StatusText == classBEntry.StatusText,
-                    "Both methods should have been renamed to the same thing.");
+                Assert.True(classAEntry.Status == ObfuscationStatus.Skipped,
+                    "Type should have been skipped.");
             }
 
             {
-                TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.ClassA`1");
-                MethodDefinition classAmethod2 = FindByName(classAType, "Method3");
-
-                TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.ClassB");
-                MethodDefinition classBmethod2 = FindByName(classBType, "Method3");
+                TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.Generic`1");
+                MethodDefinition classAmethod2 = FindByName(classAType, "GetEnumerator");
 
                 ObfuscatedThing classAEntry = map.GetMethod(new MethodKey(classAmethod2));
-                ObfuscatedThing classBEntry = map.GetMethod(new MethodKey(classBmethod2));
 
-                Assert.True(
-                    classAEntry.Status == ObfuscationStatus.Renamed &&
-                    classBEntry.Status == ObfuscationStatus.Renamed,
-                    "Both methods should have been renamed.");
-
-                Assert.True(
-                    classAEntry.StatusText == classBEntry.StatusText,
-                    "Both methods should have been renamed to the same thing.");
+                Assert.True(classAEntry.Status == ObfuscationStatus.Skipped,
+                    "Method should have been skipped.");
             }
         }
     }

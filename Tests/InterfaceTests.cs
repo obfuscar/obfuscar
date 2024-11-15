@@ -58,7 +58,7 @@ namespace ObfuscarTests
                 if (method.Name == name)
                     return method;
 
-            Assert.True(false, string.Format("Expected to find method: {0}", name));
+            Assert.Fail(string.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 
@@ -68,7 +68,7 @@ namespace ObfuscarTests
                 if (property.Name == name)
                     return property;
 
-            Assert.True(false, string.Format("Expected to find method: {0}", name));
+            Assert.Fail(string.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 

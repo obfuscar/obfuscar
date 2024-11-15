@@ -41,13 +41,17 @@ namespace ObfuscarTests
                 if (method.FullName == name)
                     return method;
 
-            Assert.True(false, string.Format("Expected to find method: {0}", name));
+            Assert.Fail(string.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 
         [Fact]
         public void CheckGeneric()
         {
+#if NETCOREAPP
+            // IMPORANT: this is not not applicable for .NET Core
+            return;
+#endif
             string outputPath = TestHelper.OutputPath;
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +

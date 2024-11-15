@@ -58,7 +58,7 @@ namespace ObfuscarTests
                 if (method.Name == name)
                     return method;
 
-            Assert.True(false, string.Format("Expected to find method: {0}", name));
+            Assert.Fail(string.Format("Expected to find method: {0}", name));
             return null; // never here
         }
 
@@ -167,6 +167,19 @@ namespace ObfuscarTests
 
                 Assert.True(classAEntry.StatusText != classBEntry.StatusText,
                     "Both methods shouldn't have been renamed to the same thing.");
+            }
+
+            {
+                TypeDefinition classType = inAssmDef.MainModule.GetType("TestClasses.ClassH");
+                MethodDefinition classMethod = FindByName(classType, "GetObjectData");
+
+                ObfuscatedThing classEntry = map.GetMethod(new MethodKey(classMethod));
+
+                Assert.True(
+                    classEntry.Status == ObfuscationStatus.Skipped,
+                    "GetObjectData method should have been skipped.");
+
+                Assert.Equal("external base class or interface", classEntry.StatusText);
             }
         }
 

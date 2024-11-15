@@ -29,6 +29,7 @@ using System.IO;
 using System.CodeDom.Compiler;
 using Obfuscar;
 using Xunit;
+using Microsoft.CSharp;
 
 namespace ObfuscarTests
 {
@@ -37,35 +38,7 @@ namespace ObfuscarTests
         public DependencyTests()
         {
             TestHelper.CleanInput();
-
-            Microsoft.CSharp.CSharpCodeProvider provider = new Microsoft.CSharp.CSharpCodeProvider();
-
-            CompilerParameters cp = new CompilerParameters();
-            cp.GenerateExecutable = false;
-            cp.GenerateInMemory = false;
-            cp.TreatWarningsAsErrors = true;
-
-            CompilerResults cr;
-            string assemblyAPath = Path.Combine(TestHelper.InputPath, "AssemblyA.dll");
-            if (!File.Exists(assemblyAPath))
-            {
-                cp.OutputAssembly = assemblyAPath;
-                cr = provider.CompileAssemblyFromFile(cp, Path.Combine(TestHelper.InputPath, "AssemblyA.cs"));
-                if (cr.Errors.Count > 0)
-                    Assert.True(false, "Unable to compile test assembly:  AssemblyA");
-            }
-
-            cp.ReferencedAssemblies.Add(assemblyAPath);
-            string fileName = Path.Combine(TestHelper.InputPath, "AssemblyB.dll");
-            if (File.Exists(fileName))
-            {
-                return;
-            }
-
-            cp.OutputAssembly = fileName;
-            cr = provider.CompileAssemblyFromFile(cp, Path.Combine(TestHelper.InputPath, "AssemblyB.cs"));
-            if (cr.Errors.Count > 0)
-                Assert.True(false, "Unable to compile test assembly:  AssemblyB");
+            TestHelper.BuildAssemblies("AssemblyA", "AssemblyB");
         }
 
         [Fact]

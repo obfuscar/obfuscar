@@ -2,8 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
-
+    <!-- detection SDK version -->
+    <ParsedSdkVersion>$([System.Text.RegularExpressions.Regex]::Replace($(NETCoreSdkVersion), '-.*', ''))</ParsedSdkVersion>
+    <IsNet60Supported Condition="'$(ParsedSdkVersion)' >= '6.0'">true</IsNet60Supported>
+    <IsNet80Supported Condition="'$(ParsedSdkVersion)' >= '8.0'">true</IsNet80Supported>
+    <IsNet90Supported Condition="'$(ParsedSdkVersion)' >= '9.0'">true</IsNet90Supported>
+    <TargetFrameworks Condition="'$(IsNet60Supported)' == 'true'">$(TargetFrameworks);net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(IsNet80Supported)' == 'true'">$(TargetFrameworks);net8.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(IsNet90Supported)' == 'true'">$(TargetFrameworks);net9.0</TargetFrameworks>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>obfuscar.console</ToolCommandName>
     <PackageOutputPath>..</PackageOutputPath>
@@ -18,9 +24,10 @@
     <PackageProjectUrl>https://github.com/obfuscar/obfuscar</PackageProjectUrl>
     <PackageIcon>Potion-icon.png</PackageIcon>
     <PackageLicense>MIT</PackageLicense>
-    <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2023 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
+    <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2024 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
     <RepositoryType>git</RepositoryType>
     <PackageTags>obfuscar,obfuscation</PackageTags>
+    <GitVersionTargetFramework>net6.0</GitVersionTargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,8 +40,8 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Options" Version="6.12.0.148" />
-    <PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
-      <PrivateAssets>All</PrivateAssets>
+    <PackageReference Include="GitVersion.MsBuild" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
 

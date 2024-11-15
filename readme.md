@@ -1,34 +1,35 @@
-Obfuscar
-========
+# Obfuscar, Minimalistic Obfuscation Tool for .NET Assemblies
 
 [![NuGet Version](https://img.shields.io/nuget/v/Obfuscar.svg?style=flat-square)](https://www.nuget.org/packages/Obfuscar/)
 [![Build status](https://img.shields.io/github/actions/workflow/status/obfuscar/obfuscar/windows.yml?style=flat-square)](https://github.com/obfuscar/obfuscar/actions/workflows/windows.yml)
 
-The project logo cames from [Legendora Icon](http://raindropmemory.deviantart.com/art/Legendora-Icon-Set-118999011) by 
-[Teekatas Suwannakrua](http://raindropmemory.deviantart.com/).
+The project logo came from [Legendora Icon](http://raindropmemory.deviantart.com/art/Legendora-Icon-Set-118999011) by
+[Teekatas Suwannakrua](https://raindropmemory.deviantart.com/).
 
-Maintained and supported by [LeXtudio](https://lextudio.com/).
+Maintained by [LeXtudio Inc.](https://lextudio.com/).
 
-# Project Description
+## Description
+
 Obfuscar is an open source .NET obfuscator released under MIT license. It provides basic obfuscation features that help secure secrets in a .NET assembly.
 
 [![Obfuscar](obfuscar.png)](https://www.obfuscar.com/)
 
-# Get Started
-[Documentation section](http://docs.obfuscar.com/) contains most information you need, and also a detailed history of this project all through the years.
+## Get Started
 
-This tool has been heavily in Lex Li's personal project ([#SNMP Pro](https://www.sharpsnmp.com/)). 
+[Documentation section](https://docs.obfuscar.com/) contains most information you need, and also a detailed history of this project all through the years.
 
-# Issues
+## Issues
+
 If you have a patch to contribute, a feature to request, or a bug to report, please post to the [Issue Tracker](https://github.com/obfuscar/obfuscar/issues).
 
-# Support Services
-Please contact [LeXtudio](http://lextudio.com/Home/Send) for support services.
+## Support Services
 
-# Contribution
+Please contact [LeXtudio Inc.](https://lextudio.com/) for support services.
+
+## Contribution
+
 Pull requests are welcome, but make sure you sign the Contributor License Agreement.
 
-# Donation
-If you want to donate to my efforts on this project, please use the following link,
+## Donation
 
-[![Donate via Paypal](https://www.paypal.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TZATDDPGZUSPL)
+If you want to donate to my efforts on this project, please [use this link](https://github.com/sponsors/obfuscar).

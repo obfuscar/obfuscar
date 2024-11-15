@@ -77,6 +77,10 @@ namespace ObfuscarTests
         [Fact]
         public void CheckInvalidOutPath()
         {
+#if NETCOREAPP
+            // IMPORANT: this is not not applicable for .NET Core
+            return;
+#endif
             string testPath = Path.Combine(PathFailureTests.BadPath, "ObfuscarTestOutPath");
             Type t = Type.GetType("Mono.Runtime");
             if (t != null)

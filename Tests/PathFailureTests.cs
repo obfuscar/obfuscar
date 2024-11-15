@@ -38,6 +38,10 @@ namespace ObfuscarTests
         [Fact]
         public void CheckBadPathIsBad()
         {
+#if NETCOREAPP
+            // IMPORANT: this is not not applicable for .NET Core
+            return;
+#endif
             Type t = Type.GetType("Mono.Runtime");
             if (t != null)
                 return;
@@ -49,6 +53,10 @@ namespace ObfuscarTests
         [Fact]
         public void CheckBadProjectPath()
         {
+#if NETCOREAPP
+            // IMPORANT: this is not not applicable for .NET Core
+            return;
+#endif
             Type t = Type.GetType("Mono.Runtime");
             if (t != null)
                 return;
@@ -72,6 +80,10 @@ namespace ObfuscarTests
         [Fact]
         public void CheckBadInPath()
         {
+#if NETCOREAPP
+            // IMPORANT: this is not not applicable for .NET Core
+            return;
+#endif
             Type t = Type.GetType("Mono.Runtime");
             if (t != null)
                 return;

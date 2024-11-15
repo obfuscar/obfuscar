@@ -48,8 +48,7 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            TestHelper.BuildAssembly("AssemblyForSigning", string.Empty,
-                "/keyfile:" + Path.Combine(TestHelper.InputPath, @"SigningKey.snk"));
+            TestHelper.BuildAssembly("AssemblyForSigning", keyFile:Path.Combine(TestHelper.InputPath, @"SigningKey.snk"));
             var exception = Assert.Throws<ObfuscarException>(() => { TestHelper.Obfuscate(xml); });
             Assert.Equal(
                 "Obfuscating a signed assembly would result in an invalid assembly:  AssemblyForSigning; use the KeyFile or KeyContainer property to set a key to use",
@@ -72,7 +71,7 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the keyfile option (embeds the public key, and signs the assembly)
-            TestHelper.BuildAssembly("AssemblyForSigning2", string.Empty, null, false);
+            TestHelper.BuildAssembly("AssemblyForSigning2", keyFile: Path.Combine(TestHelper.InputPath, @"SigningKey.snk"));
 
             var map = TestHelper.Obfuscate(xml).Mapping;
             var assembly = Path.Combine(TestHelper.InputPath, "AssemblyForSigning2.dll");
@@ -109,7 +108,7 @@ namespace ObfuscarTests
                     File.Copy(snkFile, target);
 
                 // build it with the keyfile option (embeds the public key, and signs the assembly)
-                TestHelper.BuildAssembly("AssemblyForSigning2", string.Empty, null, false);
+                TestHelper.BuildAssembly("AssemblyForSigning2", keyFile: Path.Combine(TestHelper.InputPath, @"SigningKey.snk"));
 
 
                 var map = TestHelper.Obfuscate(xml).Mapping;
@@ -143,8 +142,10 @@ namespace ObfuscarTests
             TestHelper.CleanInput();
 
             // build it with the delaysign option (embeds the public key, reserves space for the signature, but does not sign)
-            TestHelper.BuildAssembly("AssemblyForSigning", string.Empty,
-                "/delaysign /keyfile:" + Path.Combine(TestHelper.InputPath, @"SigningKey.snk"));
+            TestHelper.BuildAssembly(
+                "AssemblyForSigning",
+                keyFile: Path.Combine(TestHelper.InputPath, @"SigningKey.snk"),
+                delaySign: true);
 
             // this should not throw
             TestHelper.Obfuscate(xml);
