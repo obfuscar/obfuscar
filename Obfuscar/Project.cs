@@ -32,6 +32,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using Obfuscar.Helpers;
 using System.Xml.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Obfuscar
 {
@@ -74,17 +75,15 @@ namespace Obfuscar
         }
 
         public string KeyContainerName = null;
-        private string keyPair;
+        private byte[] keyPair;
         private RSA keyValue;
 
-        public string KeyPair
+        public byte[] KeyPair
         {
             get
             {
                 if (keyPair != null)
-                {
                     return keyPair;
-                }
 
                 var lKeyFileName = vars.GetValue(Settings.VariableKeyFile, null);
                 var lKeyContainerName = vars.GetValue(Settings.VariableKeyContainer, null);
@@ -94,7 +93,22 @@ namespace Obfuscar
                 if (!string.IsNullOrEmpty(lKeyFileName) && !string.IsNullOrEmpty(lKeyContainerName))
                     throw new ObfuscarException($"'{Settings.VariableKeyFile}' and '{Settings.VariableKeyContainer}' variables cann't be setted together.");
 
-                keyPair = lKeyFileName;
+                try
+                {
+                    if (Path.GetExtension(lKeyFileName)?.Equals(".pfx", StringComparison.InvariantCultureIgnoreCase) ?? false)
+                    {
+                        keyPair = GetStrongNameKeyPairFromPfx(lKeyFileName, vars.GetValue("KeyFilePassword", null));
+                    }
+                    else
+                    {
+                        keyPair = File.ReadAllBytes(vars.GetValue("KeyFile", null));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new ObfuscarException(
+                        String.Format("Failure loading key file \"{0}\"", vars.GetValue("KeyFile", null)), ex);
+                }
 
                 return keyPair;
             }
@@ -392,7 +406,7 @@ namespace Obfuscar
                 }
                 catch (IOException e)
                 {
-                    throw new ObfuscarException("Could not create path specified by OutPath: " + Settings.OutPath, e);
+                    throw new ObfuscarException("Could not create path specified by OutPath:  " + Settings.OutPath, e);
                 }
             }
         }
@@ -480,6 +494,24 @@ namespace Obfuscar
             }
 
             return typeDef;
+        }
+
+        private static byte[] GetStrongNameKeyPairFromPfx(string pfxFile, string password)
+        {
+            X509Certificate2Collection certs = new X509Certificate2Collection();
+            certs.Import(pfxFile, password, X509KeyStorageFlags.Exportable);
+            if (certs.Count == 0)
+                throw new ArgumentException("Invalid certificate", nameof(pfxFile));
+
+            //not clear, but we may need to have only one key and that should be the provider https://msdn.microsoft.com/en-us/library/aa730868(vs.80).aspx
+
+            foreach (X509Certificate2 cert in certs)
+            {
+                if (cert.PrivateKey is RSACryptoServiceProvider provider)
+                    return provider.ExportCspBlob(true);
+            }
+
+            throw new ArgumentException("Invalid private key certificate", nameof(pfxFile));
         }
     }
 }
