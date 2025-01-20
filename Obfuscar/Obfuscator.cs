@@ -36,7 +36,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml.Linq;
-using ILSpy.BamlDecompiler.Baml;
+using ICSharpCode.BamlDecompiler.Baml;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
