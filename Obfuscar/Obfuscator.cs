@@ -1167,11 +1167,8 @@ namespace Obfuscar
             {
                 // group is not yet named
 
-                // counts are grouping according to signature
-                ParamSig sig = new ParamSig(method);
-
                 // get name groups for classes in the group
-                NameGroup[] nameGroups = GetNameGroups(baseSigNames, @group.Methods, sig);
+                NameGroup[] nameGroups = GetNameGroups(baseSigNames, @group.Methods);
 
                 if (@group.External)
                 {
@@ -1241,25 +1238,35 @@ namespace Obfuscar
         }
 
         NameGroup[] GetNameGroups(Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-            IEnumerable<MethodKey> methodKeys, ParamSig sig)
+            IEnumerable<MethodKey> methodKeys)
         {
-            // build unique set of classes in group
-            HashSet<TypeKey> typeKeys = new HashSet<TypeKey>();
+            // build unique set of classes (plus method signatures) in group
+            HashSet<Tuple<TypeKey, ParamSig>> typeKeys = new HashSet<Tuple<TypeKey, ParamSig>>();
             foreach (MethodKey methodKey in methodKeys)
-                typeKeys.Add(methodKey.TypeKey);
+                typeKeys.Add(Tuple.Create(methodKey.TypeKey, new ParamSig(methodKey.Method)));
 
-            HashSet<TypeKey> parentTypes = new HashSet<TypeKey>();
-            foreach (TypeKey type in typeKeys)
-                InheritMap.GetBaseTypes(Project, parentTypes, type.TypeDefinition);
+            HashSet<Tuple<TypeKey, ParamSig>> typeKeys2 = new HashSet<Tuple<TypeKey, ParamSig>>(typeKeys);
+            HashSet <TypeKey> parentTypes = new HashSet<TypeKey>();
+            foreach (var item in typeKeys)
+            {
+                var typeKey = item.Item1;
+                var sig = item.Item2;
 
-            typeKeys.UnionWith(parentTypes);
+                parentTypes.Clear();
+                InheritMap.GetBaseTypes(Project, parentTypes, typeKey.TypeDefinition);
+
+                foreach (var parentType in parentTypes)
+                    typeKeys2.Add(Tuple.Create(parentType, sig));
+            }
 
             // build list of namegroups
-            NameGroup[] nameGroups = new NameGroup[typeKeys.Count];
+            NameGroup[] nameGroups = new NameGroup[typeKeys2.Count];
 
             int i = 0;
-            foreach (TypeKey typeKey in typeKeys)
+            foreach (var item in typeKeys2)
             {
+                var typeKey = item.Item1;
+                var sig = item.Item2;
                 NameGroup nameGroup = GetNameGroup(baseSigNames, typeKey, sig);
 
                 nameGroups[i++] = nameGroup;
