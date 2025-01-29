@@ -137,5 +137,42 @@ namespace ObfuscarTests
             var assemblyPath = Path.Combine(Directory.GetCurrentDirectory(), output, args.Name.Split(',')[0] + ".dll");
             return File.Exists(assemblyPath) ? Assembly.LoadFile(assemblyPath) : null;
         }
+
+
+        [Fact]
+        public void CheckInterfaces4()
+        {
+            Obfuscator item = BuildAndObfuscateAssemblies("AssemblyWithInterfaces4");
+            ObfuscationMap map = item.Mapping;
+
+            string assmName = "AssemblyWithInterfaces4.dll";
+
+            AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(TestHelper.InputPath, assmName));
+
+            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(item.Project.Settings.OutPath, assmName));
+            {
+                TypeDefinition ifaceType = inAssmDef.MainModule.GetType("TestClasses.IFace`1");
+                TypeDefinition class2Type = inAssmDef.MainModule.GetType("TestClasses.Impl2`1");
+                MethodDefinition method1 = FindMethodByName(ifaceType, "set_Value");
+                MethodDefinition method2 = FindMethodByName(class2Type, "set_Value2");
+                MethodDefinition method3 = FindMethodByName(ifaceType, "set_Value3");
+
+                ObfuscatedThing methodEntry1 = map.GetMethod(new MethodKey(method1));
+                ObfuscatedThing methodEntry2 = map.GetMethod(new MethodKey(method2));
+                ObfuscatedThing methodEntry3 = map.GetMethod(new MethodKey(method3));
+
+                Assert.True(methodEntry1.Status == ObfuscationStatus.Renamed, "All methods in this test should be obfuscated.");
+                Assert.True(methodEntry2.Status == ObfuscationStatus.Renamed, "All methods in this test should be obfuscated.");
+                Assert.True(methodEntry3.Status == ObfuscationStatus.Renamed, "All methods in this test should be obfuscated.");
+
+                Assert.True(methodEntry1.StatusText != methodEntry2.StatusText, "Value and Value2 must not have the same name after obfuscation.");
+                Assert.True(methodEntry1.StatusText != methodEntry3.StatusText, "Value and Value3 must not have the same name after obfuscation.");
+
+                // Value2 is only in Impl2. Value3 is in AbstractImpl and Impl2 inherits it but they can share a name anyway,
+                // e.g. call in Value4 will go to `base.something`.
+            }
+        }
     }
 }
