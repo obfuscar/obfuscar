@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>net6.0-windows;net8.0-windows;net48</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +17,13 @@
     </PackageReference>
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <PackageReference Include="Rollbar" Version="5.2.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net8.0-windows'">
+    <PackageReference Include="System.Runtime.Caching" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
     <PackageReference Include="System.Runtime.Caching" Version="9.0.2" />
   </ItemGroup>
 
