@@ -135,15 +135,14 @@ namespace Obfuscar
             Console.WriteLine("Note that Rollbar API is enabled by default to collect crashes. If you want to opt out, please run with -s switch");
             var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             RollbarLocator.RollbarInstance.Configure(
-                new RollbarConfig("1dd3cf880c5a46eeb4338dbea73f9620")
+                new RollbarLoggerConfig("1dd3cf880c5a46eeb4338dbea73f9620", "production")
                 {
-                    Environment = "production",
-                    Transform = payload =>
+                    RollbarPayloadAdditionOptions =
                     {
-                        payload.Data.Person = new Person(version)
+                        Person = new Person(version)
                         {
-                            UserName = $"{version}"
-                        };
+                            UserName = version,
+                        }
                     }
                 });
 

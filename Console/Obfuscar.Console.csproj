@@ -72,6 +72,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Mono.Options" Version="6.12.0.148" />
-    <PackageReference Include="Rollbar" Version="3.14.0" />
+    <PackageReference Include="Rollbar" Version="5.2.2" />
   </ItemGroup>
 </Project>
