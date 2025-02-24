@@ -29,7 +29,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using Mono.Options;
 using Rollbar;
 using Rollbar.DTOs;
@@ -146,11 +145,6 @@ namespace Obfuscar
                     }
                 }
             });
-
-            Application.ThreadException += (sender, args) =>
-            {
-                RollbarLocator.RollbarInstance.Error(args.Exception);
-            };
 
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
