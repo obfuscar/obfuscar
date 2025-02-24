@@ -55,9 +55,6 @@
     <StartupObject>Obfuscar.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System.Windows.Forms" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Obfuscar\Obfuscar.csproj" />
   </ItemGroup>
   <ItemGroup>
