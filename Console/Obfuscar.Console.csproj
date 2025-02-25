@@ -2,14 +2,10 @@
 
   <Target Name="RepackWithILOnWindows" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT'">
     <Exec Command="rename Obfuscar.Console.exe Obfuscar.exe" WorkingDirectory="$(TargetDir)" />
-    <Exec Command="&quot;$(ILRepack)&quot; /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Newtonsoft.Json.dll" WorkingDirectory="$(TargetDir)" />
-    <Exec Command="del Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Obfuscar.exe Newtonsoft.Json.dll" WorkingDirectory="$(TargetDir)" />
   </Target>
 
   <Target Name="RepackWithILOnNonWindows" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' AND '$(OS)' != 'Windows_NT'">
     <Exec Command="mv Obfuscar.Console.exe Obfuscar.exe" WorkingDirectory="$(TargetDir)" />
-    <Exec Command="&quot;$(ILRepack)&quot; /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Newtonsoft.Json.dll" WorkingDirectory="$(TargetDir)" />
-    <Exec Command="rm Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Obfuscar.exe Newtonsoft.Json.dll" WorkingDirectory="$(TargetDir)" />
   </Target>
 
   <PropertyGroup>
