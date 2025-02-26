@@ -22,6 +22,7 @@
     <PackageProjectUrl>https://github.com/obfuscar/obfuscar</PackageProjectUrl>
     <PackageIcon>Potion-icon.png</PackageIcon>
     <PackageLicense>MIT</PackageLicense>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
     <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2024 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
     <RepositoryType>git</RepositoryType>
     <PackageTags>obfuscar,obfuscation</PackageTags>
@@ -30,6 +31,7 @@
 
   <ItemGroup>
     <None Include="..\Potion-icon.png" Pack="true" PackagePath="" />
+    <None Include="..\readme.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>

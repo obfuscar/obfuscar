@@ -9,6 +9,7 @@
 		<id>Obfuscar</id>
 		<title>Obfuscar</title>
 		<icon>Potion-icon.png</icon>
+		<readme>readme.md</readme>
 		<requireLicenseAcceptance>true</requireLicenseAcceptance>
 		<description>Obfuscar is a basic obfuscator for .NET assemblies. It uses massive overloading to rename metadata in .NET assemblies (including the names of methods, properties, events, fields, types and namespaces) to a minimal set, distinguishable in most cases only by signature.</description>
 		<summary>Open source obfuscar for .NET and Mono.</summary>
@@ -22,5 +23,6 @@
 		<file src="console\bin\release\net462\obfuscar.console.exe" target="tools" />
 		<file src="build\obfuscar.props" target="build" />
 		<file src="Potion-icon.png" target="" />
+		<file src="readme.md" target="" />
 	</files>
 </package>
