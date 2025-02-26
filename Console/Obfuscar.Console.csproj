@@ -26,6 +26,8 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisMode>Minimum</AnalysisMode>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
