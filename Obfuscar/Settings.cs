@@ -40,6 +40,7 @@ namespace Obfuscar
 
             RenameFields = XmlConvert.ToBoolean(vars.GetValue("RenameFields", "true"));
             RenameProperties = XmlConvert.ToBoolean(vars.GetValue("RenameProperties", "true"));
+            KeepProperties = XmlConvert.ToBoolean(vars.GetValue("KeepProperties", "false"));
             RenameEvents = XmlConvert.ToBoolean(vars.GetValue("RenameEvents", "true"));
             KeepPublicApi = XmlConvert.ToBoolean(vars.GetValue("KeepPublicApi", "true"));
             HidePrivateApi = XmlConvert.ToBoolean(vars.GetValue("HidePrivateApi", "true"));
@@ -69,6 +70,8 @@ namespace Obfuscar
         public bool RenameFields { get; }
 
         public bool RenameProperties { get; }
+
+        public bool KeepProperties { get; }
 
         public bool RenameEvents { get; }
 

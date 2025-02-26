@@ -911,9 +911,10 @@ namespace Obfuscar
                 m.Update(ObfuscationStatus.Skipped, "public setter of a custom attribute");
                 // no problem when the getter or setter methods are renamed by RenameMethods()
             }
-            else if (prop.CustomAttributes.Count > 0)
+            else if (prop.CustomAttributes.Count > 0 || Project.Settings.KeepProperties)
             {
                 // If a property has custom attributes we don't remove the property but rename it instead.
+                // Does the same if KeepProperties is set to true.
                 var newName = NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
                 RenameProperty(info, propKey, prop, newName);
             }

@@ -34,7 +34,7 @@ namespace ObfuscarTests
 {
     public class SkipPropertyTests
     {
-        protected void CheckProperties(string name, int expectedTypes, string[] expected, string[] notExpected)
+        protected void CheckProperties(string name, int expectedTypes, string[] expected, string[] notExpected, bool keepProperties = false)
         {
             HashSet<string> propsToFind = new HashSet<string>(expected);
             HashSet<string> propsNotToFind = new HashSet<string>(notExpected);
@@ -57,7 +57,7 @@ namespace ObfuscarTests
                 delegate(TypeDefinition typeDef) { return true; },
                 delegate(TypeDefinition typeDef)
                 {
-                    Assert.Equal(expected.Length, typeDef.Properties.Count);
+                    Assert.Equal(keepProperties ? notExpected.Length : expected.Length, typeDef.Properties.Count);
                     // expected.Length == 1 ? "Type should have 1 property (others dropped by default)." :
                     // String.Format ("Type should have {0} properties (others dropped by default).", expected.Length));
 
@@ -98,6 +98,34 @@ namespace ObfuscarTests
             };
 
             CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), 1, expected, notExpected);
+        }
+
+        [Fact]
+        public void CheckKeepsProperties()
+        {
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='KeepProperties' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithProperties.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
+
+            string[] expected = new string[0];
+
+            string[] notExpected = new string[]
+            {
+                "Property1",
+                "Property2",
+                "PropertyA"
+            };
+
+            CheckProperties(Path.Combine(outputPath, "AssemblyWithProperties.dll"), 1, expected, notExpected, true);
         }
 
         [Fact]
