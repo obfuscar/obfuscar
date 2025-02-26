@@ -31,8 +31,9 @@ namespace ObfuscarTest
             var obfuscatedClassName = obfuscatedClass.Value.StatusText;
 #if NET6_0_OR_GREATER
             obfuscatedClassName = obfuscatedClassName[(obfuscatedClassName.IndexOf(']') + 1)..];
-#endif
+#else
             obfuscatedClassName = obfuscatedClassName.Substring(obfuscatedClassName.IndexOf(']') + 1);
+#endif
             var type = assembly2.GetType(obfuscatedClassName) ?? throw new Exception($"Test class {obfuscatedClassName} not found");
             var instance = Activator.CreateInstance(type);
 

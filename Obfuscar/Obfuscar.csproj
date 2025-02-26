@@ -3,6 +3,8 @@
   <PropertyGroup>
     <TargetFrameworks>net6.0-windows;net8.0-windows;net48</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisMode>Minimum</AnalysisMode>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
