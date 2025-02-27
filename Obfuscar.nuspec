@@ -17,13 +17,10 @@
 		<copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2022 Calvin Rien, Lex Li, RemObjects and other contributors.</copyright>
 		<language>en-US</language>
 		<tags>obfuscation,obfuscator,open source</tags>
-    <dependencies>
-      <dependency id="System.Runtime.Caching" version="8.0.0" />
-    </dependencies>
 	</metadata>
 	<files>
 		<!-- Include everything in \build -->
     <file src="build\**" target="build" />
-    <file src="bin\release\net8.0-windows\*.*" target="tools" />
+    <file src="bin\release\net8.0-windows\win-x64\*.*" target="tools" />
 	</files>
 </package>
