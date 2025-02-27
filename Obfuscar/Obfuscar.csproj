@@ -8,8 +8,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>CA1866;CA1510;CA1416;CA1845;CA1846;SYSLIB0051</NoWarn>
     <LangVersion>latest</LangVersion>
-    <AssemblyVersion>4.3.1.0</AssemblyVersion>
-    <FileVersion>4.3.1.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
