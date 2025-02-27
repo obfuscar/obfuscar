@@ -47,7 +47,6 @@ namespace Obfuscar
             Console.WriteLine("obfuscar [Options] [project_file] [project_file]");
             Console.WriteLine("Options:");
             optionSet.WriteOptionDescriptions(Console.Out);
-            Console.ReadKey();
         }
 
         [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification =
