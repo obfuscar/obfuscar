@@ -255,7 +255,7 @@ namespace Obfuscar
 
             LogOutput("Loading assemblies...");
             LogOutput("Extra framework folders: ");
-            foreach (var lExtraPath in Project.ExtraPaths ?? new string[0])
+            foreach (var lExtraPath in Project.ExtraPaths ?? Array.Empty<string>())
                 LogOutput(lExtraPath + ", ");
 
             Project.LoadAssemblies();
@@ -399,11 +399,11 @@ namespace Obfuscar
             TypeNameCache.nameCache.Clear();
         }
 
-        private bool IsOnWindows {
+        private static bool IsOnWindows {
             get {
                 // https://stackoverflow.com/a/38795621/11182
                 string windir = Environment.GetEnvironmentVariable("windir");
-                return !string.IsNullOrEmpty(windir) && windir.Contains(@"\") && Directory.Exists(windir);
+                return !string.IsNullOrEmpty(windir) && windir.Contains('\\') && Directory.Exists(windir);
             }
         }
 
@@ -630,7 +630,7 @@ namespace Obfuscar
                     if (type.FullName == "<Module>")
                         continue;
 
-                    if (type.FullName.IndexOf("<PrivateImplementationDetails>{", StringComparison.Ordinal) >= 0)
+                    if (type.FullName.Contains("<PrivateImplementationDetails>{"))
                         continue;
 
                     TypeKey oldTypeKey = new TypeKey(type);
@@ -772,7 +772,7 @@ namespace Obfuscar
             }
         }
 
-        private HashSet<string> TypeNamesInXaml(IEnumerable<BamlDocument> xamlFiles)
+        private static HashSet<string> TypeNamesInXaml(IEnumerable<BamlDocument> xamlFiles)
         {
             var result = new HashSet<string>();
 
@@ -791,7 +791,7 @@ namespace Obfuscar
             return result;
         }
 
-        private List<BamlDocument> GetXamlDocuments(AssemblyDefinition library)
+        private static List<BamlDocument> GetXamlDocuments(AssemblyDefinition library)
         {
             var result = new List<BamlDocument>();
             foreach (Resource res in library.MainModule.Resources)
@@ -875,7 +875,7 @@ namespace Obfuscar
                 string.Format("[{0}]{1}", newTypeKey.Scope, type));
         }
 
-        private Dictionary<ParamSig, NameGroup> GetSigNames(
+        private static Dictionary<ParamSig, NameGroup> GetSigNames(
             Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames, TypeKey typeKey)
         {
             Dictionary<ParamSig, NameGroup> sigNames;
@@ -888,13 +888,13 @@ namespace Obfuscar
             return sigNames;
         }
 
-        private NameGroup GetNameGroup(Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
+        private static NameGroup GetNameGroup(Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
             TypeKey typeKey, ParamSig sig)
         {
             return GetNameGroup(GetSigNames(baseSigNames, typeKey), sig);
         }
 
-        private NameGroup GetNameGroup<TKeyType>(Dictionary<TKeyType, NameGroup> sigNames, TKeyType sig)
+        private static NameGroup GetNameGroup<TKeyType>(Dictionary<TKeyType, NameGroup> sigNames, TKeyType sig)
         {
             NameGroup nameGroup;
             if (!sigNames.TryGetValue(sig, out nameGroup))
@@ -1408,7 +1408,7 @@ namespace Obfuscar
             return t.StatusText;
         }
 
-        private string GetNewName(Dictionary<ParamSig, NameGroup> sigNames, MethodDefinition method)
+        private static string GetNewName(Dictionary<ParamSig, NameGroup> sigNames, MethodDefinition method)
         {
             // counts are grouping according to signature
             ParamSig sig = new ParamSig(method, true);

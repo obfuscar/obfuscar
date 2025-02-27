@@ -96,7 +96,7 @@ namespace Obfuscar
                 throw new InvalidOperationException("Need valid file attribute.");
 
             string isExcluded = Helper.GetAttribute(reader, "Exclude", vars);
-            if ((isExcluded.Length > 0) && (isExcluded.ToLowerInvariant() == "true"))
+            if (!string.IsNullOrEmpty(isExcluded) && isExcluded.Equals("true", StringComparison.OrdinalIgnoreCase))
             {
                 info.Exclude = true;
             }
@@ -456,7 +456,7 @@ namespace Obfuscar
         /// Are unique references that differ from the same type TypeReferences in other places.
         /// Thus we need to add generic arguments for types used as attribute constructor parameters.
         /// </summary>
-        private void AddTypeDefFromAttribute(HashSet<TypeReference> typerefs, TypeReference type)
+        private static void AddTypeDefFromAttribute(HashSet<TypeReference> typerefs, TypeReference type)
         {
             typerefs.Add(type);
             if (type is GenericInstanceType gt)
@@ -525,9 +525,8 @@ namespace Obfuscar
             {
                 var key = baseType.FullName;
                 parent = null;
-                if (_map.ContainsKey(key))
+                if (_map.TryGetValue(key, out parent))
                 {
-                    parent = _map[key];
                     if (parent.Item.Scope.Name != baseType.Scope.Name)
                     {
                         parent = null;
@@ -536,14 +535,14 @@ namespace Obfuscar
                 return parent != null;
             }
 
-            internal IEnumerable<TypeDefinition> GetOrderedList()
+            internal List<TypeDefinition> GetOrderedList()
             {
                 var result = new List<TypeDefinition>();
                 CleanPool(Root, result);
                 return result;
             }
 
-            private void CleanPool(List<Node<TypeDefinition>> pool, List<TypeDefinition> result)
+            private static void CleanPool(List<Node<TypeDefinition>> pool, List<TypeDefinition> result)
             {
                 while (pool.Count > 0)
                 {
@@ -615,7 +614,7 @@ namespace Obfuscar
             _cached = null;
         }
 
-        private IEnumerable<MemberReference> getMemberReferences()
+        private HashSet<MemberReference> getMemberReferences()
         {
             HashSet<MemberReference> memberReferences = new HashSet<MemberReference>();
             foreach (TypeDefinition type in this.GetAllTypeDefinitions())
@@ -651,7 +650,7 @@ namespace Obfuscar
             return memberReferences;
         }
 
-        private bool IsOnlyReference(MemberReference memberref)
+        private static bool IsOnlyReference(MemberReference memberref)
         {
             if (memberref is MethodReference)
             {

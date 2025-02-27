@@ -221,7 +221,7 @@ namespace Obfuscar
             }
         }
 
-        private void DumpField(TextWriter writer, FieldKey key, ObfuscatedThing info)
+        private static void DumpField(TextWriter writer, FieldKey key, ObfuscatedThing info)
         {
             if (info.Status == ObfuscationStatus.Renamed)
                 writer.WriteLine("\t{0} {1} -> {2}", key.Type, info.Name, info.StatusText);
@@ -234,7 +234,7 @@ namespace Obfuscar
             }
         }
 
-        private void DumpProperty(TextWriter writer, PropertyKey key, ObfuscatedThing info)
+        private static void DumpProperty(TextWriter writer, PropertyKey key, ObfuscatedThing info)
         {
             if (info.Status == ObfuscationStatus.Renamed)
                 writer.WriteLine("\t{0} {1} -> {2}", key.Type, info.Name, info.StatusText);
@@ -247,7 +247,7 @@ namespace Obfuscar
             }
         }
 
-        private void DumpEvent(TextWriter writer, EventKey key, ObfuscatedThing info)
+        private static void DumpEvent(TextWriter writer, EventKey key, ObfuscatedThing info)
         {
             if (info.Status == ObfuscationStatus.Renamed)
                 writer.WriteLine("\t{0} {1} -> {2}", key.Type, info.Name, info.StatusText);
@@ -268,7 +268,7 @@ namespace Obfuscar
 
     class XmlMapWriter : IMapWriter, IDisposable
     {
-        private readonly XmlWriter writer;
+        private readonly XmlTextWriter writer;
 
         public XmlMapWriter(TextWriter writer)
         {
@@ -371,7 +371,7 @@ namespace Obfuscar
             {
                 if (field.Value.Status == ObfuscationStatus.Renamed)
                 {
-                    DumpField(writer, field.Key, field.Value);
+                    DumpField(writer, field.Value);
                 }
             }
 
@@ -380,7 +380,7 @@ namespace Obfuscar
             foreach (KeyValuePair<FieldKey, ObfuscatedThing> field in classInfo.Fields)
             {
                 if (field.Value.Status == ObfuscationStatus.Skipped)
-                    DumpField(writer, field.Key, field.Value);
+                    DumpField(writer, field.Value);
             }
 
 
@@ -388,7 +388,7 @@ namespace Obfuscar
             {
                 if (field.Value.Status == ObfuscationStatus.Renamed)
                 {
-                    DumpProperty(writer, field.Key, field.Value);
+                    DumpProperty(writer, field.Value);
                 }
             }
 
@@ -396,7 +396,7 @@ namespace Obfuscar
             foreach (KeyValuePair<PropertyKey, ObfuscatedThing> field in classInfo.Properties)
             {
                 if (field.Value.Status == ObfuscationStatus.Skipped)
-                    DumpProperty(writer, field.Key, field.Value);
+                    DumpProperty(writer, field.Value);
             }
 
 
@@ -404,7 +404,7 @@ namespace Obfuscar
             {
                 if (field.Value.Status == ObfuscationStatus.Renamed)
                 {
-                    DumpEvent(writer, field.Key, field.Value);
+                    DumpEvent(writer, field.Value);
                 }
             }
 
@@ -412,7 +412,7 @@ namespace Obfuscar
             foreach (KeyValuePair<EventKey, ObfuscatedThing> field in classInfo.Events)
             {
                 if (field.Value.Status == ObfuscationStatus.Skipped)
-                    DumpEvent(writer, field.Key, field.Value);
+                    DumpEvent(writer, field.Value);
             }
 
             writer.WriteEndElement();
@@ -425,12 +425,12 @@ namespace Obfuscar
             for (int i = 0; i < key.Count; i++)
             {
                 if (i > 0)
-                    sb.Append(",");
+                    sb.Append(',');
 
                 sb.Append(key.ParamTypes[i]);
             }
 
-            sb.Append(")");
+            sb.Append(')');
 
             if (info.Status == ObfuscationStatus.Renamed)
             {
@@ -448,7 +448,7 @@ namespace Obfuscar
             }
         }
 
-        private void DumpField(XmlWriter writer, FieldKey key, ObfuscatedThing info)
+        private static void DumpField(XmlTextWriter writer, ObfuscatedThing info)
         {
             if (info.Status == ObfuscationStatus.Renamed)
             {
@@ -466,7 +466,7 @@ namespace Obfuscar
             }
         }
 
-        private void DumpProperty(XmlWriter writer, PropertyKey key, ObfuscatedThing info)
+        private static void DumpProperty(XmlTextWriter writer, ObfuscatedThing info)
         {
             if (info.Status == ObfuscationStatus.Renamed)
             {
@@ -484,7 +484,7 @@ namespace Obfuscar
             }
         }
 
-        private void DumpEvent(XmlWriter writer, EventKey key, ObfuscatedThing info)
+        private static void DumpEvent(XmlTextWriter writer, ObfuscatedThing info)
         {
             if (info.Status == ObfuscationStatus.Renamed)
             {

@@ -75,7 +75,7 @@ namespace Obfuscar
             }
         }
 
-        public string KeyContainerName = null;
+        public string KeyContainerName;
         private string keyPair;
         private RSA keyValue;
 
@@ -215,10 +215,10 @@ namespace Obfuscar
             Action<XElement, Project> readAction)
         {
             if (parentReader == null)
-                throw new ArgumentNullException("parentReader");
+                throw new ArgumentNullException(nameof(parentReader));
 
             if (readAction == null)
-                throw new ArgumentNullException("readAction");
+                throw new ArgumentNullException(nameof(readAction));
 
             string path =
                 Environment.ExpandEnvironmentVariables(Helper.GetAttribute(parentReader, "path", project.vars));
@@ -259,14 +259,14 @@ namespace Obfuscar
                 return nodes.FirstOrDefault(node => node.Item == baseType);
             }
 
-            internal IEnumerable<AssemblyInfo> GetOrderedList()
+            internal List<AssemblyInfo> GetOrderedList()
             {
                 var result = new List<AssemblyInfo>();
                 CleanPool(Root, result);
                 return result;
             }
 
-            private void CleanPool(List<Node<AssemblyInfo>> pool, List<AssemblyInfo> result)
+            private static void CleanPool(List<Node<AssemblyInfo>> pool, List<AssemblyInfo> result)
             {
                 while (pool.Count > 0)
                 {

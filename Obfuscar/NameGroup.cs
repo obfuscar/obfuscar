@@ -115,7 +115,7 @@ namespace Obfuscar
             foreach (string s in names)
             {
                 if (sb.Length != 0)
-                    sb.Append(",");
+                    sb.Append(',');
                 sb.Append(s);
             }
             return sb.ToString();

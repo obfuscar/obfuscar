@@ -63,7 +63,7 @@ namespace Obfuscar
 
                         BuildTypeName(builder, argType);
                     }
-                    builder.Append(">");
+                    builder.Append('>');
                 }
                 else
                 {
