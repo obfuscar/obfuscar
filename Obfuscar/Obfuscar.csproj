@@ -6,8 +6,6 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisMode>Minimum</AnalysisMode>
     <LangVersion>latest</LangVersion>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
