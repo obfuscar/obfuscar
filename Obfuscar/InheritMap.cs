@@ -145,12 +145,12 @@ namespace Obfuscar
 
         public TypeKey[] GetBaseTypes(TypeKey typeKey)
         {
-            if (nodes.TryGetValue(typeKey, out var node))
+            if (nodes.ContainsKey(typeKey))
             {
-                return node.GetBaseTypes();
+                return nodes[typeKey].GetBaseTypes();
             }
 
-            return [];
+            return new TypeKey[0];
         }
 
         public static void GetBaseTypes(Project project, HashSet<TypeKey> baseTypes, TypeDefinition type)

@@ -106,19 +106,19 @@ namespace Obfuscar
                    ParamsEqual(ParamTypes, other.ParamTypes);
         }
 
-        private static bool ParamsEqual(string[] a, string[] b)
+        private static bool ParamsEqual(IList<string> a, IList<string> b)
         {
             if (a == null)
                 return b == null;
             else if (b == null)
                 return false;
-            else if (a.Length != b.Length)
+            else if (a.Count != b.Count)
                 return false;
             else
             {
                 // kludge...too simplistic...param types match anything
 
-                for (int i = 0; i < a.Length; i++)
+                for (int i = 0; i < a.Count; i++)
                 {
                     if (!a[i].StartsWith("!") && !b[i].StartsWith("!") &&
                         !a[i].Equals(b[i]))
@@ -174,7 +174,7 @@ namespace Obfuscar
                 sb.Append(ParamTypes[0]);
                 for (int i = 1; i < ParamTypes.Length; i++)
                 {
-                    sb.Append(' ');
+                    sb.Append(" ");
                     sb.Append(ParamTypes[i]);
                 }
                 return sb.ToString();

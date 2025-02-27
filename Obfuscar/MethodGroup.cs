@@ -33,9 +33,9 @@ namespace Obfuscar
     {
         public HashSet<MethodKey> Methods { get; } = new HashSet<MethodKey>();
 
-        public string Name { get; set; }
+        public string Name { get; set; } = null;
 
-        public bool External { get; set; }
+        public bool External { get; set; } = false;
 
         public override string ToString()
         {
@@ -48,8 +48,8 @@ namespace Obfuscar
             sb.Append(": ");
             foreach (MethodKey k in Methods)
             {
-                sb.Append(k);
-                sb.Append(' ');
+                sb.Append(k.ToString());
+                sb.Append(" ");
             }
             return sb.ToString();
         }

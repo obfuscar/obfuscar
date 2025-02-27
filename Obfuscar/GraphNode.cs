@@ -53,11 +53,11 @@ namespace Obfuscar
             var baseTypes = GetBaseTypes(project, type.TypeDefinition);
             foreach (var type in baseTypes)
             {
-                if (nodes.TryGetValue(type, out var node))
+                if (nodes.ContainsKey(type))
                 {
-                    node.Scan(nodes, toRemove, project);
+                    nodes[type].Scan(nodes, toRemove, project);
                     toRemove.Add(type);
-                    baseNodes.Add(node);
+                    baseNodes.Add(nodes[type]);
                 }
                 else
                 {

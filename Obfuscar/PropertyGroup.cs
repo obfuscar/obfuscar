@@ -25,17 +25,18 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Obfuscar
 {
     class PropertyGroup
     {
-        public HashSet<PropertyKey> Properties { get; } = [];
+        public HashSet<PropertyKey> Properties { get; } = new HashSet<PropertyKey>();
 
-        public string Name { get; set; }
+        public string Name { get; set; } = null;
 
-        public bool External { get; set; }
+        public bool External { get; set; } = false;
 
         public override string ToString()
         {
@@ -48,8 +49,8 @@ namespace Obfuscar
             sb.Append(": ");
             foreach (PropertyKey k in Properties)
             {
-                sb.Append(k);
-                sb.Append(' ');
+                sb.Append(k.ToString());
+                sb.Append(" ");
             }
             return sb.ToString();
         }

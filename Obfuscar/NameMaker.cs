@@ -76,7 +76,7 @@ namespace Obfuscar
             UseKoreanChars = false;
         }
 
-        private static void ShuffleArray<T>(List<T> list, Random rnd)
+        private void ShuffleArray<T>(IList<T> list, Random rnd)
         {
             int n = list.Count;
             while (n > 1)
