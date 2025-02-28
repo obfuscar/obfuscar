@@ -29,7 +29,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using Mono.Options;
 using Rollbar;
 using Rollbar.DTOs;
@@ -136,22 +135,16 @@ namespace Obfuscar
             Console.WriteLine("Note that Rollbar API is enabled by default to collect crashes. If you want to opt out, please run with -s switch");
             var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             RollbarLocator.RollbarInstance.Configure(
-                new RollbarConfig("1dd3cf880c5a46eeb4338dbea73f9620")
-                {
-                    Environment = "production",
-                    Transform = payload =>
-                    {
-                        payload.Data.Person = new Person(version)
-                        {
-                            UserName = $"{version}"
-                        };
-                    }
-                });
-
-            Application.ThreadException += (sender, args) =>
+                new RollbarLoggerConfig("1dd3cf880c5a46eeb4338dbea73f9620", "production")
             {
-                RollbarLocator.RollbarInstance.Error(args.Exception);
-            };
+                RollbarPayloadAdditionOptions =
+                {
+                    Person = new Person(version)
+                    {
+                        UserName = version,
+                    }
+                }
+            });
 
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {

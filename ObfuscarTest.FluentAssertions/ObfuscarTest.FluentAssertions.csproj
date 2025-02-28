@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net60-windows;net48</TargetFrameworks>
+    <TargetFrameworks>net6.0;net8.0;net48</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="6.12.0" />
-    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
   </ItemGroup>
 
 </Project>

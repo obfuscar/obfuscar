@@ -29,7 +29,11 @@ namespace ObfuscarTest
             var assembly2 = Assembly.LoadFrom(Path.GetFullPath(Path.Combine(outputPath, "AssemblyWithCollectionExpression.dll")));
             var obfuscatedClass = output.Mapping.ClassMap.First(c => c.Key.Name == "ObfuscarTestNet.Input.AssemblyWithCollectionExpression");
             var obfuscatedClassName = obfuscatedClass.Value.StatusText;
+#if NET6_0_OR_GREATER
             obfuscatedClassName = obfuscatedClassName[(obfuscatedClassName.IndexOf(']') + 1)..];
+#else
+            obfuscatedClassName = obfuscatedClassName.Substring(obfuscatedClassName.IndexOf(']') + 1);
+#endif
             var type = assembly2.GetType(obfuscatedClassName) ?? throw new Exception($"Test class {obfuscatedClassName} not found");
             var instance = Activator.CreateInstance(type);
 

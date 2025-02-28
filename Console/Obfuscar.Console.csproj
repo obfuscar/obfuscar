@@ -1,23 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <Target Name="RepackWithILOnWindows" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT'">
-    <Exec Command="rename Obfuscar.Console.exe Obfuscar.exe" WorkingDirectory="$(TargetDir)" />
-    <Exec Command="&quot;$(ILRepack)&quot; /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Newtonsoft.Json.dll" WorkingDirectory="$(TargetDir)" />
-    <Exec Command="del Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Obfuscar.exe Newtonsoft.Json.dll" WorkingDirectory="$(TargetDir)" />
-  </Target>
-
-  <Target Name="RepackWithILOnNonWindows" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' AND '$(OS)' != 'Windows_NT'">
-    <Exec Command="mv Obfuscar.Console.exe Obfuscar.exe" WorkingDirectory="$(TargetDir)" />
-    <Exec Command="&quot;$(ILRepack)&quot; /t:exe /out:Obfuscar.Console.exe Obfuscar.exe Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Newtonsoft.Json.dll" WorkingDirectory="$(TargetDir)" />
-    <Exec Command="rm Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Rollbar.dll Obfuscar.exe Newtonsoft.Json.dll" WorkingDirectory="$(TargetDir)" />
-  </Target>
-
   <PropertyGroup>
     <ProductVersion>9.0.21022</ProductVersion>
     <ProjectGuid>{275B3EED-7E70-4460-950F-96EDCA099BD4}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>Obfuscar</RootNamespace>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <FileUpgradeFlags />
     <UpgradeBackupLocation />
     <PublishUrl>publish\</PublishUrl>
@@ -37,6 +24,9 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <ApplicationIcon>..\Raindropmemory-Legendora-Potion.ico</ApplicationIcon>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisMode>Minimum</AnalysisMode>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -54,9 +44,6 @@
     <StartupObject>Obfuscar.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System.Windows.Forms" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Obfuscar\Obfuscar.csproj" />
   </ItemGroup>
   <ItemGroup>
@@ -67,8 +54,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="ILRepack" Version="2.0.18" />
-    <PackageReference Include="Mono.Options" Version="6.6.0.161" />
-    <PackageReference Include="Rollbar" Version="3.14.0" />
+    <PackageReference Include="Mono.Options" Version="6.12.0.148" />
+    <PackageReference Include="Rollbar" Version="5.2.2" />
   </ItemGroup>
 </Project>

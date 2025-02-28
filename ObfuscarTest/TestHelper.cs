@@ -49,8 +49,8 @@ namespace ObfuscarTest
             // clean out inputPath
             try
             {
-                //foreach (string file in Directory.GetFiles(InputPath, "*.dll"))
-                //File.Delete(file);
+                foreach (string file in Directory.GetFiles(InputPath, "*.dll"))
+                    File.Delete(file);
             }
             catch
             {
