@@ -134,6 +134,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckKeepPublicApiTrue()
         {
+            string output = TestHelper.OutputPath;
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
@@ -143,7 +144,7 @@ namespace ObfuscarTests
                 @"<Var name='HidePrivateApi' value='true' />" +
                 @"<Module file='$(InPath){2}AssemblyWithTypes.dll'>" +
                 @"</Module>" +
-                @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+                @"</Obfuscator>", TestHelper.InputPath, output, Path.DirectorySeparatorChar);
 
             Obfuscar.Obfuscator obfuscator = TestHelper.BuildAndObfuscate("AssemblyWithTypes", string.Empty, xml);
             var map = obfuscator.Mapping;
@@ -164,12 +165,36 @@ namespace ObfuscarTests
             var classA = map.GetClass(new TypeKey(classAType));
             Assert.True(classA.Status == ObfuscationStatus.Skipped, "Public class shouldn't have been obfuscated");
             Assert.True(classAMethod1.Status == ObfuscationStatus.Renamed, "private method is not obfuscated.");
-            Assert.True(classAMethod2.Status == ObfuscationStatus.Skipped, "pubilc method is obfuscated.");
+            var newName = classAMethod1.StatusText;
+            Assert.True(classAMethod2.Status == ObfuscationStatus.Skipped, "public method is obfuscated.");
             Assert.True(classAMethod3.Status == ObfuscationStatus.Skipped, "internal protected method is obfuscated.");
 
             var protectedMethod = FindByName(classAType, "ProtectedMethod");
             var protectedAfter = map.GetMethod(new MethodKey(protectedMethod));
             Assert.True(protectedAfter.Status == ObfuscationStatus.Skipped, "protected method is obfuscated.");
+
+            var outAssmDef = AssemblyDefinition.ReadAssembly(
+                Path.Combine(output, assmName));
+
+            var outClassAType = outAssmDef.MainModule.GetType("TestClasses.PublicClass");
+            Assert.NotNull(outClassAType);
+
+            string[] newNameParts = newName.Split(']');
+            string correctMethodName = newNameParts.Length > 1 ? newNameParts[1] : newName;
+            var outClassAmethod1 = FindByName(outClassAType, correctMethodName);
+            var outClassAmethod2 = FindByName(outClassAType, "PublicMethod");
+            var outClassAmethod3 = FindByName(outClassAType, "InternalProtectedMethod");
+
+            Assert.NotEqual(classAmethod1.Name, outClassAmethod1.Name);
+            Assert.Equal(string.Empty, outClassAmethod1.Parameters[0].Name); // obfuscation removed the parameter name
+            Assert.Equal(classAmethod2.Name, outClassAmethod2.Name);
+            Assert.Equal("yourName", outClassAmethod2.Parameters[0].Name); // skipped method keeps parameter names
+            Assert.Equal(classAmethod3.Name, outClassAmethod3.Name);
+            Assert.Equal("theirNames", outClassAmethod3.Parameters[0].Name);
+
+            var outProtectedMethod = FindByName(outClassAType, "ProtectedMethod");
+            Assert.Equal(protectedMethod.Name, outProtectedMethod.Name);
+            Assert.Equal("itsName", protectedMethod.Parameters[0].Name);
         }
 
         [Fact]

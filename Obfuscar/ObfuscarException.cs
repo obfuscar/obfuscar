@@ -33,17 +33,5 @@ namespace Obfuscar
             : base(message, inner)
         {
         }
-
-#if !CF
-        /// <summary>
-        /// Creates a <see cref="ObfuscarException"/> instance.
-        /// </summary>
-        /// <param name="info">Info</param>
-        /// <param name="context">Context</param>
-        protected ObfuscarException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-#endif
     }
 }

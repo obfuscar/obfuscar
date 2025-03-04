@@ -46,16 +46,16 @@ namespace TestClasses
 
 	public class PublicClass
 	{
-		private void PrivateMethod()
+		private void PrivateMethod(string myName)
 		{ }
 
-		public void PublicMethod()
+		public void PublicMethod(string yourName)
 		{ }
 
-		protected void ProtectedMethod()
+		protected void ProtectedMethod(string itsName)
 		{ }
 
-		internal protected void InternalProtectedMethod()
+		internal protected void InternalProtectedMethod(string theirNames)
 		{ }
 
 		protected internal void ProtectedInternalMethod()

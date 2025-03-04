@@ -105,8 +105,8 @@ namespace ObfuscarTests
             Assert.NotNull(method2);
             var first = method2.Parameters[0].Name;
             var second = method2.Parameters[1].Name;
-            Assert.Equal("", first);
-            Assert.Equal("", second);
+            Assert.Equal(string.Empty, first);
+            Assert.Equal(string.Empty, second);
         }
     }
 }
