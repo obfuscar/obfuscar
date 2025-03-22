@@ -124,7 +124,7 @@ namespace ObfuscarTests
             var classA = map.GetClass(new TypeKey(classAType));
             Assert.True(classA.Status == ObfuscationStatus.Renamed, "Public class should have been obfuscated");
             Assert.True(classAMethod1.Status == ObfuscationStatus.Renamed, "private method is not obfuscated.");
-            Assert.True(classAMethod2.Status == ObfuscationStatus.Renamed, "pubilc method is not obfuscated.");
+            Assert.True(classAMethod2.Status == ObfuscationStatus.Renamed, "public method is not obfuscated.");
 
             var protectedMethod = FindByName(classAType, "ProtectedMethod");
             var protectedAfter = map.GetMethod(new MethodKey(protectedMethod));
@@ -142,6 +142,7 @@ namespace ObfuscarTests
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='KeepPublicApi' value='true' />" +
                 @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Var name='HideStrings' value='false' />" +
                 @"<Module file='$(InPath){2}AssemblyWithTypes.dll'>" +
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, output, Path.DirectorySeparatorChar);

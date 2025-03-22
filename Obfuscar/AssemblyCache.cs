@@ -90,9 +90,13 @@ namespace Obfuscar
 
         public new void RegisterAssembly(AssemblyDefinition assembly)
         {
-            var path = assembly.GetPortableProfileDirectory();
-            if (path != null && Directory.Exists(path))
-                paths.Add(path);
+            var portablePath = assembly.GetPortableProfileDirectory();
+            if (portablePath != null && Directory.Exists(portablePath))
+                paths.Add(portablePath);
+
+            var netCorePath = assembly.GetNetCoreDirectory();
+            if (netCorePath != null && Directory.Exists(netCorePath))
+                paths.Add(netCorePath);
 
             base.RegisterAssembly(assembly);
         }

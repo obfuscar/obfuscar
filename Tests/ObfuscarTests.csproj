@@ -17,45 +17,44 @@
 
   <ItemGroup>
     <Compile Include="AssemblyHelper.cs" />
-    <Compile Include="FilterTests.cs" />
-    <Compile Include="InterfaceTests.cs" />
-    <Compile Include="SettingsTests.cs" />
-    <Compile Include="CleanPoolTests.cs" />
-    <Compile Include="AttributeTests.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="AttributeTests.cs" />
     <Compile Include="AutoSkipTypeTests.cs" />
     <Compile Include="BamlTests.cs" />
-    <Compile Include="CustomAttributeWithArgTests.cs" />
-    <Compile Include="DockPanelSuiteTests.cs" />
-    <Compile Include="FSharpTests.cs" />
+    <Compile Include="CleanPoolTests.cs" />
     <Compile Include="CustomAttributeTests.cs" />
+    <Compile Include="CustomAttributeWithArgTests.cs" />
+    <Compile Include="DependencyTests.cs" />
+    <Compile Include="DockPanelSuiteTests.cs" />
+    <Compile Include="FilterTests.cs" />
+    <Compile Include="FSharpTests.cs" />
     <Compile Include="FunctionOverridingTests.cs" />
     <Compile Include="HideStringsTests.cs" />
     <Compile Include="IncludeTests.cs" />
+    <Compile Include="InterfaceTests.cs" />
     <Compile Include="NetStandardTests.cs" />
-    <Compile Include="PortableTests.cs" />
-    <Compile Include="ResourcesTests.cs" />
-    <Compile Include="SigningTests.cs" />
-    <Compile Include="SkipNestedTypeTests.cs" />
-    <Compile Include="SkipVirtualMethodTest.cs" />
-    <Compile Include="SpecializedGenericsTests.cs" />
-    <Compile Include="SkipEnumTests.cs" />
-    <Compile Include="SkipEventTests.cs" />
-    <Compile Include="SkipPropertyTests.cs" />
-    <Compile Include="DependencyTests.cs" />
+    <Compile Include="NetCoreTests.cs" />
     <Compile Include="OutPathTests.cs" />
     <Compile Include="PathFailureTests.cs" />
+    <Compile Include="PortableTests.cs" />
+    <Compile Include="ResourcesTests.cs" />
+    <Compile Include="SettingsTests.cs" />
+    <Compile Include="SigningTests.cs" />
+    <Compile Include="SkipEnumTests.cs" />
+    <Compile Include="SkipEventTests.cs" />
+    <Compile Include="SkipNestedTypeTests.cs" />
+    <Compile Include="SkipPropertyTests.cs" />
+    <Compile Include="SkipVirtualMethodTest.cs" />
+    <Compile Include="SpecializedGenericsTests.cs" />
     <Compile Include="TesterTests.cs" />
-    <Compile Include="TestHelper.cs" />
-    <Compile Include="TestClasses2.cs" />
     <Compile Include="TestClasses.cs" />
+    <Compile Include="TestClasses2.cs" />
+    <Compile Include="TestHelper.cs" />
     <Compile Include="UnityTests.cs" />
     <Compile Include="UnmanagedGenericsTests.cs" />
     <Compile Include="VariablesTests.cs" />
     <Compile Include="WildcardTests.cs" />
-    <Compile Include="ObfuscationAttributeTests.cs" />
     <Compile Include="WpfToolkitTests.cs" />
+    <Compile Include="ObfuscationAttributeTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

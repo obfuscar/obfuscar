@@ -29,10 +29,42 @@ using Mono.Cecil;
 using System.Linq;
 using Xunit;
 
+using Obfuscar.Helpers;
+
 namespace ObfuscarTests
 {
     public class NetStandardTests
     {
+        [Fact]
+        public void CheckFolderDetection()
+        {
+            // This test verifies the GetNetCoreDirectory method correctly identifies .NET Core assemblies
+            string outputPath = TestHelper.OutputPath;
+            string testDllPath = Path.Combine(TestHelper.InputPath, "NetStandard20.dll");
+            
+            // Copy the test DLL to input path if it doesn't exist
+            if (!File.Exists(testDllPath))
+            {
+                File.Copy(Path.Combine(TestHelper.InputPath, @"..", "NetStandard20.dll"),
+                    testDllPath, true);
+            }
+
+            // Read the test assembly
+            AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(testDllPath);
+
+            // Test the GetNetCoreDirectory method
+            string netCoreDir = assembly.GetNetCoreDirectory();
+
+            // Verify the result - the specific path will depend on the environment, 
+            // but we can verify it contains expected components
+            Assert.NotNull(netCoreDir);
+            Assert.Contains("netstandard.library", netCoreDir.ToLowerInvariant());
+            Assert.Contains("2.0.", netCoreDir);
+            Assert.Contains("netstandard2.0", netCoreDir);
+
+            Assert.True(Directory.Exists(netCoreDir), "The directory does not exist: " + netCoreDir);
+        }
+
         [Fact]
         public void CheckNetStandard()
         {
