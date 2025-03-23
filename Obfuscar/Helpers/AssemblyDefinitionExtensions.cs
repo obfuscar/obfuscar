@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
+using NuGet.Versioning;  // Add reference to NuGet.Versioning
 
 namespace Obfuscar.Helpers
 {
@@ -90,14 +91,14 @@ namespace Obfuscar.Helpers
                             }
                         }
                     }
-
                     // Handle .NET Standard
-                    if (framework.StartsWith(".NETStandard,Version="))
+                    else if (framework.StartsWith(".NETStandard,Version="))
                     {
                         var versionStr = framework.Split('=')[1].Substring(1);
 
                         if (Version.TryParse(versionStr, out Version parsedVersion) && parsedVersion <= new Version(2, 0))
                         {
+                            // For .NET Standard 1.x and 2.0, check the NuGet fallback folder
                             string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) ?? Environment.GetEnvironmentVariable("HOME");
                             string nugetPackagesPath = Path.Combine(homeDir, ".nuget", "packages", "netstandard.library");
 
@@ -110,14 +111,17 @@ namespace Obfuscar.Helpers
                                 }
                             }
                         }
-
-                         var baseDir = Environment.OSVersion.Platform == PlatformID.Unix || 
-                                          Environment.OSVersion.Platform == PlatformID.MacOSX
-                                ?  "/usr/local/share/dotnet/packs/NETStandard.Library.Ref"
-                                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "packs", "NETStandard.Library.Ref");                       
-                        if (Directory.Exists(baseDir))
+                        else
                         {
-                            yield return Path.Combine(FindBestVersionMatch(baseDir, versionStr), "ref", $"netstandard{versionStr}");
+                            // For .NET Standard 2.1 and above, check the .NET SDK packs directory
+                            var baseDir = Environment.OSVersion.Platform == PlatformID.Unix || 
+                                                Environment.OSVersion.Platform == PlatformID.MacOSX
+                                    ?  "/usr/local/share/dotnet/packs/NETStandard.Library.Ref"
+                                    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "packs", "NETStandard.Library.Ref");                       
+                            if (Directory.Exists(baseDir))
+                            {
+                                yield return Path.Combine(FindBestVersionMatch(baseDir, versionStr), "ref", $"netstandard{versionStr}");
+                            }
                         }
                     }
                 }
@@ -135,17 +139,27 @@ namespace Obfuscar.Helpers
             // Get all version directories
             var allDirs = Directory.GetDirectories(baseDir);
             
-            // Filter to those that start with our major.minor version
-            var matchingDirs = allDirs.Where(d => 
+            // Parse the requested version
+            var requestedVersion = new NuGetVersion(versionStr);
+            
+            // Find matching directories with the same major.minor version
+            var matchingDirs = new List<(string Path, NuGetVersion Version)>();
+            
+            foreach (var dir in allDirs)
             {
-                var dirName = Path.GetFileName(d);
-                return dirName.StartsWith(versionStr + ".");  // e.g., "6.0.10" starts with "6.0."
-            }).ToList();
+                var dirName = Path.GetFileName(dir);
+                if (NuGetVersion.TryParse(dirName, out var dirVersion) && 
+                    dirVersion.Major == requestedVersion.Major && 
+                    dirVersion.Minor == requestedVersion.Minor)
+                {
+                    matchingDirs.Add((dir, dirVersion));
+                }
+            }
             
             // If there are no matching directories, fall back to exact version
             if (matchingDirs.Count == 0)
             {
-                // Look for exact match (without patch version)
+                // Look for exact match
                 var exactMatch = allDirs.FirstOrDefault(d => Path.GetFileName(d) == versionStr);
                 if (exactMatch != null)
                     return exactMatch;
@@ -155,8 +169,12 @@ namespace Obfuscar.Helpers
             }
             
             // Sort directories by version and return the highest one
-            matchingDirs.Sort(CompareVersionStrings);
-            return matchingDirs[matchingDirs.Count - 1];
+            // Stable versions are preferred over prerelease ones
+            var bestMatch = matchingDirs
+                .OrderByDescending(x => x.Version, VersionComparer.Default)
+                .First();
+            
+            return bestMatch.Path;
         }
         
         /// <summary>
@@ -170,63 +188,43 @@ namespace Obfuscar.Helpers
             // Get all version directories
             var allDirs = Directory.GetDirectories(baseDir);
             
-            // Filter to those that start with our major.minor version
-            var matchingDirs = allDirs.Where(d => 
+            // Parse the requested version
+            if (!NuGetVersion.TryParse(versionStr, out var requestedVersion))
+                return null;
+            
+            // Find matching directories with the same major.minor version
+            var matchingDirs = new List<(string Path, NuGetVersion Version)>();
+            
+            foreach (var dir in allDirs)
             {
-                var dirName = Path.GetFileName(d);
-                return dirName.StartsWith(versionStr + ".");  // e.g., "2.0.3" starts with "2.0."
-            }).ToList();
+                var dirName = Path.GetFileName(dir);
+                if (NuGetVersion.TryParse(dirName, out var dirVersion) && 
+                    dirVersion.Major == requestedVersion.Major && 
+                    dirVersion.Minor == requestedVersion.Minor)
+                {
+                    matchingDirs.Add((dir, dirVersion));
+                }
+            }
             
             // If there are no matching directories, fall back to exact version
             if (matchingDirs.Count == 0)
             {
-                // Look for exact match (without patch version)
-                var exactMatch = allDirs.FirstOrDefault(d => Path.GetFileName(d) == versionStr);
+                // Look for exact match
+                var exactMatch = allDirs.FirstOrDefault(d => NuGetVersion.TryParse(Path.GetFileName(d), out var v) && v == requestedVersion);
                 if (exactMatch != null)
-                    return exactMatch;
+                    return Path.GetFileName(exactMatch);
                 
                 // If no exact match exists either, return null
                 return null;
             }
             
             // Sort directories by version and return the highest one
-            matchingDirs.Sort(CompareVersionStrings);
-            return matchingDirs[matchingDirs.Count - 1];
-        }
-        
-        /// <summary>
-        /// Compares two version strings, sorting them in ascending version order
-        /// </summary>
-        private static int CompareVersionStrings(string a, string b)
-        {
-            // Extract just the directory name part
-            var versionA = Path.GetFileName(a);
-            var versionB = Path.GetFileName(b);
+            // Stable versions are preferred over prerelease ones by default with VersionComparer
+            var bestMatch = matchingDirs
+                .OrderByDescending(x => x.Version, VersionComparer.Default)
+                .First();
             
-            // Split the version strings into components
-            var partsA = versionA.Split('.').Select(p => 
-            {
-                int.TryParse(p, out int result);
-                return result;
-            }).ToArray();
-            
-            var partsB = versionB.Split('.').Select(p => 
-            {
-                int.TryParse(p, out int result);
-                return result;
-            }).ToArray();
-            
-            // Compare version components
-            for (int i = 0; i < Math.Min(partsA.Length, partsB.Length); i++)
-            {
-                if (partsA[i] != partsB[i])
-                {
-                    return partsA[i].CompareTo(partsB[i]);
-                }
-            }
-            
-            // If all common parts are the same, longer version is newer
-            return partsA.Length.CompareTo(partsB.Length);
+            return Path.GetFileName(bestMatch.Path);
         }
 
         public static bool MarkedToRename(this AssemblyDefinition assembly)
