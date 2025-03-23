@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace Obfuscar.Helpers
 {
@@ -41,122 +42,88 @@ namespace Obfuscar.Helpers
             return null;
         }
 
-        public static string GetNetCoreDirectory(this AssemblyDefinition assembly)
+        public static IEnumerable<string> GetNetCoreDirectories(this AssemblyDefinition assembly)
         {
+            var seenFrameworks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             foreach (var custom in assembly.CustomAttributes)
             {
                 if (custom.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute")
                 {
                     var framework = custom.ConstructorArguments[0].Value.ToString();
-                    
+
+                    // Normalize framework string (e.g., ".NETCoreApp,Version=6.0" -> ".NETCoreApp,Version=v6.0")
+                    if (framework.StartsWith(".NETCoreApp,Version=") && !framework.Contains("v"))
+                    {
+                        framework = framework.Replace("Version=", "Version=v");
+                    }
+
+                    // Skip if this framework has already been processed
+                    if (!seenFrameworks.Add(framework))
+                        continue;
+
                     // Handle .NET Core
                     if (framework.StartsWith(".NETCoreApp,Version="))
                     {
-                        // Parse version out of the framework string, e.g., ".NETCoreApp,Version=v6.0"
                         var versionStr = framework.Split('=')[1].Substring(1);
-                        
-                        // Get platform-specific path for .NET Core reference assemblies
-                        if (Environment.OSVersion.Platform == PlatformID.Unix || 
-                            Environment.OSVersion.Platform == PlatformID.MacOSX)
+
+                        string[] profiles = new[]
                         {
-                            // macOS/Unix path base directory
-                            var baseDir = "/usr/local/share/dotnet/packs/Microsoft.NETCore.App.Ref";
+                            "Microsoft.AspNetCore.App.Ref",
+                            "Microsoft.NETCore.App.Ref",
+                            "Microsoft.WindowsDesktop.App.Ref"
+                        };
+
+                        foreach (var profile in profiles)
+                        {
+                            var baseDir = Environment.OSVersion.Platform == PlatformID.Unix || 
+                                          Environment.OSVersion.Platform == PlatformID.MacOSX
+                                ? $"/usr/local/share/dotnet/packs/{profile}"
+                                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "packs", profile);
+
                             if (Directory.Exists(baseDir))
                             {
-                                // Find the best matching version (latest patch for same major.minor)
-                                return Path.Combine(FindBestVersionMatch(baseDir, versionStr), "ref",
-                                       $"net{versionStr}");
-                            }
-                            
-                            // Fallback path if directory doesn't exist
-                            return Path.Combine(baseDir, versionStr);
-                        }
-                        else
-                        {
-                            // Windows path
-                            var root = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-                            return Environment.ExpandEnvironmentVariables(
-                                Path.Combine(
-                                    root,
-                                    "dotnet",
-                                    "packs",
-                                    "Microsoft.NETCore.App.Ref",
-                                    versionStr,
+                                yield return Path.Combine(
+                                    FindBestVersionMatch(baseDir, versionStr),
                                     "ref",
-                                    $"net{versionStr.Replace(".", "")}"));
+                                    $"net{versionStr}");
+                            }
                         }
                     }
-                    
+
                     // Handle .NET Standard
                     if (framework.StartsWith(".NETStandard,Version="))
                     {
-                        // Parse version out of the framework string, e.g., ".NETStandard,Version=v2.1"
                         var versionStr = framework.Split('=')[1].Substring(1);
-                        
-                        // Check if version is 2.0 or below which uses NuGet packages path
+
                         if (Version.TryParse(versionStr, out Version parsedVersion) && parsedVersion <= new Version(2, 0))
                         {
-                            // Get user profile directory
-                            string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                            if (string.IsNullOrEmpty(homeDir))
-                            {
-                                // Fallback for Unix/macOS if the above doesn't work
-                                homeDir = Environment.GetEnvironmentVariable("HOME");
-                            }
-
-                            // Base path to NuGet packages
+                            string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) ?? Environment.GetEnvironmentVariable("HOME");
                             string nugetPackagesPath = Path.Combine(homeDir, ".nuget", "packages", "netstandard.library");
-                            
+
                             if (Directory.Exists(nugetPackagesPath))
                             {
-                                // Find best matching version 
                                 string bestVersion = FindBestNuGetVersionMatch(nugetPackagesPath, versionStr);
                                 if (!string.IsNullOrEmpty(bestVersion))
                                 {
-                                    return Path.Combine(nugetPackagesPath, bestVersion, "build", $"netstandard{versionStr}", "ref");
+                                    yield return Path.Combine(nugetPackagesPath, bestVersion, "build", $"netstandard{versionStr}", "ref");
                                 }
                             }
-                            
-                            // Fallback to the standard (non-NuGet) path logic if we can't find the NuGet package
                         }
-                        
-                        // Get platform-specific path for .NET Standard reference assemblies (for versions > 2.0 or as fallback)
-                        if (Environment.OSVersion.Platform == PlatformID.Unix || 
-                            Environment.OSVersion.Platform == PlatformID.MacOSX)
+
+                         var baseDir = Environment.OSVersion.Platform == PlatformID.Unix || 
+                                          Environment.OSVersion.Platform == PlatformID.MacOSX
+                                ?  "/usr/local/share/dotnet/packs/NETStandard.Library.Ref"
+                                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "packs", "NETStandard.Library.Ref");                       
+                        if (Directory.Exists(baseDir))
                         {
-                            // macOS/Unix path base directory
-                            var baseDir = "/usr/local/share/dotnet/packs/NETStandard.Library.Ref";
-                            if (Directory.Exists(baseDir))
-                            {
-                                // Find the best matching version (latest patch for same major.minor)
-                                return Path.Combine(FindBestVersionMatch(baseDir, versionStr), "ref",
-                                       $"netstandard{versionStr}");
-                            }
-                            
-                            // Fallback path if directory doesn't exist
-                            return Path.Combine(baseDir, versionStr);
-                        }
-                        else
-                        {
-                            // Windows path
-                            var root = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-                            return Environment.ExpandEnvironmentVariables(
-                                Path.Combine(
-                                    root,
-                                    "dotnet",
-                                    "packs",
-                                    "NETStandard.Library.Ref",
-                                    versionStr,
-                                    "ref",
-                                    $"netstandard{versionStr}"));
+                            yield return Path.Combine(FindBestVersionMatch(baseDir, versionStr), "ref", $"netstandard{versionStr}");
                         }
                     }
                 }
             }
-
-            return null;
         }
-        
+
         /// <summary>
         /// Finds the best matching version directory for a given major.minor version
         /// </summary>

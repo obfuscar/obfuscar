@@ -38,10 +38,10 @@ namespace ObfuscarTests
         [Fact]
         public void CheckFolderDetection()
         {
-            // This test verifies the GetNetCoreDirectory method correctly identifies .NET Core assemblies
+            // This test verifies the GetNetCoreDirectories method correctly identifies .NET Standard assemblies
             string outputPath = TestHelper.OutputPath;
             string testDllPath = Path.Combine(TestHelper.InputPath, "NetStandard20.dll");
-            
+
             // Copy the test DLL to input path if it doesn't exist
             if (!File.Exists(testDllPath))
             {
@@ -52,17 +52,16 @@ namespace ObfuscarTests
             // Read the test assembly
             AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(testDllPath);
 
-            // Test the GetNetCoreDirectory method
-            string netCoreDir = assembly.GetNetCoreDirectory();
+            // Test the GetNetCoreDirectories method
+            var netCoreDirs = assembly.GetNetCoreDirectories().ToList();
 
-            // Verify the result - the specific path will depend on the environment, 
-            // but we can verify it contains expected components
-            Assert.NotNull(netCoreDir);
-            Assert.Contains("netstandard.library", netCoreDir.ToLowerInvariant());
-            Assert.Contains("2.0.", netCoreDir);
-            Assert.Contains("netstandard2.0", netCoreDir);
-
-            Assert.True(Directory.Exists(netCoreDir), "The directory does not exist: " + netCoreDir);
+            // Verify the result - the specific paths will depend on the environment,
+            // but we can verify they contain expected components
+            Assert.Single(netCoreDirs);
+            Assert.All(netCoreDirs, dir => Assert.Contains("netstandard.library", dir.ToLowerInvariant()));
+            Assert.All(netCoreDirs, dir => Assert.Contains("2.0.", dir));
+            Assert.All(netCoreDirs, dir => Assert.Contains("netstandard2.0", dir));
+            Assert.All(netCoreDirs, dir => Assert.True(Directory.Exists(dir), $"The directory does not exist: {dir}"));
         }
 
         [Fact]

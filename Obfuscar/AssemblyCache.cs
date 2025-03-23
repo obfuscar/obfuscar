@@ -94,9 +94,13 @@ namespace Obfuscar
             if (portablePath != null && Directory.Exists(portablePath))
                 paths.Add(portablePath);
 
-            var netCorePath = assembly.GetNetCoreDirectory();
-            if (netCorePath != null && Directory.Exists(netCorePath))
-                paths.Add(netCorePath);
+            foreach (var netCorePath in assembly.GetNetCoreDirectories())
+            {
+                if (Directory.Exists(netCorePath))
+                {
+                    paths.Add(netCorePath);
+                }
+            }
 
             base.RegisterAssembly(assembly);
         }

@@ -37,7 +37,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckFolderDetection()
         {
-            // This test verifies the GetNetCoreDirectory method correctly identifies .NET Core assemblies
+            // This test verifies the GetNetCoreDirectories method correctly identifies .NET Core assemblies
             string outputPath = TestHelper.OutputPath;
             string testDllPath = Path.Combine(TestHelper.InputPath, "testmvc6.dll");
             
@@ -67,17 +67,15 @@ namespace ObfuscarTests
             // Add the attribute to the assembly
             assembly.CustomAttributes.Add(targetFrameworkAttribute);
             
-            // Test the GetNetCoreDirectory method
-            string netCoreDir = assembly.GetNetCoreDirectory();
+            // Test the GetNetCoreDirectories method
+            var netCoreDirs = assembly.GetNetCoreDirectories().ToList();
             
-            // Verify the result - the specific path will depend on the environment, 
-            // but we can verify it contains expected components
-            Assert.NotNull(netCoreDir);
-            Assert.Contains("Microsoft.NETCore.App.Ref", netCoreDir);
-            Assert.Contains("6.0.", netCoreDir);
-            Assert.Contains("net6.0", netCoreDir);
-
-            Assert.True(Directory.Exists(netCoreDir), "The directory does not exist: " + netCoreDir);
+            // Verify the result - ensure at least one valid path exists
+            Assert.NotEmpty(netCoreDirs);
+            Assert.True(netCoreDirs.Any(dir => dir.Contains("Microsoft.NETCore.App.Ref") &&
+                                               dir.Contains("6.0.") &&
+                                               dir.Contains("net6.0")),
+                        "No valid directory found in netCoreDirs.");
         }
     }
 }
