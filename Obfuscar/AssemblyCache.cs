@@ -24,6 +24,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
@@ -91,14 +92,27 @@ namespace Obfuscar
         public new void RegisterAssembly(AssemblyDefinition assembly)
         {
             var portablePath = assembly.GetPortableProfileDirectory();
-            if (portablePath != null && Directory.Exists(portablePath))
-                paths.Add(portablePath);
+            if (portablePath != null)
+            {
+                if (Directory.Exists(portablePath))
+                {
+                    paths.Add(portablePath);
+                }
+                else
+                {
+                    Console.WriteLine("Warning: Portable profile directory does not exist: " + portablePath);
+                }
+            }
 
             foreach (var netCorePath in assembly.GetNetCoreDirectories())
             {
                 if (Directory.Exists(netCorePath))
                 {
                     paths.Add(netCorePath);
+                }
+                else
+                {
+                    Console.WriteLine("Warning: .NET Core/.NET Standard/.NET referenced assembly directory does not exist: " + netCorePath);
                 }
             }
 
