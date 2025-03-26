@@ -48,19 +48,9 @@ namespace Obfuscar
         "Reviewed. Suppression is OK here.")]
     public class Obfuscator
     {
-        // ReSharper disable once EventNeverSubscribedTo.Global
-        public event Action<string> Log;
-
         private void LogOutput(string output)
         {
-            if (Log != null)
-            {
-                Log(output);
-            }
-            else
-            {
-                Console.Write(output);
-            }
+            LoggerService.Logger.LogInformation(output);
         }
 
         // Unique names for type and members

@@ -27,6 +27,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using Obfuscar.Helpers;
 
@@ -100,7 +101,7 @@ namespace Obfuscar
                 }
                 else
                 {
-                    Console.WriteLine("Warning: Portable profile directory does not exist: " + portablePath);
+                    LoggerService.Logger.LogWarning("Portable profile directory does not exist: {Path}", portablePath);
                 }
             }
 
@@ -112,7 +113,7 @@ namespace Obfuscar
                 }
                 else
                 {
-                    Console.WriteLine("Warning: .NET Core/.NET Standard/.NET referenced assembly directory does not exist: " + netCorePath);
+                    LoggerService.Logger.LogWarning(".NET Core/.NET Standard/.NET referenced assembly directory does not exist: {Path}", netCorePath);
                 }
             }
 

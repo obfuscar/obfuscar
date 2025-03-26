@@ -29,6 +29,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Mono.Options;
 
 namespace Obfuscar
@@ -49,11 +51,38 @@ namespace Obfuscar
         {
             bool showHelp = false;
             bool showVersion = false;
+            LogLevel logLevel = LogLevel.Information; // Default log level
 
             OptionSet p = new OptionSet()
                 .Add("h|?|help", "Print this help information.", delegate (string v) { showHelp = v != null; })
                 .Add("V|version", "Display version number of this application.",
-                    delegate (string v) { showVersion = v != null; });
+                    delegate (string v) { showVersion = v != null; })
+                .Add("v:|verbosity:", "Set logging verbosity (q|quiet|n|normal|v|verbose|t|trace)",
+                    delegate(string v)
+                    {
+                        if (string.IsNullOrEmpty(v))
+                            return;
+                            
+                        switch (v.ToLowerInvariant())
+                        {
+                            case "q":
+                            case "quiet":
+                                logLevel = LogLevel.Warning;
+                                break;
+                            case "n":
+                            case "normal":
+                                logLevel = LogLevel.Information;
+                                break;
+                            case "v":
+                            case "verbose":
+                                logLevel = LogLevel.Debug;
+                                break;
+                            case "t":
+                            case "trace":
+                                logLevel = LogLevel.Trace;
+                                break;
+                        }
+                    });
 
             if (args.Length == 0)
             {
@@ -90,26 +119,45 @@ namespace Obfuscar
                 return 1;
             }
 
+            // Configure logging based on verbosity level
+            ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder
+                    .SetMinimumLevel(logLevel)
+                    .AddConsole(options =>
+                    {
+                        options.IncludeScopes = true;
+                        options.TimestampFormat = "[HH:mm:ss] ";
+                    });
+            });
+
+            // Create logger for the Program class
+            ILogger logger = loggerFactory.CreateLogger("Obfuscar");
+            
+            // Set the global logger for the Obfuscar library
+            LoggerService.SetLogger(logger);
+
+            logger.LogInformation("Obfuscar starting with log level: {LogLevel}", logLevel);
+            
             int start = Environment.TickCount;
             foreach (var project in extra)
             {
                 try
                 {
-                    Console.Write("Loading project {0}...", project);
+                    logger.LogInformation("Loading project {ProjectFile}...", project);
                     Obfuscator obfuscator = new Obfuscator(project);
-                    Console.WriteLine("Done.");
+                    logger.LogInformation("Project loaded successfully");
 
                     obfuscator.RunRules();
 
-                    Console.WriteLine("Completed, {0:f2} secs.", (Environment.TickCount - start) / 1000.0);
+                    logger.LogInformation("Completed in {ElapsedTime:f2} seconds", (Environment.TickCount - start) / 1000.0);
                 }
                 catch (ObfuscarException e)
                 {
-                    Console.WriteLine();
-                    Console.Error.WriteLine("An error occurred during processing:");
-                    Console.Error.WriteLine(e.Message);
+                    logger.LogError(e, "An error occurred during processing");
+                    logger.LogError("{ErrorMessage}", e.Message);
                     if (e.InnerException != null)
-                        Console.Error.WriteLine(e.InnerException.Message);
+                        logger.LogError("{InnerErrorMessage}", e.InnerException.Message);
                     return 1;
                 }
             }
