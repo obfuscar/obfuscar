@@ -48,11 +48,6 @@ namespace Obfuscar
         "Reviewed. Suppression is OK here.")]
     public class Obfuscator
     {
-        private void LogOutput(string output)
-        {
-            LoggerService.Logger.LogInformation(output);
-        }
-
         // Unique names for type and members
         private int _uniqueTypeNameIndex;
 
@@ -98,38 +93,38 @@ namespace Obfuscar
             // The SemanticAttributes of MethodDefinitions have to be loaded before any fields,properties or events are removed
             LoadMethodSemantics();
 
-            LogOutput("Hiding strings...\n");
+            LoggerService.Logger.LogInformation("Hiding strings...\n");
             HideStrings();
 
-            LogOutput("Renaming:  fields...");
+            LoggerService.Logger.LogInformation("Renaming:  fields...");
             RenameFields();
 
-            LogOutput("Parameters...");
+            LoggerService.Logger.LogInformation("Parameters...");
             RenameParams();
 
-            LogOutput("Properties...");
+            LoggerService.Logger.LogInformation("Properties...");
             RenameProperties();
 
-            LogOutput("Events...");
+            LoggerService.Logger.LogInformation("Events...");
             RenameEvents();
 
-            LogOutput("Methods...");
+            LoggerService.Logger.LogInformation("Methods...");
             RenameMethods();
 
-            LogOutput("Types...");
+            LoggerService.Logger.LogInformation("Types...");
             RenameTypes();
 
             PostProcessing();
 
-            LogOutput("Done.\n");
+            LoggerService.Logger.LogInformation("Done.\n");
 
-            LogOutput("Saving assemblies...");
+            LoggerService.Logger.LogInformation("Saving assemblies...");
             SaveAssemblies();
-            LogOutput("Done.\n");
+            LoggerService.Logger.LogInformation("Done.\n");
 
-            LogOutput("Writing log file...");
+            LoggerService.Logger.LogInformation("Writing log file...");
             SaveMapping();
-            LogOutput("Done.\n");
+            LoggerService.Logger.LogInformation("Done.\n");
         }
 
         public static Obfuscator CreateFromXml(string xml)
@@ -150,10 +145,10 @@ namespace Obfuscar
             Project.CheckSettings();
             NameMaker.DetermineChars(Project.Settings);
 
-            LogOutput("Loading assemblies...");
-            LogOutput("Extra framework folders: ");
+            LoggerService.Logger.LogInformation("Loading assemblies...");
+            LoggerService.Logger.LogInformation("Extra framework folders: ");
             foreach (var lExtraPath in Project.ExtraPaths ?? new string[0])
-                LogOutput(lExtraPath + ", ");
+                LoggerService.Logger.LogInformation(lExtraPath + ", ");
 
             Project.LoadAssemblies();
         }
@@ -164,6 +159,7 @@ namespace Obfuscar
         public void SaveAssemblies(bool throwException = true)
         {
             string outPath = Project.Settings.OutPath;
+            LoggerService.Logger.LogDebug("Saving assemblies to output path: {0}", outPath);
 
             //copy excluded assemblies
             foreach (AssemblyInfo copyInfo in Project.CopyAssemblyList)
@@ -173,6 +169,7 @@ namespace Obfuscar
                 Debug.Assert(fileName != null, "fileName != null");
                 // ReSharper disable once AssignNullToNotNullAttribute
                 string outName = Path.Combine(outPath, fileName);
+                LoggerService.Logger.LogDebug("Copying excluded assembly: {0} to {1}", copyInfo.Name, outName);
                 copyInfo.Definition.Write(outName);
             }
 
@@ -197,6 +194,7 @@ namespace Obfuscar
                     var parameters = new WriterParameters();
                     if (Project.Settings.RegenerateDebugInfo)
                     {
+                        LoggerService.Logger.LogDebug("Regenerating debug info for assembly: {0}", info.Name);
                         if (IsOnWindows)
                         {
                             parameters.SymbolWriterProvider = new Mono.Cecil.Cil.PortablePdbWriterProvider();
@@ -209,6 +207,7 @@ namespace Obfuscar
 
                     if (info.Definition.Name.HasPublicKey)
                     {
+                        LoggerService.Logger.LogDebug("Assembly {0} is signed, processing key information", info.Name);
                         // source assembly was signed.
                         if (Project.KeyPair != null)
                         {
@@ -216,6 +215,7 @@ namespace Obfuscar
                             string keyFile = Project.KeyPair;
                             if (string.Equals(keyFile, "auto", StringComparison.OrdinalIgnoreCase))
                             {
+                                LoggerService.Logger.LogDebug("Using 'auto' key mode for assembly: {0}", info.Name);
                                 // if key file is "auto", resolve key file from assembly's attribute.
                                 var attribute = info.Definition.CustomAttributes
                                     .FirstOrDefault(item => item.AttributeType.FullName == "System.Reflection.AssemblyKeyFileAttribute");
@@ -231,6 +231,7 @@ namespace Obfuscar
                                     {
                                        keyFile = fileName;
                                     }
+                                    LoggerService.Logger.LogDebug("Auto-resolved key file for assembly {0}: {1}", info.Name, keyFile);
                                 }
                             }
 
@@ -242,12 +243,15 @@ namespace Obfuscar
                             var keyPair = File.ReadAllBytes(keyFile);
                             try
                             {
+                                LoggerService.Logger.LogDebug("Attempting to sign assembly {0} with key file: {1}", info.Name, keyFile);
                                 parameters.StrongNameKeyBlob = keyPair;
                                 info.Definition.Write(outName, parameters);
                                 info.OutputFileName = outName;
                             }
-                            catch (Exception)
+                            catch (Exception ex)
                             {
+                                LoggerService.Logger.LogDebug("Strong-name signing failed for {0}, using delay signing. Error: {1}", 
+                                    info.Name, ex.Message);
                                 parameters.StrongNameKeyBlob = null;
                                 if (info.Definition.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned))
                                 {
@@ -263,6 +267,8 @@ namespace Obfuscar
                         else if (Project.KeyValue != null)
                         {
                             // config file contains key container name.
+                            LoggerService.Logger.LogDebug("Signing assembly {0} using key container: {1}", 
+                                info.Name, Project.KeyContainerName);
                             info.Definition.Write(outName, parameters);
                             MsNetSigner.SignAssemblyFromKeyContainer(outName, Project.KeyContainerName);
                         }
@@ -270,6 +276,7 @@ namespace Obfuscar
                         {
                             // When an assembly is "delay signed" and no KeyFile or KeyContainer properties were provided,
                             // keep the obfuscated assembly "delay signed" too.
+                            LoggerService.Logger.LogDebug("Assembly {0} is delay-signed and will remain delay-signed", info.Name);
                             info.Definition.Write(outName, parameters);
                             info.OutputFileName = outName;
                         }
@@ -280,6 +287,7 @@ namespace Obfuscar
                     }
                     else
                     {
+                        LoggerService.Logger.LogDebug("Saving unsigned assembly: {0} to {1}", info.Name, outName);
                         info.Definition.Write(outName, parameters);
                         info.OutputFileName = outName;
                     }
@@ -291,19 +299,20 @@ namespace Obfuscar
                         throw;
                     }
 
-                    LogOutput(string.Format("\nFailed to save {0}", fileName));
-                    LogOutput(string.Format("\n{0}: {1}", e.GetType().Name, e.Message));
-                    var match = Regex.Match(e.Message, @"Failed to resolve\s+(?<name>[^\s]+)");
+                    LoggerService.Logger.LogInformation(string.Format("\nFailed to save {0}", fileName));
+                    LoggerService.Logger.LogInformation(string.Format("\n{0}: {1}", e.GetType().Name, e.Message));
+                    var match = Regex.Match(e.Message, @"Failed to resolve\s+(?<n>[^\s]+)");
                     if (match.Success)
                     {
                         var name = match.Groups["name"].Value;
-                        LogOutput(string.Format("\n{0} might be one of:", name));
+                        LoggerService.Logger.LogInformation(string.Format("\n{0} might be one of:", name));
                         LogMappings(name);
-                        LogOutput("\nHint: you might need to add a SkipType for an enum above.");
+                        LoggerService.Logger.LogInformation("\nHint: you might need to add a SkipType for an enum above.");
                     }
                 }
             }
 
+            LoggerService.Logger.LogDebug("Clearing type name cache");
             TypeNameCache.nameCache.Clear();
         }
 
@@ -319,7 +328,7 @@ namespace Obfuscar
         {
             foreach (var tuple in Mapping.FindClasses(name))
             {
-                LogOutput(string.Format("\n{0} => {1}", tuple.Item1.Fullname, tuple.Item2));
+                LoggerService.Logger.LogInformation(string.Format("\n{0} => {1}", tuple.Item1.Fullname, tuple.Item2));
             }
         }
 
@@ -423,6 +432,7 @@ namespace Obfuscar
                 Project.Settings.HidePrivateApi,
                 Project.Settings.MarkedOnly, out skip))
             {
+                LoggerService.Logger.LogDebug("Field {0} in type {1} skipped: {2}", field.Name, typeKey, skip);
                 Mapping.UpdateField(fieldKey, ObfuscationStatus.Skipped, skip);
                 nameGroup.Add(fieldKey.Name);
                 return;
@@ -432,6 +442,7 @@ namespace Obfuscar
                 ? nameGroup.GetNext()
                 : NameMaker.UniqueName(_uniqueMemberNameIndex++);
 
+            LoggerService.Logger.LogDebug("Renaming field {0} in type {1} to {2}", field.Name, typeKey, newName);
             RenameField(info, fieldKey, field, newName);
             nameGroup.Add(newName);
         }
@@ -766,6 +777,8 @@ namespace Obfuscar
         private void RenameType(AssemblyInfo info, TypeDefinition type, TypeKey oldTypeKey, TypeKey newTypeKey,
             TypeKey unrenamedTypeKey)
         {
+            LoggerService.Logger.LogDebug("Renaming type {0} to {1}", oldTypeKey, newTypeKey);
+            
             // find references, rename them, then rename the type itself
             foreach (AssemblyInfo reference in info.ReferencedBy)
             {
@@ -777,6 +790,7 @@ namespace Obfuscar
                     // rename the reference
                     if (oldTypeKey.Matches(refType))
                     {
+                        LoggerService.Logger.LogDebug("Found reference to {0} in {1}, updating", oldTypeKey, reference.Name);
                         refType.GetElementType().Namespace = newTypeKey.Namespace;
                         refType.GetElementType().Name = newTypeKey.Name;
 
@@ -878,6 +892,7 @@ namespace Obfuscar
                 Project.Settings.HidePrivateApi,
                 Project.Settings.MarkedOnly, out skip))
             {
+                LoggerService.Logger.LogDebug("Property {0} in type {1} skipped: {2}", prop.Name, typeKey, skip);
                 m.Update(ObfuscationStatus.Skipped, skip);
 
                 // make sure get/set get skipped too
@@ -898,6 +913,7 @@ namespace Obfuscar
                 (prop.SetMethod.Attributes & MethodAttributes.Public) != 0)
             {
                 // do not rename properties of custom attribute types which have a public setter method
+                LoggerService.Logger.LogDebug("Property {0} in attribute type {1} skipped: public setter of a custom attribute", prop.Name, typeKey);
                 m.Update(ObfuscationStatus.Skipped, "public setter of a custom attribute");
                 // no problem when the getter or setter methods are renamed by RenameMethods()
             }
@@ -906,11 +922,14 @@ namespace Obfuscar
                 // If a property has custom attributes we don't remove the property but rename it instead.
                 // Does the same if KeepProperties is set to true.
                 var newName = NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
+                LoggerService.Logger.LogDebug("Renaming property {0} in type {1} to {2} (has {3} custom attributes, KeepProperties={4})", 
+                    prop.Name, typeKey, newName, prop.CustomAttributes.Count, Project.Settings.KeepProperties);
                 RenameProperty(info, propKey, prop, newName);
             }
             else
             {
                 // add to to collection for removal
+                LoggerService.Logger.LogDebug("Property {0} in type {1} will be dropped", prop.Name, typeKey);
                 propsToDrop.Add(prop);
             }
             return index;
@@ -1145,6 +1164,7 @@ namespace Obfuscar
             MethodGroup group = Project.InheritMap.GetMethodGroup(methodKey);
             if (group == null)
             {
+                LoggerService.Logger.LogDebug("Method {0} has no group", methodKey);
                 if (skipRename != null)
                 {
                     Mapping.UpdateMethod(methodKey, ObfuscationStatus.Skipped, skipRename);
@@ -1152,6 +1172,9 @@ namespace Obfuscar
 
                 return;
             }
+
+            LoggerService.Logger.LogDebug("Method {0} is in group with {1} methods, external: {2}", 
+                methodKey, group.Methods.Count, group.External);
 
             string groupName = @group.Name;
             if (groupName == null)
@@ -1167,6 +1190,7 @@ namespace Obfuscar
                 if (@group.External)
                 {
                     skipRename = "external base class or interface";
+                    LoggerService.Logger.LogDebug("Group for method {0} is external, will be skipped", methodKey);
                 }
 
                 // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
@@ -1175,11 +1199,13 @@ namespace Obfuscar
                     // for an external group, we can't rename.  just use the method
                     // name as group name
                     groupName = method.Name;
+                    LoggerService.Logger.LogDebug("Using method name as group name: {0}", groupName);
                 }
                 else
                 {
                     // for an internal group, get next unused name
                     groupName = NameGroup.GetNext(nameGroups);
+                    LoggerService.Logger.LogDebug("Generated new name for method group: {0}", groupName);
                 }
 
                 @group.Name = groupName;
@@ -1199,13 +1225,14 @@ namespace Obfuscar
             }
             else if (skipRename != null)
             {
-                // group is named, so we need to un-name it
-
                 // ReSharper disable once InvocationIsSkipped
                 Debug.Assert(!@group.External,
                     "Group's external flag should have been handled when the group was created, " +
                     "and all methods in the group should already be marked skipped.");
                 Mapping.UpdateMethod(methodKey, ObfuscationStatus.Skipped, skipRename);
+
+                LoggerService.Logger.LogDebug("Group {0} is already named but method {1} needs to be skipped", 
+                    groupName, methodKey);
 
                 var message =
                     new StringBuilder(
@@ -1221,6 +1248,7 @@ namespace Obfuscar
             }
             else
             {
+                LoggerService.Logger.LogDebug("Using existing name for method group: {0}", groupName);
                 // ReSharper disable once RedundantAssignment
                 ObfuscatedThing m = Mapping.GetMethod(methodKey);
                 // ReSharper disable once InvocationIsSkipped
@@ -1701,9 +1729,7 @@ namespace Obfuscar
                 }
             }
 
-            public void ProcessStrings(MethodDefinition method,
-                AssemblyInfo info,
-                Project project)
+            public void ProcessStrings(MethodDefinition method, AssemblyInfo info, Project project)
             {
                 if (info.ShouldSkipStringHiding(new MethodKey(method), project.InheritMap,
                         project.Settings.HideStrings) || method.Body == null)
@@ -1713,6 +1739,8 @@ namespace Obfuscar
 
                 if (_disabled)
                     return;
+
+                LoggerService.Logger.LogDebug("Processing strings in method {0}", method.FullName);
 
                 // Unroll short form instructions so they can be auto-fixed by Cecil
                 // automatically when instructions are inserted/replaced
@@ -1744,6 +1772,9 @@ namespace Obfuscar
                             data.DataBytes.AddRange(stringBytes);
                             int count = data.DataBytes.Count - start;
 
+                            LoggerService.Logger.LogDebug("Creating new hidden string method for '{0}' with name {1}", 
+                                str.Length > 30 ? str.Substring(0, 30) + "..." : str, methodName);
+
                             // Add a method for this string to our new class
                             individualStringMethodDefinition = new MethodDefinition(
                                 methodName,
@@ -1767,7 +1798,7 @@ namespace Obfuscar
                             worker4.Emit(OpCodes.Call, data.StringGetterMethodDefinition);
 
                             label20.Operand = worker4.Create(OpCodes.Ret);
-                            worker4.Append((Instruction)label20.Operand);
+                            worker4.Append((Instruction) label20.Operand);
 
                             data.NewType.Methods.Add(individualStringMethodDefinition);
                             _methodByString.Add(str, individualStringMethodDefinition);
@@ -1776,14 +1807,17 @@ namespace Obfuscar
                         }
 
                         // Replace Ldstr with Call
-
                         Instruction newinstruction = worker.Create(OpCodes.Call, individualStringMethodDefinition);
-
                         oldToNewStringInstructions.Add(instruction, new LdStrInstructionReplacement(index, newinstruction));
                     }
                 }
 
-                worker.ReplaceAndFixReferences(method.Body, oldToNewStringInstructions);
+                int replacementCount = oldToNewStringInstructions.Count;
+                if (replacementCount > 0)
+                {
+                    LoggerService.Logger.LogDebug("Replacing {0} string constants in method {1}", replacementCount, method.FullName);
+                    worker.ReplaceAndFixReferences(method.Body, oldToNewStringInstructions);
+                }
 
                 // Optimize method back
                 if (project.Settings.Optimize)
