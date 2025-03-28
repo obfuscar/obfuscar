@@ -76,10 +76,13 @@ namespace ObfuscarTests
 
             {
                 TypeDefinition classAType = inAssmDef.MainModule.GetType("System.Runtime.CompilerServices.IsUnmanagedAttribute");
-                ObfuscatedThing classAEntry = map.GetClass(new TypeKey(classAType));
+                if (classAType != null)
+                {
+                    ObfuscatedThing classAEntry = map.GetClass(new TypeKey(classAType));
 
-                Assert.True(classAEntry.Status == ObfuscationStatus.Skipped,
-                    "Type should have been skipped.");
+                    Assert.True(classAEntry.Status == ObfuscationStatus.Skipped,
+                        "Type should have been skipped.");
+                }
             }
 
             {

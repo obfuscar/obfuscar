@@ -3,9 +3,9 @@
   <PropertyGroup>
     <!-- detection SDK version -->
     <ParsedSdkVersion>$([System.Text.RegularExpressions.Regex]::Replace($(NETCoreSdkVersion), '-.*', ''))</ParsedSdkVersion>
-    <IsNet80Supported Condition="'$(ParsedSdkVersion)' >= '8.0'">true</IsNet80Supported>
-    <IsNet90Supported Condition="'$(ParsedSdkVersion)' >= '9.0'">true</IsNet90Supported>
-    <IsNet100Supported Condition="'$(ParsedSdkVersion)' >= '10.0'">true</IsNet100Supported>
+    <IsNet80Supported Condition="'$(ParsedSdkVersion)' &gt;= '8.0'">true</IsNet80Supported>
+    <IsNet90Supported Condition="'$(ParsedSdkVersion)' &gt;= '9.0'">true</IsNet90Supported>
+    <IsNet100Supported Condition="'$(ParsedSdkVersion)' &gt;= '10.0'">true</IsNet100Supported>
     <TargetFrameworks Condition="'$(IsNet80Supported)' == 'true'">$(TargetFrameworks);net8.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(IsNet90Supported)' == 'true'">$(TargetFrameworks);net9.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(IsNet100Supported)' == 'true'">$(TargetFrameworks);net10.0</TargetFrameworks>
@@ -67,11 +67,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
-    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
-    <PackageReference Include="xunit" Version="2.9.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>

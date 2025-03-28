@@ -35,7 +35,8 @@ namespace Obfuscar
 {
     class AssemblyCache : DefaultAssemblyResolver
     {
-        private List<string> paths = new List<string>();
+        private List<string> pathsPortable = new List<string>();
+        private List<string> pathsNetCore = new List<string>();
 
         public AssemblyCache(Project project)
         {
@@ -97,7 +98,7 @@ namespace Obfuscar
             {
                 if (Directory.Exists(portablePath))
                 {
-                    paths.Add(portablePath);
+                    pathsPortable.Add(portablePath);
                 }
                 else
                 {
@@ -109,7 +110,7 @@ namespace Obfuscar
             {
                 if (Directory.Exists(netCorePath))
                 {
-                    paths.Add(netCorePath);
+                    pathsNetCore.Add(netCorePath);
                 }
                 else
                 {
@@ -125,15 +126,33 @@ namespace Obfuscar
             AssemblyDefinition result;
             if (name.IsRetargetable)
             {
-                foreach (var path in paths)
+                LoggerService.Logger.LogDebug("Assembly {Name} is retargetable, adding {paths} search paths", name.Name, pathsPortable.Count);
+                foreach (var path in pathsPortable)
+                {
+                    LoggerService.Logger.LogDebug("Adding search path {Path}", path);
                     AddSearchDirectory(path);
+                }
 
                 result = base.Resolve(name, parameters);
-                foreach (var path in paths)
+                foreach (var path in pathsPortable)
+                    RemoveSearchDirectory(path);
+            }
+            else if (pathsNetCore.Count > 0)
+            {
+                LoggerService.Logger.LogDebug("Assembly {Name} is not retargetable, adding {paths} search paths", name.Name, pathsNetCore.Count);
+                foreach (var path in pathsNetCore)
+                {
+                    LoggerService.Logger.LogDebug("Adding search path {Path}", path);
+                    AddSearchDirectory(path);
+                }
+
+                result = base.Resolve(name, parameters);
+                foreach (var path in pathsNetCore)
                     RemoveSearchDirectory(path);
             }
             else
             {
+                LoggerService.Logger.LogDebug("Assembly {Name} is using default search paths", name.Name);
                 result = base.Resolve(name, parameters);
             }
 
