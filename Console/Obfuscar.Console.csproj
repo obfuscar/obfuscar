@@ -12,11 +12,6 @@
     <ProjectReference Include="..\Obfuscar\Obfuscar.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ILRepack">
-      <Version>2.0.41</Version>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="GitVersion.MsBuild" Version="6.1.0">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -26,18 +21,4 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.3" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
-  <PropertyGroup>
-    <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT' ">
-      rename Obfuscar.Console.exe Obfuscar.Executable.exe
-      rename Obfuscar.Console.pdb Obfuscar.Executable.pdb
-      "$(ILRepack)" /t:exe /out:Obfuscar.Console.exe Obfuscar.Executable.exe Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll
-      del Baml.dll Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Obfuscar.Executable.exe
-    </PostBuildEvent>
-    <PostBuildEvent Condition=" '$(Configuration)' == 'Release' AND '$(OS)' != 'Windows_NT' ">
-      mv Obfuscar.Console.exe Obfuscar.Executable.exe
-      mv Obfuscar.Console.pdb Obfuscar.Executable.pdb
-      mono "$(ILRepack)" /t:exe /out:Obfuscar.Console.exe Obfuscar.Executable.exe Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll
-      rm Mono.Cecil.dll Mono.Cecil.Pdb.dll Mono.Cecil.Rocks.dll Mono.Options.dll Obfuscar.dll Obfuscar.Executable.exe
-    </PostBuildEvent>
-  </PropertyGroup>
 </Project>
