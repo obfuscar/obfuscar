@@ -169,7 +169,7 @@ namespace Obfuscar
                 // Show version if requested
                 if (parsedArgs.ShowVersion)
                 {
-                    Console.WriteLine(Assembly.GetExecutingAssembly().GetName().Version);
+                    Console.WriteLine(Assembly.GetEntryAssembly().GetName().Version);
                     return Task.FromResult(0);
                 }
                 
