@@ -1,8 +1,8 @@
 # Obfuscar, Minimalistic Obfuscation Tool for .NET Assemblies
 
-[![NuGet Version](https://img.shields.io/nuget/v/Obfuscar.svg?style=flat-square)](https://www.nuget.org/packages/Obfuscar/)
-[![NuGet Version (Global Tool)](https://img.shields.io/nuget/v/Obfuscar.GlobalTool.svg?style=flat-square)](https://www.nuget.org/packages/Obfuscar.GlobalTool/)
-[![Build status](https://img.shields.io/github/actions/workflow/status/obfuscar/obfuscar/windows.yml?style=flat-square)](https://github.com/obfuscar/obfuscar/actions/workflows/windows.yml)
+* [![Build status](https://img.shields.io/github/actions/workflow/status/obfuscar/obfuscar/windows.yml?style=flat-square)](https://github.com/obfuscar/obfuscar/actions/workflows/windows.yml)
+* [![NuGet Version (Global Tool)](https://img.shields.io/nuget/v/Obfuscar.GlobalTool.svg?style=flat-square&label=Obfuscar%20for%20.NET)](https://www.nuget.org/packages/Obfuscar.GlobalTool/)
+* [![NuGet Version](https://img.shields.io/nuget/v/Obfuscar.svg?style=flat-square&label=Obfuscar%20for%20.NET%20Framework)](https://www.nuget.org/packages/Obfuscar/)
 
 The project logo came from [Legendora Icon](http://raindropmemory.deviantart.com/art/Legendora-Icon-Set-118999011) by
 [Teekatas Suwannakrua](https://raindropmemory.deviantart.com/).
