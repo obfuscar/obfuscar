@@ -69,10 +69,6 @@ namespace Obfuscar
         public InheritMap(Project project)
         {
             this.project = project;
-
-            // cache for assemblies not in the project
-            project.Cache = new AssemblyCache(project);
-
             foreach (AssemblyInfo info in project.AssemblyList)
             {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
