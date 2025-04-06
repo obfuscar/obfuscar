@@ -317,6 +317,7 @@ namespace Obfuscar
             }
 
             logger.LogInformation("Obfuscar starting with log level: {0}", ObfuscarConsoleLogger.GetLogLevelString(logLevel));
+            logger.LogInformation("Use -v:<level> to set verbosity level (q=quiet, m=minimal, n=normal, d=detailed, diag=diagnostic)");
             
             int start = Environment.TickCount;
             foreach (var project in projectFiles)

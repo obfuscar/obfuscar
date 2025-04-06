@@ -32,8 +32,8 @@ namespace Obfuscar
     {
         private static Task<int> Main(string[] args)
         {
-            const string AppName = "Obfuscar";
-            const string AppDescription = "Obfuscar is a basic obfuscator for .NET assemblies";
+            const string AppName = "Obfuscar for .NET Framework";
+            const string AppDescription = "Obfuscar is a basic obfuscator for .NET Framework assemblies";
             const string AppCopyright = "(C) 2007-2025, Ryan Williams and other contributors.";
             
             return ObfuscarCommandLine.RunAsync(args, AppName, AppDescription, AppCopyright);
