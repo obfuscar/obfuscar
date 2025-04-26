@@ -38,7 +38,7 @@ namespace ObfuscarTests
         public DependencyTests()
         {
             TestHelper.CleanInput();
-            TestHelper.BuildAssemblies("AssemblyA", "AssemblyB");
+            TestHelper.BuildAssemblies(names: ["AssemblyA", "AssemblyB"]);
         }
 
         [Fact]

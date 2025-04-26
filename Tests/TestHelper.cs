@@ -60,13 +60,13 @@ namespace ObfuscarTests
             {
             }
         }
-
-        public static void BuildAssembly(string name, string suffix)
+        
+        public static void BuildAssembly(string name, string suffix, LanguageVersion languageVersion)
         {
-            BuildAssembly(name, suffix, null);
+            BuildAssembly(name, suffix, null, null, false, true, languageVersion);
         }
 
-        public static void BuildAssembly(string name, string suffix = null, List<string> references = null, string keyFile = null, bool delaySign = false, bool treatWarningsAsErrors = true)
+        public static void BuildAssembly(string name, string suffix = null, List<string> references = null, string keyFile = null, bool delaySign = false, bool treatWarningsAsErrors = true, LanguageVersion languageVersion = LanguageVersion.Latest)
         {
             string dllName = string.IsNullOrEmpty(suffix) ? name : name + suffix;
 
@@ -77,8 +77,8 @@ namespace ObfuscarTests
             }
 
             string code = File.ReadAllText(Path.Combine(InputPath, name + ".cs"));
-            // IMPORTANT: force to C# 10 to avoid extra attributes in assemblies. dotnet/runtime#76032
-            var tree = SyntaxFactory.ParseSyntaxTree(code, new CSharpParseOptions(LanguageVersion.CSharp10));
+            // Parse with specified language version (default is C# 10 to avoid extra attributes in assemblies. dotnet/runtime#76032)
+            var tree = SyntaxFactory.ParseSyntaxTree(code, new CSharpParseOptions(languageVersion));
 
             // Detect the file location for the library that defines the object type
             var systemRefLocation = typeof(object).GetTypeInfo().Assembly.Location;
@@ -91,7 +91,7 @@ namespace ObfuscarTests
             var consoleRefLocation = typeof(Console).GetTypeInfo().Assembly.Location;
             var consoleReference = MetadataReference.CreateFromFile(consoleRefLocation);
 
-            var attributeRefLocation = Path.Combine(Path.GetDirectoryName(systemRefLocation), "System.Runtime.dll");           
+            var attributeRefLocation = Path.Combine(Path.GetDirectoryName(systemRefLocation), "System.Runtime.dll");
             var attributeReference = MetadataReference.CreateFromFile(attributeRefLocation);
 
             // Configure compilation options with the key file if provided
@@ -131,12 +131,12 @@ namespace ObfuscarTests
             Assert.Fail("Unable to compile test assembly: " + dllName + ": " + compilationResult.Diagnostics[0].GetMessage());
         }
 
-        public static void BuildAssemblies(params string[] names)
+        public static void BuildAssemblies(LanguageVersion languageVersion = LanguageVersion.Latest, params string[] names)
         {
             var options = new List<string>();
             foreach (var name in names)
             {
-                BuildAssembly(name, null, options);
+                BuildAssembly(name, null, options, languageVersion: languageVersion);
                 options.Add(GetAssemblyPath(name));
             }
         }
@@ -160,17 +160,17 @@ namespace ObfuscarTests
         }
 
         public static Obfuscar.Obfuscator BuildAndObfuscate(string name, string suffix, string xml,
-            bool hideStrings = false)
+            bool hideStrings = false, LanguageVersion languageVersion = LanguageVersion.Latest)
         {
             CleanInput();
-            BuildAssembly(name, suffix);
+            BuildAssembly(name, suffix, languageVersion: languageVersion);
             return Obfuscate(xml, hideStrings);
         }
 
-        public static Obfuscar.Obfuscator BuildAndObfuscate(string[] names, string xml)
+        public static Obfuscar.Obfuscator BuildAndObfuscate(string[] names, string xml, LanguageVersion languageVersion = LanguageVersion.Latest)
         {
             CleanInput();
-            BuildAssemblies(names);
+            BuildAssemblies(languageVersion, names);
             return Obfuscate(xml);
         }
 

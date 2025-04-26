@@ -28,6 +28,7 @@ using System.IO;
 using Mono.Cecil;
 using Xunit;
 using Obfuscar;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace ObfuscarTests
 {
@@ -47,7 +48,8 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
-            return TestHelper.BuildAndObfuscate("AssemblyWithUnmanagedGenerics", string.Empty, xml);
+            // IMPORTANT: The assembly must be built with C# 10 or later to include the IsUnmanagedAttribute.
+            return TestHelper.BuildAndObfuscate("AssemblyWithUnmanagedGenerics", string.Empty, xml, languageVersion: LanguageVersion.CSharp10);
         }
 
         MethodDefinition FindByName(TypeDefinition typeDef, string name)

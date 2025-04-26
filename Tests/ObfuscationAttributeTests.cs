@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Mono.Cecil;
 using Obfuscar;
 using System.IO;
@@ -11,7 +12,7 @@ namespace ObfuscarTests
         public ObfuscationAttributeTests()
         {
             TestHelper.CleanInput();
-            TestHelper.BuildAssemblies("AssemblyA", "AssemblyB");
+            TestHelper.BuildAssemblies(names: ["AssemblyA", "AssemblyB"]);
         }
 
         static MethodDefinition FindByName(TypeDefinition typeDef, string name)
