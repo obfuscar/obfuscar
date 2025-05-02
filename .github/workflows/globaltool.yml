@@ -22,6 +22,15 @@ jobs:
               with:
                   dotnet-version: ${{ matrix.dotnet-version }}
 
+            - name: Temp delete global.json
+              run: |
+                  if [ -f global.json ]; then
+                      echo "Deleting global.json"
+                      rm global.json
+                  else
+                      echo "global.json not found, skipping deletion."
+                  fi
+
             - name: Install Obfuscar
               run: dotnet tool install --global Obfuscar.GlobalTool
 
