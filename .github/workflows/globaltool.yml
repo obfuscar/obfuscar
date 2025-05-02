@@ -1,0 +1,36 @@
+name: update-dotnet-sdk
+
+on:
+    schedule:
+        - cron: "00 12 * * MON"
+    workflow_dispatch:
+
+jobs:
+    install-for-dotnet-sdk:
+        name: Install .NET SDK (${{ matrix.dotnet-version }}) on ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                dotnet-version: ["8.0.x", "9.0.x"]
+                os: [ubuntu-latest, macos-latest, windows-latest]
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v2
+
+            - name: Setup .NET SDK ${{ matrix.dotnet-version }}
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ matrix.dotnet-version }}
+
+            - name: Install Obfuscar
+              run: dotnet tool install --global Obfuscar.GlobalTool
+
+            - name: Verify installation
+              shell: bash
+              run: |
+                  VERSION_OUTPUT=$(obfuscar.console --version)
+                  echo "Obfuscar version: $VERSION_OUTPUT"
+                  if [[ ! "$VERSION_OUTPUT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                          echo "Obfuscar version output is not a valid version number."
+                          exit 1
+                  fi
