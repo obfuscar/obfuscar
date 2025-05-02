@@ -23,6 +23,7 @@ jobs:
                   dotnet-version: ${{ matrix.dotnet-version }}
 
             - name: Temp delete global.json
+              shell: bash
               run: |
                   if [ -f global.json ]; then
                       echo "Deleting global.json"
