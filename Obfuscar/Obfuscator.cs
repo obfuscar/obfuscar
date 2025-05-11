@@ -45,8 +45,6 @@ using Obfuscar.Helpers;
 
 namespace Obfuscar
 {
-    [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification =
-        "Reviewed. Suppression is OK here.")]
     public class Obfuscator
     {
         // Unique names for type and members
@@ -58,8 +56,6 @@ namespace Obfuscar
         /// Creates an obfuscator initialized from a project file.
         /// </summary>
         /// <param name="projfile">Path to project file.</param>
-        [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification =
-            "Reviewed. Suppression is OK here.")]
         public Obfuscator(string projfile)
         {
             Mapping = new ObfuscationMap();

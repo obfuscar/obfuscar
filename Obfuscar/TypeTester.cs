@@ -49,9 +49,9 @@ namespace Obfuscar
         private readonly string attrib;
         private readonly string inherits;
         private readonly bool? isStatic;
-
-        [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:TabsMustNotBeUsed", Justification =
-            "Reviewed. Suppression is OK here.")] private readonly bool?
+        private readonly string decorator;
+        private readonly string[] decoratorAll;
+        private readonly bool?
             isSerializable;
 
         public TypeAffectFlags AffectFlags { get; }
@@ -76,6 +76,27 @@ namespace Obfuscar
             this.isStatic = isStatic;
             this.isSerializable = isSeriablizable;
         }
+        
+        public TypeTester(string name, TypeAffectFlags skipFlags, string attrib, string inherits, bool? isStatic,
+            bool? isSeriablizable, string decorator)
+            : this(name, skipFlags, attrib)
+        {
+            this.inherits = inherits;
+            this.isStatic = isStatic;
+            this.isSerializable = isSeriablizable;
+            this.decorator = decorator;
+        }
+        
+        public TypeTester(string name, TypeAffectFlags skipFlags, string attrib, string inherits, bool? isStatic,
+            bool? isSeriablizable, string decorator, string[] decoratorAll)
+            : this(name, skipFlags, attrib)
+        {
+            this.inherits = inherits;
+            this.isStatic = isStatic;
+            this.isSerializable = isSeriablizable;
+            this.decorator = decorator;
+            this.decoratorAll = decoratorAll;
+        }
 
         public TypeTester(Regex nameRx, TypeAffectFlags skipFlags, string attrib)
         {
@@ -91,6 +112,27 @@ namespace Obfuscar
             this.inherits = inherits;
             this.isStatic = isStatic;
             this.isSerializable = isSeriablizable;
+        }
+        
+        public TypeTester(Regex nameRx, TypeAffectFlags skipFlags, string attrib, string inherits, bool? isStatic,
+            bool? isSeriablizable, string decorator)
+            : this(nameRx, skipFlags, attrib)
+        {
+            this.inherits = inherits;
+            this.isStatic = isStatic;
+            this.isSerializable = isSeriablizable;
+            this.decorator = decorator;
+        }
+        
+        public TypeTester(Regex nameRx, TypeAffectFlags skipFlags, string attrib, string inherits, bool? isStatic,
+            bool? isSeriablizable, string decorator, string[] decoratorAll)
+            : this(nameRx, skipFlags, attrib)
+        {
+            this.inherits = inherits;
+            this.isStatic = isStatic;
+            this.isSerializable = isSeriablizable;
+            this.decorator = decorator;
+            this.decoratorAll = decoratorAll;
         }
 
         public bool Test(TypeKey type, InheritMap map)
@@ -109,6 +151,59 @@ namespace Obfuscar
                     throw new ObfuscarException(string.Format(
                         "'{0}' is not valid for the 'attrib' value of the SkipType element. Only 'public' is supported by now.",
                         attrib));
+                }
+            }
+            
+            if (!string.IsNullOrEmpty(decorator))
+            {
+                var match = false;
+                
+                if (type.TypeDefinition.HasCustomAttributes)
+                {
+                    foreach (var customAttr in type.TypeDefinition.CustomAttributes)
+                    {
+                        if (customAttr.AttributeType.FullName == decorator)
+                        {
+                            match = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!match)
+                {
+                    return false;
+                }
+            }
+            
+            if (decoratorAll != null && decoratorAll.Length > 0)
+            {
+                if (!type.TypeDefinition.HasCustomAttributes)
+                {
+                    return false;
+                }
+                
+                // Track whether each required attribute is found
+                var foundAttributes = new bool[decoratorAll.Length];
+                
+                foreach (var customAttr in type.TypeDefinition.CustomAttributes)
+                {
+                    for (int i = 0; i < decoratorAll.Length; i++)
+                    {
+                        if (customAttr.AttributeType.FullName == decoratorAll[i])
+                        {
+                            foundAttributes[i] = true;
+                        }
+                    }
+                }
+                
+                // Check if all required attributes were found
+                foreach (var found in foundAttributes)
+                {
+                    if (!found)
+                    {
+                        return false;
+                    }
                 }
             }
 

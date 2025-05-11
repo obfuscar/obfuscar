@@ -159,6 +159,9 @@ namespace Obfuscar
                         break;
                     case "SkipType":
                         TypeAffectFlags skipFlags = TypeAffectFlags.SkipNone;
+                        string decorator = Helper.GetAttribute(reader, "decorator", vars);
+                        string decoratorAllStr = Helper.GetAttribute(reader, "decoratorAll", vars);
+                        string[] decoratorAll = string.IsNullOrEmpty(decoratorAllStr) ? null : decoratorAllStr.Split(',');
 
                         val = Helper.GetAttribute(reader, "skipMethods", vars);
                         if (val.Length > 0 && Convert.ToBoolean(val))
@@ -183,16 +186,19 @@ namespace Obfuscar
                         if (rx != null)
                         {
                             info.skipTypes.Add(new TypeTester(rx, skipFlags, attrib, inherits, isStatic,
-                                isSerializable));
+                                isSerializable, decorator, decoratorAll));
                         }
                         else
                         {
                             info.skipTypes.Add(new TypeTester(name, skipFlags, attrib, inherits, isStatic,
-                                isSerializable));
+                                isSerializable, decorator, decoratorAll));
                         }
                         break;
                     case "ForceType":
                         TypeAffectFlags forceFlags = TypeAffectFlags.SkipNone;
+                        string forceDecorator = Helper.GetAttribute(reader, "decorator", vars);
+                        string forceDecoratorAllStr = Helper.GetAttribute(reader, "decoratorAll", vars);
+                        string[] forceDecoratorAll = string.IsNullOrEmpty(forceDecoratorAllStr) ? null : forceDecoratorAllStr.Split(',');
 
                         val = Helper.GetAttribute(reader, "forceMethods", vars);
                         if (val.Length > 0 && Convert.ToBoolean(val))
@@ -217,12 +223,12 @@ namespace Obfuscar
                         if (rx != null)
                         {
                             info.forceTypes.Add(new TypeTester(rx, forceFlags, attrib, inherits, isStatic,
-                                isSerializable));
+                                isSerializable, forceDecorator, forceDecoratorAll));
                         }
                         else
                         {
                             info.forceTypes.Add(new TypeTester(name, forceFlags, attrib, inherits, isStatic,
-                                isSerializable));
+                                isSerializable, forceDecorator, forceDecoratorAll));
                         }
                         break;
                     case "SkipMethod":
@@ -270,31 +276,31 @@ namespace Obfuscar
                         }
                         break;
                     case "SkipField":
-                        string decorator = Helper.GetAttribute(reader, "decorator", vars);
+                        string fieldDecorator = Helper.GetAttribute(reader, "decorator", vars);
 
                         if (rx != null)
                         {
-                            info.skipFields.Add(new FieldTester(rx, type, attrib, typeattrib, inherits, decorator,
+                            info.skipFields.Add(new FieldTester(rx, type, attrib, typeattrib, inherits, fieldDecorator,
                                 isStatic, isSerializable));
                         }
                         else
                         {
-                            info.skipFields.Add(new FieldTester(name, type, attrib, typeattrib, inherits, decorator,
+                            info.skipFields.Add(new FieldTester(name, type, attrib, typeattrib, inherits, fieldDecorator,
                                 isStatic, isSerializable));
                         }
                         break;
                     case "ForceField":
-                        string decorator1 = Helper.GetAttribute(reader, "decorator", vars);
+                        string forceFieldDecorator = Helper.GetAttribute(reader, "decorator", vars);
 
                         if (rx != null)
                         {
-                            info.forceFields.Add(new FieldTester(rx, type, attrib, typeattrib, inherits, decorator1,
+                            info.forceFields.Add(new FieldTester(rx, type, attrib, typeattrib, inherits, forceFieldDecorator,
                                 isStatic, isSerializable));
                         }
                         else
                         {
                             info.forceFields.Add(new FieldTester(name, type, attrib, typeattrib, inherits,
-                                decorator1, isStatic, isSerializable));
+                                forceFieldDecorator, isStatic, isSerializable));
                         }
                         break;
                     case "SkipProperty":

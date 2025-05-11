@@ -46,6 +46,8 @@
     <Compile Include="SkipEventTests.cs" />
     <Compile Include="SkipNestedTypeTests.cs" />
     <Compile Include="SkipPropertyTests.cs" />
+    <Compile Include="SkipTypeByDecoratorTests.cs" />
+    <Compile Include="SkipTypeByDecoratorAllTests.cs" />
     <Compile Include="SkipVirtualMethodTest.cs" />
     <Compile Include="SpecializedGenericsTests.cs" />
     <Compile Include="TesterTests.cs" />
