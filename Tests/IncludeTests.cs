@@ -81,7 +81,7 @@ namespace ObfuscarTests
                     destFileName, true);
             }
 
-            TestHelper.BuildAndObfuscate("SkipVirtualMethodTest", "1", xml);
+            TestHelper.BuildAndObfuscate("SkipVirtualMethodTest", "1", xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             string[] expected = new string[]
             {

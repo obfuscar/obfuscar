@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using Mono.Cecil;
 using Xunit;
 
@@ -21,7 +20,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}{3}.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar, name);
 
-            TestHelper.BuildAndObfuscate(name, string.Empty, xml);
+            TestHelper.BuildAndObfuscate(name, string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
             return Path.Combine(outputPath, $"{name}.dll");
         }
 

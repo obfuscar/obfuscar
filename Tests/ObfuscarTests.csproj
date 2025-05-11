@@ -29,6 +29,7 @@
     <Compile Include="DockPanelSuiteTests.cs" />
     <Compile Include="FilterTests.cs" />
     <Compile Include="FSharpTests.cs" />
+    <Compile Include="SkipCompilerGeneratedTypeTests.cs" />
     <Compile Include="FunctionOverridingTests.cs" />
     <Compile Include="HideStringsTests.cs" />
     <Compile Include="IncludeTests.cs" />
@@ -69,6 +70,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">

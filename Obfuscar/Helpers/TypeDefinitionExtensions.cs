@@ -5,8 +5,43 @@ using System.Runtime.Caching;
 
 namespace Obfuscar.Helpers
 {
-    internal static class TypeDefinitionExtensions
+    public static class TypeDefinitionExtensions
     {
+        /// <summary>
+        /// Checks if a type has attributes that are compiler-generated and embedded
+        /// </summary>
+        /// <param name="type">Type to check</param>
+        /// <returns>True if the type has compiler-generated and embedded attributes</returns>
+        public static bool HasCompilerGeneratedAttributes(this TypeDefinition type)
+        {
+            if (type == null || !type.HasCustomAttributes)
+                return false;
+
+            bool hasCompilerGenerated = false;
+            bool hasEmbedded = false;
+
+            foreach (var attribute in type.CustomAttributes)
+            {
+                // Check if the attribute itself is compiler-generated
+                if (attribute.AttributeType.Name == "CompilerGeneratedAttribute" && 
+                    attribute.AttributeType.Namespace == "System.Runtime.CompilerServices")
+                {
+                    hasCompilerGenerated = true;
+                }
+
+                // Check if the attribute name or namespace contains "Embedded"
+                if (attribute.AttributeType.Name == "EmbeddedAttribute" && 
+                    attribute.AttributeType.Namespace == "Microsoft.CodeAnalysis")
+                {
+                    hasEmbedded = true;
+                }
+
+                if (hasCompilerGenerated && hasEmbedded)
+                    return true;
+            }
+            
+            return hasCompilerGenerated && hasEmbedded;
+        }
         public static bool IsTypePublic(this TypeDefinition type)
         {
             if (type.DeclaringType == null)

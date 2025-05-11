@@ -27,6 +27,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -66,7 +67,10 @@ namespace ObfuscarTests
             BuildAssembly(name, suffix, null, null, false, true, languageVersion);
         }
 
-        public static void BuildAssembly(string name, string suffix = null, List<string> references = null, string keyFile = null, bool delaySign = false, bool treatWarningsAsErrors = true, LanguageVersion languageVersion = LanguageVersion.Latest)
+        public static void BuildAssembly(string name, string suffix = null, List<string> customReferences = null,
+            string keyFile = null, bool delaySign = false, bool treatWarningsAsErrors = true,
+            LanguageVersion languageVersion = LanguageVersion.Latest, bool useNetFramework = true,
+            string targetFrameworkVersion = "net48")
         {
             string dllName = string.IsNullOrEmpty(suffix) ? name : name + suffix;
 
@@ -77,22 +81,67 @@ namespace ObfuscarTests
             }
 
             string code = File.ReadAllText(Path.Combine(InputPath, name + ".cs"));
-            // Parse with specified language version (default is C# 10 to avoid extra attributes in assemblies. dotnet/runtime#76032)
+            // Parse with specified language version (default is C# 10 to avoid extra attributes in assemblies)
             var tree = SyntaxFactory.ParseSyntaxTree(code, new CSharpParseOptions(languageVersion));
 
-            // Detect the file location for the library that defines the object type
-            var systemRefLocation = typeof(object).GetTypeInfo().Assembly.Location;
-            // Create a reference to the library
-            var systemReference = MetadataReference.CreateFromFile(systemRefLocation);
+            List<MetadataReference> references = new List<MetadataReference>();
 
-            var dataContractRefLocation = typeof(DataContractAttribute).GetTypeInfo().Assembly.Location;
-            var dataContractReference = MetadataReference.CreateFromFile(dataContractRefLocation);
-
-            var consoleRefLocation = typeof(Console).GetTypeInfo().Assembly.Location;
-            var consoleReference = MetadataReference.CreateFromFile(consoleRefLocation);
-
-            var attributeRefLocation = Path.Combine(Path.GetDirectoryName(systemRefLocation), "System.Runtime.dll");
-            var attributeReference = MetadataReference.CreateFromFile(attributeRefLocation);
+            if (useNetFramework)
+            {
+                // Find the reference assemblies from NuGet package
+                // Typically they're in a path like:
+                // ~/.nuget/packages/microsoft.netframework.referenceassemblies.net48/1.0.3/build/.NETFramework/v4.8/
+                string nugetPackagesPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    ".nuget", "packages");
+                    
+                // This finds the most recent version of the package
+                string referenceAssemblyPackageDir = Directory.GetDirectories(
+                    Path.Combine(nugetPackagesPath, 
+                    $"microsoft.netframework.referenceassemblies.{targetFrameworkVersion}"))
+                    .OrderByDescending(d => d)
+                    .FirstOrDefault();
+                    
+                if (referenceAssemblyPackageDir == null)
+                {
+                    throw new DirectoryNotFoundException(
+                        $"Could not find Microsoft.NETFramework.ReferenceAssemblies.{targetFrameworkVersion} NuGet package.");
+                }
+                
+                string frameworkPath = Path.Combine(
+                    referenceAssemblyPackageDir,
+                    "build", ".NETFramework", 
+                    "v" + targetFrameworkVersion.Substring(3, 1) + "." + targetFrameworkVersion.Substring(4));
+                    
+                // Add core .NET Framework references
+                references.Add(MetadataReference.CreateFromFile(Path.Combine(frameworkPath, "mscorlib.dll")));
+                references.Add(MetadataReference.CreateFromFile(Path.Combine(frameworkPath, "System.dll")));
+                references.Add(MetadataReference.CreateFromFile(Path.Combine(frameworkPath, "System.Core.dll")));
+                references.Add(MetadataReference.CreateFromFile(Path.Combine(frameworkPath, "System.Runtime.Serialization.dll")));
+                
+                // Add other references that your code might need
+                string facadesPath = Path.Combine(frameworkPath, "Facades");
+                if (Directory.Exists(facadesPath))
+                {
+                    references.Add(MetadataReference.CreateFromFile(
+                        Path.Combine(facadesPath, "System.Runtime.dll")));
+                }
+            }
+            else
+            {
+                // Use the current runtime's references as before
+                var systemRefLocation = typeof(object).GetTypeInfo().Assembly.Location;
+                references.Add(MetadataReference.CreateFromFile(systemRefLocation));
+                
+                var dataContractRefLocation = typeof(DataContractAttribute).GetTypeInfo().Assembly.Location;
+                references.Add(MetadataReference.CreateFromFile(dataContractRefLocation));
+                
+                var consoleRefLocation = typeof(Console).GetTypeInfo().Assembly.Location;
+                references.Add(MetadataReference.CreateFromFile(consoleRefLocation));
+                
+                var attributeRefLocation = Path.Combine(Path.GetDirectoryName(systemRefLocation), "System.Runtime.dll");
+                references.Add(MetadataReference.CreateFromFile(attributeRefLocation));
+            }
 
             // Configure compilation options with the key file if provided
             var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
@@ -108,18 +157,19 @@ namespace ObfuscarTests
                 }
             }
 
-            // A single, immutable invocation to the compiler
-            // to produce a library
+            // Build the compilation with all references
             var compilation = CSharpCompilation.Create(dllName)
-              .WithOptions(compilationOptions)
-              .AddReferences(systemReference)
-              .AddReferences(dataContractReference)
-              .AddReferences(consoleReference)
-              .AddReferences(attributeReference)
-              .AddSyntaxTrees(tree);
-            foreach (var option in references ?? new List<string>())
+            .WithOptions(compilationOptions)
+            .AddReferences(references)
+            .AddSyntaxTrees(tree);
+            
+            // Add additional references provided by the caller
+            if (customReferences != null)
             {
-                compilation = compilation.AddReferences(MetadataReference.CreateFromFile(option));
+                foreach (var customRef in customReferences)
+                {
+                    compilation = compilation.AddReferences(MetadataReference.CreateFromFile(customRef));
+                }
             }
 
             EmitResult compilationResult = compilation.Emit(fileName);

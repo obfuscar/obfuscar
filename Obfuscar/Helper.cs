@@ -24,7 +24,6 @@
 
 #endregion
 
-using System;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using System.Collections.Generic;

@@ -24,7 +24,6 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
@@ -49,7 +48,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, output, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithNestedTypes", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithNestedTypes", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             HashSet<string> typesToFind = new HashSet<string>();
             typesToFind.Add("A.A");
@@ -83,7 +82,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithNestedTypes2", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithNestedTypes2", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             HashSet<string> typesToFind = new HashSet<string>();
             typesToFind.Add("TestClasses.ClassA");

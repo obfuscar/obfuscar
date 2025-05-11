@@ -48,7 +48,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithStrings.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true);
+            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true, Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
@@ -79,7 +79,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithStrings.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true);
+            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true, Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
@@ -116,7 +116,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true);
+            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true, Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
@@ -153,7 +153,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true);
+            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true, Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
@@ -190,7 +190,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true);
+            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true, Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
@@ -225,7 +225,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}ManyStrings.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("ManyStrings", string.Empty, xml, true);
+            TestHelper.BuildAndObfuscate("ManyStrings", string.Empty, xml, true, Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "ManyStrings.dll"));
 
@@ -263,7 +263,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true);
+            TestHelper.BuildAndObfuscate("AssemblyWithStrings", string.Empty, xml, true, Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 

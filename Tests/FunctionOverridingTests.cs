@@ -49,7 +49,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithOverrides.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
-            return TestHelper.BuildAndObfuscate("AssemblyWithOverrides", string.Empty, xml);
+            return TestHelper.BuildAndObfuscate("AssemblyWithOverrides", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
         }
 
         MethodDefinition FindByName(TypeDefinition typeDef, string name)
@@ -243,7 +243,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithClosedOverrideGeneric.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithClosedOverrideGeneric", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithClosedOverrideGeneric", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             var assemblyPath = Path.Combine(Directory.GetCurrentDirectory(), outputPath,
                 "AssemblyWithClosedOverrideGeneric.dll");

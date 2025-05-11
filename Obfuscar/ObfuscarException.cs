@@ -1,6 +1,5 @@
 ﻿using System;
 #if (!SILVERLIGHT)
-using System.Runtime.Serialization;
 
 #endif
 

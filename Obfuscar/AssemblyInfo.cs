@@ -809,7 +809,7 @@ namespace Obfuscar
         }
 
         public bool ShouldSkip(TypeKey type, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
-            out string message)
+            bool skipCompilerGeneratedTypes, out string message)
         {
             var attribute = type.TypeDefinition.MarkedToRename();
             if (attribute != null)
@@ -845,6 +845,12 @@ namespace Obfuscar
             if (ShouldSkip(type.Namespace, map))
             {
                 message = "namespace rule in configuration";
+                return true;
+            }
+
+            if (skipCompilerGeneratedTypes && type.TypeDefinition.HasCompilerGeneratedAttributes())
+            {
+                message = "compiler generated attribute rule in configuration";
                 return true;
             }
 
@@ -1200,6 +1206,8 @@ namespace Obfuscar
             if (!initialized)
                 throw new InvalidOperationException("Expected that AssemblyInfo.Init would be called before use.");
         }
+
+
 
         public override string ToString()
         {

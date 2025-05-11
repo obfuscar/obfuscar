@@ -498,7 +498,8 @@ namespace Obfuscar
                     string skip;
                     // rename the class parameters
                     if (info.ShouldSkip(new TypeKey(type), Project.InheritMap, Project.Settings.KeepPublicApi,
-                        Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
+                        Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, 
+                        Project.Settings.SkipGenerated, out skip))
                         continue;
 
                     int index = 0;
@@ -564,7 +565,8 @@ namespace Obfuscar
 
                     string skip;
                     if (info.ShouldSkip(unrenamedTypeKey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                        Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
+                        Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly,
+                        Project.Settings.SkipGenerated, out skip))
                     {
                         Mapping.UpdateType(oldTypeKey, ObfuscationStatus.Skipped, skip);
 

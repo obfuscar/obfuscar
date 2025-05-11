@@ -24,7 +24,6 @@
 
 #endregion
 
-using System;
 using Mono.Cecil;
 
 namespace Obfuscar

@@ -28,7 +28,6 @@ using System.IO;
 using Mono.Cecil;
 using Xunit;
 using Obfuscar;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace ObfuscarTests
 {
@@ -49,7 +48,7 @@ namespace ObfuscarTests
                 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
             // IMPORTANT: The assembly must be built with C# 10 or later to include the IsUnmanagedAttribute.
-            return TestHelper.BuildAndObfuscate("AssemblyWithUnmanagedGenerics", string.Empty, xml, languageVersion: LanguageVersion.CSharp10);
+            return TestHelper.BuildAndObfuscate("AssemblyWithUnmanagedGenerics", string.Empty, xml);
         }
 
         MethodDefinition FindByName(TypeDefinition typeDef, string name)
@@ -73,9 +72,6 @@ namespace ObfuscarTests
             AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(TestHelper.InputPath, assmName));
 
-            AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(
-                Path.Combine(item.Project.Settings.OutPath, assmName));
-
             {
                 TypeDefinition classAType = inAssmDef.MainModule.GetType("System.Runtime.CompilerServices.IsUnmanagedAttribute");
                 if (classAType != null)
@@ -84,6 +80,10 @@ namespace ObfuscarTests
 
                     Assert.True(classAEntry.Status == ObfuscationStatus.Skipped,
                         "Type should have been skipped.");
+                }
+                else
+                {
+                    Assert.Fail("Type should have been found.");
                 }
             }
 

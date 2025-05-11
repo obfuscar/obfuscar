@@ -25,10 +25,7 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Mono.Cecil;
-using Mono.Cecil.Metadata;
 
 namespace Obfuscar
 {

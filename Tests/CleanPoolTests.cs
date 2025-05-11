@@ -24,7 +24,6 @@
 
 #endregion
 
-using System;
 using System.IO;
 using Xunit;
 

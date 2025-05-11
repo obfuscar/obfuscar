@@ -24,7 +24,6 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
@@ -86,7 +85,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithProperties.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             string[] expected = new string[0];
 
@@ -114,7 +113,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithProperties.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             string[] expected = new string[0];
 
@@ -143,7 +142,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             string[] expected = new string[]
             {
@@ -174,7 +173,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithProperties", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             string[] expected = new string[]
             {

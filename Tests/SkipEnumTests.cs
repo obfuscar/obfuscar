@@ -24,7 +24,6 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
@@ -74,7 +73,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithEnums.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             string[] expected = new string[0];
 
@@ -103,7 +102,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             string[] expected = new string[]
             {
@@ -134,7 +133,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             string[] expected = new string[]
             {
@@ -164,7 +163,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             string[] expected = new string[]
             {
@@ -193,7 +192,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}AssemblyWithEnums.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml);
+            TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             string[] expected = new string[]
             {
@@ -223,7 +222,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            var map = TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml).Mapping;
+            var map = TestHelper.BuildAndObfuscate("AssemblyWithEnums", string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7).Mapping;
 
             string[] expected = new string[]
             {

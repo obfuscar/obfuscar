@@ -25,7 +25,6 @@
 #endregion
 
 using System;
-using Mono.CompilerServices.SymbolWriter;
 using Obfuscar;
 using Xunit;
 

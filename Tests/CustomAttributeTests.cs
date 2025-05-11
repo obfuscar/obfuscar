@@ -24,7 +24,6 @@
 
 #endregion
 
-using System;
 using System.IO;
 using System.Linq;
 using Mono.Cecil;
@@ -49,7 +48,7 @@ namespace ObfuscarTests
                 @"<Module file='$(InPath){2}{3}.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, output, Path.DirectorySeparatorChar, name);
 
-            TestHelper.BuildAndObfuscate(name, string.Empty, xml);
+            TestHelper.BuildAndObfuscate(name, string.Empty, xml, false, Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
             return Path.Combine(output, $"{name}.dll");
         }
 

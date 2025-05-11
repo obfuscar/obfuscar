@@ -24,12 +24,9 @@
 
 #endregion
 
-using System;
 using System.IO;
-using System.CodeDom.Compiler;
 using Obfuscar;
 using Xunit;
-using Microsoft.CSharp;
 
 namespace ObfuscarTests
 {

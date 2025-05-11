@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Mono.Cecil;
 using Obfuscar;
 using System.IO;
@@ -189,7 +188,7 @@ namespace ObfuscarTests
                 @"				</Obfuscator>",
                 TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar, name);
 
-            var obfuscator = TestHelper.BuildAndObfuscate(name, string.Empty, xml);
+            var obfuscator = TestHelper.BuildAndObfuscate(name, string.Empty, xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
             var map = obfuscator.Mapping;
 
             AssemblyDefinition inAssmDef = AssemblyDefinition.ReadAssembly(obfuscator.Project.AssemblyList[0].FileName);
