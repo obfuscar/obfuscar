@@ -23,7 +23,7 @@
     <RepositoryUrl>https://github.com/obfuscar/obfuscar</RepositoryUrl>
     <PackageProjectUrl>https://github.com/obfuscar/obfuscar</PackageProjectUrl>
     <PackageIcon>Potion-icon.png</PackageIcon>
-    <PackageLicense>MIT</PackageLicense>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
     <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2024 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
     <RepositoryType>git</RepositoryType>
