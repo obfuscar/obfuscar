@@ -48,6 +48,7 @@ namespace Obfuscar
         private readonly PredicateCollection<string> forceNamespaces = new PredicateCollection<string>();
         private readonly PredicateCollection<TypeKey> forceTypes = new PredicateCollection<TypeKey>();
         private readonly PredicateCollection<MethodKey> forceMethods = new PredicateCollection<MethodKey>();
+        private readonly PredicateCollection<MethodKey> forceParams = new PredicateCollection<MethodKey>();
         private readonly PredicateCollection<FieldKey> forceFields = new PredicateCollection<FieldKey>();
         private readonly PredicateCollection<PropertyKey> forceProperties = new PredicateCollection<PropertyKey>();
         private readonly PredicateCollection<EventKey> forceEvents = new PredicateCollection<EventKey>();
@@ -253,6 +254,16 @@ namespace Obfuscar
                         {
                             info.forceMethods.Add(new MethodTester(name, type, attrib, typeattrib, inherits,
                                 isStatic));
+                        }
+                        break;
+                    case "ForceParams":
+                        if (rx != null)
+                        {
+                            info.forceParams.Add(new MethodTester(rx, type, attrib, typeattrib));
+                        }
+                        else
+                        {
+                            info.forceParams.Add(new MethodTester(name, type, attrib, typeattrib));
                         }
                         break;
                     case "SkipStringHiding":
@@ -904,6 +915,11 @@ namespace Obfuscar
             }
 
             return ShouldSkipParams(method, map, keepPublicApi, hidePrivateApi, markedOnly, out message);
+        }
+
+        public bool ShouldForceParams(MethodKey method, InheritMap map)
+        {
+            return forceParams.IsMatch(method, map);
         }
 
         public bool ShouldSkipParams(MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
