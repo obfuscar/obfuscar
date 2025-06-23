@@ -45,6 +45,8 @@ namespace Obfuscar
         private readonly Variables vars = new Variables();
         private readonly List<string> assemblySearchPaths = new List<string>();
 
+        private static readonly List<string> paramsWithEnvVars = new List<string>() { "InPath", "OutPath", "LogFile" };
+
         Settings settings;
 
         // FIXME: Figure out why this exists if it is never used.
@@ -183,7 +185,7 @@ namespace Obfuscar
                 {
                     var value = setting.Attribute("value")?.Value;
                     if (!string.IsNullOrEmpty(value))
-                        project.vars.Add(name, value);
+                        project.vars.Add(name, paramsWithEnvVars.Contains(name) ? Environment.ExpandEnvironmentVariables(value) : value);
                     else
                         project.vars.Remove(name);
                 }
