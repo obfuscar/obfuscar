@@ -23,7 +23,7 @@ namespace Obfuscar.Helpers
                     var rename = !(bool)(Helper.GetAttributePropertyByName(attr, "Exclude") ?? true);
 
                     if (fromMember && !applyToMembers)
-                        return !rename;
+                        return null;
 
                     return rename;
                 }
