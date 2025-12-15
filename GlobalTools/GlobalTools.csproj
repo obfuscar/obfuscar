@@ -25,7 +25,7 @@
     <PackageIcon>Potion-icon.png</PackageIcon>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
-    <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2024 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
+    <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2025 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
     <RepositoryType>git</RepositoryType>
     <PackageTags>obfuscar,obfuscation</PackageTags>
     <GitVersionTargetFramework>net8.0</GitVersionTargetFramework>
