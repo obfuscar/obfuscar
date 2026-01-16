@@ -49,11 +49,11 @@ namespace Obfuscar.Metadata
     public static class AssemblyWriterFactory
     {
         /// <summary>
-        /// Create a writer using the default implementation (Cecil-based).
+        /// Create a writer using the default implementation (SRM-based).
         /// </summary>
         public static IAssemblyWriter CreateWriter()
         {
-            return new CecilAssemblyWriter();
+            return new SrmAssemblyWriter();
         }
     }
 }
