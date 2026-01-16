@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using Mono.Cecil.Cil;
 using System.Reflection.Metadata.Ecma335;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Obfuscar.Metadata
 {
@@ -29,7 +28,27 @@ namespace Obfuscar.Metadata
                 throw new BadImageFormatException("PE image has no metadata.");
 
             MetadataReader = PeReader.GetMetadataReader();
+            // Try load portable PDB next to assembly (simple strategy)
+            try
+            {
+                var pdbPath = Path.ChangeExtension(path, ".pdb");
+                if (File.Exists(pdbPath))
+                {
+                    var pdbStream = File.OpenRead(pdbPath);
+                    pdbProvider = System.Reflection.Metadata.MetadataReaderProvider.FromPortablePdbStream(pdbStream);
+                    pdbReader = pdbProvider.GetMetadataReader();
+                }
+            }
+            catch
+            {
+                // continue without PDB
+            }
         }
+
+        // PDB reader/provider (if a portable PDB exists alongside the assembly)
+        private System.Reflection.Metadata.MetadataReaderProvider pdbProvider;
+        private System.Reflection.Metadata.MetadataReader pdbReader;
+        public System.Reflection.Metadata.MetadataReader PdbReader => pdbReader;
 
         // Materialized AssemblyDefinition (lazy)
         private Mono.Cecil.AssemblyDefinition materializedAssembly;
@@ -96,7 +115,45 @@ namespace Obfuscar.Metadata
                     var mname = md.GetString(mdMethod.Name);
                     var matt = (Mono.Cecil.MethodAttributes)mdMethod.Attributes;
                     var mdef = new Mono.Cecil.MethodDefinition(mname, matt, module.TypeSystem.Object);
+                    // Try to decode signature for return type and parameters
+                    try
+                    {
+                        var sigHandle = mdMethod.Signature;
+                        if (!sigHandle.IsNil)
+                        {
+                            var returnType = SrmSignatureDecoder.DecodeType(module, md, sigHandle);
+                            if (returnType != null)
+                                mdef.ReturnType = returnType;
+                        }
+                    }
+                    catch
+                    {
+                        // best-effort: leave as object
+                    }
                     typeDef.Methods.Add(mdef);
+
+                    // Populate method parameters from signature (simple extraction)
+                    try
+                    {
+                        var sigHandle = mdMethod.Signature;
+                        if (!sigHandle.IsNil)
+                        {
+                            var msig = SrmSignatureDecoder.DecodeMethodSignature(module, md, sigHandle);
+                            if (msig.ParameterTypes.Length > 0)
+                            {
+                                for (int i = 0; i < msig.ParameterTypes.Length; i++)
+                                {
+                                    var ptype = msig.ParameterTypes[i];
+                                    var pname = "param" + (i + 1);
+                                    var pdef = new Mono.Cecil.ParameterDefinition(pname, Mono.Cecil.ParameterAttributes.None, ptype ?? module.TypeSystem.Object);
+                                    mdef.Parameters.Add(pdef);
+                                }
+                            }
+                            if (msig.ReturnType != null)
+                                mdef.ReturnType = msig.ReturnType;
+                        }
+                    }
+                    catch { }
 
                     // Try to populate method body if there is an RVA
                     int rva = mdMethod.RelativeVirtualAddress;
@@ -116,7 +173,111 @@ namespace Obfuscar.Metadata
                                 foreach (var instr in instructions)
                                     mbody.Instructions.Add(instr);
 
-                                mdef.Body = mbody;
+                                    // Local variable decoding: try to use MethodDebugInformation local signature when available
+                                    try
+                                    {
+                                        // method handle
+                                        var methodHandle = (MethodDefinitionHandle)mh;
+                                        var debugHandle = md.GetMethodDebugInformation(methodHandle);
+                                        var localSig = debugHandle.LocalSignature;
+                                        if (!localSig.IsNil)
+                                        {
+                                            var locals = SrmSignatureDecoder.DecodeLocalVariables(module, md, localSig);
+                                            foreach (var lt in locals)
+                                            {
+                                                var v = new Mono.Cecil.Cil.VariableDefinition(lt ?? module.TypeSystem.Object);
+                                                mbody.Variables.Add(v);
+                                            }
+                                        }
+                                    }
+                                    catch { }
+
+                                    // If we have a portable PDB loaded, try to get local variable names and scopes
+                                    try
+                                    {
+                                        if (pdbReader != null)
+                                        {
+                                            var methodHandle = (MethodDefinitionHandle)mh;
+
+                                            // Build an instruction offset map for mapping offsets -> Instruction
+                                            var instrMap = mbody.Instructions.ToDictionary(i => i.Offset, i => i);
+
+                                            // Iterate local scopes from the PDB and find those that belong to this method
+                                            foreach (var scopeHandle in pdbReader.LocalScopes)
+                                            {
+                                                try
+                                                {
+                                                    var scope = pdbReader.GetLocalScope(scopeHandle);
+                                                    if (!scope.Method.Equals(methodHandle))
+                                                        continue;
+
+                                                    // Only attach debug scopes/variable names if MethodDebugInformation already exists
+                                                    var mdDebug = mdef.DebugInformation;
+                                                    if (mdDebug == null)
+                                                        continue;
+
+                                                    // Map start/end instruction by offset
+                                                    instrMap.TryGetValue(scope.StartOffset, out var sInstr);
+                                                    instrMap.TryGetValue(scope.StartOffset + scope.Length, out var eInstr);
+                                                    var sd = new Mono.Cecil.Cil.ScopeDebugInformation(sInstr, eInstr);
+
+                                                    // Add variables declared in this scope
+                                                    foreach (var lvHandle in scope.GetLocalVariables())
+                                                    {
+                                                        try
+                                                        {
+                                                            var lv = pdbReader.GetLocalVariable(lvHandle);
+                                                            int localIndex = lv.Index;
+                                                            if (localIndex >= 0 && localIndex < mbody.Variables.Count)
+                                                            {
+                                                                var vdef = mbody.Variables[localIndex];
+                                                                var lvName = pdbReader.GetString(lv.Name);
+                                                                var vinfo = new Mono.Cecil.Cil.VariableDebugInformation(vdef, lvName);
+                                                                sd.Variables.Add(vinfo);
+                                                            }
+                                                        }
+                                                        catch { }
+                                                    }
+
+                                                    // Attach scope to method debug info
+                                                    mdDebug.Scope = sd;
+                                                    mdef.DebugInformation = mdDebug;
+                                                }
+                                                catch { }
+                                            }
+                                        }
+                                    }
+                                    catch { }
+
+                                    // Exception handlers from method body
+                                    try
+                                    {
+                                        foreach (var eh in bodyBlock.ExceptionRegions)
+                                        {
+                                            var handler = new Mono.Cecil.Cil.ExceptionHandler(Mono.Cecil.Cil.ExceptionHandlerType.Catch);
+                                            // map offsets to instructions
+                                            var map = mbody.Instructions.ToDictionary(i => i.Offset, i => i);
+                                            if (map.TryGetValue(eh.TryOffset, out var tstart)) handler.TryStart = tstart;
+                                            if (map.TryGetValue(eh.TryOffset + eh.TryLength, out var tend)) handler.TryEnd = tend;
+                                            if (map.TryGetValue(eh.HandlerOffset, out var hstart)) handler.HandlerStart = hstart;
+                                            if (map.TryGetValue(eh.HandlerOffset + eh.HandlerLength, out var hend)) handler.HandlerEnd = hend;
+                                            try
+                                            {
+                                                var catchHandle = eh.CatchType;
+                                                if (!catchHandle.IsNil)
+                                                {
+                                                    var catchToken = System.Reflection.Metadata.Ecma335.MetadataTokens.GetToken(catchHandle);
+                                                    var catchType = ResolveMetadataToken(module, md, (int)catchToken);
+                                                    handler.CatchType = catchType as Mono.Cecil.TypeReference;
+                                                }
+                                            }
+                                            catch { }
+                                            mbody.ExceptionHandlers.Add(handler);
+                                        }
+                                    }
+                                    catch { }
+
+                                    mdef.Body = mbody;
                             }
                         }
                         catch
