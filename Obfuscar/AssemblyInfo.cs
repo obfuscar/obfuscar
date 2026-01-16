@@ -664,56 +664,110 @@ namespace Obfuscar
 
             try
             {
-                bool readSymbols = project.Settings.RegenerateDebugInfo &&
-                                   System.IO.File.Exists(System.IO.Path.ChangeExtension(filename, "pdb"));
-                try
+                // Use the configured factory to create an assembly reader. By default this is the Cecil-based reader.
+                using (var reader = Metadata.AssemblyReaderFactory.Create(filename))
                 {
-                    definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
+                    // If the reader exposes a Mono.Cecil AssemblyDefinition, use it to preserve behavior.
+                    if (reader is Metadata.CecilAssemblyReader cecilReader)
                     {
-                        ReadingMode = ReadingMode.Deferred,
-                        ReadSymbols = readSymbols,
-                        AssemblyResolver = project.Cache
-                    });
-                }
-                catch
-                {
-                    // If there's a non-matching pdb next to it, this fails, else just try again
-                    if (!readSymbols)
-                        throw;
-                    definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
-                    {
-                        ReadingMode = ReadingMode.Deferred,
-                        ReadSymbols = false,
-                        AssemblyResolver = project.Cache
-                    });
-                }
+                        // Preserve previous two-pass read behavior by re-reading via AssemblyDefinition.ReadAssembly
+                        bool readSymbols = project.Settings.RegenerateDebugInfo &&
+                                           System.IO.File.Exists(System.IO.Path.ChangeExtension(filename, "pdb"));
 
-                project.Cache.RegisterAssembly(definition);
+                        try
+                        {
+                            definition = cecilReader.AssemblyDefinition;
+                        }
+                        catch
+                        {
+                            // fall back to direct read if wrapper couldn't provide it
+                            definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
+                            {
+                                ReadingMode = ReadingMode.Deferred,
+                                ReadSymbols = readSymbols,
+                                AssemblyResolver = project.Cache
+                            });
+                        }
 
-                // IMPORTANT: read again but with full mode.
-                try
-                {
-                    definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
-                    {
-                        ReadingMode = ReadingMode.Immediate,
-                        ReadSymbols = readSymbols,
-                        AssemblyResolver = project.Cache
-                    });
-                }
-                catch
-                {
-                    // If there's a non-matching pdb next to it, this fails, else just try again
-                    if (!readSymbols)
-                        throw;
-                    definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
-                    {
-                        ReadingMode = ReadingMode.Immediate,
-                        ReadSymbols = false,
-                        AssemblyResolver = project.Cache
-                    });
-                }
+                        project.Cache.RegisterAssembly(definition);
 
-                name = definition.Name.Name;
+                        // Re-read with immediate reading mode to populate structures.
+                        try
+                        {
+                            definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
+                            {
+                                ReadingMode = ReadingMode.Immediate,
+                                ReadSymbols = readSymbols,
+                                AssemblyResolver = project.Cache
+                            });
+                        }
+                        catch
+                        {
+                            if (!readSymbols)
+                                throw;
+                            definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
+                            {
+                                ReadingMode = ReadingMode.Immediate,
+                                ReadSymbols = false,
+                                AssemblyResolver = project.Cache
+                            });
+                        }
+
+                        name = definition.Name.Name;
+                    }
+                    else if (reader is Metadata.SrmAssemblyReader srm)
+                    {
+                        // Materialize a minimal AssemblyDefinition from SRM and register it in the cache.
+                        definition = srm.CreateAssemblyDefinition();
+                        project.Cache.RegisterAssembly(definition);
+                        name = definition.Name.Name;
+                        // Try to resolve a core library module (mscorlib / System.Private.CoreLib) and patch
+                        // the TypeSystem.CoreLibrary via reflection so Resolve() works for core types.
+                        try
+                        {
+                            var module = definition.MainModule;
+                            var candidates = new[] { "mscorlib", "System.Private.CoreLib", "netstandard", "System.Runtime" };
+                            Mono.Cecil.AssemblyDefinition coreAsm = null;
+                            foreach (var cand in candidates)
+                            {
+                                var aref = module.AssemblyReferences.FirstOrDefault(a => a.Name == cand);
+                                if (aref == null)
+                                    continue;
+
+                                try
+                                {
+                                    coreAsm = project.Cache.Resolve(aref);
+                                    if (coreAsm != null)
+                                        break;
+                                }
+                                catch
+                                {
+                                }
+                            }
+
+                            if (coreAsm != null)
+                            {
+                                var ts = module.TypeSystem;
+                                var tsType = ts.GetType();
+                                var fi = tsType.GetField("core_library", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                                         ?? tsType.GetField("_coreLibrary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                                         ?? tsType.GetField("coreLibrary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                                if (fi != null)
+                                {
+                                    fi.SetValue(ts, coreAsm.MainModule);
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            // best-effort only
+                        }
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("Non-Cecil assembly readers are not yet supported for loading into AssemblyInfo.");
+                    }
+                }
             }
             catch (System.IO.IOException e)
             {
