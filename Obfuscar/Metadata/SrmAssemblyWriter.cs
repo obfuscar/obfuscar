@@ -22,6 +22,7 @@ using CecilEventDefinition = Mono.Cecil.EventDefinition;
 using CecilParameterDefinition = Mono.Cecil.ParameterDefinition;
 using CecilGenericParameter = Mono.Cecil.GenericParameter;
 using CecilCustomAttribute = Mono.Cecil.CustomAttribute;
+using CecilModuleReference = Mono.Cecil.ModuleReference;
 
 namespace Obfuscar.Metadata
 {
@@ -35,6 +36,8 @@ namespace Obfuscar.Metadata
         private MetadataBuilder metadata;
         private BlobBuilder ilBuilder;
         private BlobBuilder resourceBuilder;
+        private ModuleDefinitionHandle moduleDefHandle;
+        private AssemblyDefinitionHandle assemblyDefHandle;
         
         // Handle caches for forward references
         private Dictionary<CecilTypeDefinition, TypeDefinitionHandle> typeDefHandles;
@@ -44,6 +47,7 @@ namespace Obfuscar.Metadata
         private Dictionary<CecilMethodReference, EntityHandle> methodRefHandles;
         private Dictionary<CecilFieldReference, EntityHandle> fieldRefHandles;
         private Dictionary<AssemblyNameReference, AssemblyReferenceHandle> assemblyRefHandles;
+        private Dictionary<CecilModuleReference, ModuleReferenceHandle> moduleRefHandles;
         
         // String/blob caches
         private Dictionary<string, StringHandle> stringCache;
@@ -59,6 +63,8 @@ namespace Obfuscar.Metadata
             this.metadata = new MetadataBuilder();
             this.ilBuilder = new BlobBuilder();
             this.resourceBuilder = new BlobBuilder();
+            this.moduleDefHandle = default;
+            this.assemblyDefHandle = default;
             
             this.typeDefHandles = new Dictionary<CecilTypeDefinition, TypeDefinitionHandle>();
             this.methodDefHandles = new Dictionary<CecilMethodDefinition, MethodDefinitionHandle>();
@@ -67,6 +73,7 @@ namespace Obfuscar.Metadata
             this.methodRefHandles = new Dictionary<CecilMethodReference, EntityHandle>();
             this.fieldRefHandles = new Dictionary<CecilFieldReference, EntityHandle>();
             this.assemblyRefHandles = new Dictionary<AssemblyNameReference, AssemblyReferenceHandle>();
+            this.moduleRefHandles = new Dictionary<CecilModuleReference, ModuleReferenceHandle>();
             
             this.stringCache = new Dictionary<string, StringHandle>();
             this.userStringCache = new Dictionary<string, UserStringHandle>();
@@ -81,6 +88,15 @@ namespace Obfuscar.Metadata
         {
             try
             {
+                if (ShouldFallbackToCecil(assembly, parameters))
+                {
+                    using (var cecilWriter = new CecilAssemblyWriter())
+                    {
+                        cecilWriter.Write(assembly, outputPath, parameters);
+                    }
+                    return;
+                }
+
                 // Initialize for this assembly
                 Initialize(assembly);
                 
@@ -99,10 +115,91 @@ namespace Obfuscar.Metadata
             }
         }
 
+        private static bool ShouldFallbackToCecil(CecilAssemblyDefinition assembly, WriterParameters parameters)
+        {
+            if (parameters?.StrongNameKeyBlob != null || parameters?.StrongNameKeyPair != null || parameters?.SymbolWriterProvider != null)
+            {
+                return true;
+            }
+
+            if (assembly == null)
+            {
+                return true;
+            }
+
+            foreach (var type in assembly.MainModule.Types)
+            {
+                if (TypeUsesGenerics(type))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TypeUsesGenerics(CecilTypeDefinition type)
+        {
+            if (type.HasGenericParameters)
+            {
+                return true;
+            }
+
+            foreach (var method in type.Methods)
+            {
+                if (method.HasGenericParameters || method.ReturnType.IsGenericInstance)
+                {
+                    return true;
+                }
+
+                foreach (var param in method.Parameters)
+                {
+                    if (param.ParameterType.IsGenericInstance)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            foreach (var field in type.Fields)
+            {
+                if (field.FieldType.IsGenericInstance)
+                {
+                    return true;
+                }
+            }
+
+            foreach (var property in type.Properties)
+            {
+                if (property.PropertyType.IsGenericInstance)
+                {
+                    return true;
+                }
+            }
+
+            foreach (var evt in type.Events)
+            {
+                if (evt.EventType.IsGenericInstance)
+                {
+                    return true;
+                }
+            }
+
+            foreach (var nested in type.NestedTypes)
+            {
+                if (TypeUsesGenerics(nested))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void BuildMetadata()
         {
             // 1. Add module
-            metadata.AddModule(
+            moduleDefHandle = metadata.AddModule(
                 generation: 0,
                 moduleName: GetOrAddString(assembly.MainModule.Name),
                 mvid: GetOrAddGuid(assembly.MainModule.Mvid),
@@ -112,7 +209,7 @@ namespace Obfuscar.Metadata
             // 2. Add assembly (if this is an assembly, not a module)
             if (assembly.Name != null)
             {
-                metadata.AddAssembly(
+                assemblyDefHandle = metadata.AddAssembly(
                     name: GetOrAddString(assembly.Name.Name),
                     version: assembly.Name.Version ?? new Version(0, 0, 0, 0),
                     culture: GetOrAddString(assembly.Name.Culture ?? string.Empty),
@@ -155,6 +252,8 @@ namespace Obfuscar.Metadata
             {
                 AddTypeMembersRecursive(type);
             }
+
+            AddAssemblyAndModuleCustomAttributes();
 
             // 5. Add resources
             AddResources();
@@ -334,6 +433,22 @@ namespace Obfuscar.Metadata
             }
         }
 
+        private void AddAssemblyAndModuleCustomAttributes()
+        {
+            if (!assemblyDefHandle.IsNil)
+            {
+                foreach (var attr in assembly.CustomAttributes)
+                {
+                    AddCustomAttribute(assemblyDefHandle, attr);
+                }
+            }
+
+            foreach (var attr in assembly.MainModule.CustomAttributes)
+            {
+                AddCustomAttribute(moduleDefHandle, attr);
+            }
+        }
+
         private void AddGenericParameter(EntityHandle owner, CecilGenericParameter gp)
         {
             metadata.AddGenericParameter(
@@ -437,9 +552,17 @@ namespace Obfuscar.Metadata
             }
 
             // Named arguments count
-            builder.WriteUInt16((ushort)attr.Properties.Count);
+            builder.WriteUInt16((ushort)(attr.Fields.Count + attr.Properties.Count));
 
             // Named arguments
+            foreach (var field in attr.Fields)
+            {
+                builder.WriteByte(0x53); // FIELD
+                EncodeCustomAttributeFieldOrPropType(builder, field.Argument.Type);
+                WriteSerializedString(builder, field.Name);
+                EncodeCustomAttributeArgument(builder, field.Argument);
+            }
+
             foreach (var prop in attr.Properties)
             {
                 builder.WriteByte(0x54); // PROPERTY
@@ -460,7 +583,20 @@ namespace Obfuscar.Metadata
             else if (arg.Type.FullName == "System.Type")
             {
                 var typeRef = arg.Value as CecilTypeReference;
-                WriteSerializedString(builder, typeRef?.FullName);
+                WriteSerializedString(builder, GetCustomAttributeTypeName(typeRef));
+            }
+            else if (arg.Type.Resolve()?.IsEnum == true)
+            {
+                var enumDef = arg.Type.Resolve();
+                var underlyingType = enumDef.Fields.FirstOrDefault(field => field.Name == "value__")?.FieldType;
+                if (underlyingType != null)
+                {
+                    WritePrimitiveValue(builder, arg.Value, underlyingType);
+                }
+                else
+                {
+                    builder.WriteInt32(0);
+                }
             }
             else if (arg.Type.IsPrimitive)
             {
@@ -475,6 +611,13 @@ namespace Obfuscar.Metadata
 
         private void EncodeCustomAttributeFieldOrPropType(BlobBuilder builder, CecilTypeReference type)
         {
+            if (type?.Resolve()?.IsEnum == true)
+            {
+                builder.WriteByte(0x55); // ELEMENT_TYPE_ENUM
+                WriteSerializedString(builder, GetCustomAttributeTypeName(type));
+                return;
+            }
+
             if (type.FullName == "System.Boolean") builder.WriteByte(0x02);
             else if (type.FullName == "System.Char") builder.WriteByte(0x03);
             else if (type.FullName == "System.SByte") builder.WriteByte(0x04);
@@ -488,6 +631,7 @@ namespace Obfuscar.Metadata
             else if (type.FullName == "System.Single") builder.WriteByte(0x0c);
             else if (type.FullName == "System.Double") builder.WriteByte(0x0d);
             else if (type.FullName == "System.String") builder.WriteByte(0x0e);
+            else if (type.FullName == "System.Type") builder.WriteByte(0x50);
             else builder.WriteByte(0x51); // ELEMENT_TYPE_OBJECT
         }
 
@@ -505,24 +649,32 @@ namespace Obfuscar.Metadata
             }
         }
 
+        private static string GetCustomAttributeTypeName(CecilTypeReference typeRef)
+        {
+            if (typeRef == null)
+                return null;
+
+            return typeRef.FullName?.Replace('/', '+');
+        }
+
         private void WritePrimitiveValue(BlobBuilder builder, object value, CecilTypeReference type)
         {
             if (value == null) return;
 
             switch (type.FullName)
             {
-                case "System.Boolean": builder.WriteBoolean((bool)value); break;
-                case "System.Byte": builder.WriteByte((byte)value); break;
-                case "System.SByte": builder.WriteSByte((sbyte)value); break;
-                case "System.Int16": builder.WriteInt16((short)value); break;
-                case "System.UInt16": builder.WriteUInt16((ushort)value); break;
-                case "System.Int32": builder.WriteInt32((int)value); break;
-                case "System.UInt32": builder.WriteUInt32((uint)value); break;
-                case "System.Int64": builder.WriteInt64((long)value); break;
-                case "System.UInt64": builder.WriteUInt64((ulong)value); break;
-                case "System.Single": builder.WriteSingle((float)value); break;
-                case "System.Double": builder.WriteDouble((double)value); break;
-                case "System.Char": builder.WriteUInt16((ushort)(char)value); break;
+                case "System.Boolean": builder.WriteBoolean(Convert.ToBoolean(value)); break;
+                case "System.Byte": builder.WriteByte(Convert.ToByte(value)); break;
+                case "System.SByte": builder.WriteSByte(Convert.ToSByte(value)); break;
+                case "System.Int16": builder.WriteInt16(Convert.ToInt16(value)); break;
+                case "System.UInt16": builder.WriteUInt16(Convert.ToUInt16(value)); break;
+                case "System.Int32": builder.WriteInt32(Convert.ToInt32(value)); break;
+                case "System.UInt32": builder.WriteUInt32(Convert.ToUInt32(value)); break;
+                case "System.Int64": builder.WriteInt64(Convert.ToInt64(value)); break;
+                case "System.UInt64": builder.WriteUInt64(Convert.ToUInt64(value)); break;
+                case "System.Single": builder.WriteSingle(Convert.ToSingle(value)); break;
+                case "System.Double": builder.WriteDouble(Convert.ToDouble(value)); break;
+                case "System.Char": builder.WriteUInt16(Convert.ToUInt16(value)); break;
             }
         }
 
@@ -823,6 +975,10 @@ namespace Obfuscar.Metadata
 
             // Create type reference
             var resScope = GetResolutionScope(typeRef);
+            if (resScope.Kind == HandleKind.TypeDefinition)
+            {
+                resScope = moduleDefHandle;
+            }
             var handle = metadata.AddTypeReference(
                 resolutionScope: resScope,
                 @namespace: GetOrAddString(typeRef.Namespace ?? string.Empty),
@@ -855,14 +1011,66 @@ namespace Obfuscar.Metadata
 
         private EntityHandle GetResolutionScope(CecilTypeReference typeRef)
         {
+            if (typeRef.DeclaringType != null)
+            {
+                return GetTypeReferenceHandle(typeRef.DeclaringType);
+            }
+
+            if (typeRef.Scope is CecilModuleDefinition)
+            {
+                return moduleDefHandle;
+            }
+
+            if (typeRef.Scope is CecilModuleReference moduleRef)
+            {
+                if (!moduleRefHandles.TryGetValue(moduleRef, out var handle))
+                {
+                    handle = metadata.AddModuleReference(GetOrAddString(moduleRef.Name));
+                    moduleRefHandles[moduleRef] = handle;
+                }
+                return handle;
+            }
+
             if (typeRef.Scope is AssemblyNameReference asmRef)
             {
                 if (assemblyRefHandles.TryGetValue(asmRef, out var handle))
                     return handle;
             }
 
+            if (typeRef.Scope is CecilTypeReference typeScope)
+            {
+                return GetTypeReferenceHandle(typeScope);
+            }
+
             // Default to first assembly reference or module
-            return assemblyRefHandles.Values.FirstOrDefault();
+            return !moduleDefHandle.IsNil
+                ? (EntityHandle)moduleDefHandle
+                : (EntityHandle)assemblyRefHandles.Values.FirstOrDefault();
+        }
+
+        private EntityHandle GetTypeReferenceHandle(CecilTypeReference typeRef)
+        {
+            if (typeRef == null)
+                return default;
+
+            if (typeRefHandles.TryGetValue(typeRef, out var cachedHandle))
+            {
+                return cachedHandle;
+            }
+
+            var resScope = GetResolutionScope(typeRef);
+            if (resScope.Kind == HandleKind.TypeDefinition)
+            {
+                resScope = moduleDefHandle;
+            }
+
+            var handle = metadata.AddTypeReference(
+                resolutionScope: resScope,
+                @namespace: GetOrAddString(typeRef.Namespace ?? string.Empty),
+                name: GetOrAddString(typeRef.Name));
+
+            typeRefHandles[typeRef] = handle;
+            return handle;
         }
 
         private EntityHandle GetMethodHandle(CecilMethodReference methodRef)
