@@ -159,158 +159,150 @@ namespace Obfuscar
             LoggerService.Logger.LogDebug("Saving assemblies to output path: {0}", outPath);
 
             //copy excluded assemblies
-            foreach (AssemblyInfo copyInfo in Project.CopyAssemblyList)
+            using (var writer = Metadata.AssemblyWriterFactory.CreateWriter())
             {
-                var fileName = Path.GetFileName(copyInfo.FileName);
-                // ReSharper disable once InvocationIsSkipped
-                Debug.Assert(fileName != null, "fileName != null");
-                // ReSharper disable once AssignNullToNotNullAttribute
-                string outName = Path.Combine(outPath, fileName);
-                LoggerService.Logger.LogDebug("Copying excluded assembly: {0} to {1}", copyInfo.Name, outName);
-                copyInfo.Definition.Write(outName);
-            }
-
-            // Cecil does not properly update the name cache, so force that:
-            foreach (AssemblyInfo info in Project.AssemblyList)
-            {
-                var types = info.Definition.MainModule.Types;
-                for (int i = 0; i < types.Count; i++)
-                    types[i] = types[i];
-            }
-
-            // save the modified assemblies
-            foreach (AssemblyInfo info in Project.AssemblyList)
-            {
-                var fileName = Path.GetFileName(info.FileName);
-                try
+                foreach (AssemblyInfo copyInfo in Project.CopyAssemblyList)
                 {
+                    var fileName = Path.GetFileName(copyInfo.FileName);
                     // ReSharper disable once InvocationIsSkipped
                     Debug.Assert(fileName != null, "fileName != null");
                     // ReSharper disable once AssignNullToNotNullAttribute
                     string outName = Path.Combine(outPath, fileName);
-                    var parameters = new WriterParameters();
-                    if (Project.Settings.RegenerateDebugInfo)
+                    LoggerService.Logger.LogDebug("Copying excluded assembly: {0} to {1}", copyInfo.Name, outName);
+                    writer.Write(copyInfo.Definition, outName);
+                }
+
+                // Cecil does not properly update the name cache, so force that:
+                foreach (AssemblyInfo info in Project.AssemblyList)
+                {
+                    var types = info.Definition.MainModule.Types;
+                    for (int i = 0; i < types.Count; i++)
+                        types[i] = types[i];
+                }
+
+                // save the modified assemblies
+                foreach (AssemblyInfo info in Project.AssemblyList)
+                {
+                    var fileName = Path.GetFileName(info.FileName);
+                    try
                     {
-                        LoggerService.Logger.LogDebug("Regenerating debug info for assembly: {0}", info.Name);
-                        if (IsOnWindows)
+                        // ReSharper disable once InvocationIsSkipped
+                        Debug.Assert(fileName != null, "fileName != null");
+                        // ReSharper disable once AssignNullToNotNullAttribute
+                        string outName = Path.Combine(outPath, fileName);
+                        var parameters = new WriterParameters();
+                        if (Project.Settings.RegenerateDebugInfo)
                         {
-                            parameters.SymbolWriterProvider = new Mono.Cecil.Cil.PortablePdbWriterProvider();
+                            LoggerService.Logger.LogDebug("Regenerating debug info for assembly: {0}", info.Name);
+                            if (IsOnWindows)
+                            {
+                                parameters.SymbolWriterProvider = new Mono.Cecil.Cil.PortablePdbWriterProvider();
+                            }
+                            else
+                            {
+                                parameters.SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider();
+                            }
+                        }
+
+                        if (info.Definition.Name.HasPublicKey)
+                        {
+                            LoggerService.Logger.LogDebug("Assembly {0} is signed, processing key information", info.Name);
+                            // source assembly was signed.
+                            if (Project.KeyPair != null)
+                            {
+                                // config file contains key file.
+                                string keyFile = Project.KeyPair;
+                                if (string.Equals(keyFile, "auto", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    LoggerService.Logger.LogDebug("Using 'auto' key mode for assembly: {0}", info.Name);
+                                    // if key file is "auto", resolve key file from assembly's attribute.
+                                    var attribute = info.Definition.CustomAttributes
+                                        .FirstOrDefault(item => item.AttributeType.FullName == "System.Reflection.AssemblyKeyFileAttribute");
+                                    if (attribute != null && attribute?.ConstructorArguments.Count == 1)
+                                    {
+                                        fileName = attribute.ConstructorArguments[0].Value.ToString();
+                                        if (!File.Exists(fileName))
+                                        {
+                                            // assume relative path.
+                                            keyFile = Path.Combine(Project.Settings.InPath, fileName);
+                                        }
+                                        else
+                                        {
+                                           keyFile = fileName;
+                                        }
+                                        LoggerService.Logger.LogDebug("Auto-resolved key file for assembly {0}: {1}", info.Name, keyFile);
+                                    }
+                                }
+
+                                if (!File.Exists(keyFile))
+                                {
+                                    throw new ObfuscarException($"Cannot locate key file: {keyFile}");
+                                }
+
+                                var keyPair = File.ReadAllBytes(keyFile);
+                                try
+                                {
+                                    LoggerService.Logger.LogDebug("Attempting to sign assembly {0} with key file: {1}", info.Name, keyFile);
+                                    parameters.StrongNameKeyBlob = keyPair;
+                                    writer.Write(info.Definition, outName, parameters);
+                                    info.OutputFileName = outName;
+                                }
+                                catch (Exception ex)
+                                {
+                                    LoggerService.Logger.LogDebug("Strong-name signing failed for {0}, using delay signing. Error: {1}", 
+                                        info.Name, ex.Message);
+                                    parameters.StrongNameKeyBlob = null;
+                                    if (info.Definition.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned))
+                                    {
+                                        info.Definition.MainModule.Attributes ^= ModuleAttributes.StrongNameSigned;
+                                    }
+
+                                    // delay sign.
+                                    info.Definition.Name.PublicKey = keyPair;
+                                    writer.Write(info.Definition, outName, parameters);
+                                    info.OutputFileName = outName;
+                                }
+                            }
+                            else if (Project.KeyValue != null)
+                            {
+                                // config file contains key container name.
+                                LoggerService.Logger.LogDebug("Signing assembly {0} using key container: {1}", 
+                                    info.Name, Project.KeyContainerName);
+                                writer.Write(info.Definition, outName, parameters);
+                                MsNetSigner.SignAssemblyFromKeyContainer(outName, Project.KeyContainerName);
+                            }
+                            else if (!info.Definition.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned))
+                            {
+                                // When an assembly is "delay signed" and no KeyFile or KeyContainer properties were provided,
+                                // keep the obfuscated assembly "delay signed" too.
+                                LoggerService.Logger.LogDebug("Assembly {0} is delay-signed and will remain delay-signed", info.Name);
+                                writer.Write(info.Definition, outName, parameters);
+                                info.OutputFileName = outName;
+                            }
+                            else
+                            {
+                                throw new ObfuscarException($"Obfuscating a signed assembly would result in an invalid assembly:  {info.Name}; use the KeyFile or KeyContainer property to set a key to use");
+                            }
                         }
                         else
                         {
-                            parameters.SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider();
-                        }
-                    }
-
-                    if (info.Definition.Name.HasPublicKey)
-                    {
-                        LoggerService.Logger.LogDebug("Assembly {0} is signed, processing key information", info.Name);
-                        // source assembly was signed.
-                        if (Project.KeyPair != null)
-                        {
-                            // config file contains key file.
-                            string keyFile = Project.KeyPair;
-                            if (string.Equals(keyFile, "auto", StringComparison.OrdinalIgnoreCase))
-                            {
-                                LoggerService.Logger.LogDebug("Using 'auto' key mode for assembly: {0}", info.Name);
-                                // if key file is "auto", resolve key file from assembly's attribute.
-                                var attribute = info.Definition.CustomAttributes
-                                    .FirstOrDefault(item => item.AttributeType.FullName == "System.Reflection.AssemblyKeyFileAttribute");
-                                if (attribute != null && attribute?.ConstructorArguments.Count == 1)
-                                {
-                                    fileName = attribute.ConstructorArguments[0].Value.ToString();
-                                    if (!File.Exists(fileName))
-                                    {
-                                        // assume relative path.
-                                        keyFile = Path.Combine(Project.Settings.InPath, fileName);
-                                    }
-                                    else
-                                    {
-                                       keyFile = fileName;
-                                    }
-                                    LoggerService.Logger.LogDebug("Auto-resolved key file for assembly {0}: {1}", info.Name, keyFile);
-                                }
-                            }
-
-                            if (!File.Exists(keyFile))
-                            {
-                                throw new ObfuscarException($"Cannot locate key file: {keyFile}");
-                            }
-
-                            var keyPair = File.ReadAllBytes(keyFile);
-                            try
-                            {
-                                LoggerService.Logger.LogDebug("Attempting to sign assembly {0} with key file: {1}", info.Name, keyFile);
-                                parameters.StrongNameKeyBlob = keyPair;
-                                info.Definition.Write(outName, parameters);
-                                info.OutputFileName = outName;
-                            }
-                            catch (Exception ex)
-                            {
-                                LoggerService.Logger.LogDebug("Strong-name signing failed for {0}, using delay signing. Error: {1}", 
-                                    info.Name, ex.Message);
-                                parameters.StrongNameKeyBlob = null;
-                                if (info.Definition.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned))
-                                {
-                                    info.Definition.MainModule.Attributes ^= ModuleAttributes.StrongNameSigned;
-                                }
-
-                                // delay sign.
-                                info.Definition.Name.PublicKey = keyPair;
-                                info.Definition.Write(outName, parameters);
-                                info.OutputFileName = outName;
-                            }
-                        }
-                        else if (Project.KeyValue != null)
-                        {
-                            // config file contains key container name.
-                            LoggerService.Logger.LogDebug("Signing assembly {0} using key container: {1}", 
-                                info.Name, Project.KeyContainerName);
-                            info.Definition.Write(outName, parameters);
-                            MsNetSigner.SignAssemblyFromKeyContainer(outName, Project.KeyContainerName);
-                        }
-                        else if (!info.Definition.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned))
-                        {
-                            // When an assembly is "delay signed" and no KeyFile or KeyContainer properties were provided,
-                            // keep the obfuscated assembly "delay signed" too.
-                            LoggerService.Logger.LogDebug("Assembly {0} is delay-signed and will remain delay-signed", info.Name);
-                            info.Definition.Write(outName, parameters);
+                            LoggerService.Logger.LogDebug("Saving unsigned assembly: {0} to {1}", info.Name, outName);
+                            writer.Write(info.Definition, outName, parameters);
                             info.OutputFileName = outName;
                         }
-                        else
+                    }
+                    catch (Exception e)
+                    {
+                        if (throwException)
                         {
-                            throw new ObfuscarException($"Obfuscating a signed assembly would result in an invalid assembly:  {info.Name}; use the KeyFile or KeyContainer property to set a key to use");
+                            throw;
                         }
-                    }
-                    else
-                    {
-                        LoggerService.Logger.LogDebug("Saving unsigned assembly: {0} to {1}", info.Name, outName);
-                        info.Definition.Write(outName, parameters);
-                        info.OutputFileName = outName;
-                    }
-                }
-                catch (Exception e)
-                {
-                    if (throwException)
-                    {
-                        throw;
-                    }
 
-                    LoggerService.Logger.LogInformation(string.Format("\nFailed to save {0}", fileName));
-                    LoggerService.Logger.LogInformation(string.Format("\n{0}: {1}", e.GetType().Name, e.Message));
-                    var match = Regex.Match(e.Message, @"Failed to resolve\s+(?<n>[^\s]+)");
-                    if (match.Success)
-                    {
-                        var name = match.Groups["name"].Value;
-                        LoggerService.Logger.LogInformation(string.Format("\n{0} might be one of:", name));
-                        LogMappings(name);
-                        LoggerService.Logger.LogInformation("\nHint: you might need to add a SkipType for an enum above.");
+                        LoggerService.Logger.LogInformation(string.Format("\nFailed to save {0}", fileName));
+                        LoggerService.Logger.LogInformation(string.Format("\n{0}: {1}", e.GetType().Name, e.Message));
                     }
                 }
             }
-
-            LoggerService.Logger.LogDebug("Clearing type name cache");
-            TypeNameCache.nameCache.Clear();
         }
 
         private bool IsOnWindows {
