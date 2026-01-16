@@ -157,37 +157,38 @@ namespace Obfuscar
                 // Parse the command line arguments
                 var parsedArgs = ParseCommandLine(args);
                 
+                // Configure logging early so we can use it for help/version messages
+                ILogger logger = ConfigureLogging(parsedArgs.LogLevel);
+
                 // Show help if requested or no arguments provided
                 if (parsedArgs.ShowHelp || args.Length == 0)
                 {
                     ShowHelp(appName, appCopyright);
                     return Task.FromResult(0);
                 }
-                
+
                 // Show version if requested
                 if (parsedArgs.ShowVersion)
                 {
-                    Console.WriteLine(Assembly.GetEntryAssembly().GetName().Version);
+                    logger.LogInformation("{Version}", Assembly.GetEntryAssembly().GetName().Version);
                     return Task.FromResult(0);
                 }
-                
+
                 // Validate that we have project files
                 if (parsedArgs.ProjectFiles.Count < 1)
                 {
                     ShowHelp(appName, appCopyright);
-                    Console.WriteLine("No project files specified. Please provide at least one project file to process.");
+                    logger.LogError("No project files specified. Please provide at least one project file to process.");
                     return Task.FromResult(1);
                 }
-                
-                // Configure logging
-                ILogger logger = ConfigureLogging(parsedArgs.LogLevel);
                 
                 // Run obfuscation
                 return Task.FromResult(RunObfuscation(parsedArgs.ProjectFiles, parsedArgs.LogLevel, logger));
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error: {ex.Message}");
+                var logger = LoggerService.Logger;
+                logger.LogError(ex, "Error: {Message}", ex.Message);
                 return Task.FromResult(1);
             }
         }
@@ -237,16 +238,17 @@ namespace Obfuscar
         /// </summary>
         private static void ShowHelp(string appName, string appCopyright)
         {
-            Console.WriteLine($"{appName} is available at https://www.obfuscar.com");
-            Console.WriteLine(appCopyright);
-            Console.WriteLine();
-            Console.WriteLine("Usage: obfuscar [Options] <project_file> [project_file...]");
-            Console.WriteLine();
-            Console.WriteLine("Options:");
-            Console.WriteLine("  -v:<level>, --verbosity:<level>  Set verbosity level (q=quiet, m=minimal, n=normal, d=detailed, diag=diagnostic)");
-            Console.WriteLine("  -V, --version                   Display version information");
-            Console.WriteLine("  -h, --help                      Show help information");
-            Console.WriteLine();
+            var logger = LoggerService.Logger;
+            logger.LogInformation("{AppName} is available at https://www.obfuscar.com", appName);
+            logger.LogInformation(appCopyright);
+            logger.LogInformation(string.Empty);
+            logger.LogInformation("Usage: obfuscar [Options] <project_file> [project_file...]");
+            logger.LogInformation(string.Empty);
+            logger.LogInformation("Options:");
+            logger.LogInformation("  -v:<level>, --verbosity:<level>  Set verbosity level (q=quiet, m=minimal, n=normal, d=detailed, diag=diagnostic)");
+            logger.LogInformation("  -V, --version                   Display version information");
+            logger.LogInformation("  -h, --help                      Show help information");
+            logger.LogInformation(string.Empty);
         }
         
         /// <summary>
@@ -284,9 +286,6 @@ namespace Obfuscar
         /// </summary>
         public static ILogger ConfigureLogging(LogLevel logLevel)
         {
-            // Output the log level we're using to help with debugging
-            Console.WriteLine($"Setting log level to: {logLevel}");
-            
             // Configure logging based on verbosity level
             ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
             {
@@ -297,7 +296,7 @@ namespace Obfuscar
 
             // Create logger for the Program class
             ILogger logger = loggerFactory.CreateLogger("Obfuscar");
-            
+
             // Set the global logger for the Obfuscar library
             LoggerService.SetLogger(logger);
 

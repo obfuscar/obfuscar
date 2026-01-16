@@ -19,6 +19,10 @@ Obfuscar is an open source .NET obfuscator released under MIT license. It provid
 
 [Documentation section](https://docs.obfuscar.com/) contains most information you need, and also a detailed history of this project all through the years.
 
+**Deprecation notice:** Environment-variable expansion inside Obfuscar configuration files is deprecated and will be removed in a future release. Please avoid using environment-variable syntax in project configuration and see the documentation for migration guidance.
+
+**Note on paths:** Relative paths in configuration files are deprecated; future releases will require absolute paths. Please update configuration files to use absolute paths.
+
 ## Issues
 
 If you have a patch to contribute, a feature to request, or a bug to report, please post to the [Issue Tracker](https://github.com/obfuscar/obfuscar/issues).

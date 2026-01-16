@@ -28,6 +28,7 @@ using System.Text.RegularExpressions;
 using Mono.Cecil;
 using System.Collections.Generic;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Obfuscar
 {
@@ -49,6 +50,33 @@ namespace Obfuscar
 
     static class Helper
     {
+        static bool warnedAboutEnvExpansion = false;
+
+        public static void WarnEnvExpansionOnce()
+        {
+            if (warnedAboutEnvExpansion)
+                return;
+
+            warnedAboutEnvExpansion = true;
+            var logger = LoggerService.Logger;
+            logger.LogWarning("Environment-variable expansion in configuration files is deprecated and will be removed in a future release. See docs for migration guidance.");
+        }
+
+        static bool warnedAboutRelativePaths = false;
+
+        public static void WarnRelativePathOnce(string location, string raw)
+        {
+            if (warnedAboutRelativePaths)
+                return;
+
+            warnedAboutRelativePaths = true;
+            var logger = LoggerService.Logger;
+            if (string.IsNullOrEmpty(raw))
+                logger.LogWarning("Relative paths in configuration files are deprecated and will be unsupported in a future release. Use absolute paths instead.");
+            else
+                logger.LogWarning("Relative path '{raw}' found in {location}. Relative paths in configuration files are deprecated and will be unsupported in a future release. Use absolute paths instead.", raw, location);
+        }
+
         public static void Noop()
         {
         }

@@ -32,6 +32,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using Obfuscar.Helpers;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Obfuscar
 {
@@ -212,6 +213,16 @@ namespace Obfuscar
 
             string path =
                 Environment.ExpandEnvironmentVariables(Helper.GetAttribute(parentReader, "path", project.vars));
+            var rawPathAttr = Helper.GetAttribute(parentReader, "path", project.vars);
+            if (!string.IsNullOrEmpty(rawPathAttr) && (rawPathAttr.Contains("%") || rawPathAttr.Contains("$((") || rawPathAttr.Contains("${") || rawPathAttr.Contains("$(")))
+            {
+                Helper.WarnEnvExpansionOnce();
+            }
+            // warn on relative paths
+            if (!string.IsNullOrEmpty(path) && !System.IO.Path.IsPathRooted(path))
+            {
+                Helper.WarnRelativePathOnce("Include path attribute", rawPathAttr);
+            }
             var includeReader = XDocument.Load(path);
             if (includeReader.Root.Name == "Include")
             {
@@ -226,6 +237,15 @@ namespace Obfuscar
             {
                 string path =
                     Environment.ExpandEnvironmentVariables(Helper.GetAttribute(searchPath, "path", project.vars));
+                var rawSearchAttr = Helper.GetAttribute(searchPath, "path", project.vars);
+                if (!string.IsNullOrEmpty(rawSearchAttr) && (rawSearchAttr.Contains("%") || rawSearchAttr.Contains("$((") || rawSearchAttr.Contains("${") || rawSearchAttr.Contains("$(")))
+                {
+                    Helper.WarnEnvExpansionOnce();
+                }
+                if (!string.IsNullOrEmpty(path) && !System.IO.Path.IsPathRooted(path))
+                {
+                    Helper.WarnRelativePathOnce("AssemblySearchPath path attribute", rawSearchAttr);
+                }
                 project.assemblySearchPaths.Add(path);
             }
         }
@@ -238,6 +258,11 @@ namespace Obfuscar
                 var file = Helper.GetAttribute(module, "file", project.vars);
                 if (string.IsNullOrWhiteSpace(file))
                     throw new InvalidOperationException("Need valid file attribute.");
+                // warn if file is a relative path (future releases will require absolute paths)
+                if (!string.IsNullOrWhiteSpace(file) && !System.IO.Path.IsPathRooted(file))
+                {
+                    Helper.WarnRelativePathOnce("Module file attribute", file);
+                }
                 ReadModule(file, module, project);
             }
         }
@@ -279,7 +304,8 @@ namespace Obfuscar
             }
             else
             {
-                Console.WriteLine("Processing assembly: " + info.Definition.Name.FullName);
+                var logger = LoggerService.Logger;
+                logger.LogInformation("Processing assembly: {Assembly}", info.Definition.Name.FullName);
                 project.AssemblyList.Add(info);
                 project.assemblyMap[info.Name] = info;
             }
