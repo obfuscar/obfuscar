@@ -22,15 +22,8 @@ namespace Obfuscar.Metadata
                 if (defaultFactory != null)
                     return defaultFactory;
 
-                // Check environment variable to determine which reader to use
-                if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OBFUSCAR_USE_SRM")))
-                {
-                    // Use SRM-based reader
-                    return defaultFactory = path => new SrmAssemblyReader(path);
-                }
-
-                // Default: Cecil-based reader
-                return defaultFactory = path => new CecilAssemblyReader(path);
+                // Default: SRM-based reader
+                return defaultFactory = path => new SrmAssemblyReader(path);
             }
             set => defaultFactory = value;
         }

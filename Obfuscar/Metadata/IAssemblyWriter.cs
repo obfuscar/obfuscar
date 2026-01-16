@@ -22,28 +22,6 @@ namespace Obfuscar.Metadata
     }
 
     /// <summary>
-    /// Cecil-based assembly writer (uses Mono.Cecil's built-in Write functionality).
-    /// This is the current implementation and remains the most complete.
-    /// </summary>
-    public sealed class CecilAssemblyWriter : IAssemblyWriter
-    {
-        public void Write(AssemblyDefinition assembly, string outputPath)
-        {
-            assembly.Write(outputPath);
-        }
-
-        public void Write(AssemblyDefinition assembly, string outputPath, WriterParameters parameters)
-        {
-            assembly.Write(outputPath, parameters);
-        }
-
-        public void Dispose()
-        {
-            // No resources to clean up
-        }
-    }
-
-    /// <summary>
     /// Factory for creating assembly writers.
     /// </summary>
     public static class AssemblyWriterFactory

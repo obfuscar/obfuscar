@@ -88,15 +88,10 @@ namespace Obfuscar.Metadata
         {
             try
             {
-                if (ShouldFallbackToCecil(assembly, parameters))
-                {
-                    using (var cecilWriter = new CecilAssemblyWriter())
-                    {
-                        cecilWriter.Write(assembly, outputPath, parameters);
-                    }
-                    return;
-                }
-
+                // NOTE: Previously this method could fall back to a Mono.Cecil-based writer for
+                // unsupported scenarios. Cecil-based writer has been removed; SRM writer will
+                // attempt to handle all cases. If a scenario isn't supported, an exception will
+                // be thrown.
                 // Initialize for this assembly
                 Initialize(assembly);
                 
