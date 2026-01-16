@@ -948,6 +948,7 @@ namespace Obfuscar
         public bool ShouldSkip(MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
             bool markedOnly, out string message)
         {
+            Console.WriteLine($"[DEBUG] ShouldSkip(Method) {method.Method.FullName} RenameProperties={project.Settings.RenameProperties} RenameEvents={project.Settings.RenameEvents} keepPublicApi={keepPublicApi} hidePrivateApi={hidePrivateApi}");
             if (method.Method.IsRuntime)
             {
                 message = "runtime method";
@@ -961,10 +962,12 @@ namespace Obfuscar
                     case MethodSemanticsAttributes.Getter:
                     case MethodSemanticsAttributes.Setter:
                         message = "skipping properties";
+                        Console.WriteLine($"[DEBUG] Method is property accessor: {method.Method.FullName} RenameProperties={project.Settings.RenameProperties} => skip={!project.Settings.RenameProperties}");
                         return !project.Settings.RenameProperties;
                     case MethodSemanticsAttributes.AddOn:
                     case MethodSemanticsAttributes.RemoveOn:
                         message = "skipping events";
+                        Console.WriteLine($"[DEBUG] Method is event accessor: {method.Method.FullName} RenameEvents={project.Settings.RenameEvents} => skip={!project.Settings.RenameEvents}");
                         return !project.Settings.RenameEvents;
                     default:
                         message = "special name";
@@ -1130,6 +1133,7 @@ namespace Obfuscar
         public bool ShouldSkip(PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
             bool markedOnly, out string message)
         {
+            Console.WriteLine($"[DEBUG] ShouldSkip(Property) {prop.Property.FullName} RenameProperties={project.Settings.RenameProperties} keepPublicApi={keepPublicApi} hidePrivateApi={hidePrivateApi}");
             if (prop.Property.IsRuntimeSpecialName)
             {
                 message = "runtime special name";
@@ -1177,6 +1181,7 @@ namespace Obfuscar
             if (skipProperties.IsMatch(prop, map))
             {
                 message = "property rule in configuration";
+                Console.WriteLine($"[DEBUG] skipProperties matched for {prop.Property.FullName}");
                 return true;
             }
 
@@ -1197,6 +1202,7 @@ namespace Obfuscar
         public bool ShouldSkip(EventKey evt, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
             out string message)
         {
+            Console.WriteLine($"[DEBUG] ShouldSkip(Event) {evt.Event.FullName} RenameEvents={project.Settings.RenameEvents} keepPublicApi={keepPublicApi} hidePrivateApi={hidePrivateApi}");
             // skip runtime special events
             if (evt.Event.IsRuntimeSpecialName)
             {
@@ -1246,6 +1252,7 @@ namespace Obfuscar
             if (skipEvents.IsMatch(evt, map))
             {
                 message = "event rule in configuration";
+                Console.WriteLine($"[DEBUG] skipEvents matched for {evt.Event.FullName}");
                 return true;
             }
 

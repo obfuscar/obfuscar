@@ -886,6 +886,8 @@ namespace Obfuscar
                 return;
             }
 
+            Console.WriteLine("[OBFUSCATOR-DEBUG] Enter RenameProperties phase");
+
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
@@ -913,6 +915,8 @@ namespace Obfuscar
                         type.Properties.Remove(prop);
                     }
                 }
+
+            Console.WriteLine("[OBFUSCATOR-DEBUG] Exit RenameProperties phase");
             }
         }
 
@@ -930,6 +934,7 @@ namespace Obfuscar
                 Project.Settings.MarkedOnly, out skip))
             {
                 LoggerService.Logger.LogDebug("Property {0} in type {1} skipped: {2}", prop.Name, typeKey, skip);
+                Console.WriteLine($"[OBFUSCATOR-DEBUG] ProcessProperty: Property '{prop.FullName}' is skipped (reason: {skip}). KeepProperties={Project.Settings.KeepProperties}, CustomAttributes={prop.CustomAttributes.Count}");
                 m.Update(ObfuscationStatus.Skipped, skip);
 
                 // make sure get/set get skipped too
@@ -951,6 +956,7 @@ namespace Obfuscar
             {
                 // do not rename properties of custom attribute types which have a public setter method
                 LoggerService.Logger.LogDebug("Property {0} in attribute type {1} skipped: public setter of a custom attribute", prop.Name, typeKey);
+                Console.WriteLine($"[OBFUSCATOR-DEBUG] ProcessProperty: Property '{prop.FullName}' in attribute type skipped (public setter). KeepProperties={Project.Settings.KeepProperties}");
                 m.Update(ObfuscationStatus.Skipped, "public setter of a custom attribute");
                 // no problem when the getter or setter methods are renamed by RenameMethods()
             }
@@ -961,12 +967,14 @@ namespace Obfuscar
                 var newName = NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
                 LoggerService.Logger.LogDebug("Renaming property {0} in type {1} to {2} (has {3} custom attributes, KeepProperties={4})", 
                     prop.Name, typeKey, newName, prop.CustomAttributes.Count, Project.Settings.KeepProperties);
+                Console.WriteLine($"[OBFUSCATOR-DEBUG] ProcessProperty: Renaming property '{prop.FullName}' to '{newName}'. CustomAttributes={prop.CustomAttributes.Count}, KeepProperties={Project.Settings.KeepProperties}");
                 RenameProperty(info, propKey, prop, newName);
             }
             else
             {
                 // add to to collection for removal
                 LoggerService.Logger.LogDebug("Property {0} in type {1} will be dropped", prop.Name, typeKey);
+                Console.WriteLine($"[OBFUSCATOR-DEBUG] ProcessProperty: Dropping property '{prop.FullName}'. CustomAttributes={prop.CustomAttributes.Count}, KeepProperties={Project.Settings.KeepProperties}");
                 propsToDrop.Add(prop);
             }
             return index;
@@ -1009,6 +1017,8 @@ namespace Obfuscar
                 return;
             }
 
+            Console.WriteLine("[OBFUSCATOR-DEBUG] Enter RenameEvents phase");
+
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
@@ -1034,6 +1044,8 @@ namespace Obfuscar
                         type.Events.Remove(evt);
                     }
                 }
+
+            Console.WriteLine("[OBFUSCATOR-DEBUG] Exit RenameEvents phase");
             }
         }
 
@@ -1063,14 +1075,30 @@ namespace Obfuscar
 
         private void ForceSkip(MethodDefinition method, string skip)
         {
-            var delete = Mapping.GetMethod(new MethodKey(method));
-            delete.Status = ObfuscationStatus.Skipped;
-            delete.StatusText = skip;
+            if (method == null)
+                return;
+
+            Console.WriteLine($"[OBFUSCATOR-DEBUG] ForceSkip called for '{method.FullName}' (reason: {skip})");
+
+            var mk = new MethodKey(method);
+            var delete = Mapping.GetMethod(mk);
+            if (delete != null)
+            {
+                Console.WriteLine($"[OBFUSCATOR-DEBUG] Mapping found for '{method.FullName}', setting status Skipped");
+                delete.Status = ObfuscationStatus.Skipped;
+                delete.StatusText = skip;
+            }
+            else
+            {
+                Console.WriteLine($"[OBFUSCATOR-DEBUG] No mapping entry for '{method.FullName}'");
+            }
         }
 
         public void RenameMethods()
         {
+            Console.WriteLine("[OBFUSCATOR-DEBUG] Enter RenameMethods phase");
             var baseSigNames = new Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>>();
+            // Do not remove methods marked as Skipped here; rename phase will consult mapping statuses
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
@@ -1100,6 +1128,8 @@ namespace Obfuscar
                             NameGroup nameGroup = GetNameGroup(sigNames, pair.Key);
                             nameGroup.AddAll(pair.Value);
                         }
+
+                    Console.WriteLine("[OBFUSCATOR-DEBUG] Exit RenameMethods phase");
                     }
                 }
 
