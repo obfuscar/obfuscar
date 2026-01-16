@@ -95,6 +95,11 @@ namespace Obfuscar.Metadata
                 module.AssemblyReferences.Add(anref);
             }
 
+            // Remove the default <Module> type that Cecil creates, so we don't have duplicates
+            var defaultModule = module.Types.FirstOrDefault(t => string.IsNullOrEmpty(t.Name) && string.IsNullOrEmpty(t.Namespace));
+            if (defaultModule != null)
+                module.Types.Remove(defaultModule);
+
             // Populate top-level types (minimal stub TypeDefinition for lookups)
             foreach (var th in md.TypeDefinitions)
             {
@@ -602,6 +607,9 @@ namespace Obfuscar.Metadata
                             var td = md.GetTypeDefinition(tdHandle);
                             var typeName = md.GetString(td.Name);
                             var typeNs = md.GetString(td.Namespace);
+                            // Skip <Module> type
+                            if (string.IsNullOrEmpty(typeName) && string.IsNullOrEmpty(typeNs))
+                                continue;
                             var cecilType = module.Types.FirstOrDefault(t => t.Name == typeName && t.Namespace == typeNs);
                             if (cecilType != null)
                                 cecilType.CustomAttributes.Add(attrDef);
