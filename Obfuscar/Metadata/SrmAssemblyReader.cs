@@ -308,6 +308,9 @@ namespace Obfuscar.Metadata
                 }
             }
 
+            // Populate custom attributes on all entities
+            PopulateCustomAttributes(module, md);
+
             return materializedAssembly;
         }
 
@@ -545,6 +548,97 @@ namespace Obfuscar.Metadata
                     return oc;
             }
             return OpCodes.Nop;
+        }
+
+        // Populate custom attributes for types, methods, fields
+        private static void PopulateCustomAttributes(Mono.Cecil.ModuleDefinition module, MetadataReader md)
+        {
+            try
+            {
+                // Iterate through custom attributes and attach them to their parent entities
+                foreach (var caHandle in md.CustomAttributes)
+                {
+                    try
+                    {
+                        var ca = md.GetCustomAttribute(caHandle);
+                        var parent = ca.Parent;
+                        var constructor = ca.Constructor;
+                        
+                        // Get the attribute type
+                        string attrTypeName = null;
+                        string attrTypeNamespace = null;
+                        
+                        if (constructor.Kind == System.Reflection.Metadata.HandleKind.MemberReference)
+                        {
+                            var mr = md.GetMemberReference((System.Reflection.Metadata.MemberReferenceHandle)constructor);
+                            if (mr.Parent.Kind == System.Reflection.Metadata.HandleKind.TypeReference)
+                            {
+                                var tr = md.GetTypeReference((System.Reflection.Metadata.TypeReferenceHandle)mr.Parent);
+                                attrTypeName = md.GetString(tr.Name);
+                                attrTypeNamespace = md.GetString(tr.Namespace);
+                            }
+                        }
+                        else if (constructor.Kind == System.Reflection.Metadata.HandleKind.MethodDefinition)
+                        {
+                            var mh = (System.Reflection.Metadata.MethodDefinitionHandle)constructor;
+                            var md_method = md.GetMethodDefinition(mh);
+                            // Find declaring type
+                            var declType = FindDeclaringTypeForMember(md, System.Reflection.Metadata.Ecma335.MetadataTokens.GetToken(mh));
+                            attrTypeName = declType.name;
+                            attrTypeNamespace = declType.ns;
+                        }
+
+                        if (attrTypeName == null)
+                            continue;
+
+                        // Create a minimal CustomAttribute in Mono.Cecil
+                        var attrTypeRef = new Mono.Cecil.TypeReference(attrTypeNamespace, attrTypeName, module, module);
+                        var attrDef = new Mono.Cecil.CustomAttribute(new Mono.Cecil.MethodReference(".ctor", module.TypeSystem.Void, attrTypeRef));
+
+                        // Attach to parent entity
+                        if (parent.Kind == System.Reflection.Metadata.HandleKind.TypeDefinition)
+                        {
+                            var tdHandle = (System.Reflection.Metadata.TypeDefinitionHandle)parent;
+                            var td = md.GetTypeDefinition(tdHandle);
+                            var typeName = md.GetString(td.Name);
+                            var typeNs = md.GetString(td.Namespace);
+                            var cecilType = module.Types.FirstOrDefault(t => t.Name == typeName && t.Namespace == typeNs);
+                            if (cecilType != null)
+                                cecilType.CustomAttributes.Add(attrDef);
+                        }
+                        else if (parent.Kind == System.Reflection.Metadata.HandleKind.MethodDefinition)
+                        {
+                            var mhParent = (System.Reflection.Metadata.MethodDefinitionHandle)parent;
+                            var mdParent = md.GetMethodDefinition(mhParent);
+                            var parentType = FindDeclaringTypeForMember(md, System.Reflection.Metadata.Ecma335.MetadataTokens.GetToken(mhParent));
+                            var cecilType = module.Types.FirstOrDefault(t => t.Name == parentType.name && t.Namespace == parentType.ns);
+                            if (cecilType != null)
+                            {
+                                var methodName = md.GetString(mdParent.Name);
+                                var cecilMethod = cecilType.Methods.FirstOrDefault(m => m.Name == methodName);
+                                if (cecilMethod != null)
+                                    cecilMethod.CustomAttributes.Add(attrDef);
+                            }
+                        }
+                        else if (parent.Kind == System.Reflection.Metadata.HandleKind.FieldDefinition)
+                        {
+                            var fhParent = (System.Reflection.Metadata.FieldDefinitionHandle)parent;
+                            var fdParent = md.GetFieldDefinition(fhParent);
+                            var parentType = FindDeclaringTypeForMember(md, System.Reflection.Metadata.Ecma335.MetadataTokens.GetToken(fhParent));
+                            var cecilType = module.Types.FirstOrDefault(t => t.Name == parentType.name && t.Namespace == parentType.ns);
+                            if (cecilType != null)
+                            {
+                                var fieldName = md.GetString(fdParent.Name);
+                                var cecilField = cecilType.Fields.FirstOrDefault(f => f.Name == fieldName);
+                                if (cecilField != null)
+                                    cecilField.CustomAttributes.Add(attrDef);
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
         }
 
         public void Dispose()
