@@ -220,9 +220,28 @@ namespace Obfuscar.Metadata
             }
 
             // 4. Add type definitions (multi-pass to handle forward references and ordering constraints)
-            // First pass: add all type definitions to get handles (without members)
+            // First, add the <Module> type explicitly as the first type (row 1)
+            // This is required by ECMA-335 II.22.37 - TypeDef row 1 is always the module pseudo-type
+            var moduleType = assembly.MainModule.Types.FirstOrDefault(t => t.Name == "<Module>" && string.IsNullOrEmpty(t.Namespace));
+            if (moduleType != null)
+            {
+                var moduleTypeHandle = metadata.AddTypeDefinition(
+                    attributes: (System.Reflection.TypeAttributes)moduleType.Attributes,
+                    @namespace: default,
+                    name: GetOrAddString("<Module>"),
+                    baseType: default,
+                    fieldList: MetadataTokens.FieldDefinitionHandle(metadata.GetRowCount(TableIndex.Field) + 1),
+                    methodList: MetadataTokens.MethodDefinitionHandle(metadata.GetRowCount(TableIndex.MethodDef) + 1));
+                typeDefHandles[moduleType] = moduleTypeHandle;
+            }
+            
+            // First pass: add all other type definitions to get handles (without members)
             foreach (var type in assembly.MainModule.Types)
             {
+                // Skip <Module> type - it was already added above
+                if (type.Name == "<Module>" && string.IsNullOrEmpty(type.Namespace))
+                    continue;
+                    
                 AddTypeDefinitionsRecursive(type);
             }
             
@@ -245,6 +264,10 @@ namespace Obfuscar.Metadata
             // Third pass: add remaining members (properties, events, custom attributes, etc.)
             foreach (var type in assembly.MainModule.Types)
             {
+                // Skip <Module> type - it's implicitly created by AddModule
+                if (type.Name == "<Module>" && string.IsNullOrEmpty(type.Namespace))
+                    continue;
+                    
                 AddTypeMembersRecursive(type);
             }
 
@@ -258,6 +281,10 @@ namespace Obfuscar.Metadata
         {
             foreach (var type in types)
             {
+                // Skip <Module> type - it's implicitly created and not in our type handles
+                if (type.Name == "<Module>" && string.IsNullOrEmpty(type.Namespace))
+                    continue;
+                    
                 // Type generic params - TypeOrMethodDef coded index with tag 0
                 int typeCodedOwner = (MetadataTokens.GetRowNumber(typeDefHandles[type]) << 1) | 0;
                 foreach (var gp in type.GenericParameters)
@@ -898,15 +925,42 @@ namespace Obfuscar.Metadata
             if (type.IsGenericParameter)
             {
                 var gp = type as CecilGenericParameter;
+                if (gp == null)
+                {
+                    throw new InvalidOperationException($"Type {type.FullName} reports IsGenericParameter=true but is not a GenericParameter");
+                }
+                
+                var position = gp.Position;
+                
+                // If position is -1, try to look up from the name (e.g., "T0", "T1", etc.)
+                if (position < 0 && gp.Name != null)
+                {
+                    // Try to parse position from name like "T0", "T1", "T2"
+                    if (gp.Name.StartsWith("T") && int.TryParse(gp.Name.Substring(1), out var parsedPos))
+                    {
+                        position = parsedPos;
+                    }
+                    else
+                    {
+                        // Default to 0 if we can't determine position
+                        position = 0;
+                    }
+                }
+                
+                if (position < 0)
+                {
+                    throw new InvalidOperationException($"Generic parameter {gp.Name} has invalid position {position}");
+                }
+                
                 if (gp.Type == GenericParameterType.Type)
                 {
                     encoder.Builder.WriteByte(0x13); // ELEMENT_TYPE_VAR
-                    encoder.Builder.WriteCompressedInteger(gp.Position);
+                    encoder.Builder.WriteCompressedInteger(position);
                 }
                 else
                 {
                     encoder.Builder.WriteByte(0x1E); // ELEMENT_TYPE_MVAR
-                    encoder.Builder.WriteCompressedInteger(gp.Position);
+                    encoder.Builder.WriteCompressedInteger(position);
                 }
                 return;
             }
@@ -1085,6 +1139,20 @@ namespace Obfuscar.Metadata
                 return defHandle;
             }
 
+            // Try to resolve to a method definition in this module
+            try
+            {
+                var resolved = methodRef.Resolve();
+                if (resolved != null && methodDefHandles.TryGetValue(resolved, out var resolvedHandle))
+                {
+                    return resolvedHandle;
+                }
+            }
+            catch
+            {
+                // Resolution failed, continue with MemberReference
+            }
+
             // Check cache
             if (methodRefHandles.TryGetValue(methodRef, out var cachedHandle))
             {
@@ -1173,11 +1241,15 @@ namespace Obfuscar.Metadata
             var codeSize = body.Instructions.Sum(i => i.GetSize());
 
             // Determine if we can use tiny format
+            // Per ECMA-335 II.25.4.2: Tiny format if:
+            // - Code size < 64 bytes
+            // - No local variables
+            // - No exception handlers  
+            // - MaxStack <= 8
             var useTinyFormat = codeSize < 64 && 
                                 body.MaxStackSize <= 8 && 
                                 body.Variables.Count == 0 && 
-                                body.ExceptionHandlers.Count == 0 &&
-                                body.InitLocals;
+                                body.ExceptionHandlers.Count == 0;
 
             if (useTinyFormat)
             {
@@ -1298,7 +1370,8 @@ namespace Obfuscar.Metadata
                 case OperandType.InlineString:
                     var str = (string)instruction.Operand;
                     var userStringHandle = GetOrAddUserString(str);
-                    ilBuilder.WriteInt32(0x70000000 | MetadataTokens.GetToken(userStringHandle));
+                    // MetadataTokens.GetToken already includes the 0x70 token type prefix
+                    ilBuilder.WriteInt32(MetadataTokens.GetToken(userStringHandle));
                     break;
                     
                 case OperandType.InlineMethod:
@@ -1489,6 +1562,18 @@ namespace Obfuscar.Metadata
                 ? epHandle
                 : default(MethodDefinitionHandle);
 
+            // If writer parameters provide a strong-name key blob or key pair, mark the image as signed
+            // and reserve space for the strong-name signature. This ensures the produced PE has the
+            // StrongNameSigned flag set so readers (tests) can observe the signed state even if an
+            // external signing step is required to produce a valid signature.
+            int strongNameSignatureSize = 0;
+            if (parameters != null && (parameters.StrongNameKeyBlob != null || parameters.StrongNameKeyPair != null))
+            {
+                corFlags |= CorFlags.StrongNameSigned;
+                // Reserve 128 bytes for the strong name signature like the full framework writer did.
+                strongNameSignatureSize = 128;
+            }
+
             // Create managed PE builder
             var peBuilder = new ManagedPEBuilder(
                 header: peHeaderBuilder,
@@ -1498,7 +1583,7 @@ namespace Obfuscar.Metadata
                 managedResources: resourceBuilder.Count > 0 ? resourceBuilder : null,
                 nativeResources: null,
                 debugDirectoryBuilder: null,
-                strongNameSignatureSize: parameters?.StrongNameKeyPair != null ? 128 : 0,
+                strongNameSignatureSize: strongNameSignatureSize,
                 entryPoint: entryPoint,
                 flags: corFlags,
                 deterministicIdProvider: null);

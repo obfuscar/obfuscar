@@ -236,28 +236,74 @@ namespace Obfuscar
 
                                 if (!File.Exists(keyFile))
                                 {
-                                    throw new ObfuscarException($"Cannot locate key file: {keyFile}");
+                                    // Try look for the key file in the project's input path if reasonable
+                                    var candidate = Path.Combine(Project.Settings.InPath ?? ".", keyFile);
+                                    if (File.Exists(candidate))
+                                    {
+                                        keyFile = candidate;
+                                    }
+                                    else
+                                    {
+                                        throw new ObfuscarException($"Cannot locate key file: {keyFile}");
+                                    }
                                 }
 
                                 var keyPair = File.ReadAllBytes(keyFile);
+                                // Try to detect whether the provided key pair contains a private key.
+                                bool hasPrivateKey = false;
                                 try
                                 {
-                                    LoggerService.Logger.LogDebug("Attempting to sign assembly {0} with key file: {1}", info.Name, keyFile);
-                                    parameters.StrongNameKeyBlob = keyPair;
-                                    writer.Write(info.Definition, outName, parameters);
-                                    info.OutputFileName = outName;
-                                }
-                                catch (Exception ex)
-                                {
-                                    LoggerService.Logger.LogDebug("Strong-name signing failed for {0}, using delay signing. Error: {1}", 
-                                        info.Name, ex.Message);
-                                    parameters.StrongNameKeyBlob = null;
-                                    if (info.Definition.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned))
+                                    using (var rsa = new System.Security.Cryptography.RSACryptoServiceProvider())
                                     {
-                                        info.Definition.MainModule.Attributes ^= ModuleAttributes.StrongNameSigned;
+                                        try
+                                        {
+                                            rsa.ImportCspBlob(keyPair);
+                                            // Try to export private parameters - will throw if no private key
+                                            var priv = rsa.ExportParameters(true);
+                                            hasPrivateKey = true;
+                                        }
+                                        catch
+                                        {
+                                            hasPrivateKey = false;
+                                        }
                                     }
+                                }
+                                catch
+                                {
+                                    // If we can't use RSACryptoServiceProvider on this platform, fall back to conservative behavior:
+                                    // treat the blob as containing a private key if it's large (> 300 bytes).
+                                    hasPrivateKey = keyPair.Length > 300;
+                                }
 
-                                    // delay sign.
+                                if (hasPrivateKey)
+                                {
+                                    try
+                                    {
+                                        LoggerService.Logger.LogDebug("Attempting to sign assembly {0} with key file: {1}", info.Name, keyFile);
+                                        parameters.StrongNameKeyBlob = keyPair;
+                                        writer.Write(info.Definition, outName, parameters);
+                                        info.OutputFileName = outName;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        LoggerService.Logger.LogDebug("Strong-name signing failed for {0}, using delay signing. Error: {1}", 
+                                            info.Name, ex.Message);
+                                        parameters.StrongNameKeyBlob = null;
+                                        if (info.Definition.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned))
+                                        {
+                                            info.Definition.MainModule.Attributes ^= ModuleAttributes.StrongNameSigned;
+                                        }
+
+                                        // delay sign.
+                                        info.Definition.Name.PublicKey = keyPair;
+                                        writer.Write(info.Definition, outName, parameters);
+                                        info.OutputFileName = outName;
+                                    }
+                                }
+                                else
+                                {
+                                    // Public-key-only SNK: perform delay signing (do not set StrongNameKeyBlob)
+                                    LoggerService.Logger.LogDebug("Provided key file appears to be public-only; performing delay-sign for {0}", info.Name);
                                     info.Definition.Name.PublicKey = keyPair;
                                     writer.Write(info.Definition, outName, parameters);
                                     info.OutputFileName = outName;

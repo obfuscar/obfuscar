@@ -394,6 +394,13 @@ namespace Obfuscar
 
                 foreach (CustomAttribute customattribute in customattributes)
                 {
+                    // Add the attribute constructor's declaring type so it gets updated when renamed
+                    if (customattribute.Constructor?.DeclaringType != null &&
+                        project.Contains(customattribute.Constructor.DeclaringType))
+                    {
+                        typerefs.Add(customattribute.Constructor.DeclaringType);
+                    }
+                    
                     // Check Constructor and named parameter for argument of type "System.Type". i.e. typeof()
                     List<CustomAttributeArgument> customattributearguments = new List<CustomAttributeArgument>();
                     customattributearguments.AddRange(customattribute.ConstructorArguments);
@@ -425,9 +432,17 @@ namespace Obfuscar
             {
                 foreach (var item in items)
                 {
+                    // Skip the synthetic <Module> type which can appear in SRM-materialized assemblies
+                    var fullName = item.FullName;
+                    if (string.IsNullOrEmpty(fullName) || fullName == "<Module>")
+                        continue;
+                    
                     var node = new Node<TypeDefinition> {Item = item};
                     Root.Add(node);
-                    _map.Add(item.FullName, node);
+                    
+                    // Use indexer to avoid exceptions on duplicate keys (can happen with SRM reader)
+                    if (!_map.ContainsKey(fullName))
+                        _map[fullName] = node;
                 }
 
                 AddParents(Root);

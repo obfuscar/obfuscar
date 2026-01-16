@@ -87,14 +87,21 @@ namespace Obfuscar.Helpers
 
             if (type.BaseType != null)
             {
-                if (type.BaseType.FullName == "System.Object" &&
-                    type.BaseType.Module.FileName.EndsWith(".winmd", StringComparison.OrdinalIgnoreCase))
+                var baseTypeFullName = type.BaseType.FullName;
+                if (baseTypeFullName == "System.Object")
                 {
-                    // IMPORTANT: Resolve call below fails for UWP .winmd files.
-                    return false;
+                    // Check if this is a UWP .winmd file
+                    var module = type.BaseType.Module;
+                    if (module?.FileName != null && module.FileName.EndsWith(".winmd", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // IMPORTANT: Resolve call below fails for UWP .winmd files.
+                        return false;
+                    }
                 }
 
-                return type.BaseType.Resolve().IsFormOrUserControl();
+                var resolved = type.BaseType.Resolve();
+                if (resolved != null)
+                    return resolved.IsFormOrUserControl();
             }
 
             return false;
