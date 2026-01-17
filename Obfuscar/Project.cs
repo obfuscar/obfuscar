@@ -459,6 +459,11 @@ namespace Obfuscar
                 info.Init();
             }
 
+            foreach (AssemblyInfo info in AssemblyList)
+            {
+                info.PrepareDecoratorMatches();
+            }
+
             // build inheritance map
             InheritMap = new InheritMap(this);
             ReorderAssemblies();

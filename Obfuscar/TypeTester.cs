@@ -25,8 +25,11 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text.RegularExpressions;
+using Mono.Cecil;
 using Obfuscar.Helpers;
 
 namespace Obfuscar
@@ -51,6 +54,8 @@ namespace Obfuscar
         private readonly bool? isStatic;
         private readonly string decorator;
         private readonly string[] decoratorAll;
+        private readonly HashSet<string> decoratorTypeNames = new HashSet<string>();
+        private bool decoratorMatchesInitialized;
         private readonly bool?
             isSerializable;
 
@@ -154,26 +159,10 @@ namespace Obfuscar
                 }
             }
             
-            if (!string.IsNullOrEmpty(decorator))
+            if ((!string.IsNullOrEmpty(decorator) || (decoratorAll != null && decoratorAll.Length > 0)) &&
+                !decoratorTypeNames.Contains(type.TypeDefinition.FullName))
             {
-                var match = false;
-                
-                if (type.TypeDefinition.HasCustomAttributes)
-                {
-                    foreach (var customAttr in type.TypeDefinition.CustomAttributes)
-                    {
-                        if (customAttr.AttributeType.FullName == decorator)
-                        {
-                            match = true;
-                            break;
-                        }
-                    }
-                }
-                
-                if (!match)
-                {
-                    return false;
-                }
+                return false;
             }
             
             if (decoratorAll != null && decoratorAll.Length > 0)
@@ -244,6 +233,68 @@ namespace Obfuscar
             }
 
             return true;
+        }
+
+        internal void InitializeDecoratorMatches(AssemblyInfo assembly)
+        {
+            if (decoratorMatchesInitialized)
+                return;
+
+            decoratorMatchesInitialized = true;
+
+            if (string.IsNullOrEmpty(decorator) && (decoratorAll == null || decoratorAll.Length == 0))
+                return;
+
+            foreach (TypeDefinition type in assembly.GetAllTypeDefinitions())
+            {
+                if (MatchesDecorator(type))
+                {
+                    AddDecoratorType(type);
+                }
+            }
+        }
+
+        private bool MatchesDecorator(TypeDefinition type)
+        {
+            if (type == null)
+                return false;
+
+            if (!string.IsNullOrEmpty(decorator))
+            {
+                bool found = type.HasCustomAttributes && type.CustomAttributes.Any(attr =>
+                    attr.AttributeType.FullName == decorator);
+                if (!found &&
+                    decorator == "System.Runtime.CompilerServices.CompilerGeneratedAttribute" &&
+                    type.Name.StartsWith("<"))
+                {
+                    found = true;
+                }
+
+                if (!found)
+                    return false;
+            }
+
+            if (decoratorAll != null && decoratorAll.Length > 0)
+            {
+                if (!type.HasCustomAttributes)
+                    return false;
+
+                foreach (string attrName in decoratorAll)
+                {
+                    if (!type.CustomAttributes.Any(attr => attr.AttributeType.FullName == attrName))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void AddDecoratorType(TypeDefinition type)
+        {
+            for (TypeDefinition current = type; current != null; current = current.DeclaringType)
+            {
+                decoratorTypeNames.Add(current.FullName);
+            }
         }
     }
 }

@@ -695,6 +695,12 @@ namespace Obfuscar
             _cached = null;
         }
 
+        public void PrepareDecoratorMatches()
+        {
+            foreach (TypeTester tester in skipTypes)
+                tester.InitializeDecoratorMatches(this);
+        }
+
         private IEnumerable<MemberReference> getMemberReferences()
         {
             HashSet<MemberReference> memberReferences = new HashSet<MemberReference>();
