@@ -114,7 +114,18 @@ namespace Obfuscar
             ObfuscatedThing t;
             if (!c.Methods.TryGetValue(key, out t))
             {
-                t = new ObfuscatedThing(key.ToString());
+                string lookup = key.ToString();
+                foreach (var kvp in c.Methods)
+                {
+                    if (kvp.Key.ToString() == lookup)
+                    {
+                        t = kvp.Value;
+                        c.Methods[key] = t;
+                        return t;
+                    }
+                }
+
+                t = new ObfuscatedThing(lookup);
                 c.Methods[key] = t;
             }
 
