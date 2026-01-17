@@ -376,6 +376,40 @@ namespace Obfuscar
                 if (project.Contains(type))
                     typerefs.Add(type);
             }
+            
+            // Also add DeclaringType of member references - these may not be in GetTypeReferences()
+            // when the member is accessed via MethodSpec (generic method instantiation)
+            foreach (MemberReference member in unrenamedReferences)
+            {
+                TypeReference declaringType = member.DeclaringType;
+                if (declaringType != null && project.Contains(declaringType))
+                {
+                    // Get the element type to handle generic instances
+                    TypeReference elementType = declaringType.GetElementType();
+                    if (elementType != null && !typerefs.Contains(elementType))
+                        typerefs.Add(elementType);
+                    if (!typerefs.Contains(declaringType))
+                        typerefs.Add(declaringType);
+                }
+                
+                // Also collect type references from method signatures (return type and parameters)
+                // These may contain GenericInstanceTypes with nested type references
+                MethodReference methodRef = member as MethodReference;
+                if (methodRef != null)
+                {
+                    CollectTypeReferencesFromType(methodRef.ReturnType, typerefs);
+                    foreach (var param in methodRef.Parameters)
+                    {
+                        CollectTypeReferencesFromType(param.ParameterType, typerefs);
+                    }
+                }
+                
+                FieldReference fieldRef = member as FieldReference;
+                if (fieldRef != null)
+                {
+                    CollectTypeReferencesFromType(fieldRef.FieldType, typerefs);
+                }
+            }
 
             // Type references in CustomAttributes
             List<CustomAttribute> customattributes = new List<CustomAttribute>();
@@ -419,6 +453,54 @@ namespace Obfuscar
             unrenamedTypeReferences = new List<TypeReference>(typerefs);
 
             initialized = true;
+        }
+        
+        /// <summary>
+        /// Recursively collects type references from a type, including nested generic type arguments.
+        /// This is needed to update type references in method signatures when types are renamed.
+        /// </summary>
+        private void CollectTypeReferencesFromType(TypeReference type, HashSet<TypeReference> typerefs)
+        {
+            if (type == null)
+                return;
+            
+            // Skip generic parameters (like !0, !1, !!0, !!1) - they are not actual type references
+            if (type is GenericParameter)
+                return;
+            
+            // Handle GenericInstanceType - collect the element type and all generic arguments
+            GenericInstanceType genericInstance = type as GenericInstanceType;
+            if (genericInstance != null)
+            {
+                // Add the element type (the generic type definition)
+                TypeReference elementType = genericInstance.ElementType;
+                if (elementType != null && project.Contains(elementType))
+                {
+                    if (!typerefs.Contains(elementType))
+                        typerefs.Add(elementType);
+                }
+                
+                // Recursively collect from generic arguments
+                foreach (TypeReference arg in genericInstance.GenericArguments)
+                {
+                    CollectTypeReferencesFromType(arg, typerefs);
+                }
+                return;
+            }
+            
+            // Handle arrays, pointers, etc.
+            TypeSpecification typeSpec = type as TypeSpecification;
+            if (typeSpec != null)
+            {
+                CollectTypeReferencesFromType(typeSpec.ElementType, typerefs);
+                return;
+            }
+            
+            // For regular type references
+            if (project.Contains(type) && !typerefs.Contains(type))
+            {
+                typerefs.Add(type);
+            }
         }
 
         private class Graph

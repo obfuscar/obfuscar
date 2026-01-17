@@ -89,7 +89,7 @@ namespace Obfuscar.Metadata
             }
         }
 
-        private sealed class SimpleTypeProvider : ISignatureTypeProvider<Mono.Cecil.TypeReference, Mono.Cecil.ModuleDefinition>
+        internal sealed class SimpleTypeProvider : ISignatureTypeProvider<Mono.Cecil.TypeReference, Mono.Cecil.ModuleDefinition>
         {
             private readonly Mono.Cecil.ModuleDefinition module;
             private readonly MetadataReader md;
@@ -138,16 +138,20 @@ namespace Obfuscar.Metadata
             public Mono.Cecil.TypeReference GetGenericMethodParameter(Mono.Cecil.ModuleDefinition provider, int index)
             {
                 // Method generic parameter (e.g., T in void Foo<T>(T t))
-                // Return a GenericParameter representing !index
-                var owner = module.Types.Count > 0 ? module.Types[0] : null;
-                var gp = new Mono.Cecil.GenericParameter("T" + index, owner);
+                // Return a GenericParameter representing !!index (method generic parameter)
+                // We need to create a dummy MethodReference as owner so the GenericParameter
+                // correctly identifies as GenericParameterType.Method
+                var dummyType = module.Types.Count > 0 ? module.Types[0] : new Mono.Cecil.TypeDefinition("", "DummyType", Mono.Cecil.TypeAttributes.NotPublic);
+                var dummyMethod = new Mono.Cecil.MethodDefinition("DummyMethod", Mono.Cecil.MethodAttributes.Private, module.TypeSystem.Void);
+                dummyType.Methods.Add(dummyMethod);
+                var gp = new Mono.Cecil.GenericParameter("T" + index, dummyMethod);
                 return gp;
             }
 
             public Mono.Cecil.TypeReference GetGenericTypeParameter(Mono.Cecil.ModuleDefinition provider, int index)
             {
                 // Type generic parameter (e.g., T in class Foo<T>)
-                // Return a GenericParameter representing !index
+                // Return a GenericParameter representing !index (type generic parameter)
                 var owner = module.Types.Count > 0 ? module.Types[0] : null;
                 var gp = new Mono.Cecil.GenericParameter("T" + index, owner);
                 return gp;
@@ -205,7 +209,40 @@ namespace Obfuscar.Metadata
                 var td = reader.GetTypeDefinition(handle);
                 var name = md.GetString(td.Name);
                 var ns = md.GetString(td.Namespace);
+                
+                // Try to find the existing TypeDefinition in the module
+                // This is important so that when types are renamed, the references are updated too
+                string fullName = string.IsNullOrEmpty(ns) ? name : ns + "." + name;
+                var existingType = module.GetType(fullName);
+                if (existingType != null)
+                    return existingType;
+                
+                // Also check nested types and types with generic arity suffix
+                foreach (var type in module.Types)
+                {
+                    if (type.Name == name && type.Namespace == ns)
+                        return type;
+                    // Check nested types
+                    var nested = FindNestedType(type, name, ns);
+                    if (nested != null)
+                        return nested;
+                }
+                
+                // Fallback to creating a TypeReference if not found
                 return new Mono.Cecil.TypeReference(ns, name, module, module);
+            }
+            
+            private static Mono.Cecil.TypeDefinition FindNestedType(Mono.Cecil.TypeDefinition parent, string name, string ns)
+            {
+                foreach (var nested in parent.NestedTypes)
+                {
+                    if (nested.Name == name)
+                        return nested;
+                    var found = FindNestedType(nested, name, ns);
+                    if (found != null)
+                        return found;
+                }
+                return null;
             }
 
             public Mono.Cecil.TypeReference GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)

@@ -932,7 +932,7 @@ namespace Obfuscar.Metadata
                 
                 var position = gp.Position;
                 
-                // If position is -1, try to look up from the name (e.g., "T0", "T1", etc.)
+                // If position is -1, try to determine it from context
                 if (position < 0 && gp.Name != null)
                 {
                     // Try to parse position from name like "T0", "T1", "T2"
@@ -942,8 +942,30 @@ namespace Obfuscar.Metadata
                     }
                     else
                     {
-                        // Default to 0 if we can't determine position
-                        position = 0;
+                        // Try to find the position from the owner's generic parameters
+                        if (gp.Owner != null)
+                        {
+                            var ownerParams = gp.Owner is Mono.Cecil.MethodReference mr 
+                                ? (IList<Mono.Cecil.GenericParameter>)mr.GenericParameters 
+                                : gp.Owner is Mono.Cecil.TypeReference tr 
+                                    ? (IList<Mono.Cecil.GenericParameter>)tr.GenericParameters 
+                                    : null;
+                            if (ownerParams != null)
+                            {
+                                for (int i = 0; i < ownerParams.Count; i++)
+                                {
+                                    if (ownerParams[i] == gp || ownerParams[i].Name == gp.Name)
+                                    {
+                                        position = i;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // If still not found, default to 0
+                        if (position < 0)
+                            position = 0;
                     }
                 }
                 
@@ -1015,6 +1037,10 @@ namespace Obfuscar.Metadata
             {
                 return defHandle;
             }
+            
+            // DEBUG: Log when we create a type reference instead of using a type definition
+            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                $"GetTypeHandle creating TypeRef for {typeRef.FullName} (Type: {typeRef.GetType().Name})\n");
 
             // Check cache
             if (typeRefHandles.TryGetValue(typeRef, out var cachedHandle))

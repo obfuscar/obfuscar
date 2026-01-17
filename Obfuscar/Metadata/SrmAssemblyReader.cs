@@ -932,6 +932,35 @@ namespace Obfuscar.Metadata
                         
                         return mref;
                     }
+                case HandleKind.MethodSpecification:
+                    {
+                        var ms = md.GetMethodSpecification((MethodSpecificationHandle)handle);
+                        
+                        // Get the generic method being instantiated
+                        var elementMethodHandle = ms.Method;
+                        var elementMethod = ResolveMetadataToken(module, md, MetadataTokens.GetToken(elementMethodHandle)) as Mono.Cecil.MethodReference;
+                        if (elementMethod == null)
+                            return token;
+                        
+                        // Decode the generic arguments
+                        var sigReader = md.GetBlobReader(ms.Signature);
+                        byte header = sigReader.ReadByte();
+                        if (header != 0x0A) // GENRICINST
+                            return token;
+                        
+                        int argCount = sigReader.ReadCompressedInteger();
+                        var provider = new SrmSignatureDecoder.SimpleTypeProvider(module, md);
+                        var decoder = new System.Reflection.Metadata.Ecma335.SignatureDecoder<Mono.Cecil.TypeReference, Mono.Cecil.ModuleDefinition>(provider, md, module);
+                        
+                        var genericInstance = new Mono.Cecil.GenericInstanceMethod(elementMethod);
+                        for (int i = 0; i < argCount; i++)
+                        {
+                            var argType = decoder.DecodeType(ref sigReader) ?? module.TypeSystem.Object;
+                            genericInstance.GenericArguments.Add(argType);
+                        }
+                        
+                        return genericInstance;
+                    }
                 default:
                     // fallback: return numeric token
                     return token;
