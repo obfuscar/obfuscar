@@ -749,7 +749,7 @@ namespace Obfuscar.Metadata
                 returnType: out var retTypeEncoder,
                 parameters: out var paramsOut);
 
-            EncodeTypeSignature(new SignatureTypeEncoder(retTypeEncoder.Builder), method.ReturnType);
+            EncodeReturnType(retTypeEncoder, method.ReturnType);
 
             foreach (var param in method.Parameters)
             {
@@ -775,7 +775,7 @@ namespace Obfuscar.Metadata
                 returnType: out var retTypeEncoder,
                 parameters: out var paramsOut);
 
-            EncodeTypeSignature(new SignatureTypeEncoder(retTypeEncoder.Builder), property.PropertyType);
+            EncodeReturnType(retTypeEncoder, property.PropertyType);
 
             foreach (var param in property.Parameters)
             {
@@ -1083,6 +1083,20 @@ namespace Obfuscar.Metadata
             if (typeRef.Scope is AssemblyNameReference asmRef)
             {
                 if (assemblyRefHandles.TryGetValue(asmRef, out var handle))
+                {
+                    return handle;
+                }
+                
+                // If the exact object is not in cache, try to find by name
+                var matchingRef = assemblyRefHandles.Keys.FirstOrDefault(r => r.Name == asmRef.Name);
+                if (matchingRef != null)
+                {
+                    return assemblyRefHandles[matchingRef];
+                }
+                    
+                // Still not found - add the assembly reference now
+                AddAssemblyReference(asmRef);
+                if (assemblyRefHandles.TryGetValue(asmRef, out handle))
                     return handle;
             }
 
@@ -1205,6 +1219,7 @@ namespace Obfuscar.Metadata
 
         private BlobHandle EncodeMethodSignature(CecilMethodReference methodRef)
         {
+            
             var builder = new BlobBuilder();
             
             var convention = SignatureCallingConvention.Default;
@@ -1221,7 +1236,7 @@ namespace Obfuscar.Metadata
                 returnType: out var retTypeEncoder,
                 parameters: out var paramsOut);
 
-            EncodeTypeSignature(new SignatureTypeEncoder(retTypeEncoder.Builder), methodRef.ReturnType);
+            EncodeReturnType(retTypeEncoder, methodRef.ReturnType);
 
             foreach (var param in methodRef.Parameters)
             {
@@ -1230,6 +1245,18 @@ namespace Obfuscar.Metadata
             }
 
             return GetOrAddBlob(builder.ToArray());
+        }
+
+        private void EncodeReturnType(ReturnTypeEncoder retTypeEncoder, CecilTypeReference returnType)
+        {
+            if (returnType == null || returnType.FullName == "System.Void")
+            {
+                retTypeEncoder.Void();
+            }
+            else
+            {
+                EncodeTypeSignature(retTypeEncoder.Type(), returnType);
+            }
         }
 
         private int EncodeMethodBody(CecilMethodDefinition method)
@@ -1335,13 +1362,35 @@ namespace Obfuscar.Metadata
                     break;
                     
                 case OperandType.InlineBrTarget:
-                    var target = (Instruction)instruction.Operand;
-                    ilBuilder.WriteInt32(target.Offset - (instruction.Offset + instruction.GetSize()));
+                    if (instruction.Operand is Instruction target)
+                    {
+                        ilBuilder.WriteInt32(target.Offset - (instruction.Offset + instruction.GetSize()));
+                    }
+                    else if (instruction.Operand is int targetOffset)
+                    {
+                        // If operand is still an int offset (unresolved), use it directly
+                        ilBuilder.WriteInt32(targetOffset);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Unexpected InlineBrTarget operand type: {instruction.Operand?.GetType()?.Name ?? "null"}");
+                    }
                     break;
                     
                 case OperandType.ShortInlineBrTarget:
-                    var shortTarget = (Instruction)instruction.Operand;
-                    ilBuilder.WriteSByte((sbyte)(shortTarget.Offset - (instruction.Offset + instruction.GetSize())));
+                    if (instruction.Operand is Instruction shortTarget)
+                    {
+                        ilBuilder.WriteSByte((sbyte)(shortTarget.Offset - (instruction.Offset + instruction.GetSize())));
+                    }
+                    else if (instruction.Operand is int shortTargetOffset)
+                    {
+                        // If operand is still an int offset (unresolved), use it directly
+                        ilBuilder.WriteSByte((sbyte)shortTargetOffset);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Unexpected ShortInlineBrTarget operand type: {instruction.Operand?.GetType()?.Name ?? "null"}");
+                    }
                     break;
                     
                 case OperandType.InlineI:
@@ -1395,22 +1444,110 @@ namespace Obfuscar.Metadata
                     break;
                     
                 case OperandType.ShortInlineVar:
-                    var shortVarIndex = instruction.Operand is VariableDefinition varDef ? varDef.Index : (int)instruction.Operand;
+                    int shortVarIndex;
+                    if (instruction.Operand is VariableDefinition varDef)
+                    {
+                        shortVarIndex = varDef.Index;
+                    }
+                    else if (instruction.Operand is int intVarIdx)
+                    {
+                        shortVarIndex = intVarIdx;
+                    }
+                    else if (instruction.Operand is byte byteVarIdx)
+                    {
+                        shortVarIndex = byteVarIdx;
+                    }
+                    else
+                    {
+                        shortVarIndex = 0;
+                    }
                     ilBuilder.WriteByte((byte)shortVarIndex);
                     break;
                     
                 case OperandType.InlineVar:
-                    var varIndex = instruction.Operand is VariableDefinition varDef2 ? varDef2.Index : (int)instruction.Operand;
+                    int varIndex;
+                    if (instruction.Operand is VariableDefinition varDef2)
+                    {
+                        varIndex = varDef2.Index;
+                    }
+                    else if (instruction.Operand is int intVarIdx2)
+                    {
+                        varIndex = intVarIdx2;
+                    }
+                    else if (instruction.Operand is ushort ushortVarIdx)
+                    {
+                        varIndex = ushortVarIdx;
+                    }
+                    else if (instruction.Operand is byte byteVarIdx2)
+                    {
+                        varIndex = byteVarIdx2;
+                    }
+                    else
+                    {
+                        varIndex = 0;
+                    }
                     ilBuilder.WriteUInt16((ushort)varIndex);
                     break;
                     
                 case OperandType.ShortInlineArg:
-                    var shortArgIndex = instruction.Operand is CecilParameterDefinition paramDef ? paramDef.Index : (int)instruction.Operand;
+                    int shortArgIndex;
+                    if (instruction.Operand is CecilParameterDefinition paramDef)
+                    {
+                        shortArgIndex = paramDef.Index;
+                        // For 'this' parameter, Index is -1, but IL encoding uses 0
+                        if (shortArgIndex == -1)
+                            shortArgIndex = 0;
+                        else if (paramDef.Method is CecilMethodDefinition md && md.HasThis)
+                            shortArgIndex++; // Adjust for 'this' parameter
+                    }
+                    else if (instruction.Operand is int intIdx)
+                    {
+                        shortArgIndex = intIdx;
+                    }
+                    else if (instruction.Operand is byte byteIdx)
+                    {
+                        shortArgIndex = byteIdx;
+                    }
+                    else if (instruction.Operand == null)
+                    {
+                        // Null operand usually means 'this' parameter (arg 0)
+                        shortArgIndex = 0;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Unexpected ShortInlineArg operand type: {instruction.Operand?.GetType()?.Name ?? "null"}");
+                    }
                     ilBuilder.WriteByte((byte)shortArgIndex);
                     break;
                     
                 case OperandType.InlineArg:
-                    var argIndex = instruction.Operand is CecilParameterDefinition paramDef2 ? paramDef2.Index : (int)instruction.Operand;
+                    int argIndex;
+                    if (instruction.Operand is CecilParameterDefinition paramDef2)
+                    {
+                        argIndex = paramDef2.Index;
+                        // For 'this' parameter, Index is -1, but IL encoding uses 0
+                        if (argIndex == -1)
+                            argIndex = 0;
+                        else if (paramDef2.Method is CecilMethodDefinition md2 && md2.HasThis)
+                            argIndex++; // Adjust for 'this' parameter
+                    }
+                    else if (instruction.Operand is int intIdx2)
+                    {
+                        argIndex = intIdx2;
+                    }
+                    else if (instruction.Operand is ushort ushortIdx)
+                    {
+                        argIndex = ushortIdx;
+                    }
+                    else if (instruction.Operand == null)
+                    {
+                        // Null operand usually means 'this' parameter (arg 0)
+                        argIndex = 0;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Unexpected InlineArg operand type: {instruction.Operand?.GetType()?.Name ?? "null"}");
+                    }
                     ilBuilder.WriteUInt16((ushort)argIndex);
                     break;
                     

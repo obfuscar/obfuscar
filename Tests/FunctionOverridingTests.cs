@@ -202,7 +202,7 @@ namespace ObfuscarTests
 
             Obfuscator obfuscator =
                 TestHelper.BuildAndObfuscate(new[] {"AssemblyWithGenericOverrides", "AssemblyWithGenericOverrides2"},
-                    xml);
+                    xml, useNetFramework: false);
 
             var assembly2Path = Path.Combine(Directory.GetCurrentDirectory(), outputPath,
                 "AssemblyWithGenericOverrides2.dll");

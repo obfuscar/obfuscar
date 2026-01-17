@@ -217,6 +217,24 @@ namespace Obfuscar.Metadata
                     }
                 }
 
+                // Populate interface implementations
+                foreach (var ifaceHandle in td.GetInterfaceImplementations())
+                {
+                    try
+                    {
+                        var ifaceImpl = md.GetInterfaceImplementation(ifaceHandle);
+                        var ifaceTypeRef = ResolveTypeHandle(module, md, ifaceImpl.Interface);
+                        if (ifaceTypeRef != null)
+                        {
+                            typeDef.Interfaces.Add(new Mono.Cecil.InterfaceImplementation(ifaceTypeRef));
+                        }
+                    }
+                    catch
+                    {
+                        // Best-effort - skip if we can't resolve
+                    }
+                }
+
                 // Populate generic parameters for this type
                 foreach (var gpHandle in td.GetGenericParameters())
                 {
@@ -312,33 +330,58 @@ namespace Obfuscar.Metadata
                             var bodyBlock = PeReader.GetMethodBody(rva);
                             if (bodyBlock != null)
                             {
-                                var ilBytes = bodyBlock.GetILBytes().ToArray();
-                                var instructions = DecodeIL(module, md, ilBytes);
+                                var ilBytes = bodyBlock.GetILBytes();
+                                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"IL decode for {mdef.Name}: RVA={rva}, ilBytes.Length={ilBytes?.Length ?? -1}\n");
+                                if (ilBytes != null && ilBytes.Length > 0)
+                                {
+                                    var instructions = DecodeIL(module, md, ilBytes.ToArray());
+                                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  Decoded {instructions.Count} instructions\n");
 
-                                var mbody = new Mono.Cecil.Cil.MethodBody(mdef);
-                                // copy MaxStack if available
-                                try { mbody.MaxStackSize = bodyBlock.MaxStack; } catch { }
-                                foreach (var instr in instructions)
-                                    mbody.Instructions.Add(instr);
+                                    var mbody = new Mono.Cecil.Cil.MethodBody(mdef);
+                                    // copy MaxStack if available
+                                    try { mbody.MaxStackSize = bodyBlock.MaxStack; } catch { }
+                                    foreach (var instr in instructions)
+                                        mbody.Instructions.Add(instr);
 
-                                    // Local variable decoding: try to use MethodDebugInformation local signature when available
+                                    // Local variable decoding: first try from MethodBodyBlock.LocalSignature (always available)
+                                    // then fallback to MethodDebugInformation if not present
+                                    bool localsPopulated = false;
                                     try
                                     {
-                                        // method handle
-                                        var methodHandle = (MethodDefinitionHandle)mh;
-                                        var debugHandle = md.GetMethodDebugInformation(methodHandle);
-                                        var localSig = debugHandle.LocalSignature;
-                                        if (!localSig.IsNil)
+                                        var bodyLocalSig = bodyBlock.LocalSignature;
+                                        if (!bodyLocalSig.IsNil)
                                         {
-                                            var locals = SrmSignatureDecoder.DecodeLocalVariables(module, md, localSig);
+                                            var locals = SrmSignatureDecoder.DecodeLocalVariables(module, md, bodyLocalSig);
                                             foreach (var lt in locals)
                                             {
                                                 var v = new Mono.Cecil.Cil.VariableDefinition(lt ?? module.TypeSystem.Object);
                                                 mbody.Variables.Add(v);
                                             }
+                                            localsPopulated = true;
                                         }
                                     }
                                     catch { }
+                                    
+                                    // Fallback: try from MethodDebugInformation local signature
+                                    if (!localsPopulated)
+                                    {
+                                        try
+                                        {
+                                            var methodHandle = (MethodDefinitionHandle)mh;
+                                            var debugHandle = md.GetMethodDebugInformation(methodHandle);
+                                            var localSig = debugHandle.LocalSignature;
+                                            if (!localSig.IsNil)
+                                            {
+                                                var locals = SrmSignatureDecoder.DecodeLocalVariables(module, md, localSig);
+                                                foreach (var lt in locals)
+                                                {
+                                                    var v = new Mono.Cecil.Cil.VariableDefinition(lt ?? module.TypeSystem.Object);
+                                                    mbody.Variables.Add(v);
+                                                }
+                                            }
+                                        }
+                                        catch { }
+                                    }
 
                                     // If we have a portable PDB loaded, try to get local variable names and scopes
                                     try
@@ -402,13 +445,55 @@ namespace Obfuscar.Metadata
                                     {
                                         foreach (var eh in bodyBlock.ExceptionRegions)
                                         {
-                                            var handler = new Mono.Cecil.Cil.ExceptionHandler(Mono.Cecil.Cil.ExceptionHandlerType.Catch);
+                                            // Map exception region kind to Cecil's ExceptionHandlerType
+                                            Mono.Cecil.Cil.ExceptionHandlerType handlerType;
+                                            switch (eh.Kind)
+                                            {
+                                                case ExceptionRegionKind.Catch:
+                                                    handlerType = Mono.Cecil.Cil.ExceptionHandlerType.Catch;
+                                                    break;
+                                                case ExceptionRegionKind.Filter:
+                                                    handlerType = Mono.Cecil.Cil.ExceptionHandlerType.Filter;
+                                                    break;
+                                                case ExceptionRegionKind.Finally:
+                                                    handlerType = Mono.Cecil.Cil.ExceptionHandlerType.Finally;
+                                                    break;
+                                                case ExceptionRegionKind.Fault:
+                                                    handlerType = Mono.Cecil.Cil.ExceptionHandlerType.Fault;
+                                                    break;
+                                                default:
+                                                    handlerType = Mono.Cecil.Cil.ExceptionHandlerType.Catch;
+                                                    break;
+                                            }
+                                            
+                                            var handler = new Mono.Cecil.Cil.ExceptionHandler(handlerType);
                                             // map offsets to instructions
                                             var map = mbody.Instructions.ToDictionary(i => i.Offset, i => i);
-                                            if (map.TryGetValue(eh.TryOffset, out var tstart)) handler.TryStart = tstart;
-                                            if (map.TryGetValue(eh.TryOffset + eh.TryLength, out var tend)) handler.TryEnd = tend;
-                                            if (map.TryGetValue(eh.HandlerOffset, out var hstart)) handler.HandlerStart = hstart;
-                                            if (map.TryGetValue(eh.HandlerOffset + eh.HandlerLength, out var hend)) handler.HandlerEnd = hend;
+                                            
+                                            // For Try/Handler end, if exact offset not found, find the instruction just after the range
+                                            Instruction FindInstruction(int offset, bool isEnd)
+                                            {
+                                                if (map.TryGetValue(offset, out var instr))
+                                                    return instr;
+                                                if (isEnd)
+                                                {
+                                                    // End offsets point one past the last instruction
+                                                    // Find the first instruction at or after this offset
+                                                    return mbody.Instructions.FirstOrDefault(i => i.Offset >= offset);
+                                                }
+                                                return null;
+                                            }
+                                            
+                                            handler.TryStart = FindInstruction(eh.TryOffset, false);
+                                            handler.TryEnd = FindInstruction(eh.TryOffset + eh.TryLength, true);
+                                            handler.HandlerStart = FindInstruction(eh.HandlerOffset, false);
+                                            handler.HandlerEnd = FindInstruction(eh.HandlerOffset + eh.HandlerLength, true);
+                                            
+                                            if (eh.Kind == ExceptionRegionKind.Filter)
+                                            {
+                                                handler.FilterStart = FindInstruction(eh.FilterOffset, false);
+                                            }
+                                            
                                             try
                                             {
                                                 var catchHandle = eh.CatchType;
@@ -426,10 +511,15 @@ namespace Obfuscar.Metadata
                                     catch { }
 
                                     mdef.Body = mbody;
+                                    
+                                    // Fix up variable and parameter operands now that we have the collections populated
+                                    FixupVariableAndParameterOperands(mdef);
+                                }
                             }
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  Exception during IL decode: {ex.Message}\n");
                             // best-effort: leave method without body
                         }
                     }
@@ -464,6 +554,7 @@ namespace Obfuscar.Metadata
                             if (m.Name == getterName)
                             {
                                 pdef.GetMethod = m;
+                                SetMethodSemanticsAttributes(m, Mono.Cecil.MethodSemanticsAttributes.Getter);
                                 break;
                             }
                         }
@@ -477,6 +568,7 @@ namespace Obfuscar.Metadata
                             if (m.Name == setterName)
                             {
                                 pdef.SetMethod = m;
+                                SetMethodSemanticsAttributes(m, Mono.Cecil.MethodSemanticsAttributes.Setter);
                                 break;
                             }
                         }
@@ -504,6 +596,7 @@ namespace Obfuscar.Metadata
                             if (m.Name == adderName)
                             {
                                 edef.AddMethod = m;
+                                SetMethodSemanticsAttributes(m, Mono.Cecil.MethodSemanticsAttributes.AddOn);
                                 break;
                             }
                         }
@@ -517,6 +610,7 @@ namespace Obfuscar.Metadata
                             if (m.Name == removerName)
                             {
                                 edef.RemoveMethod = m;
+                                SetMethodSemanticsAttributes(m, Mono.Cecil.MethodSemanticsAttributes.RemoveOn);
                                 break;
                             }
                         }
@@ -530,6 +624,7 @@ namespace Obfuscar.Metadata
                             if (m.Name == raiserName)
                             {
                                 edef.InvokeMethod = m;
+                                SetMethodSemanticsAttributes(m, Mono.Cecil.MethodSemanticsAttributes.Fire);
                                 break;
                             }
                         }
@@ -543,6 +638,22 @@ namespace Obfuscar.Metadata
             PopulateCustomAttributes(module, md);
 
             return materializedAssembly;
+        }
+
+        // Helper to set SemanticsAttributes on a MethodDefinition and mark it as ready.
+        // Cecil's SemanticsAttributes getter resets the value to None if sem_attrs_ready is false.
+        private static void SetMethodSemanticsAttributes(Mono.Cecil.MethodDefinition method, Mono.Cecil.MethodSemanticsAttributes value)
+        {
+            // First set the field via the public setter
+            method.SemanticsAttributes = value;
+            
+            // Then set sem_attrs_ready = true via reflection so the getter doesn't reset it
+            var semAttrsReadyField = typeof(Mono.Cecil.MethodDefinition).GetField("sem_attrs_ready", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (semAttrsReadyField != null)
+            {
+                semAttrsReadyField.SetValue(method, true);
+            }
         }
 
         // Basic IL decoder: converts raw IL bytes into a list of Cecil Instructions.
@@ -575,11 +686,31 @@ namespace Obfuscar.Metadata
                     case OperandType.InlineNone:
                         break;
                     case OperandType.ShortInlineI:
-                        operand = il[offset++];
+                        operand = (sbyte)il[offset++];
                         break;
                     case OperandType.InlineI:
                         operand = BitConverter.ToInt32(il, offset);
                         offset += 4;
+                        break;
+                    case OperandType.InlineI8:
+                        operand = BitConverter.ToInt64(il, offset);
+                        offset += 8;
+                        break;
+                    case OperandType.InlineString:
+                        int strToken = BitConverter.ToInt32(il, offset);
+                        offset += 4;
+                        try
+                        {
+                            // User string token format: 0x70XXXXXX where XXXXXX is heap offset
+                            // MetadataTokens.UserStringHandle expects just the offset (lower 24 bits)
+                            int heapOffset = strToken & 0x00FFFFFF;
+                            var strHandle = System.Reflection.Metadata.Ecma335.MetadataTokens.UserStringHandle(heapOffset);
+                            operand = md.GetUserString(strHandle);
+                        }
+                        catch
+                        {
+                            operand = string.Empty;
+                        }
                         break;
                     case OperandType.InlineMethod:
                     case OperandType.InlineTok:
@@ -643,10 +774,10 @@ namespace Obfuscar.Metadata
                         break;
                 }
 
-                var instruction = Instruction.Create(op);
+                // Use reflection to create Instruction since Instruction.Create validates operand types
+                // and we're building from raw IL where the structure is already validated
+                var instruction = CreateInstruction(op, operand);
                 instruction.Offset = start;
-                if (operand != null)
-                    instruction.Operand = operand;
                 result.Add(instruction);
             }
 
@@ -654,15 +785,36 @@ namespace Obfuscar.Metadata
             var map = result.ToDictionary(i => i.Offset, i => i);
             foreach (var instr in result)
             {
-                if (instr.Operand is int off)
+                // Only process branch instructions
+                if (instr.OpCode.OperandType == OperandType.ShortInlineBrTarget ||
+                    instr.OpCode.OperandType == OperandType.InlineBrTarget)
                 {
-                    if (map.TryGetValue(off, out var target))
-                        instr.Operand = target;
+                    if (instr.Operand is int off)
+                    {
+                        if (map.TryGetValue(off, out var target))
+                            instr.Operand = target;
+                        else
+                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  WARNING: Branch target offset {off} not found in instruction map\n");
+                    }
                 }
-                else if (instr.Operand is int[] offs)
+                else if (instr.OpCode.OperandType == OperandType.InlineSwitch)
                 {
-                    var targets = offs.Select(o => map.TryGetValue(o, out var t) ? t : null).ToArray();
-                    instr.Operand = targets;
+                    if (instr.Operand is int[] offs)
+                    {
+                        var targets = new Instruction[offs.Length];
+                        for (int j = 0; j < offs.Length; j++)
+                        {
+                            if (map.TryGetValue(offs[j], out var t))
+                                targets[j] = t;
+                            else
+                            {
+                                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  WARNING: Switch target offset {offs[j]} not found\n");
+                                // Find the closest instruction or use the first one as fallback
+                                targets[j] = result.FirstOrDefault(x => x.Offset >= offs[j]) ?? result[0];
+                            }
+                        }
+                        instr.Operand = targets;
+                    }
                 }
             }
 
@@ -706,7 +858,9 @@ namespace Obfuscar.Metadata
                         var name = md.GetString(mdDef.Name);
                         var declType = FindDeclaringTypeForMember(md, System.Reflection.Metadata.Ecma335.MetadataTokens.GetToken(System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDefinitionHandle(token)));
                         Mono.Cecil.TypeReference parent = declType.ns != null ? new Mono.Cecil.TypeReference(declType.ns, declType.name, module, module) : module.TypeSystem.Object;
-                        return new Mono.Cecil.MethodReference(name, module.TypeSystem.Object) { DeclaringType = parent };
+                        // Decode proper return type from method signature
+                        var methodSig = SrmSignatureDecoder.DecodeMethodSignature(module, md, mdDef.Signature);
+                        return new Mono.Cecil.MethodReference(name, methodSig.ReturnType) { DeclaringType = parent };
                     }
                 case HandleKind.MemberReference:
                     {
@@ -749,25 +903,32 @@ namespace Obfuscar.Metadata
                             return new Mono.Cecil.FieldReference(name, module.TypeSystem.Object, parent);
                         }
                         
-                        // Method signature - decode parameters and return type
-                        var mref = new Mono.Cecil.MethodReference(name, module.TypeSystem.Object) { DeclaringType = parent };
+                        // Method signature - decode parameters and return type properly
+                        var methodSig = SrmSignatureDecoder.DecodeMethodSignature(module, md, mr.Signature);
+                        var mref = new Mono.Cecil.MethodReference(name, methodSig.ReturnType) { DeclaringType = parent };
                         
-                        // Parse calling convention
+                        // Parse calling convention from first byte
                         bool hasThis = (firstByte & 0x20) != 0;
                         mref.HasThis = hasThis;
                         
                         // Check for generic method
                         if ((firstByte & 0x10) != 0)
                         {
-                            var genParamCount = sigBlob.ReadCompressedInteger();
+                            // Re-read signature to get generic param count
+                            var sigBlob2 = md.GetBlobReader(mr.Signature);
+                            sigBlob2.ReadByte(); // skip calling convention
+                            var genParamCount = sigBlob2.ReadCompressedInteger();
                             for (int i = 0; i < genParamCount; i++)
                             {
                                 mref.GenericParameters.Add(new Mono.Cecil.GenericParameter("T" + i, mref));
                             }
                         }
                         
-                        var paramCount = sigBlob.ReadCompressedInteger();
-                        // Skip return type (we already set it to Object)
+                        // Add parameters from decoded signature
+                        for (int i = 0; i < methodSig.ParameterTypes.Length; i++)
+                        {
+                            mref.Parameters.Add(new Mono.Cecil.ParameterDefinition(methodSig.ParameterTypes[i]));
+                        }
                         
                         return mref;
                     }
@@ -813,6 +974,121 @@ namespace Obfuscar.Metadata
             }
             // fallback
             return module;
+        }
+
+        // Cache for reflection access to Instruction's internal constructor
+        private static ConstructorInfo _instructionCtor;
+        
+        /// <summary>
+        /// Creates an Instruction using reflection to bypass validation in Instruction.Create methods.
+        /// This is needed because we're decoding raw IL and the structure is already valid.
+        /// </summary>
+        private static Instruction CreateInstruction(OpCode opcode, object operand)
+        {
+            if (_instructionCtor == null)
+            {
+                // Find the internal constructor: Instruction(OpCode opcode, object operand)
+                _instructionCtor = typeof(Instruction).GetConstructor(
+                    BindingFlags.Instance | BindingFlags.NonPublic,
+                    null,
+                    new[] { typeof(OpCode), typeof(object) },
+                    null);
+            }
+            
+            if (_instructionCtor != null)
+            {
+                return (Instruction)_instructionCtor.Invoke(new object[] { opcode, operand });
+            }
+            
+            // Fallback: try finding the (int, OpCode) constructor and set Operand via property
+            var altCtor = typeof(Instruction).GetConstructor(
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                null,
+                new[] { typeof(int), typeof(OpCode) },
+                null);
+            if (altCtor != null)
+            {
+                var instruction = (Instruction)altCtor.Invoke(new object[] { 0, opcode });
+                instruction.Operand = operand;
+                return instruction;
+            }
+            
+            // Last resort: use Create and hope it works
+            throw new InvalidOperationException("Cannot create Instruction - no suitable constructor found");
+        }
+
+        /// <summary>
+        /// After populating variables and parameters, fix up instructions that have integer operands
+        /// which should be VariableDefinition or ParameterDefinition objects.
+        /// </summary>
+        private static void FixupVariableAndParameterOperands(Mono.Cecil.MethodDefinition method)
+        {
+            if (method.Body == null) return;
+            
+            var body = method.Body;
+            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"FixupVariableAndParameterOperands for {method.Name} - {body.Instructions.Count} instrs, {body.Variables.Count} vars\n");
+            
+            foreach (var instr in body.Instructions)
+            {
+                switch (instr.OpCode.OperandType)
+                {
+                    case OperandType.ShortInlineVar:
+                    case OperandType.InlineVar:
+                        System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  {instr.OpCode} operand type={instr.Operand?.GetType()?.Name ?? "null"}, value={instr.Operand}\n");
+                        if (instr.Operand is byte b && b < body.Variables.Count)
+                        {
+                            instr.Operand = body.Variables[b];
+                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"    -> fixed to byte {b}\n");
+                        }
+                        else if (instr.Operand is ushort u && u < body.Variables.Count)
+                        {
+                            instr.Operand = body.Variables[u];
+                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"    -> fixed from ushort {u}\n");
+                        }
+                        else if (instr.Operand is int i && i >= 0 && i < body.Variables.Count)
+                        {
+                            instr.Operand = body.Variables[i];
+                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"    -> fixed from int {i}\n");
+                        }
+                        else
+                        {
+                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"    NOT FIXED!\n");
+                        }
+                        break;
+                        
+                    case OperandType.ShortInlineArg:
+                    case OperandType.InlineArg:
+                        int argIndex = -1;
+                        if (instr.Operand is byte ab)
+                            argIndex = ab;
+                        else if (instr.Operand is ushort au)
+                            argIndex = au;
+                        else if (instr.Operand is int ai)
+                            argIndex = ai;
+                            
+                        if (argIndex >= 0)
+                        {
+                            // For instance methods, arg 0 is 'this', so we need to adjust
+                            if (method.HasThis)
+                            {
+                                if (argIndex == 0)
+                                {
+                                    // 'this' parameter - use method.Body.ThisParameter
+                                    instr.Operand = body.ThisParameter;
+                                }
+                                else if (argIndex - 1 < method.Parameters.Count)
+                                {
+                                    instr.Operand = method.Parameters[argIndex - 1];
+                                }
+                            }
+                            else if (argIndex < method.Parameters.Count)
+                            {
+                                instr.Operand = method.Parameters[argIndex];
+                            }
+                        }
+                        break;
+                }
+            }
         }
 
         private static OpCode GetOpCode(int code)

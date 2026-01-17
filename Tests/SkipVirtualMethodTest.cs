@@ -49,7 +49,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("SkipVirtualMethodTest", "1", xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
+            TestHelper.BuildAndObfuscate("SkipVirtualMethodTest", "1", xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7, useNetFramework: false);
 
             string[] expected = new string[]
             {
@@ -83,7 +83,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
-            TestHelper.BuildAndObfuscate("SkipVirtualMethodTest", "2", xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
+            TestHelper.BuildAndObfuscate("SkipVirtualMethodTest", "2", xml, languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7, useNetFramework: false);
 
             string[] expected = new string[]
             {

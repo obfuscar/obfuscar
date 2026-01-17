@@ -27,10 +27,16 @@ namespace Obfuscar.Metadata
     public static class AssemblyWriterFactory
     {
         /// <summary>
-        /// Create a writer using the default implementation (SRM-based).
+        /// Create a writer using the default implementation.
+        /// Set USE_CECIL_WRITER environment variable to "true" to use Cecil-based writer for comparison.
         /// </summary>
         public static IAssemblyWriter CreateWriter()
         {
+            var useCecil = Environment.GetEnvironmentVariable("USE_CECIL_WRITER");
+            if (string.Equals(useCecil, "true", StringComparison.OrdinalIgnoreCase))
+            {
+                return new CecilAssemblyWriter();
+            }
             return new SrmAssemblyWriter();
         }
     }

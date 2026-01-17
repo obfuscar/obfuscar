@@ -99,9 +99,17 @@ namespace Obfuscar.Helpers
                     }
                 }
 
-                var resolved = type.BaseType.Resolve();
-                if (resolved != null)
-                    return resolved.IsFormOrUserControl();
+                try
+                {
+                    var resolved = type.BaseType.Resolve();
+                    if (resolved != null)
+                        return resolved.IsFormOrUserControl();
+                }
+                catch (Mono.Cecil.AssemblyResolutionException)
+                {
+                    // If we can't resolve the base type assembly, assume it's not a Form/UserControl
+                    return false;
+                }
             }
 
             return false;

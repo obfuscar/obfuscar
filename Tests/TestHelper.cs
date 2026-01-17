@@ -183,10 +183,15 @@ namespace ObfuscarTests
 
         public static void BuildAssemblies(LanguageVersion languageVersion = LanguageVersion.Latest, params string[] names)
         {
+            BuildAssemblies(languageVersion, true, names);
+        }
+
+        public static void BuildAssemblies(LanguageVersion languageVersion, bool useNetFramework, params string[] names)
+        {
             var options = new List<string>();
             foreach (var name in names)
             {
-                BuildAssembly(name, null, options, languageVersion: languageVersion);
+                BuildAssembly(name, null, options, languageVersion: languageVersion, useNetFramework: useNetFramework);
                 options.Add(GetAssemblyPath(name));
             }
         }
@@ -210,17 +215,17 @@ namespace ObfuscarTests
         }
 
         public static Obfuscar.Obfuscator BuildAndObfuscate(string name, string suffix, string xml,
-            bool hideStrings = false, LanguageVersion languageVersion = LanguageVersion.Latest)
+            bool hideStrings = false, LanguageVersion languageVersion = LanguageVersion.Latest, bool useNetFramework = true)
         {
             CleanInput();
-            BuildAssembly(name, suffix, languageVersion: languageVersion);
+            BuildAssembly(name, suffix, languageVersion: languageVersion, useNetFramework: useNetFramework);
             return Obfuscate(xml, hideStrings);
         }
 
-        public static Obfuscar.Obfuscator BuildAndObfuscate(string[] names, string xml, LanguageVersion languageVersion = LanguageVersion.Latest)
+        public static Obfuscar.Obfuscator BuildAndObfuscate(string[] names, string xml, LanguageVersion languageVersion = LanguageVersion.Latest, bool useNetFramework = true)
         {
             CleanInput();
-            BuildAssemblies(languageVersion, names);
+            BuildAssemblies(languageVersion, useNetFramework, names);
             return Obfuscate(xml);
         }
 

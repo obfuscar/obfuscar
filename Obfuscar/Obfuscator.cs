@@ -886,8 +886,6 @@ namespace Obfuscar
                 return;
             }
 
-            Console.WriteLine("[OBFUSCATOR-DEBUG] Enter RenameProperties phase");
-
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
@@ -915,8 +913,6 @@ namespace Obfuscar
                         type.Properties.Remove(prop);
                     }
                 }
-
-            Console.WriteLine("[OBFUSCATOR-DEBUG] Exit RenameProperties phase");
             }
         }
 
@@ -934,7 +930,6 @@ namespace Obfuscar
                 Project.Settings.MarkedOnly, out skip))
             {
                 LoggerService.Logger.LogDebug("Property {0} in type {1} skipped: {2}", prop.Name, typeKey, skip);
-                Console.WriteLine($"[OBFUSCATOR-DEBUG] ProcessProperty: Property '{prop.FullName}' is skipped (reason: {skip}). KeepProperties={Project.Settings.KeepProperties}, CustomAttributes={prop.CustomAttributes.Count}");
                 m.Update(ObfuscationStatus.Skipped, skip);
 
                 // make sure get/set get skipped too
@@ -956,7 +951,6 @@ namespace Obfuscar
             {
                 // do not rename properties of custom attribute types which have a public setter method
                 LoggerService.Logger.LogDebug("Property {0} in attribute type {1} skipped: public setter of a custom attribute", prop.Name, typeKey);
-                Console.WriteLine($"[OBFUSCATOR-DEBUG] ProcessProperty: Property '{prop.FullName}' in attribute type skipped (public setter). KeepProperties={Project.Settings.KeepProperties}");
                 m.Update(ObfuscationStatus.Skipped, "public setter of a custom attribute");
                 // no problem when the getter or setter methods are renamed by RenameMethods()
             }
@@ -967,14 +961,12 @@ namespace Obfuscar
                 var newName = NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
                 LoggerService.Logger.LogDebug("Renaming property {0} in type {1} to {2} (has {3} custom attributes, KeepProperties={4})", 
                     prop.Name, typeKey, newName, prop.CustomAttributes.Count, Project.Settings.KeepProperties);
-                Console.WriteLine($"[OBFUSCATOR-DEBUG] ProcessProperty: Renaming property '{prop.FullName}' to '{newName}'. CustomAttributes={prop.CustomAttributes.Count}, KeepProperties={Project.Settings.KeepProperties}");
                 RenameProperty(info, propKey, prop, newName);
             }
             else
             {
                 // add to to collection for removal
                 LoggerService.Logger.LogDebug("Property {0} in type {1} will be dropped", prop.Name, typeKey);
-                Console.WriteLine($"[OBFUSCATOR-DEBUG] ProcessProperty: Dropping property '{prop.FullName}'. CustomAttributes={prop.CustomAttributes.Count}, KeepProperties={Project.Settings.KeepProperties}");
                 propsToDrop.Add(prop);
             }
             return index;
@@ -1017,8 +1009,6 @@ namespace Obfuscar
                 return;
             }
 
-            Console.WriteLine("[OBFUSCATOR-DEBUG] Enter RenameEvents phase");
-
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
@@ -1044,8 +1034,6 @@ namespace Obfuscar
                         type.Events.Remove(evt);
                     }
                 }
-
-            Console.WriteLine("[OBFUSCATOR-DEBUG] Exit RenameEvents phase");
             }
         }
 
@@ -1078,25 +1066,18 @@ namespace Obfuscar
             if (method == null)
                 return;
 
-            Console.WriteLine($"[OBFUSCATOR-DEBUG] ForceSkip called for '{method.FullName}' (reason: {skip})");
-
             var mk = new MethodKey(method);
             var delete = Mapping.GetMethod(mk);
             if (delete != null)
             {
-                Console.WriteLine($"[OBFUSCATOR-DEBUG] Mapping found for '{method.FullName}', setting status Skipped");
                 delete.Status = ObfuscationStatus.Skipped;
                 delete.StatusText = skip;
-            }
-            else
-            {
-                Console.WriteLine($"[OBFUSCATOR-DEBUG] No mapping entry for '{method.FullName}'");
+                // Do not physically remove methods here; mapping status is used by RenameMethods
             }
         }
 
         public void RenameMethods()
         {
-            Console.WriteLine("[OBFUSCATOR-DEBUG] Enter RenameMethods phase");
             var baseSigNames = new Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>>();
             // Do not remove methods marked as Skipped here; rename phase will consult mapping statuses
             foreach (AssemblyInfo info in Project.AssemblyList)
@@ -1128,8 +1109,6 @@ namespace Obfuscar
                             NameGroup nameGroup = GetNameGroup(sigNames, pair.Key);
                             nameGroup.AddAll(pair.Value);
                         }
-
-                    Console.WriteLine("[OBFUSCATOR-DEBUG] Exit RenameMethods phase");
                     }
                 }
 
@@ -1452,8 +1431,10 @@ namespace Obfuscar
         /// </summary>
         internal void HideStrings()
         {
+            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", "HideStrings() called\n");
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
+                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"Processing assembly {info.Definition.Name}\n");
                 AssemblyDefinition library = info.Definition;
                 StringSqueeze container = new StringSqueeze(library);
 
@@ -1509,8 +1490,8 @@ namespace Obfuscar
                     foreach (MethodDefinition method in type.Methods)
                     {
                         method.CleanAttributes();
-                        if (method.HasBody && Project.Settings.Optimize)
-                            method.Body.Optimize();
+                        // if (method.HasBody && Project.Settings.Optimize)
+                        //     method.Body.Optimize();
                     }
                 }
 
@@ -1798,9 +1779,13 @@ namespace Obfuscar
 
             public void ProcessStrings(MethodDefinition method, AssemblyInfo info, Project project)
             {
+                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"ProcessStrings: {method.FullName}\n");
                 if (info.ShouldSkipStringHiding(new MethodKey(method), project.InheritMap,
                         project.Settings.HideStrings) || method.Body == null)
+                {
+                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  Skipping: Body={method.Body != null}\n");
                     return;
+                }
 
                 Initialize();
 
@@ -1808,11 +1793,25 @@ namespace Obfuscar
                     return;
 
                 LoggerService.Logger.LogDebug("Processing strings in method {0}", method.FullName);
+                
+                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  Body.Variables.Count={method.Body.Variables.Count}, Instructions.Count={method.Body.Instructions.Count}\n");
 
                 // Unroll short form instructions so they can be auto-fixed by Cecil
                 // automatically when instructions are inserted/replaced
-                method.Body.SimplifyMacros();
+                // method.Body.SimplifyMacros();
                 ILProcessor worker = method.Body.GetILProcessor();
+
+                // DEBUG: Count ldstr instructions
+                int ldstrCount = 0;
+                foreach (var instr in method.Body.Instructions)
+                {
+                    if (instr.OpCode == OpCodes.Ldstr)
+                    {
+                        ldstrCount++;
+                        System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  Found ldstr operand type={instr.Operand?.GetType()?.Name ?? "null"}, value={instr.Operand}\n");
+                    }
+                }
+                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  Instructions={method.Body.Instructions.Count}, ldstr={ldstrCount}\n");
 
                 //
                 // Make a dictionary of all instructions to replace and their replacement.
@@ -1889,7 +1888,83 @@ namespace Obfuscar
                 // Optimize method back
                 if (project.Settings.Optimize)
                 {
-                    method.Body.Optimize();
+                    try
+                    {
+                        // Debug: Check ThisParameter
+                        if (method.HasThis)
+                        {
+                            try
+                            {
+                                var thisPar = method.Body.ThisParameter;
+                                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                                    $"  ThisParameter: {(thisPar == null ? "NULL" : thisPar.ParameterType?.FullName)}\n");
+                            }
+                            catch (Exception ex)
+                            {
+                                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                                    $"  ThisParameter THREW: {ex.GetType().Name}: {ex.Message}\n");
+                            }
+                        }
+                        
+                        // Debug: Check for problematic operands before Optimize
+                        System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                            $"  Pre-optimize: Method.HasThis={method.HasThis}, Parameters.Count={method.Parameters.Count}\n");
+                        foreach (var instr in method.Body.Instructions)
+                        {
+                            // Log all ldarg-family instructions
+                            if (instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg ||
+                                instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg_S ||
+                                instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg_0 ||
+                                instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg_1 ||
+                                instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg_2 ||
+                                instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg_3)
+                            {
+                                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                                    $"  Instr@{instr.Offset}: {instr.OpCode} operand={instr.Operand?.GetType()?.Name ?? "null"}\n");
+                            }
+                            
+                            if (instr.OpCode.OperandType == Mono.Cecil.Cil.OperandType.InlineBrTarget ||
+                                instr.OpCode.OperandType == Mono.Cecil.Cil.OperandType.ShortInlineBrTarget)
+                            {
+                                if (instr.Operand != null && !(instr.Operand is Mono.Cecil.Cil.Instruction))
+                                {
+                                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                                        $"  ERROR: {instr.OpCode} has operand of type {instr.Operand?.GetType()?.Name}, expected Instruction\n");
+                                }
+                            }
+                            else if (instr.OpCode.OperandType == Mono.Cecil.Cil.OperandType.ShortInlineVar ||
+                                     instr.OpCode.OperandType == Mono.Cecil.Cil.OperandType.InlineVar)
+                            {
+                                if (!(instr.Operand is Mono.Cecil.Cil.VariableDefinition))
+                                {
+                                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                                        $"  ERROR: {instr.OpCode} has operand of type {instr.Operand?.GetType()?.Name ?? "null"}, expected VariableDefinition\n");
+                                }
+                            }
+                            else if (instr.OpCode.OperandType == Mono.Cecil.Cil.OperandType.ShortInlineArg ||
+                                     instr.OpCode.OperandType == Mono.Cecil.Cil.OperandType.InlineArg)
+                            {
+                                if (!(instr.Operand is Mono.Cecil.ParameterDefinition))
+                                {
+                                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                                        $"  ERROR: {instr.OpCode} has operand of type {instr.Operand?.GetType()?.Name ?? "null"}, expected ParameterDefinition\n");
+                                }
+                            }
+                            // Check for null operands on Ldarg/Ldloc after SimplifyMacros style expansion
+                            if (instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg && instr.Operand == null)
+                            {
+                                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                                    $"  ERROR: {instr.OpCode} at offset {instr.Offset} has NULL operand\n");
+                            }
+                        }
+                        // method.Body.Optimize();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                            $"  OPTIMIZE FAILED for {method.FullName}: {ex.GetType().Name}: {ex.Message}\n");
+                        throw;
+                    }
                 }
             }
         }
