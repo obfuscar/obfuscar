@@ -25,7 +25,8 @@
 #endregion
 
 using System;
-using Mono.Cecil;
+using System.Linq;
+using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar
 {
@@ -44,20 +45,9 @@ namespace Obfuscar
             hashCode = CalcHashCode();
         }
 
-        public NameParamSig(MethodReference method)
-            : base(method)
+        public NameParamSig(IMethod method)
+            : this(method?.Name ?? string.Empty, method?.ParameterTypeFullNames?.ToArray() ?? Array.Empty<string>())
         {
-            Name = method.Name;
-
-            hashCode = CalcHashCode();
-        }
-
-        public NameParamSig(MethodDefinition method)
-            : base(method)
-        {
-            Name = method.Name;
-
-            hashCode = CalcHashCode();
         }
 
         private int CalcHashCode()

@@ -24,8 +24,8 @@
 
 #endregion
 
+using System.Reflection;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
 
 namespace Obfuscar
 {

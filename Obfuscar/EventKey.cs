@@ -24,6 +24,7 @@
 
 #endregion
 
+using MethodAttributes = System.Reflection.MethodAttributes;
 using Mono.Cecil;
 
 namespace Obfuscar
@@ -56,7 +57,7 @@ namespace Obfuscar
 
         public MethodAttributes AddMethodAttributes
         {
-            get { return Event.AddMethod != null ? Event.AddMethod.Attributes : 0; }
+            get { return Event.AddMethod != null ? (MethodAttributes) Event.AddMethod.Attributes : 0; }
         }
 
         public TypeDefinition DeclaringType

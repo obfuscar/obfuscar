@@ -27,6 +27,7 @@
 using System;
 using Mono.Cecil;
 using Obfuscar.Helpers;
+using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar
 {
@@ -39,20 +40,10 @@ namespace Obfuscar
         {
             this.typeReference = type;
             this.Scope = type.GetScopeName();
+            InitializeFromFullName(type.FullName);
 
-            this.Name = string.IsNullOrEmpty(type.Namespace) ? type.Name : type.Namespace + "." + type.Name;
-            TypeReference declaringType = type;
-            // Build path to nested type
-            while (declaringType.DeclaringType != null)
-            {
-                declaringType = declaringType.DeclaringType;
-                this.Name = declaringType.Name + "/" + Name;
-            }
-            this.Namespace = declaringType.Namespace;
-
-            this.Fullname = !string.IsNullOrEmpty(this.Namespace) && Namespace != type.Namespace ? this.Namespace + "." + Name : Name;
-
-            // Our name should be the same as the Cecil's name. This is important to the Match method.
+            // Ensure the parsed name matches Cecil's view for consistency.
+            // This is important to the Match method.
             GenericInstanceType gi = type as GenericInstanceType;
             type.DeclaringType = type.DeclaringType; // Hack: Update fullname of nested type
             if (this.Fullname != type.ToString() && (gi == null || this.Fullname != gi.ElementType.FullName))
@@ -60,6 +51,10 @@ namespace Obfuscar
                     this.Fullname, type.ToString()));
 
             this.hashCode = CalcHashCode();
+        }
+
+        public TypeKey(IType type) : this(type.FullName)
+        {
         }
 
         public TypeKey(string scope, string ns, string name)
@@ -77,6 +72,30 @@ namespace Obfuscar
             this.hashCode = CalcHashCode();
         }
 
+        // Minimal constructor accepting a full type name. Scope will be empty.
+        public TypeKey(string fullName)
+        {
+            this.Scope = string.Empty;
+            InitializeFromFullName(fullName ?? string.Empty);
+            this.hashCode = CalcHashCode();
+        }
+
+        private void InitializeFromFullName(string fullName)
+        {
+            this.Fullname = fullName ?? string.Empty;
+            int lastDot = this.Fullname.LastIndexOf('.');
+            if (lastDot > 0)
+            {
+                this.Namespace = this.Fullname.Substring(0, lastDot);
+                this.Name = this.Fullname.Substring(lastDot + 1);
+            }
+            else
+            {
+                this.Namespace = string.Empty;
+                this.Name = this.Fullname;
+            }
+        }
+
         private int CalcHashCode()
         {
             return Scope.GetHashCode() ^ Namespace.GetHashCode() ^ Name.GetHashCode() ^ Fullname.GetHashCode();
@@ -89,11 +108,11 @@ namespace Obfuscar
 
         public string Scope { get; }
 
-        public string Namespace { get; }
+        public string Namespace { get; private set; }
 
-        public string Name { get; }
+        public string Name { get; private set; }
 
-        public string Fullname { get; }
+        public string Fullname { get; private set; }
 
         public bool Matches(TypeReference type)
         {

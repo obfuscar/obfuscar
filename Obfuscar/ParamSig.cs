@@ -26,8 +26,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Mono.Cecil;
+using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar
 {
@@ -51,25 +53,18 @@ namespace Obfuscar
         }
 
         public ParamSig(MethodReference method)
+            : this(BuildParameterTypeNames(method.Parameters))
         {
-            ParamTypes = new string[method.Parameters.Count];
-
-            int i = 0;
-            foreach (ParameterDefinition param in method.Parameters)
-                ParamTypes[i++] = Helper.GetParameterTypeName(param);
-
-            hashCode = CalcHashCode();
         }
 
         public ParamSig(MethodDefinition method)
+            : this(BuildParameterTypeNames(method.Parameters))
         {
-            ParamTypes = new string[method.Parameters.Count];
+        }
 
-            int i = 0;
-            foreach (ParameterDefinition param in method.Parameters)
-                ParamTypes[i++] = Helper.GetParameterTypeName(param);
-
-            hashCode = CalcHashCode();
+        public ParamSig(IMethod method)
+            : this(method?.ParameterTypeFullNames?.ToArray() ?? Array.Empty<string>())
+        {
         }
 
         private int CalcHashCode()
@@ -190,6 +185,15 @@ namespace Obfuscar
 
                 return 0;
             }
+        }
+
+        private static string[] BuildParameterTypeNames(Mono.Collections.Generic.Collection<ParameterDefinition> parameters)
+        {
+            var paramTypes = new string[parameters.Count];
+            int i = 0;
+            foreach (ParameterDefinition param in parameters)
+                paramTypes[i++] = Helper.GetParameterTypeName(param);
+            return paramTypes;
         }
     }
 }

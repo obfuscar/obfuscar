@@ -28,6 +28,7 @@ using System;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Obfuscar.Helpers;
+using MethodAttributes = System.Reflection.MethodAttributes;
 
 namespace Obfuscar
 {

@@ -24,33 +24,49 @@
 
 #endregion
 
+using FieldAttributes = System.Reflection.FieldAttributes;
 using Mono.Cecil;
+using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar
 {
     class FieldKey
     {
+        public FieldKey(Obfuscar.Metadata.Abstractions.IField field)
+            : this(new TypeKey(field.DeclaringTypeFullName), field.FieldTypeFullName, field.Name, null, field.Attributes)
+        {
+        }
+
         public FieldKey(FieldDefinition field)
             : this(new TypeKey((TypeDefinition) field.DeclaringType), field.FieldType.FullName, field.Name, field)
         {
         }
 
-        public FieldKey(TypeKey typeKey, string type, string name, FieldDefinition fieldDefinition)
+        public FieldKey(TypeKey typeKey, string type, string name, FieldDefinition fieldDefinition, FieldAttributes? attributes = null)
         {
             this.TypeKey = typeKey;
             this.Type = type;
             this.Name = name;
             this.Field = fieldDefinition;
+            this.overriddenAttributes = attributes;
         }
+
+        private readonly FieldAttributes? overriddenAttributes;
 
         public FieldAttributes FieldAttributes
         {
-            get { return Field.Attributes; }
+            get
+            {
+                if (overriddenAttributes.HasValue)
+                    return overriddenAttributes.Value;
+
+                return Field != null ? (FieldAttributes) Field.Attributes : 0;
+            }
         }
 
         public TypeDefinition DeclaringType
         {
-            get { return (TypeDefinition) Field.DeclaringType; }
+            get { return Field != null ? (TypeDefinition) Field.DeclaringType : null; }
         }
 
         public FieldDefinition Field { get; }
@@ -67,7 +83,12 @@ namespace Obfuscar
             if (fieldRef != null)
             {
                 if (TypeKey.Matches(fieldRef.DeclaringType))
+                {
+                    if (Field != null)
+                        return Type == fieldRef.FieldType.FullName && Name == fieldRef.Name;
+                    // If we don't have a FieldDefinition (from IField), match by name and type string
                     return Type == fieldRef.FieldType.FullName && Name == fieldRef.Name;
+                }
             }
 
             return false;

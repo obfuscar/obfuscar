@@ -25,23 +25,34 @@
 #endregion
 
 using System;
+using MethodAttributes = System.Reflection.MethodAttributes;
 using Mono.Cecil;
+using Obfuscar.Metadata.Adapters;
+using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar
 {
     class MethodKey : NameParamSig, IComparable<MethodKey>
     {
         readonly int hashCode;
+        private readonly IMethod methodAdapter;
 
-        public MethodKey(MethodDefinition method) : this(new TypeKey((TypeDefinition) method.DeclaringType), method)
+        public MethodKey(MethodDefinition method)
+            : this(new TypeKey((TypeDefinition) method.DeclaringType), method, new CecilMethodAdapter(method))
         {
         }
 
         public MethodKey(TypeKey typeKey, MethodDefinition method)
-            : base(method)
+            : this(typeKey, method, new CecilMethodAdapter(method))
+        {
+        }
+
+        private MethodKey(TypeKey typeKey, MethodDefinition method, IMethod metadata)
+            : base(metadata)
         {
             this.TypeKey = typeKey;
             this.Method = method;
+            this.methodAdapter = metadata;
 
             hashCode = CalcHashCode();
         }
@@ -53,12 +64,12 @@ namespace Obfuscar
 
         public MethodAttributes MethodAttributes
         {
-            get { return Method.Attributes; }
+            get { return methodAdapter?.Attributes ?? (MethodAttributes) Method.Attributes; }
         }
 
         public TypeDefinition DeclaringType
         {
-            get { return (TypeDefinition) Method.DeclaringType; }
+            get { return Method != null ? (TypeDefinition) Method.DeclaringType : null; }
         }
 
         public TypeKey TypeKey { get; }
