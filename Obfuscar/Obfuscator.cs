@@ -989,20 +989,26 @@ namespace Obfuscar
                 m.Update(ObfuscationStatus.Skipped, "public setter of a custom attribute");
                 // no problem when the getter or setter methods are renamed by RenameMethods()
             }
-            else if (prop.CustomAttributes.Count > 0 || Project.Settings.KeepProperties)
-            {
-                // If a property has custom attributes we don't remove the property but rename it instead.
-                // Does the same if KeepProperties is set to true.
-                var newName = NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
-                LoggerService.Logger.LogDebug("Renaming property {0} in type {1} to {2} (has {3} custom attributes, KeepProperties={4})", 
-                    prop.Name, typeKey, newName, prop.CustomAttributes.Count, Project.Settings.KeepProperties);
-                RenameProperty(info, propKey, prop, newName);
-            }
             else
             {
-                // add to to collection for removal
-                LoggerService.Logger.LogDebug("Property {0} in type {1} will be dropped", prop.Name, typeKey);
-                propsToDrop.Add(prop);
+                bool keepForMarkedOnly = Project.Settings.MarkedOnly &&
+                    (prop.MarkedToRename() == true || prop.DeclaringType.MarkedToRename() == true);
+
+                if (prop.CustomAttributes.Count > 0 || Project.Settings.KeepProperties || keepForMarkedOnly)
+                {
+                    // If a property has custom attributes we don't remove the property but rename it instead.
+                    // Does the same if KeepProperties is set to true or marked-only should keep it.
+                    var newName = NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
+                    LoggerService.Logger.LogDebug("Renaming property {0} in type {1} to {2} (has {3} custom attributes, KeepProperties={4})",
+                        prop.Name, typeKey, newName, prop.CustomAttributes.Count, Project.Settings.KeepProperties);
+                    RenameProperty(info, propKey, prop, newName);
+                }
+                else
+                {
+                    // add to to collection for removal
+                    LoggerService.Logger.LogDebug("Property {0} in type {1} will be dropped", prop.Name, typeKey);
+                    propsToDrop.Add(prop);
+                }
             }
             return index;
         }

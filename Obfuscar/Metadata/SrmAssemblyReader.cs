@@ -144,6 +144,7 @@ namespace Obfuscar.Metadata
 
             // Map from TypeDefinitionHandle to Cecil TypeDefinition
             var typeMap = new Dictionary<System.Reflection.Metadata.TypeDefinitionHandle, Mono.Cecil.TypeDefinition>();
+            var propertyMap = new Dictionary<System.Reflection.Metadata.PropertyDefinitionHandle, Mono.Cecil.PropertyDefinition>();
             
             // First pass: Create all type definitions (both top-level and nested)
             foreach (var th in md.TypeDefinitions)
@@ -615,6 +616,7 @@ namespace Obfuscar.Metadata
                     }
                     
                     typeDef.Properties.Add(pdef);
+                    propertyMap[ph] = pdef;
                     System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
                         $"SrmReader: Added property {pdef.Name} to type {typeDef.FullName}, total properties now: {typeDef.Properties.Count}\n");
                 }
@@ -677,7 +679,7 @@ namespace Obfuscar.Metadata
             }
 
             // Populate custom attributes on all entities
-            PopulateCustomAttributes(module, md);
+            PopulateCustomAttributes(module, md, propertyMap);
 
             return materializedAssembly;
         }
@@ -1204,7 +1206,8 @@ namespace Obfuscar.Metadata
         }
 
         // Populate custom attributes for types, methods, fields
-        private static void PopulateCustomAttributes(Mono.Cecil.ModuleDefinition module, MetadataReader md)
+        private static void PopulateCustomAttributes(Mono.Cecil.ModuleDefinition module, MetadataReader md,
+            Dictionary<System.Reflection.Metadata.PropertyDefinitionHandle, Mono.Cecil.PropertyDefinition> propertyMap)
         {
             try
             {
@@ -1403,6 +1406,14 @@ namespace Obfuscar.Metadata
                                 var cecilField = cecilType.Fields.FirstOrDefault(f => f.Name == fieldName);
                                 if (cecilField != null)
                                     cecilField.CustomAttributes.Add(attrDef);
+                            }
+                        }
+                        else if (parent.Kind == System.Reflection.Metadata.HandleKind.PropertyDefinition)
+                        {
+                            var propHandle = (System.Reflection.Metadata.PropertyDefinitionHandle)parent;
+                            if (propertyMap.TryGetValue(propHandle, out var cecilProp))
+                            {
+                                cecilProp.CustomAttributes.Add(attrDef);
                             }
                         }
                     }
