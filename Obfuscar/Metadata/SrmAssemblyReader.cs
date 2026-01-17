@@ -528,17 +528,60 @@ namespace Obfuscar.Metadata
                     var mdField = md.GetFieldDefinition(fh);
                     var fname = md.GetString(mdField.Name);
                     var fatt = (Mono.Cecil.FieldAttributes)mdField.Attributes;
-                    var fdef = new Mono.Cecil.FieldDefinition(fname, fatt, module.TypeSystem.Object);
+                    
+                    // Decode field type from signature
+                    Mono.Cecil.TypeReference fieldType = module.TypeSystem.Object;
+                    try
+                    {
+                        var sigBlob = md.GetBlobReader(mdField.Signature);
+                        byte header = sigBlob.ReadByte(); // Skip FIELD header (0x06)
+                        if (header == 0x06)
+                        {
+                            var provider = new SrmSignatureDecoder.SimpleTypeProvider(module, md, typeDef);
+                            var decoder = new System.Reflection.Metadata.Ecma335.SignatureDecoder<Mono.Cecil.TypeReference, Mono.Cecil.ModuleDefinition>(provider, md, module);
+                            fieldType = decoder.DecodeType(ref sigBlob) ?? module.TypeSystem.Object;
+                        }
+                    }
+                    catch
+                    {
+                        // Fall back to Object on decode failure
+                    }
+                    
+                    var fdef = new Mono.Cecil.FieldDefinition(fname, fatt, fieldType);
                     typeDef.Fields.Add(fdef);
                 }
 
                 // Populate properties (stub) for this type, linking getter/setter methods
-                foreach (var ph in td.GetProperties())
+                // DEBUG: Log property count being read
+                var propHandles = td.GetProperties();
+                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                    $"SrmReader: Type={typeDef.FullName}, Reading {propHandles.Count} properties\n");
+                foreach (var ph in propHandles)
                 {
                     var mdProp = md.GetPropertyDefinition(ph);
                     var pname = md.GetString(mdProp.Name);
                     var patt = (Mono.Cecil.PropertyAttributes)mdProp.Attributes;
-                    var pdef = new Mono.Cecil.PropertyDefinition(pname, patt, module.TypeSystem.Object);
+                    
+                    // Decode property type from signature
+                    Mono.Cecil.TypeReference propType = module.TypeSystem.Object;
+                    try
+                    {
+                        var sigBlob = md.GetBlobReader(mdProp.Signature);
+                        byte header = sigBlob.ReadByte(); // Read calling convention (PROPERTY header)
+                        if ((header & 0x08) != 0) // PROPERTY signature
+                        {
+                            int paramCount = sigBlob.ReadCompressedInteger();
+                            var provider = new SrmSignatureDecoder.SimpleTypeProvider(module, md, typeDef);
+                            var decoder = new System.Reflection.Metadata.Ecma335.SignatureDecoder<Mono.Cecil.TypeReference, Mono.Cecil.ModuleDefinition>(provider, md, module);
+                            propType = decoder.DecodeType(ref sigBlob) ?? module.TypeSystem.Object;
+                        }
+                    }
+                    catch
+                    {
+                        // Fall back to Object on decode failure
+                    }
+                    
+                    var pdef = new Mono.Cecil.PropertyDefinition(pname, patt, propType);
                     
                     // Link getter and setter methods
                     var accessors = mdProp.GetAccessors();
@@ -572,6 +615,8 @@ namespace Obfuscar.Metadata
                     }
                     
                     typeDef.Properties.Add(pdef);
+                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
+                        $"SrmReader: Added property {pdef.Name} to type {typeDef.FullName}, total properties now: {typeDef.Properties.Count}\n");
                 }
 
                 // Populate events for this type, linking add/remove methods
@@ -844,7 +889,23 @@ namespace Obfuscar.Metadata
                         // Try to find declaring type by scanning type definitions (best-effort)
                         var declType = FindDeclaringTypeForMember(md, System.Reflection.Metadata.Ecma335.MetadataTokens.GetToken(System.Reflection.Metadata.Ecma335.MetadataTokens.FieldDefinitionHandle(token)));
                         Mono.Cecil.TypeReference parent = declType.ns != null ? new Mono.Cecil.TypeReference(declType.ns, declType.name, module, module) : module.TypeSystem.Object;
-                        return new Mono.Cecil.FieldReference(name, module.TypeSystem.Object, parent);
+                        
+                        // Decode field type from signature
+                        Mono.Cecil.TypeReference fieldType = module.TypeSystem.Object;
+                        try
+                        {
+                            var sigBlob = md.GetBlobReader(fd.Signature);
+                            byte header = sigBlob.ReadByte(); // Skip FIELD header (0x06)
+                            if (header == 0x06)
+                            {
+                                var provider = new SrmSignatureDecoder.SimpleTypeProvider(module, md);
+                                var decoder = new System.Reflection.Metadata.Ecma335.SignatureDecoder<Mono.Cecil.TypeReference, Mono.Cecil.ModuleDefinition>(provider, md, module);
+                                fieldType = decoder.DecodeType(ref sigBlob) ?? module.TypeSystem.Object;
+                            }
+                        }
+                        catch { }
+                        
+                        return new Mono.Cecil.FieldReference(name, fieldType, parent);
                     }
                 case HandleKind.MethodDefinition:
                     {
@@ -895,7 +956,16 @@ namespace Obfuscar.Metadata
                         // Field signature starts with 0x06 (FIELD)
                         if (firstByte == 0x06)
                         {
-                            return new Mono.Cecil.FieldReference(name, module.TypeSystem.Object, parent);
+                            // Decode the actual field type
+                            Mono.Cecil.TypeReference fieldType = module.TypeSystem.Object;
+                            try
+                            {
+                                var provider = new SrmSignatureDecoder.SimpleTypeProvider(module, md);
+                                var decoder = new System.Reflection.Metadata.Ecma335.SignatureDecoder<Mono.Cecil.TypeReference, Mono.Cecil.ModuleDefinition>(provider, md, module);
+                                fieldType = decoder.DecodeType(ref sigBlob) ?? module.TypeSystem.Object;
+                            }
+                            catch { }
+                            return new Mono.Cecil.FieldReference(name, fieldType, parent);
                         }
                         
                         // Method signature - decode parameters and return type properly

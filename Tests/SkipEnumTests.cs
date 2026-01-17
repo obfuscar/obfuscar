@@ -248,7 +248,12 @@ namespace ObfuscarTests
             Assert.True(classB.Status == ObfuscationStatus.Renamed, "Internal class is not renamed");
 
             var fieldType = classBType.Fields[0];
-            var fieldB = map.GetField(new FieldKey(fieldType));
+            var fieldKey = new FieldKey(fieldType);
+            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
+                $"Test lookup: TypeKey={fieldKey.TypeKey}, TypeKey.Scope={fieldKey.TypeKey.Scope}, FieldKey={fieldKey}\n");
+            var fieldB = map.GetField(fieldKey);
+            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
+                $"  -> fieldB.Status={fieldB.Status}, fieldB.StatusText={fieldB.StatusText}\n");
 
             Assert.True(fieldB.Status == ObfuscationStatus.Renamed, "Fields of internal class is not renamed");
         }

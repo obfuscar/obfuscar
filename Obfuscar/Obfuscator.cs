@@ -87,6 +87,20 @@ namespace Obfuscar
 
         public void RunRules()
         {
+            // DEBUG: Log properties at start
+            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
+                $"RunRules: AssemblyList.Count={Project.AssemblyList.Count}\n");
+            foreach (AssemblyInfo info in Project.AssemblyList)
+            {
+                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
+                    $"RunRules: Checking assembly {info.Name}, Types.Count={info.Definition.MainModule.Types.Count}\n");
+                foreach (var t in info.Definition.MainModule.Types)
+                {
+                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
+                        $"StartOfRules: Type={t.FullName}, PropertiesCount={t.Properties.Count}\n");
+                }
+            }
+            
             // The SemanticAttributes of MethodDefinitions have to be loaded before any fields,properties or events are removed
             LoadMethodSemantics();
 
@@ -176,6 +190,15 @@ namespace Obfuscar
                 foreach (AssemblyInfo info in Project.AssemblyList)
                 {
                     var types = info.Definition.MainModule.Types;
+                    // DEBUG: Log type properties before saving
+                    foreach (var t in types)
+                    {
+                        if (t.Properties.Count > 0)
+                        {
+                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
+                                $"BeforeSave: Type={t.FullName}, PropertiesCount={t.Properties.Count}\n");
+                        }
+                    }
                     for (int i = 0; i < types.Count; i++)
                         types[i] = types[i];
                 }
@@ -463,10 +486,14 @@ namespace Obfuscar
 
             // skip filtered fields
             string skip;
+            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                $"ProcessField: {typeKey.Fullname}.{field.Name}, Scope={typeKey.Scope}, FieldKey={fieldKey}, HidePrivateApi={Project.Settings.HidePrivateApi}\n");
             if (info.ShouldSkip(fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi,
                 Project.Settings.HidePrivateApi,
                 Project.Settings.MarkedOnly, out skip))
             {
+                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                    $"  -> Skipped: {skip}\n");
                 LoggerService.Logger.LogDebug("Field {0} in type {1} skipped: {2}", field.Name, typeKey, skip);
                 Mapping.UpdateField(fieldKey, ObfuscationStatus.Skipped, skip);
                 nameGroup.Add(fieldKey.Name);
@@ -477,6 +504,8 @@ namespace Obfuscar
                 ? nameGroup.GetNext()
                 : NameMaker.UniqueName(_uniqueMemberNameIndex++);
 
+            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                $"  -> Renamed to: {newName}\n");
             LoggerService.Logger.LogDebug("Renaming field {0} in type {1} to {2}", field.Name, typeKey, newName);
             RenameField(info, fieldKey, field, newName);
             nameGroup.Add(newName);
@@ -492,8 +521,14 @@ namespace Obfuscar
                     FieldReference member = reference.UnrenamedReferences[i] as FieldReference;
                     if (member != null)
                     {
+                        // DEBUG: Log field reference matching
+                        System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                            $"  Checking FieldRef: {member.DeclaringType?.FullName}.{member.Name}, Type={member.FieldType?.FullName} vs Key Type={fieldKey.Type}, Name={fieldKey.Name}\n");
+                        
                         if (fieldKey.Matches(member))
                         {
+                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                                $"    -> MATCHED! Renaming to {newName}\n");
                             member.Name = newName;
                             reference.UnrenamedReferences.RemoveAt(i);
 

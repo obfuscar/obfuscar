@@ -214,6 +214,18 @@ namespace ObfuscarTests
             AssemblyDefinition outAssmDef = AssemblyDefinition.ReadAssembly(obfuscator.Project.AssemblyList[0].OutputFileName);
             Assert.True(outAssmDef.CustomAttributes.Count == inAssmDef.CustomAttributes.Count - 1, "obfuscation attribute on assembly should have been removed.");
             TypeDefinition classTypeRenamed = outAssmDef.MainModule.Types[2];
+            
+            // DEBUG: Log type info
+            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                $"CheckMakedOnly: Type={classTypeRenamed.FullName}, PropertiesCount={classTypeRenamed.Properties.Count}\n");
+            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                $"  All types in output: {string.Join(", ", outAssmDef.MainModule.Types.Select(t => t.FullName + "[P:" + t.Properties.Count + "]"))}\n");
+            foreach (var prop in classTypeRenamed.Properties)
+            {
+                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                    $"  Property: {prop.Name}, Type={prop.PropertyType?.FullName}\n");
+            }
+            
             Assert.False(classTypeRenamed.CustomAttributes.Count == 2, "obfuscation attribute on type should have been removed.");
             MethodDefinition testMethod = classTypeRenamed.Methods.First(_ => _.Name == "Test");
             Assert.False(testMethod.HasCustomAttributes, "obfuscation attribute on method should have been removed.");

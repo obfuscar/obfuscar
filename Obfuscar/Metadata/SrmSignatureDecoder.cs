@@ -93,11 +93,23 @@ namespace Obfuscar.Metadata
         {
             private readonly Mono.Cecil.ModuleDefinition module;
             private readonly MetadataReader md;
+            private readonly Mono.Cecil.TypeDefinition owningType;
+            private readonly Mono.Cecil.MethodDefinition owningMethod;
 
             public SimpleTypeProvider(Mono.Cecil.ModuleDefinition module, MetadataReader md)
             {
                 this.module = module;
                 this.md = md;
+                this.owningType = null;
+                this.owningMethod = null;
+            }
+
+            public SimpleTypeProvider(Mono.Cecil.ModuleDefinition module, MetadataReader md, Mono.Cecil.TypeDefinition owningType, Mono.Cecil.MethodDefinition owningMethod = null)
+            {
+                this.module = module;
+                this.md = md;
+                this.owningType = owningType;
+                this.owningMethod = owningMethod;
             }
 
             public Mono.Cecil.TypeReference GetArrayType(Mono.Cecil.TypeReference elementType, ArrayShape shape)
@@ -138,9 +150,12 @@ namespace Obfuscar.Metadata
             public Mono.Cecil.TypeReference GetGenericMethodParameter(Mono.Cecil.ModuleDefinition provider, int index)
             {
                 // Method generic parameter (e.g., T in void Foo<T>(T t))
-                // Return a GenericParameter representing !!index (method generic parameter)
-                // We need to create a dummy MethodReference as owner so the GenericParameter
-                // correctly identifies as GenericParameterType.Method
+                // If we have an owning method with generic parameters, use them
+                if (owningMethod != null && owningMethod.HasGenericParameters && index < owningMethod.GenericParameters.Count)
+                {
+                    return owningMethod.GenericParameters[index];
+                }
+                // Fallback: create a dummy GenericParameter
                 var dummyType = module.Types.Count > 0 ? module.Types[0] : new Mono.Cecil.TypeDefinition("", "DummyType", Mono.Cecil.TypeAttributes.NotPublic);
                 var dummyMethod = new Mono.Cecil.MethodDefinition("DummyMethod", Mono.Cecil.MethodAttributes.Private, module.TypeSystem.Void);
                 dummyType.Methods.Add(dummyMethod);
@@ -151,7 +166,12 @@ namespace Obfuscar.Metadata
             public Mono.Cecil.TypeReference GetGenericTypeParameter(Mono.Cecil.ModuleDefinition provider, int index)
             {
                 // Type generic parameter (e.g., T in class Foo<T>)
-                // Return a GenericParameter representing !index (type generic parameter)
+                // If we have an owning type with generic parameters, use them
+                if (owningType != null && owningType.HasGenericParameters && index < owningType.GenericParameters.Count)
+                {
+                    return owningType.GenericParameters[index];
+                }
+                // Fallback: create a dummy GenericParameter
                 var owner = module.Types.Count > 0 ? module.Types[0] : null;
                 var gp = new Mono.Cecil.GenericParameter("T" + index, owner);
                 return gp;

@@ -407,9 +407,13 @@ namespace Obfuscar.Metadata
             }
 
             // Add properties - first add PropertyMap, then properties
+            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                $"SrmWriter: Type={type.FullName}, PropertiesCount={type.Properties.Count}\n");
             if (type.Properties.Count > 0)
             {
                 int firstPropertyRow = metadata.GetRowCount(TableIndex.Property) + 1;
+                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
+                    $"SrmWriter: Type={type.FullName}, Writing {type.Properties.Count} properties, FirstRow={firstPropertyRow}\n");
                 metadata.AddPropertyMap(
                     declaringType: typeDefHandles[type],
                     propertyList: MetadataTokens.PropertyDefinitionHandle(firstPropertyRow));
@@ -1784,23 +1788,60 @@ namespace Obfuscar.Metadata
                 return defHandle;
             }
 
+            // Try to resolve to a field definition to get the renamed name
+            var resolvedField = TryResolveField(fieldRef);
+            if (resolvedField != null && fieldDefHandles.TryGetValue(resolvedField, out var resolvedDefHandle))
+            {
+                return resolvedDefHandle;
+            }
+
             // Check cache
             if (fieldRefHandles.TryGetValue(fieldRef, out var cachedHandle))
             {
                 return cachedHandle;
             }
 
-            // Create member reference
+            // Create member reference using resolved name if available
+            var fieldName = resolvedField?.Name ?? fieldRef.Name;
             var parent = GetTypeHandle(fieldRef.DeclaringType);
             var signature = EncodeFieldSignature(fieldRef);
             
             var handle = metadata.AddMemberReference(
                 parent: parent,
-                name: GetOrAddString(fieldRef.Name),
+                name: GetOrAddString(fieldName),
                 signature: signature);
 
             fieldRefHandles[fieldRef] = handle;
             return handle;
+        }
+
+        private CecilFieldDefinition TryResolveField(CecilFieldReference fieldRef)
+        {
+            try
+            {
+                // Try to resolve the field reference to a definition
+                var declaring = fieldRef.DeclaringType?.Resolve();
+                if (declaring == null) return null;
+                
+                // Look for a field matching by original name in the defining type
+                foreach (var f in declaring.Fields)
+                {
+                    if (f.Name == fieldRef.Name || 
+                        (f.MetadataToken.ToInt32() == fieldRef.MetadataToken.ToInt32() && fieldRef.MetadataToken.ToInt32() != 0))
+                    {
+                        return f;
+                    }
+                }
+                
+                // If the field has been renamed, we need to match by token or signature
+                // Since the name has changed, we can't match by name anymore
+                // Try to find by field type and position (for simple cases)
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private BlobHandle EncodeFieldSignature(CecilFieldReference fieldRef)
