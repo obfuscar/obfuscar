@@ -839,7 +839,7 @@ namespace Obfuscar.Metadata
             {
                 var genericInstance = type as GenericInstanceType;
                 var elementType = genericInstance.ElementType;
-                var elementIsValueType = elementType.Resolve()?.IsValueType ?? false;
+                var elementIsValueType = SafeIsValueType(elementType);
                 
                 encoder.Builder.WriteByte(0x15); // ELEMENT_TYPE_GENERICINST
                 encoder.Builder.WriteByte(elementIsValueType ? (byte)0x11 : (byte)0x12); // ELEMENT_TYPE_VALUETYPE or ELEMENT_TYPE_CLASS
@@ -989,8 +989,32 @@ namespace Obfuscar.Metadata
 
             // Handle class/valuetype references
             var typeHandle = GetTypeHandle(type);
-            var isValueType = type.Resolve()?.IsValueType ?? false;
+            var isValueType = SafeIsValueType(type);
             encoder.Type(typeHandle, isValueType);
+        }
+        
+        /// <summary>
+        /// Safely determines if a type is a value type, handling resolution failures.
+        /// </summary>
+        private bool SafeIsValueType(CecilTypeReference type)
+        {
+            if (type == null)
+                return false;
+                
+            // Check if it's a TypeDefinition first
+            if (type is CecilTypeDefinition td)
+                return td.IsValueType;
+                
+            try
+            {
+                var resolved = type.Resolve();
+                return resolved?.IsValueType ?? false;
+            }
+            catch
+            {
+                // Resolution failed - assume it's not a value type (most types are classes)
+                return false;
+            }
         }
 
         private int EncodeTypeDefOrRefOrSpec(EntityHandle handle)
@@ -1031,6 +1055,12 @@ namespace Obfuscar.Metadata
             {
                 return GetTypeSpecHandle(typeRef as GenericInstanceType);
             }
+            
+            // Handle generic parameters - these need a TypeSpec with VAR/MVAR encoding
+            if (typeRef.IsGenericParameter && typeRef is CecilGenericParameter gp)
+            {
+                return GetGenericParameterTypeSpecHandle(gp);
+            }
 
             // Check if it's a type definition we've already added
             if (typeRef is CecilTypeDefinition typeDef && typeDefHandles.TryGetValue(typeDef, out var defHandle))
@@ -1038,9 +1068,16 @@ namespace Obfuscar.Metadata
                 return defHandle;
             }
             
-            // DEBUG: Log when we create a type reference instead of using a type definition
-            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                $"GetTypeHandle creating TypeRef for {typeRef.FullName} (Type: {typeRef.GetType().Name})\n");
+            // If it's a TypeReference that points to a type in the same module, 
+            // try to find the TypeDefinition and use that instead
+            if (!(typeRef is CecilTypeDefinition))
+            {
+                var resolved = TryResolveToLocalTypeDefinition(typeRef);
+                if (resolved != null && typeDefHandles.TryGetValue(resolved, out var resolvedHandle))
+                {
+                    return resolvedHandle;
+                }
+            }
 
             // Check cache
             if (typeRefHandles.TryGetValue(typeRef, out var cachedHandle))
@@ -1062,8 +1099,74 @@ namespace Obfuscar.Metadata
             typeRefHandles[typeRef] = handle;
             return handle;
         }
+        
+        /// <summary>
+        /// Tries to resolve a TypeReference to a TypeDefinition in the current module.
+        /// </summary>
+        private CecilTypeDefinition TryResolveToLocalTypeDefinition(CecilTypeReference typeRef)
+        {
+            var mainModule = assembly.MainModule;
+            
+            // First try to use Cecil's built-in resolution
+            try
+            {
+                var resolved = typeRef.Resolve();
+                if (resolved != null && resolved.Module == mainModule)
+                {
+                    return resolved;
+                }
+            }
+            catch
+            {
+                // Resolution failed, fall through to manual lookup
+            }
+            
+            // Check if it's a type in this module by looking at the scope
+            if (typeRef.Scope is CecilModuleDefinition modDef && modDef == mainModule)
+            {
+                // Find the type in module.Types - try both current and original names
+                foreach (var td in mainModule.Types)
+                {
+                    if (td.FullName == typeRef.FullName)
+                        return td;
+                    // Check nested types
+                    var nested = FindNestedType(td, typeRef.FullName);
+                    if (nested != null)
+                        return nested;
+                }
+            }
+            
+            // Also try to resolve if the scope is an assembly reference to itself
+            if (typeRef.Scope is AssemblyNameReference asmRef && 
+                asmRef.FullName == mainModule.Assembly?.Name?.FullName)
+            {
+                foreach (var td in mainModule.Types)
+                {
+                    if (td.FullName == typeRef.FullName)
+                        return td;
+                    var nested = FindNestedType(td, typeRef.FullName);
+                    if (nested != null)
+                        return nested;
+                }
+            }
+            
+            return null;
+        }
+        
+        private CecilTypeDefinition FindNestedType(CecilTypeDefinition parent, string fullName)
+        {
+            foreach (var nested in parent.NestedTypes)
+            {
+                if (nested.FullName == fullName)
+                    return nested;
+                var found = FindNestedType(nested, fullName);
+                if (found != null)
+                    return found;
+            }
+            return null;
+        }
 
-        private readonly Dictionary<GenericInstanceType, TypeSpecificationHandle> typeSpecHandles = new Dictionary<GenericInstanceType, TypeSpecificationHandle>();
+        private readonly Dictionary<CecilTypeReference, TypeSpecificationHandle> typeSpecHandles = new Dictionary<CecilTypeReference, TypeSpecificationHandle>();
 
         private TypeSpecificationHandle GetTypeSpecHandle(GenericInstanceType genericType)
         {
@@ -1081,6 +1184,53 @@ namespace Obfuscar.Metadata
             var signature = GetOrAddBlob(builder.ToArray());
             var handle = metadata.AddTypeSpecification(signature);
             typeSpecHandles[genericType] = handle;
+            return handle;
+        }
+        
+        /// <summary>
+        /// Creates a TypeSpecification handle for a generic parameter (VAR/MVAR).
+        /// </summary>
+        private TypeSpecificationHandle GetGenericParameterTypeSpecHandle(CecilGenericParameter gp)
+        {
+            // Check cache
+            if (typeSpecHandles.TryGetValue(gp, out var cachedHandle))
+            {
+                return cachedHandle;
+            }
+
+            // Encode the generic parameter type signature
+            var builder = new BlobBuilder();
+            var encoder = new SignatureTypeEncoder(builder);
+            
+            // Determine position
+            var position = gp.Position;
+            if (position < 0 && gp.Name != null)
+            {
+                // Try to parse position from name like "T0", "T1", "T2"
+                if (gp.Name.StartsWith("T") && int.TryParse(gp.Name.Substring(1), out var parsedPos))
+                {
+                    position = parsedPos;
+                }
+                else
+                {
+                    position = 0;
+                }
+            }
+            
+            if (gp.Type == GenericParameterType.Type)
+            {
+                builder.WriteByte(0x13); // ELEMENT_TYPE_VAR
+                builder.WriteCompressedInteger(position);
+            }
+            else
+            {
+                builder.WriteByte(0x1E); // ELEMENT_TYPE_MVAR
+                builder.WriteCompressedInteger(position);
+            }
+
+            var signature = GetOrAddBlob(builder.ToArray());
+            var handle = metadata.AddTypeSpecification(signature);
+            typeSpecHandles[gp] = handle;
             return handle;
         }
 
@@ -1178,19 +1328,27 @@ namespace Obfuscar.Metadata
             {
                 return defHandle;
             }
-
-            // Try to resolve to a method definition in this module
-            try
+            
+            // IMPORTANT: If the declaring type is a generic instance, we MUST create a MemberReference
+            // with a TypeSpec as parent, even if the method resolves to a local MethodDefinition.
+            // This is because the runtime needs to know the specific generic instantiation.
+            bool hasGenericParent = methodRef.DeclaringType?.IsGenericInstance ?? false;
+            
+            if (!hasGenericParent)
             {
-                var resolved = methodRef.Resolve();
-                if (resolved != null && methodDefHandles.TryGetValue(resolved, out var resolvedHandle))
+                // Only try to resolve to a method definition if the declaring type is NOT a generic instance
+                try
                 {
-                    return resolvedHandle;
+                    var resolved = methodRef.Resolve();
+                    if (resolved != null && methodDefHandles.TryGetValue(resolved, out var resolvedHandle))
+                    {
+                        return resolvedHandle;
+                    }
                 }
-            }
-            catch
-            {
-                // Resolution failed, continue with MemberReference
+                catch
+                {
+                    // Resolution failed, continue with MemberReference
+                }
             }
 
             // Check cache
@@ -1200,7 +1358,9 @@ namespace Obfuscar.Metadata
             }
 
             // Create member reference
-            var parent = GetTypeHandle(methodRef.DeclaringType);
+            var declaringType = methodRef.DeclaringType;
+            
+            var parent = GetTypeHandle(declaringType);
             var signature = EncodeMethodSignature(methodRef);
             
             var handle = metadata.AddMemberReference(
@@ -1450,7 +1610,8 @@ namespace Obfuscar.Metadata
                     break;
                     
                 case OperandType.InlineMethod:
-                    var methodHandle = GetMethodHandle(instruction.Operand as CecilMethodReference);
+                    var methodOperand = instruction.Operand as CecilMethodReference;
+                    var methodHandle = GetMethodHandle(methodOperand);
                     ilBuilder.WriteInt32(MetadataTokens.GetToken(methodHandle));
                     break;
                     
@@ -1466,7 +1627,30 @@ namespace Obfuscar.Metadata
                     break;
                     
                 case OperandType.InlineTok:
-                    ilBuilder.WriteInt32(0); // TODO: Handle metadata tokens
+                    // InlineTok can be a type, method, or field token
+                    EntityHandle tokenHandle = default;
+                    if (instruction.Operand is CecilTypeReference tokTypeRef)
+                    {
+                        tokenHandle = GetTypeHandle(tokTypeRef);
+                    }
+                    else if (instruction.Operand is CecilMethodReference tokMethodRef)
+                    {
+                        tokenHandle = GetMethodHandle(tokMethodRef);
+                    }
+                    else if (instruction.Operand is CecilFieldReference tokFieldRef)
+                    {
+                        tokenHandle = GetFieldHandle(tokFieldRef);
+                    }
+                    
+                    if (tokenHandle.IsNil)
+                    {
+                        // Fallback for unexpected operand types - write 0
+                        ilBuilder.WriteInt32(0);
+                    }
+                    else
+                    {
+                        ilBuilder.WriteInt32(MetadataTokens.GetToken(tokenHandle));
+                    }
                     break;
                     
                 case OperandType.ShortInlineVar:

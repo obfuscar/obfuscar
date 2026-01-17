@@ -331,11 +331,9 @@ namespace Obfuscar.Metadata
                             if (bodyBlock != null)
                             {
                                 var ilBytes = bodyBlock.GetILBytes();
-                                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"IL decode for {mdef.Name}: RVA={rva}, ilBytes.Length={ilBytes?.Length ?? -1}\n");
                                 if (ilBytes != null && ilBytes.Length > 0)
                                 {
                                     var instructions = DecodeIL(module, md, ilBytes.ToArray());
-                                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  Decoded {instructions.Count} instructions\n");
 
                                     var mbody = new Mono.Cecil.Cil.MethodBody(mdef);
                                     // copy MaxStack if available
@@ -517,9 +515,8 @@ namespace Obfuscar.Metadata
                                 }
                             }
                         }
-                        catch (Exception ex)
+                        catch
                         {
-                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  Exception during IL decode: {ex.Message}\n");
                             // best-effort: leave method without body
                         }
                     }
@@ -793,8 +790,6 @@ namespace Obfuscar.Metadata
                     {
                         if (map.TryGetValue(off, out var target))
                             instr.Operand = target;
-                        else
-                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  WARNING: Branch target offset {off} not found in instruction map\n");
                     }
                 }
                 else if (instr.OpCode.OperandType == OperandType.InlineSwitch)
@@ -808,7 +803,6 @@ namespace Obfuscar.Metadata
                                 targets[j] = t;
                             else
                             {
-                                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  WARNING: Switch target offset {offs[j]} not found\n");
                                 // Find the closest instruction or use the first one as fallback
                                 targets[j] = result.FirstOrDefault(x => x.Offset >= offs[j]) ?? result[0];
                             }
@@ -866,6 +860,7 @@ namespace Obfuscar.Metadata
                     {
                         var mr = md.GetMemberReference(System.Reflection.Metadata.Ecma335.MetadataTokens.MemberReferenceHandle(token));
                         var name = md.GetString(mr.Name);
+                        
                         // Resolve parent type properly with correct scope
                         Mono.Cecil.TypeReference parent = null;
                         if (mr.Parent.Kind == HandleKind.TypeReference)
@@ -885,8 +880,8 @@ namespace Obfuscar.Metadata
                         }
                         else if (mr.Parent.Kind == HandleKind.TypeSpecification)
                         {
-                            // Handle generic type specification
-                            parent = module.TypeSystem.Object;
+                            // Handle generic type specification - decode the signature
+                            parent = ResolveTypeHandle(module, md, mr.Parent) ?? module.TypeSystem.Object;
                         }
                         else
                         {
@@ -960,6 +955,21 @@ namespace Obfuscar.Metadata
                         }
                         
                         return genericInstance;
+                    }
+                case HandleKind.TypeSpecification:
+                    {
+                        // TypeSpecification is for generic instantiations, arrays, pointers, and generic parameters
+                        // Decode the signature blob to get the actual type
+                        var tsHandle = (TypeSpecificationHandle)handle;
+                        var ts = md.GetTypeSpecification(tsHandle);
+                        var sigBlob = ts.Signature;
+                        if (!sigBlob.IsNil)
+                        {
+                            var decodedType = SrmSignatureDecoder.DecodeType(module, md, sigBlob);
+                            if (decodedType != null)
+                                return decodedType;
+                        }
+                        return module.TypeSystem.Object;
                     }
                 default:
                     // fallback: return numeric token
@@ -1055,7 +1065,6 @@ namespace Obfuscar.Metadata
             if (method.Body == null) return;
             
             var body = method.Body;
-            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"FixupVariableAndParameterOperands for {method.Name} - {body.Instructions.Count} instrs, {body.Variables.Count} vars\n");
             
             foreach (var instr in body.Instructions)
             {
@@ -1063,25 +1072,17 @@ namespace Obfuscar.Metadata
                 {
                     case OperandType.ShortInlineVar:
                     case OperandType.InlineVar:
-                        System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  {instr.OpCode} operand type={instr.Operand?.GetType()?.Name ?? "null"}, value={instr.Operand}\n");
                         if (instr.Operand is byte b && b < body.Variables.Count)
                         {
                             instr.Operand = body.Variables[b];
-                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"    -> fixed to byte {b}\n");
                         }
                         else if (instr.Operand is ushort u && u < body.Variables.Count)
                         {
                             instr.Operand = body.Variables[u];
-                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"    -> fixed from ushort {u}\n");
                         }
                         else if (instr.Operand is int i && i >= 0 && i < body.Variables.Count)
                         {
                             instr.Operand = body.Variables[i];
-                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"    -> fixed from int {i}\n");
-                        }
-                        else
-                        {
-                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"    NOT FIXED!\n");
                         }
                         break;
                         
@@ -1764,7 +1765,16 @@ namespace Obfuscar.Metadata
                     
                 case HandleKind.TypeSpecification:
                     // TypeSpec is for generic instantiations, arrays, pointers, etc.
-                    // For now, return Object as a placeholder
+                    // Decode the signature blob to get the actual type
+                    var tsHandle = (TypeSpecificationHandle)handle;
+                    var ts = md.GetTypeSpecification(tsHandle);
+                    var sigBlob = ts.Signature;
+                    if (!sigBlob.IsNil)
+                    {
+                        var decodedType = SrmSignatureDecoder.DecodeType(module, md, sigBlob);
+                        if (decodedType != null)
+                            return decodedType;
+                    }
                     return module.TypeSystem.Object;
                     
                 default:

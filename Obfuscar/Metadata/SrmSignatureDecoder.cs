@@ -250,7 +250,38 @@ namespace Obfuscar.Metadata
                 var tr = reader.GetTypeReference(handle);
                 var name = reader.GetString(tr.Name);
                 var ns = reader.GetString(tr.Namespace);
-                return new Mono.Cecil.TypeReference(ns, name, module, module);
+                
+                // Try to resolve the resolution scope to get the correct assembly reference
+                Mono.Cecil.IMetadataScope scope = module;
+                var resScope = tr.ResolutionScope;
+                if (!resScope.IsNil)
+                {
+                    switch (resScope.Kind)
+                    {
+                        case HandleKind.AssemblyReference:
+                            var asmRef = reader.GetAssemblyReference((AssemblyReferenceHandle)resScope);
+                            var asmName = reader.GetString(asmRef.Name);
+                            // Find the matching assembly reference in the Cecil module
+                            foreach (var cecilAsmRef in module.AssemblyReferences)
+                            {
+                                if (cecilAsmRef.Name == asmName)
+                                {
+                                    scope = cecilAsmRef;
+                                    break;
+                                }
+                            }
+                            break;
+                        case HandleKind.ModuleReference:
+                            // External module reference - keep current module as scope
+                            break;
+                        case HandleKind.TypeReference:
+                            // Nested type - the outer type is the scope
+                            // For now, just use module scope
+                            break;
+                    }
+                }
+                
+                return new Mono.Cecil.TypeReference(ns, name, module, scope);
             }
             public Mono.Cecil.TypeReference GetTypeFromSpecification(MetadataReader reader, Mono.Cecil.ModuleDefinition genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
             {
