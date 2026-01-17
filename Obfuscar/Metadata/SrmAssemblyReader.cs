@@ -516,9 +516,10 @@ namespace Obfuscar.Metadata
                                 }
                             }
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            // best-effort: leave method without body
+                            if (ex is OverflowException)
+                                throw;
                         }
                     }
                 }
@@ -555,8 +556,6 @@ namespace Obfuscar.Metadata
                 // Populate properties (stub) for this type, linking getter/setter methods
                 // DEBUG: Log property count being read
                 var propHandles = td.GetProperties();
-                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                    $"SrmReader: Type={typeDef.FullName}, Reading {propHandles.Count} properties\n");
                 foreach (var ph in propHandles)
                 {
                     var mdProp = md.GetPropertyDefinition(ph);
@@ -617,8 +616,6 @@ namespace Obfuscar.Metadata
                     
                     typeDef.Properties.Add(pdef);
                     propertyMap[ph] = pdef;
-                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
-                        $"SrmReader: Added property {pdef.Name} to type {typeDef.FullName}, total properties now: {typeDef.Properties.Count}\n");
                 }
 
                 // Populate events for this type, linking add/remove methods

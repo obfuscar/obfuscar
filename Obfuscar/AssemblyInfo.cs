@@ -33,6 +33,7 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Obfuscar.Helpers;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Obfuscar
 {
@@ -814,50 +815,73 @@ namespace Obfuscar
                     }
                     else if (reader is Metadata.SrmAssemblyReader srm)
                     {
-                        // Materialize a minimal AssemblyDefinition from SRM and register it in the cache.
-                        definition = srm.CreateAssemblyDefinition();
+                        bool fallbackToCecil = false;
+                        bool readSymbols = project.Settings.RegenerateDebugInfo &&
+                                           System.IO.File.Exists(System.IO.Path.ChangeExtension(filename, "pdb"));
+
+                        try
+                        {
+                            // Materialize a minimal AssemblyDefinition from SRM and register it in the cache.
+                            definition = srm.CreateAssemblyDefinition();
+                        }
+                        catch (OverflowException ex)
+                        {
+                            fallbackToCecil = true;
+                            LoggerService.Logger.LogInformation("Srm reader failed for {0} ({1}); falling back to Cecil reader.",
+                                filename, ex.Message);
+                            definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
+                            {
+                                ReadingMode = ReadingMode.Immediate,
+                                ReadSymbols = readSymbols,
+                                AssemblyResolver = project.Cache
+                            });
+                        }
+
                         project.Cache.RegisterAssembly(definition);
                         name = definition.Name.Name;
                         // Try to resolve a core library module (mscorlib / System.Private.CoreLib) and patch
                         // the TypeSystem.CoreLibrary via reflection so Resolve() works for core types.
-                        try
+                        if (!fallbackToCecil)
                         {
-                            var module = definition.MainModule;
-                            var candidates = new[] { "mscorlib", "System.Private.CoreLib", "netstandard", "System.Runtime" };
-                            Mono.Cecil.AssemblyDefinition coreAsm = null;
-                            foreach (var cand in candidates)
+                            try
                             {
-                                var aref = module.AssemblyReferences.FirstOrDefault(a => a.Name == cand);
-                                if (aref == null)
-                                    continue;
+                                var module = definition.MainModule;
+                                var candidates = new[] { "mscorlib", "System.Private.CoreLib", "netstandard", "System.Runtime" };
+                                Mono.Cecil.AssemblyDefinition coreAsm = null;
+                                foreach (var cand in candidates)
+                                {
+                                    var aref = module.AssemblyReferences.FirstOrDefault(a => a.Name == cand);
+                                    if (aref == null)
+                                        continue;
 
-                                try
-                                {
-                                    coreAsm = project.Cache.Resolve(aref);
-                                    if (coreAsm != null)
-                                        break;
+                                    try
+                                    {
+                                        coreAsm = project.Cache.Resolve(aref);
+                                        if (coreAsm != null)
+                                            break;
+                                    }
+                                    catch
+                                    {
+                                    }
                                 }
-                                catch
+
+                                if (coreAsm != null)
                                 {
+                                    var ts = module.TypeSystem;
+                                    var tsType = ts.GetType();
+                                    var fi = tsType.GetField("core_library", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                                             ?? tsType.GetField("_coreLibrary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                                             ?? tsType.GetField("coreLibrary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                                    if (fi != null)
+                                    {
+                                        fi.SetValue(ts, coreAsm.MainModule);
+                                    }
                                 }
                             }
-
-                            if (coreAsm != null)
+                            catch
                             {
-                                var ts = module.TypeSystem;
-                                var tsType = ts.GetType();
-                                var fi = tsType.GetField("core_library", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                                         ?? tsType.GetField("_coreLibrary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                                         ?? tsType.GetField("coreLibrary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                                if (fi != null)
-                                {
-                                    fi.SetValue(ts, coreAsm.MainModule);
-                                }
+                                // best-effort only
                             }
-                        }
-                        catch
-                        {
-                            // best-effort only
                         }
                     }
                     else
