@@ -87,6 +87,7 @@ namespace Obfuscar
                 throw new ArgumentNullException(nameof(type));
 
             var attributes = type.CustomAttributeTypeFullNames?.ToArray() ?? Array.Empty<string>();
+            var isPublic = IsTypePublic(type);
             
             // Extract underlying Cecil TypeDefinition if available for attribute checking
             TypeDefinition typeDef = null;
@@ -96,12 +97,27 @@ namespace Obfuscar
                 typeDef = cecilType;
             }
             
-            return new TypeDescriptor(typeDef, type.FullName, type.IsPublic, type.IsSerializable, type.IsSealed, type.IsAbstract, type.IsEnum, attributes);
+            return new TypeDescriptor(typeDef, type.FullName, isPublic, type.IsSerializable, type.IsSealed, type.IsAbstract, type.IsEnum, attributes);
         }
 
         public static TypeDescriptor FromFullName(string fullName)
         {
             return new TypeDescriptor(null, fullName ?? string.Empty, false, false, false, false, false, Array.Empty<string>());
+        }
+
+        private static bool IsTypePublic(IType type)
+        {
+            if (type is not ITypeDefinition typeDef || typeDef.DeclaringType == null)
+            {
+                return type.IsPublic;
+            }
+
+            if (!type.IsPublic)
+            {
+                return false;
+            }
+
+            return IsTypePublic(typeDef.DeclaringType);
         }
     }
 }

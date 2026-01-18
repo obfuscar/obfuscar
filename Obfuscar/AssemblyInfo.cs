@@ -723,7 +723,11 @@ namespace Obfuscar
                 // Use the IAssembly abstraction when available
                 if (srmReader?.Assembly?.MainModule != null)
                 {
-                    var result = new List<Metadata.Abstractions.ITypeDefinition>(srmReader.Assembly.MainModule.Types);
+                    var result = new List<Metadata.Abstractions.ITypeDefinition>();
+                    foreach (var typeDef in srmReader.Assembly.MainModule.TopLevelTypes)
+                    {
+                        AddTypeWithNested(typeDef, result);
+                    }
                     return _cachedTypes = result;
                 }
 
@@ -738,6 +742,16 @@ namespace Obfuscar
             catch (Exception e)
             {
                 throw new ObfuscarException(string.Format("Failed to get types for {0}", definition.Name), e);
+            }
+        }
+
+        private static void AddTypeWithNested(Metadata.Abstractions.ITypeDefinition typeDef,
+            List<Metadata.Abstractions.ITypeDefinition> types)
+        {
+            types.Add(typeDef);
+            foreach (var nested in typeDef.NestedTypes)
+            {
+                AddTypeWithNested(nested, types);
             }
         }
 
