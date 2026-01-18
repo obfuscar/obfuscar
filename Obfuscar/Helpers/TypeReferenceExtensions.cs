@@ -11,9 +11,6 @@ namespace Obfuscar.Helpers
         /// </summary>
         public static string GetScopeName(this MutableTypeReference type)
         {
-            if (type?.Module?.Assembly?.Name?.Name != null)
-                return type.Module.Assembly.Name.Name;
-
             if (type?.Scope is MutableAssemblyNameReference asmRef)
                 return asmRef.Name;
 
@@ -22,6 +19,9 @@ namespace Obfuscar.Helpers
 
             if (type?.Scope is MutableModuleDefinition module)
                 return module.Assembly?.Name?.Name ?? module.Name;
+
+            if (type?.Module?.Assembly?.Name?.Name != null)
+                return type.Module.Assembly.Name.Name;
 
             return type?.Scope?.ToString() ?? string.Empty;
         }

@@ -24,7 +24,6 @@
 
 #endregion
 
-using Mono.Cecil;
 using Obfuscar;
 using System;
 using System.IO;

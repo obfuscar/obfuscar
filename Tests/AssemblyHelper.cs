@@ -26,7 +26,6 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
 using Xunit;
 
 namespace ObfuscarTests
@@ -62,7 +61,7 @@ namespace ObfuscarTests
             Action<TypeDefinition> checkType)
         {
             checkType(typeDef);
-            if (typeDef.HasNestedTypes)
+            if (typeDef.NestedTypes.Count > 0)
                 foreach (var nested in typeDef.NestedTypes)
                     if (isType(nested))
                         CheckTypeNested(nested, isType, checkType);

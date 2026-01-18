@@ -27,6 +27,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Obfuscar.Helpers;
 using Obfuscar.Metadata;
 using Obfuscar.Metadata.Abstractions;
@@ -97,17 +98,21 @@ namespace Obfuscar
 
         private static bool IsTypePublic(IType type)
         {
-            if (type is not ITypeDefinition typeDef || typeDef.DeclaringType == null)
-            {
+            if (type is not ITypeDefinition typeDef)
                 return type.IsPublic;
-            }
 
-            if (!type.IsPublic)
+            if (typeDef.DeclaringType == null)
+                return typeDef.IsPublic;
+
+            var visibility = typeDef.Attributes & TypeAttributes.VisibilityMask;
+            if (visibility == TypeAttributes.NestedPublic ||
+                visibility == TypeAttributes.NestedFamily ||
+                visibility == TypeAttributes.NestedFamORAssem)
             {
-                return false;
+                return IsTypePublic(typeDef.DeclaringType);
             }
 
-            return IsTypePublic(typeDef.DeclaringType);
+            return false;
         }
     }
 }

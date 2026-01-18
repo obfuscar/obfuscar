@@ -123,6 +123,22 @@ namespace Obfuscar
                     return LoadAssembly(exePath, parameters);
             }
 
+            if (string.Equals(name.Name, "System.Private.CoreLib", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(name.Name, "mscorlib", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(name.Name, "System.Runtime", StringComparison.OrdinalIgnoreCase) ||
+                (name.Name?.StartsWith("System.", StringComparison.OrdinalIgnoreCase) == true) ||
+                string.Equals(name.Name, "System", StringComparison.OrdinalIgnoreCase))
+            {
+                var runtimePath = typeof(object).Assembly.Location;
+                if (File.Exists(runtimePath))
+                {
+                    var runtimeAssembly = LoadAssembly(runtimePath, parameters);
+                    if (runtimeAssembly != null && !assemblies.ContainsKey(name.Name))
+                        assemblies[name.Name] = runtimeAssembly;
+                    return runtimeAssembly;
+                }
+            }
+
             throw new FileNotFoundException("Unable to resolve dependency: " + name.Name);
         }
 

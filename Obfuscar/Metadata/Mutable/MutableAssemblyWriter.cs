@@ -54,6 +54,8 @@ namespace Obfuscar.Metadata.Mutable
         private Dictionary<MutableFieldReference, EntityHandle> _fieldRefHandles;
         private Dictionary<MutableAssemblyNameReference, AssemblyReferenceHandle> _asmRefHandles;
         private Dictionary<string, UserStringHandle> _userStringHandles;
+        private List<MutableTypeDefinition> _orderedTypes;
+        private Dictionary<MutableMethodDefinition, int> _methodBodyOffsets;
 
         /// <summary>
         /// Initializes a new writer for the specified assembly.
@@ -96,15 +98,21 @@ namespace Obfuscar.Metadata.Mutable
             
             // First pass: create type definitions (forward declarations)
             WriteTypeDefinitionsFirstPass();
+
+            // Precompute member handles for IL encoding.
+            PrecomputeMemberHandles();
+
+            // Encode method bodies before emitting method definitions.
+            WriteMethodBodies();
             
             // Second pass: fill in type members
             WriteTypeDefinitionsSecondPass();
 
+            // Write generic parameters after type/method definitions are available.
+            WriteAllGenericParameters();
+
             // Custom attributes
             WriteCustomAttributes();
-            
-            // Third pass: write method bodies
-            WriteMethodBodies();
             
             // Create the PE file
             WritePEFile(stream);
@@ -130,6 +138,8 @@ namespace Obfuscar.Metadata.Mutable
             _fieldRefHandles = new Dictionary<MutableFieldReference, EntityHandle>();
             _asmRefHandles = new Dictionary<MutableAssemblyNameReference, AssemblyReferenceHandle>();
             _userStringHandles = new Dictionary<string, UserStringHandle>();
+            _orderedTypes = new List<MutableTypeDefinition>();
+            _methodBodyOffsets = new Dictionary<MutableMethodDefinition, int>();
         }
 
         private void WriteAssemblyDefinition()
@@ -180,22 +190,47 @@ namespace Obfuscar.Metadata.Mutable
         {
             var module = _assembly.MainModule;
             
-            // Add <Module> type first
-            _metadata.AddTypeDefinition(
-                default, // Attributes
-                default, // Namespace
-                _metadata.GetOrAddString("<Module>"),
-                default, // BaseType
-                MetadataTokens.FieldDefinitionHandle(1),
-                MetadataTokens.MethodDefinitionHandle(1));
-
             // Process types in order: non-nested first, then nested
-            var allTypes = new List<MutableTypeDefinition>();
-            CollectTypes(module.Types, allTypes);
-            
-            foreach (var type in allTypes)
+            _orderedTypes.Clear();
+            CollectTypes(module.Types, _orderedTypes);
+
+            // Ensure <Module> type (if present) is first.
+            var moduleIndex = _orderedTypes.FindIndex(t => t.Name == "<Module>" && string.IsNullOrEmpty(t.Namespace));
+            if (moduleIndex > 0)
             {
-                CreateTypeDefinition(type);
+                var moduleType = _orderedTypes[moduleIndex];
+                _orderedTypes.RemoveAt(moduleIndex);
+                _orderedTypes.Insert(0, moduleType);
+            }
+            
+            var fieldIndex = 1;
+            var methodIndex = 1;
+            foreach (var type in _orderedTypes)
+            {
+                CreateTypeDefinition(type, fieldIndex, methodIndex);
+                fieldIndex += type.Fields.Count;
+                methodIndex += type.Methods.Count;
+            }
+        }
+
+        private void PrecomputeMemberHandles()
+        {
+            _fieldDefHandles.Clear();
+            _methodDefHandles.Clear();
+
+            var fieldIndex = 1;
+            var methodIndex = 1;
+            foreach (var type in _orderedTypes)
+            {
+                foreach (var field in type.Fields)
+                {
+                    _fieldDefHandles[field] = MetadataTokens.FieldDefinitionHandle(fieldIndex++);
+                }
+
+                foreach (var method in type.Methods)
+                {
+                    _methodDefHandles[method] = MetadataTokens.MethodDefinitionHandle(methodIndex++);
+                }
             }
         }
 
@@ -208,11 +243,11 @@ namespace Obfuscar.Metadata.Mutable
             }
         }
 
-        private void CreateTypeDefinition(MutableTypeDefinition type)
+        private void CreateTypeDefinition(MutableTypeDefinition type, int firstFieldIndex, int firstMethodIndex)
         {
-            // Get field and method handles (will be set in second pass)
-            var firstField = MetadataTokens.FieldDefinitionHandle(_metadata.GetRowCount(TableIndex.Field) + 1);
-            var firstMethod = MetadataTokens.MethodDefinitionHandle(_metadata.GetRowCount(TableIndex.MethodDef) + 1);
+            // Compute field and method list indices based on type order.
+            var firstField = MetadataTokens.FieldDefinitionHandle(firstFieldIndex);
+            var firstMethod = MetadataTokens.MethodDefinitionHandle(firstMethodIndex);
             
             var baseType = type.BaseType != null ? GetTypeHandle(type.BaseType) : default;
             
@@ -240,9 +275,12 @@ namespace Obfuscar.Metadata.Mutable
 
         private void WriteTypeDefinitionsSecondPass()
         {
-            foreach (var kvp in _typeDefHandles)
+            foreach (var type in _orderedTypes)
             {
-                var type = kvp.Key;
+                if (!_typeDefHandles.TryGetValue(type, out var typeHandle))
+                {
+                    continue;
+                }
                 
                 // Write fields
                 foreach (var field in type.Fields)
@@ -255,21 +293,29 @@ namespace Obfuscar.Metadata.Mutable
                 {
                     WriteMethodDefinition(method);
                 }
+
+                // Write explicit method implementations
+                foreach (var impl in type.MethodImplementations)
+                {
+                    var bodyHandle = GetMethodHandleForImpl(impl.MethodBody);
+                    var declarationHandle = GetMethodHandleForImpl(impl.MethodDeclaration);
+                    if (bodyHandle.IsNil || declarationHandle.IsNil)
+                        continue;
+
+                    _metadata.AddMethodImplementation(typeHandle, bodyHandle, declarationHandle);
+                }
                 
                 // Write interfaces
                 foreach (var iface in type.Interfaces)
                 {
                     var ifaceHandle = GetTypeHandle(iface.InterfaceType);
-                    _metadata.AddInterfaceImplementation(kvp.Value, ifaceHandle);
+                    _metadata.AddInterfaceImplementation(typeHandle, ifaceHandle);
                 }
-                
-                // Write generic parameters
-                WriteGenericParameters(kvp.Value, type.GenericParameters);
                 
                 // Write properties
                 if (type.Properties.Count > 0)
                 {
-                    _metadata.AddPropertyMap(kvp.Value, 
+                    _metadata.AddPropertyMap(typeHandle, 
                         MetadataTokens.PropertyDefinitionHandle(_metadata.GetRowCount(TableIndex.Property) + 1));
                     
                     foreach (var prop in type.Properties)
@@ -281,7 +327,7 @@ namespace Obfuscar.Metadata.Mutable
                 // Write events
                 if (type.Events.Count > 0)
                 {
-                    _metadata.AddEventMap(kvp.Value,
+                    _metadata.AddEventMap(typeHandle,
                         MetadataTokens.EventDefinitionHandle(_metadata.GetRowCount(TableIndex.Event) + 1));
                     
                     foreach (var evt in type.Events)
@@ -319,14 +365,19 @@ namespace Obfuscar.Metadata.Mutable
         private void WriteMethodDefinition(MutableMethodDefinition method)
         {
             var signature = EncodeMethodSignature(method);
+            var bodyOffset = -1;
+            if (CanWriteBody(method) && _methodBodyOffsets.TryGetValue(method, out var offset))
+            {
+                bodyOffset = offset;
+            }
             
-            // RVA will be set when writing method body
+            // RVA derived from encoded method body (0 for abstract/external).
             var handle = _metadata.AddMethodDefinition(
                 method.Attributes,
                 method.ImplAttributes,
                 _metadata.GetOrAddString(method.Name),
                 _metadata.GetOrAddBlob(signature),
-                -1, // RVA placeholder - will be patched
+                bodyOffset,
                 MetadataTokens.ParameterHandle(_metadata.GetRowCount(TableIndex.Param) + 1));
             
             _methodDefHandles[method] = handle;
@@ -346,21 +397,71 @@ namespace Obfuscar.Metadata.Mutable
                     _metadata.AddConstant(paramHandle, param.DefaultValue);
                 }
             }
-            
-            // Write generic parameters
-            WriteGenericParameters(handle, method.GenericParameters);
         }
 
         private void WriteMethodBodies()
         {
+            _methodBodyOffsets.Clear();
+
             foreach (var kvp in _methodDefHandles)
             {
                 var method = kvp.Key;
+                var declaringType = method?.DeclaringType as MutableTypeDefinition;
+                var isInterface = declaringType != null && declaringType.IsInterface;
+
+                if (declaringType != null && declaringType.Namespace == "SkipVirtualMethodTest" && declaringType.Name == "Interface1")
+                {
+                    LogBodyIssue($"SkipVirtualMethodTest.Interface1::{method.Name} attrs={method.Attributes} isInterface={isInterface} bodyNull={method.Body == null}");
+                }
+
+                if (method?.Body != null && (method.IsAbstract || isInterface))
+                {
+                    LogBodyIssue($"Method has body but abstract/interface: {declaringType?.FullName}::{method.Name} attrs={method.Attributes} isInterface={isInterface} bodyInstr={method.Body.Instructions.Count}");
+                }
                 
-                if (method.Body == null || method.IsAbstract || method.IsPInvokeImpl)
+                if (!CanWriteBody(method))
                     continue;
+
+                if (method.IsAbstract || isInterface)
+                {
+                    LogBodyIssue($"Encoding body for abstract/interface: {declaringType?.FullName}::{method.Name} attrs={method.Attributes} isInterface={isInterface}");
+                }
                 
-                EncodeMethodBody(method.Body);
+                var offset = EncodeMethodBody(method.Body);
+                _methodBodyOffsets[method] = offset;
+            }
+        }
+
+        private static bool CanWriteBody(MutableMethodDefinition method)
+        {
+            if (method == null || method.Body == null)
+                return false;
+
+            if (method.IsAbstract || method.IsPInvokeImpl || method.IsRuntime)
+                return false;
+
+            if (method.DeclaringType is MutableTypeDefinition declaringType && declaringType.IsInterface)
+                return false;
+
+            // Only emit IL bodies for IL methods.
+            if ((method.ImplAttributes & MethodImplAttributes.CodeTypeMask) != MethodImplAttributes.IL)
+                return false;
+
+            return true;
+        }
+
+        private static void LogBodyIssue(string message)
+        {
+            if (!string.Equals(Environment.GetEnvironmentVariable("OBFUSCAR_DEBUG_BODIES"), "1", StringComparison.Ordinal))
+                return;
+
+            try
+            {
+                File.AppendAllText("/tmp/obfuscar_debug.log", message + Environment.NewLine);
+            }
+            catch
+            {
+                // Ignore logging failures.
             }
         }
 
@@ -627,22 +728,70 @@ namespace Obfuscar.Metadata.Mutable
             }
         }
 
-        private void WriteGenericParameters(EntityHandle owner, IList<MutableGenericParameter> genericParameters)
+        private void WriteAllGenericParameters()
         {
-            foreach (var gp in genericParameters)
+            var entries = new List<(EntityHandle owner, MutableGenericParameter gp)>();
+
+            foreach (var type in _orderedTypes)
             {
+                if (_typeDefHandles.TryGetValue(type, out var typeHandle))
+                {
+                    foreach (var gp in type.GenericParameters)
+                    {
+                        entries.Add((typeHandle, gp));
+                    }
+                }
+
+                foreach (var method in type.Methods)
+                {
+                    if (_methodDefHandles.TryGetValue(method, out var methodHandle))
+                    {
+                        foreach (var gp in method.GenericParameters)
+                        {
+                            entries.Add((methodHandle, gp));
+                        }
+                    }
+                }
+            }
+
+            entries.Sort((left, right) =>
+            {
+                var leftCode = GetTypeOrMethodDefCode(left.owner);
+                var rightCode = GetTypeOrMethodDefCode(right.owner);
+                if (leftCode != rightCode)
+                    return leftCode.CompareTo(rightCode);
+
+                return left.gp.Position.CompareTo(right.gp.Position);
+            });
+
+            foreach (var entry in entries)
+            {
+                var gp = entry.gp;
                 var gpHandle = _metadata.AddGenericParameter(
-                    owner,
+                    entry.owner,
                     (GenericParameterAttributes)gp.GenericParameterAttributes,
                     _metadata.GetOrAddString(gp.Name),
                     gp.Position);
                 _genericParameterHandles[gp] = gpHandle;
-                
+
                 foreach (var constraint in gp.Constraints)
                 {
                     var constraintType = GetTypeHandle(constraint.ConstraintType);
                     _metadata.AddGenericParameterConstraint(gpHandle, constraintType);
                 }
+            }
+        }
+
+        private static int GetTypeOrMethodDefCode(EntityHandle owner)
+        {
+            switch (owner.Kind)
+            {
+                case HandleKind.TypeDefinition:
+                    return MetadataTokens.GetRowNumber((TypeDefinitionHandle)owner) << 1;
+                case HandleKind.MethodDefinition:
+                    return (MetadataTokens.GetRowNumber((MethodDefinitionHandle)owner) << 1) | 1;
+                default:
+                    return int.MaxValue;
             }
         }
 
@@ -767,6 +916,17 @@ namespace Obfuscar.Metadata.Mutable
             }
             catch
             {
+                if (string.Equals(Environment.GetEnvironmentVariable("OBFUSCAR_DEBUG_ATTRS"), "1", StringComparison.Ordinal))
+                {
+                    try
+                    {
+                        File.AppendAllText("/tmp/obfuscar_debug.log", $"Custom attribute skipped: {attr?.AttributeTypeName}\n");
+                    }
+                    catch
+                    {
+                        // ignore logging failures
+                    }
+                }
                 // Skip attributes that can't be encoded
             }
         }
@@ -791,7 +951,7 @@ namespace Obfuscar.Metadata.Mutable
             foreach (var field in attr.Fields)
             {
                 builder.WriteByte(0x53); // FIELD
-                EncodeCustomAttributeFieldOrPropType(builder, field.Argument.Type);
+                EncodeCustomAttributeFieldOrPropType(builder, field.Argument);
                 WriteSerializedString(builder, field.Name);
                 EncodeCustomAttributeArgument(builder, field.Argument);
             }
@@ -799,7 +959,7 @@ namespace Obfuscar.Metadata.Mutable
             foreach (var prop in attr.Properties)
             {
                 builder.WriteByte(0x54); // PROPERTY
-                EncodeCustomAttributeFieldOrPropType(builder, prop.Argument.Type);
+                EncodeCustomAttributeFieldOrPropType(builder, prop.Argument);
                 WriteSerializedString(builder, prop.Name);
                 EncodeCustomAttributeArgument(builder, prop.Argument);
             }
@@ -811,6 +971,15 @@ namespace Obfuscar.Metadata.Mutable
         {
             if (arg?.Type == null)
             {
+                if (arg?.Value is string stringValue)
+                {
+                    WriteSerializedString(builder, stringValue);
+                    return;
+                }
+
+                if (TryWritePrimitiveValueFromObject(builder, arg?.Value))
+                    return;
+
                 builder.WriteInt32(0);
                 return;
             }
@@ -862,18 +1031,28 @@ namespace Obfuscar.Metadata.Mutable
             builder.WriteInt32(0);
         }
 
-        private void EncodeCustomAttributeFieldOrPropType(BlobBuilder builder, MutableTypeReference type)
+        private void EncodeCustomAttributeFieldOrPropType(BlobBuilder builder, MutableCustomAttributeArgument argument)
         {
+            var type = argument?.Type;
+            if (type == null)
+            {
+                if (argument?.Value is string)
+                {
+                    builder.WriteByte(0x0e);
+                    return;
+                }
+
+                if (TryWritePrimitiveTypeFromObject(builder, argument?.Value))
+                    return;
+
+                builder.WriteByte(0x51); // ELEMENT_TYPE_OBJECT
+                return;
+            }
+
             if (type?.Resolve() is MutableTypeDefinition enumDef && enumDef.IsEnum)
             {
                 builder.WriteByte(0x55); // ELEMENT_TYPE_ENUM
                 WriteSerializedString(builder, GetCustomAttributeTypeName(type));
-                return;
-            }
-
-            if (type == null)
-            {
-                builder.WriteByte(0x51); // ELEMENT_TYPE_OBJECT
                 return;
             }
 
@@ -936,6 +1115,41 @@ namespace Obfuscar.Metadata.Mutable
                 case "System.Double": builder.WriteDouble(Convert.ToDouble(value)); break;
                 case "System.Char": builder.WriteUInt16(Convert.ToUInt16(value)); break;
             }
+        }
+
+        private static bool TryWritePrimitiveTypeFromObject(BlobBuilder builder, object value)
+        {
+            if (value is bool) { builder.WriteByte(0x02); return true; }
+            if (value is char) { builder.WriteByte(0x03); return true; }
+            if (value is sbyte) { builder.WriteByte(0x04); return true; }
+            if (value is byte) { builder.WriteByte(0x05); return true; }
+            if (value is short) { builder.WriteByte(0x06); return true; }
+            if (value is ushort) { builder.WriteByte(0x07); return true; }
+            if (value is int) { builder.WriteByte(0x08); return true; }
+            if (value is uint) { builder.WriteByte(0x09); return true; }
+            if (value is long) { builder.WriteByte(0x0a); return true; }
+            if (value is ulong) { builder.WriteByte(0x0b); return true; }
+            if (value is float) { builder.WriteByte(0x0c); return true; }
+            if (value is double) { builder.WriteByte(0x0d); return true; }
+            if (value is Type || value is MutableTypeReference) { builder.WriteByte(0x50); return true; }
+            return false;
+        }
+
+        private static bool TryWritePrimitiveValueFromObject(BlobBuilder builder, object value)
+        {
+            if (value is bool boolValue) { builder.WriteBoolean(boolValue); return true; }
+            if (value is char charValue) { builder.WriteUInt16(charValue); return true; }
+            if (value is sbyte sbyteValue) { builder.WriteSByte(sbyteValue); return true; }
+            if (value is byte byteValue) { builder.WriteByte(byteValue); return true; }
+            if (value is short shortValue) { builder.WriteInt16(shortValue); return true; }
+            if (value is ushort ushortValue) { builder.WriteUInt16(ushortValue); return true; }
+            if (value is int intValue) { builder.WriteInt32(intValue); return true; }
+            if (value is uint uintValue) { builder.WriteUInt32(uintValue); return true; }
+            if (value is long longValue) { builder.WriteInt64(longValue); return true; }
+            if (value is ulong ulongValue) { builder.WriteUInt64(ulongValue); return true; }
+            if (value is float floatValue) { builder.WriteSingle(floatValue); return true; }
+            if (value is double doubleValue) { builder.WriteDouble(doubleValue); return true; }
+            return false;
         }
 
         private BlobBuilder EncodeFieldSignature(MutableTypeReference fieldType)
@@ -1071,7 +1285,7 @@ namespace Obfuscar.Metadata.Mutable
             
             if (type is MutableGenericParameter gp)
             {
-                if (gp.Owner is MutableMethodDefinition || gp.Owner is MutableMethodReference)
+                if (gp.IsMethodParameter || gp.Owner is MutableMethodDefinition || gp.Owner is MutableMethodReference)
                 {
                     encoder.GenericMethodTypeParameter(gp.Position);
                 }
@@ -1097,6 +1311,17 @@ namespace Obfuscar.Metadata.Mutable
 
             if (_typeRefHandles.TryGetValue(type, out var existing))
                 return existing;
+
+            if (type is MutableGenericParameter)
+            {
+                var sig = new BlobBuilder();
+                var sigEncoder = new BlobEncoder(sig);
+                EncodeTypeToBuilder(sigEncoder.TypeSpecificationSignature(), type);
+
+                var specHandle = _metadata.AddTypeSpecification(_metadata.GetOrAddBlob(sig));
+                _typeRefHandles[type] = specHandle;
+                return specHandle;
+            }
 
             // Need to create a type reference or type spec
             if (type is MutableGenericInstanceType || type is MutableArrayType || 
@@ -1132,6 +1357,25 @@ namespace Obfuscar.Metadata.Mutable
         {
             if (method == null)
                 return default;
+
+            if (method is MutableGenericInstanceMethod genericInstance)
+            {
+                if (_methodRefHandles.TryGetValue(method, out var existingSpec))
+                    return existingSpec;
+
+                var elementHandle = GetMethodHandle(genericInstance.ElementMethod);
+                var specSig = new BlobBuilder();
+                var specEncoder = new BlobEncoder(specSig);
+                var argsEncoder = specEncoder.MethodSpecificationSignature(genericInstance.GenericArguments.Count);
+                foreach (var arg in genericInstance.GenericArguments)
+                {
+                    EncodeTypeToBuilder(argsEncoder.AddArgument(), arg);
+                }
+
+                var specHandle = _metadata.AddMethodSpecification(elementHandle, _metadata.GetOrAddBlob(specSig));
+                _methodRefHandles[method] = specHandle;
+                return specHandle;
+            }
 
             if (method is MutableMethodDefinition methodDef && _methodDefHandles.TryGetValue(methodDef, out var defHandle))
                 return defHandle;
@@ -1194,7 +1438,7 @@ namespace Obfuscar.Metadata.Mutable
             
             encoder.MethodSignature(
                 SignatureCallingConvention.Default,
-                0, // genericParameterCount
+                method.GenericParameters.Count,
                 method.HasThis)
                 .Parameters(
                     method.Parameters.Count,
@@ -1208,6 +1452,18 @@ namespace Obfuscar.Metadata.Mutable
                     });
             
             return builder;
+        }
+
+        private EntityHandle GetMethodHandleForImpl(MutableMethodReference method)
+        {
+            if (method is MutableGenericInstanceMethod genericInstance)
+                method = genericInstance.ElementMethod;
+
+            var handle = GetMethodHandle(method);
+            if (handle.Kind == HandleKind.MethodSpecification)
+                return default;
+
+            return handle;
         }
 
         private UserStringHandle GetOrAddUserString(string value)
@@ -1237,11 +1493,19 @@ namespace Obfuscar.Metadata.Mutable
                 subsystem: module.Kind == MutableModuleKind.Windows ? Subsystem.WindowsGui : Subsystem.WindowsCui);
 
             // Create managed PE builder
+            var corFlags = CorFlags.ILOnly;
+            if (module.Attributes.HasFlag(MutableModuleAttributes.Required32Bit))
+                corFlags |= CorFlags.Requires32Bit;
+            if (module.Attributes.HasFlag(MutableModuleAttributes.Preferred32Bit))
+                corFlags |= CorFlags.Prefers32Bit;
+            if (module.Attributes.HasFlag(MutableModuleAttributes.StrongNameSigned) || _parameters.StrongNameKeyBlob != null)
+                corFlags |= CorFlags.StrongNameSigned;
+
             var peBuilder = new ManagedPEBuilder(
                 peHeaderBuilder,
                 new MetadataRootBuilder(_metadata),
                 _ilStream,
-                flags: CorFlags.ILOnly);
+                flags: corFlags);
 
             // Write to blob
             var peBlob = new BlobBuilder();

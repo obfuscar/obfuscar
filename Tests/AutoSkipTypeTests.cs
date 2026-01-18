@@ -1,5 +1,4 @@
-﻿using Mono.Cecil;
-using Obfuscar;
+﻿using Obfuscar;
 using System.IO;
 using Xunit;
 

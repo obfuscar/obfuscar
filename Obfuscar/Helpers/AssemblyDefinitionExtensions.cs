@@ -247,19 +247,55 @@ namespace Obfuscar.Helpers
 
         public static bool CleanAttributes(this MutableAssemblyDefinition assembly)
         {
-            for (int i = 0; i < assembly.CustomAttributes.Count; i++)
+            RemoveObfuscateAssemblyAttributes(assembly.CustomAttributes);
+            if (assembly.MainModule != null)
+                RemoveObfuscateAssemblyAttributes(assembly.MainModule.CustomAttributes);
+
+            return true;
+        }
+
+        private static void RemoveObfuscateAssemblyAttributes(List<MutableCustomAttribute> attributes)
+        {
+            if (attributes == null || attributes.Count == 0)
+                return;
+
+            if (string.Equals(Environment.GetEnvironmentVariable("OBFUSCAR_DEBUG_ATTRS"), "1", StringComparison.Ordinal))
             {
-                var custom = assembly.CustomAttributes[i];
+                try
+                {
+                    var names = string.Join(", ", attributes.Select(attr => attr.AttributeTypeName));
+                    File.AppendAllText("/tmp/obfuscar_debug.log", $"Assembly attrs before clean: {names}\n");
+                }
+                catch
+                {
+                    // ignore logging failures
+                }
+            }
+
+            for (int i = attributes.Count - 1; i >= 0; i--)
+            {
+                var custom = attributes[i];
                 if (custom.AttributeTypeName == typeof(ObfuscateAssemblyAttribute).FullName)
                 {
                     if ((bool)(Helper.GetAttributePropertyByName(custom, "StripAfterObfuscation") ?? true))
                     {
-                        assembly.CustomAttributes.Remove(custom);
+                        attributes.RemoveAt(i);
                     }
                 }
             }
 
-            return true;
+            if (string.Equals(Environment.GetEnvironmentVariable("OBFUSCAR_DEBUG_ATTRS"), "1", StringComparison.Ordinal))
+            {
+                try
+                {
+                    var names = string.Join(", ", attributes.Select(attr => attr.AttributeTypeName));
+                    File.AppendAllText("/tmp/obfuscar_debug.log", $"Assembly attrs after clean: {names}\n");
+                }
+                catch
+                {
+                    // ignore logging failures
+                }
+            }
         }
     }
 }

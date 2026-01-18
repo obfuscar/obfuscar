@@ -167,16 +167,35 @@ namespace Obfuscar
             
             if (decoratorAll != null && decoratorAll.Length > 0)
             {
-                if (!type.Descriptor.HasCustomAttributes)
+                var attrNames = type.Descriptor.CustomAttributeTypeFullNames ?? Array.Empty<string>();
+                bool requiresCompilerGenerated =
+                    decoratorAll.Contains("System.Runtime.CompilerServices.CompilerGeneratedAttribute");
+                bool hasCompilerGenerated = false;
+                if (requiresCompilerGenerated)
                 {
-                    return false;
+                    hasCompilerGenerated = attrNames.Contains("System.Runtime.CompilerServices.CompilerGeneratedAttribute");
+                    if (!hasCompilerGenerated && (type.Descriptor.TypeDefinition?.Name?.StartsWith("<") ?? false))
+                    {
+                        hasCompilerGenerated = true;
+                    }
                 }
 
-                var attrNames = type.Descriptor.CustomAttributeTypeFullNames;
                 for (int i = 0; i < decoratorAll.Length; i++)
                 {
                     if (!attrNames.Contains(decoratorAll[i]))
+                    {
+                        if (decoratorAll[i] == "System.Runtime.CompilerServices.CompilerGeneratedAttribute" &&
+                            (type.Descriptor.TypeDefinition?.Name?.StartsWith("<") ?? false))
+                        {
+                            continue;
+                        }
+                        if (decoratorAll[i] == "Microsoft.CodeAnalysis.EmbeddedAttribute" &&
+                            requiresCompilerGenerated && hasCompilerGenerated)
+                        {
+                            continue;
+                        }
                         return false;
+                    }
                 }
             }
 
@@ -258,10 +277,35 @@ namespace Obfuscar
                 if (type.CustomAttributeTypeFullNames == null)
                     return false;
 
+                bool requiresCompilerGenerated =
+                    decoratorAll.Contains("System.Runtime.CompilerServices.CompilerGeneratedAttribute");
+                bool hasCompilerGenerated = false;
+                if (requiresCompilerGenerated)
+                {
+                    hasCompilerGenerated = type.CustomAttributeTypeFullNames.Contains(
+                        "System.Runtime.CompilerServices.CompilerGeneratedAttribute");
+                    if (!hasCompilerGenerated && (type.Name?.StartsWith("<") ?? false))
+                    {
+                        hasCompilerGenerated = true;
+                    }
+                }
+
                 foreach (string attrName in decoratorAll)
                 {
                     if (!type.CustomAttributeTypeFullNames.Contains(attrName))
+                    {
+                        if (attrName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute" &&
+                            (type.Name?.StartsWith("<") ?? false))
+                        {
+                            continue;
+                        }
+                        if (attrName == "Microsoft.CodeAnalysis.EmbeddedAttribute" &&
+                            requiresCompilerGenerated && hasCompilerGenerated)
+                        {
+                            continue;
+                        }
                         return false;
+                    }
                 }
             }
 

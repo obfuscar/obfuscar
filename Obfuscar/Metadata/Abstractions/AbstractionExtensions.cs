@@ -66,7 +66,22 @@ namespace Obfuscar.Metadata.Abstractions
         /// </summary>
         public static bool? MarkedToRename(this ITypeDefinition type)
         {
-            return MarkedToRenameFromAttributes(type?.CustomAttributes);
+            if (type == null)
+                return null;
+
+            var result = MarkedToRenameFromAttributes(type.CustomAttributes, false);
+            if (result != null)
+                return result;
+
+            return MarkedToRenameFromAncestors(type.DeclaringType, true);
+        }
+
+        public static bool? MarkedToRenameForMembers(this ITypeDefinition type)
+        {
+            if (type == null)
+                return null;
+
+            return MarkedToRenameFromAncestors(type, true);
         }
 
         /// <summary>
@@ -75,25 +90,40 @@ namespace Obfuscar.Metadata.Abstractions
         /// </summary>
         public static bool? MarkedToRename(this IMethodDefinition method)
         {
-            return MarkedToRenameFromAttributes(method?.CustomAttributes);
+            return MarkedToRenameFromAttributes(method?.CustomAttributes, false);
         }
 
         public static bool? MarkedToRename(this IFieldDefinition field)
         {
-            return MarkedToRenameFromAttributes(field?.CustomAttributes);
+            return MarkedToRenameFromAttributes(field?.CustomAttributes, false);
         }
 
         public static bool? MarkedToRename(this IPropertyDefinition property)
         {
-            return MarkedToRenameFromAttributes(property?.CustomAttributes);
+            return MarkedToRenameFromAttributes(property?.CustomAttributes, false);
         }
 
         public static bool? MarkedToRename(this IEventDefinition evt)
         {
-            return MarkedToRenameFromAttributes(evt?.CustomAttributes);
+            return MarkedToRenameFromAttributes(evt?.CustomAttributes, false);
         }
 
-        private static bool? MarkedToRenameFromAttributes(IEnumerable<ICustomAttribute> attributes)
+        private static bool? MarkedToRenameFromAncestors(ITypeDefinition type, bool fromMember)
+        {
+            var current = type;
+            while (current != null)
+            {
+                var result = MarkedToRenameFromAttributes(current.CustomAttributes, fromMember);
+                if (result != null)
+                    return result;
+
+                current = current.DeclaringType;
+            }
+
+            return null;
+        }
+
+        private static bool? MarkedToRenameFromAttributes(IEnumerable<ICustomAttribute> attributes, bool fromMember)
         {
             if (attributes == null)
                 return null;
@@ -114,6 +144,10 @@ namespace Obfuscar.Metadata.Abstractions
 
                 if (attrFullName == reflectionObfuscate)
                 {
+                    var applyToMembers = (bool)(Helper.GetAttributePropertyByName(attr, "ApplyToMembers") ?? true);
+                    if (fromMember && !applyToMembers)
+                        continue;
+
                     var rename = !((bool)(Helper.GetAttributePropertyByName(attr, "Exclude") ?? true));
                     return rename;
                 }

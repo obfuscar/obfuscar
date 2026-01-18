@@ -85,6 +85,9 @@ namespace Obfuscar
         /// </summary>
         public static string GetTypeName(MutableTypeReference type)
         {
+            if (type == null)
+                return string.Empty;
+
             lock (nameCache)
             {
                 string name;

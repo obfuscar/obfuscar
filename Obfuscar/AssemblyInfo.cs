@@ -448,6 +448,12 @@ namespace Obfuscar
 
                 if (method.Body != null)
                 {
+                    foreach (var variable in method.Body.Variables)
+                        CollectTypeReferencesFromType(variable.VariableType, typerefs);
+
+                    foreach (var handler in method.Body.ExceptionHandlers)
+                        CollectTypeReferencesFromType(handler.CatchType, typerefs);
+
                     foreach (var instruction in method.Body.Instructions)
                     {
                         CollectInstructionTypeReferences(instruction, typerefs);
@@ -815,6 +821,14 @@ namespace Obfuscar
                         }
                     }
                 }
+
+                foreach (var impl in type.MethodImplementations)
+                {
+                    if (impl.MethodBody is MutableMethodReference bodyRef && impl.MethodBody is not MutableMethodDefinition)
+                        memberReferences.Add(bodyRef);
+                    if (impl.MethodDeclaration is MutableMethodReference declRef && impl.MethodDeclaration is not MutableMethodDefinition)
+                        memberReferences.Add(declRef);
+                }
             }
             return memberReferences;
         }
@@ -836,11 +850,46 @@ namespace Obfuscar
                 definition = MutableAssemblyDefinition.ReadAssembly(filename, parameters);
                 project.Cache.RegisterAssembly(definition);
                 name = definition.Name?.Name ?? string.Empty;
+
+                // Validate referenced assemblies exist early to match legacy behavior.
+                foreach (var asmRef in definition.MainModule.AssemblyReferences)
+                {
+                    try
+                    {
+                        project.Cache.Resolve(asmRef, new MutableReaderParameters { AssemblyResolver = project.Cache });
+                    }
+                    catch (System.IO.FileNotFoundException e)
+                    {
+                        if (IsFrameworkAssembly(asmRef.Name))
+                        {
+                            continue;
+                        }
+
+                        throw new ObfuscarException("Unable to resolve dependency:  " + asmRef.Name, e);
+                    }
+                }
             }
             catch (System.IO.IOException e)
             {
                 throw new ObfuscarException("Unable to find assembly:  " + filename, e);
             }
+        }
+
+        private static bool IsFrameworkAssembly(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return false;
+
+            if (string.Equals(name, "mscorlib", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(name, "System.Private.CoreLib", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(name, "netstandard", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(name, "System", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return name.StartsWith("System.", StringComparison.OrdinalIgnoreCase) ||
+                   name.StartsWith("Microsoft.", StringComparison.OrdinalIgnoreCase);
         }
 
         public string FileName
@@ -1045,7 +1094,7 @@ namespace Obfuscar
                 return !attribute.Value;
             }
 
-            bool? parent = method.TypeKey.Descriptor?.TypeDefinition?.MarkedToRename();
+            bool? parent = method.TypeKey.Descriptor?.TypeDefinition?.MarkedToRenameForMembers();
             if (parent != null)
             {
                 message = "type attribute";
@@ -1139,7 +1188,7 @@ namespace Obfuscar
                 return !attribute.Value;
             }
 
-            bool? parent = field.DeclaringType?.MarkedToRename();
+            bool? parent = field.DeclaringType?.MarkedToRenameForMembers();
             if (parent != null)
             {
                 message = "type attribute";
@@ -1219,7 +1268,7 @@ namespace Obfuscar
                 return !attribute.Value;
             }
 
-            bool? parent = prop.DeclaringType?.MarkedToRename();
+            bool? parent = prop.DeclaringType?.MarkedToRenameForMembers();
             if (parent != null)
             {
                 message = "type attribute";
@@ -1302,7 +1351,7 @@ namespace Obfuscar
                 return !attribute.Value;
             }
 
-            bool? parent = evt.DeclaringType?.MarkedToRename();
+            bool? parent = evt.DeclaringType?.MarkedToRenameForMembers();
             if (parent != null)
             {
                 message = "type attribute";

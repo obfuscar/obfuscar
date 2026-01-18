@@ -1,4 +1,3 @@
-using Mono.Cecil;
 using Obfuscar;
 using System.IO;
 using System.Linq;
@@ -138,6 +137,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckCrossAssembly()
         {
+            string outputPath = TestHelper.OutputPath;
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
@@ -148,7 +148,7 @@ namespace ObfuscarTests
                 @"								<Module file='$(InPath){2}AssemblyF.dll'>" +
                 @"								</Module>" +
                 @"								<Module file='$(InPath){2}AssemblyG.dll' />" +
-                @"								</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
+                @"								</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
             // Directory.Delete (TestHelper.OutputPath, true);
             string destFileName = Path.Combine(TestHelper.InputPath, "AssemblyG.dll");
             if (!File.Exists(destFileName))
@@ -167,8 +167,8 @@ namespace ObfuscarTests
             var exception = Assert.Throws<ObfuscarException>(() => TestHelper.Obfuscate(xml));
             Assert.StartsWith("Inconsistent virtual method obfuscation", exception.Message);
 
-            Assert.False(File.Exists(Path.Combine(TestHelper.OutputPath, @"AssemblyG.dll")));
-            Assert.False(File.Exists(Path.Combine(TestHelper.OutputPath, @"AssemblyF.dll")));
+            Assert.False(File.Exists(Path.Combine(outputPath, @"AssemblyG.dll")));
+            Assert.False(File.Exists(Path.Combine(outputPath, @"AssemblyF.dll")));
         }
 
         [Fact]

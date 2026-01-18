@@ -286,6 +286,16 @@ namespace Obfuscar.Metadata.Mutable
         {
             ElementMethod = elementMethod;
             GenericArguments = new List<MutableTypeReference>();
+            HasThis = elementMethod.HasThis;
+            CallingConvention = elementMethod.CallingConvention;
+
+            foreach (var param in elementMethod.Parameters)
+            {
+                Parameters.Add(new MutableParameterDefinition(param.Name, param.Attributes, param.ParameterType)
+                {
+                    Index = param.Index
+                });
+            }
         }
 
         /// <summary>

@@ -21,6 +21,7 @@ namespace Obfuscar.Metadata.Mutable
             BaseType = baseType;
             Fields = new List<MutableFieldDefinition>();
             Methods = new List<MutableMethodDefinition>();
+            MethodImplementations = new List<MutableMethodImplementation>();
             Properties = new List<MutablePropertyDefinition>();
             Events = new List<MutableEventDefinition>();
             NestedTypes = new List<MutableTypeDefinition>();
@@ -60,6 +61,11 @@ namespace Obfuscar.Metadata.Mutable
         /// The methods defined in this type.
         /// </summary>
         public List<MutableMethodDefinition> Methods { get; }
+
+        /// <summary>
+        /// Explicit method implementations for this type.
+        /// </summary>
+        public List<MutableMethodImplementation> MethodImplementations { get; }
 
         /// <summary>
         /// The properties defined in this type.
@@ -196,6 +202,22 @@ namespace Obfuscar.Metadata.Mutable
     }
 
     /// <summary>
+    /// Represents an explicit method implementation mapping.
+    /// </summary>
+    public class MutableMethodImplementation
+    {
+        public MutableMethodImplementation(MutableMethodReference methodBody, MutableMethodReference methodDeclaration)
+        {
+            MethodBody = methodBody;
+            MethodDeclaration = methodDeclaration;
+        }
+
+        public MutableMethodReference MethodBody { get; }
+
+        public MutableMethodReference MethodDeclaration { get; }
+    }
+
+    /// <summary>
     /// Represents an interface implementation.
     /// </summary>
     public class MutableInterfaceImplementation
@@ -252,6 +274,8 @@ namespace Obfuscar.Metadata.Mutable
         public System.Reflection.GenericParameterAttributes GenericParameterAttributes { get; set; }
 
         public System.Reflection.GenericParameterAttributes Attributes => GenericParameterAttributes;
+
+        public bool IsMethodParameter { get; set; }
 
         /// <summary>
         /// Constraints on this generic parameter.

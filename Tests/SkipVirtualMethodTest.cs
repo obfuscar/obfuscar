@@ -27,7 +27,6 @@
 using System;
 using System.IO;
 using System.Reflection;
-using Mono.Cecil;
 using Xunit;
 
 namespace ObfuscarTests

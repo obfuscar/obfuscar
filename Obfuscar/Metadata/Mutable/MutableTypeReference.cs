@@ -133,9 +133,6 @@ namespace Obfuscar.Metadata.Mutable
         {
             get
             {
-                if (Module?.Assembly?.Name?.Name != null)
-                    return Module.Assembly.Name.Name;
-
                 if (Scope is MutableAssemblyNameReference asmRef)
                     return asmRef.Name;
 
@@ -144,6 +141,9 @@ namespace Obfuscar.Metadata.Mutable
 
                 if (Scope is MutableModuleDefinition module)
                     return module.Assembly?.Name?.Name ?? module.Name;
+
+                if (Module?.Assembly?.Name?.Name != null)
+                    return Module.Assembly.Name.Name;
 
                 return Scope?.ToString() ?? string.Empty;
             }

@@ -219,7 +219,7 @@ namespace Obfuscar
             }
 
             var baseType = project.GetTypeDefinition(type.BaseType) ?? project.Cache.GetTypeDefinition(type.BaseType);
-            if (baseType != null && baseType.FullName != "System.Object")
+            if (baseType != null)
                 GetVirtualMethods(methods, baseType);
 
             foreach (var method in type.Methods)

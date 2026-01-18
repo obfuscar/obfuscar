@@ -26,7 +26,6 @@
 
 using System;
 using System.IO;
-using Mono.Cecil;
 using Obfuscar;
 using Xunit;
 

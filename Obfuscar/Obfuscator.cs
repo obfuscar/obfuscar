@@ -212,6 +212,36 @@ namespace Obfuscar
                             parameters.WriteSymbols = true;
                         }
 
+                        if (string.Equals(Environment.GetEnvironmentVariable("OBFUSCAR_DEBUG_ATTRS"), "1", StringComparison.Ordinal))
+                        {
+                            try
+                            {
+                                var names = string.Join(", ", info.Definition.CustomAttributes.Select(attr => attr.AttributeTypeName));
+                                File.AppendAllText("/tmp/obfuscar_debug.log", $"Saving {info.Name} assembly attrs: {names}\n");
+                                foreach (var typeDef in info.Definition.MainModule.Types)
+                                {
+                                    if (typeDef.Properties.Count == 0)
+                                        continue;
+                                    File.AppendAllText("/tmp/obfuscar_debug.log",
+                                        $"  Type {typeDef.FullName} props: {string.Join(", ", typeDef.Properties.Select(p => p.Name + "[A:" + p.CustomAttributes.Count + "]"))}\n");
+                                    foreach (var prop in typeDef.Properties)
+                                    {
+                                        foreach (var attr in prop.CustomAttributes)
+                                        {
+                                            var named = string.Join(", ", attr.Properties.Select(p =>
+                                                $"{p.Name}:{p.Argument?.Type?.FullName}={p.Argument?.Value}"));
+                                            File.AppendAllText("/tmp/obfuscar_debug.log",
+                                                $"    Prop {prop.Name} attr {attr.AttributeTypeName} named [{named}]\n");
+                                        }
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                // ignore logging failures
+                            }
+                        }
+
                         var hasPublicKey = info.Definition.Name.PublicKey != null && info.Definition.Name.PublicKey.Length > 0;
                         if (hasPublicKey)
                         {
@@ -876,12 +906,55 @@ namespace Obfuscar
 
                     i++;
                 }
+
+                UpdateMethodBodyTypeReferences(reference, oldTypeKey, newTypeKey);
             }
 
             type.Namespace = newTypeKey.Namespace;
             type.Name = newTypeKey.Name;
             Mapping.UpdateType(unrenamedTypeKey, ObfuscationStatus.Renamed,
                 string.Format("[{0}]{1}", newTypeKey.Scope, type));
+        }
+
+        private static void UpdateMethodBodyTypeReferences(AssemblyInfo reference, TypeKey oldTypeKey, TypeKey newTypeKey)
+        {
+            foreach (var typeDef in reference.GetAllTypes())
+            {
+                if (typeDef is not MutableTypeDefinition type)
+                    continue;
+
+                foreach (var method in type.Methods)
+                {
+                    if (method.Body == null)
+                        continue;
+
+                    foreach (var variable in method.Body.Variables)
+                    {
+                        UpdateTypeReference(oldTypeKey, newTypeKey, variable.VariableType);
+                    }
+
+                    foreach (var handler in method.Body.ExceptionHandlers)
+                    {
+                        UpdateTypeReference(oldTypeKey, newTypeKey, handler.CatchType);
+                    }
+                }
+            }
+        }
+
+        private static void UpdateTypeReference(TypeKey oldTypeKey, TypeKey newTypeKey, TypeReference typeRef)
+        {
+            if (typeRef == null)
+                return;
+
+            if (!oldTypeKey.Matches(typeRef))
+                return;
+
+            var elementType = typeRef.GetElementType();
+            if (elementType == null)
+                return;
+
+            elementType.Namespace = newTypeKey.Namespace;
+            elementType.Name = newTypeKey.Name;
         }
 
         private Dictionary<ParamSig, NameGroup> GetSigNames(
@@ -997,7 +1070,7 @@ namespace Obfuscar
             else
             {
                 bool keepForMarkedOnly = Project.Settings.MarkedOnly &&
-                    (prop.MarkedToRename() == true || prop.DeclaringType?.MarkedToRename() == true);
+                    (prop.MarkedToRename() == true || prop.DeclaringType?.MarkedToRenameForMembers() == true);
 
                 var hasCustomAttributes = prop.HasCustomAttributes;
                 if (hasCustomAttributes || Project.Settings.KeepProperties || keepForMarkedOnly)
@@ -1560,7 +1633,6 @@ namespace Obfuscar
 
                 //Add one
                 module.CustomAttributes.Add(new MutableCustomAttribute(suppressCtorRef));
-                module.Assembly?.CustomAttributes.Add(new MutableCustomAttribute(suppressCtorRef));
             }
         }
 
