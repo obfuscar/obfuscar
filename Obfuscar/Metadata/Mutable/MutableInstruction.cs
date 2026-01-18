@@ -7,7 +7,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Represents an IL instruction in the mutable object model.
-    /// This replaces Mono.Cecil.Cil.Instruction.
+    /// This replaces the legacy Cecil Instruction.
     /// </summary>
     public class MutableInstruction : IInstruction
     {

@@ -2,7 +2,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Standard IL opcodes.
-    /// This replaces Mono.Cecil.Cil.OpCodes.
+    /// This replaces the legacy Cecil OpCodes.
     /// </summary>
     public static class MutableOpCodes
     {

@@ -11,7 +11,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Reads assemblies into the mutable object model using System.Reflection.Metadata.
-    /// This replaces the need for Mono.Cecil.AssemblyDefinition.ReadAssembly().
+    /// This replaces the need for legacy Mono.Cecil.AssemblyDefinition.ReadAssembly().
     /// </summary>
     public class MutableAssemblyReader : IDisposable
     {

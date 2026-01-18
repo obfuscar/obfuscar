@@ -6,7 +6,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Represents a custom attribute in the mutable object model.
-    /// This replaces Mono.Cecil.CustomAttribute.
+    /// This replaces legacy Mono.Cecil.CustomAttribute.
     /// </summary>
     public class MutableCustomAttribute : ICustomAttribute
     {

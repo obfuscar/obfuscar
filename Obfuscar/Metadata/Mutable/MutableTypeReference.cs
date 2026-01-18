@@ -6,7 +6,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Represents a type reference in the mutable object model.
-    /// This replaces Mono.Cecil.TypeReference.
+    /// This replaces the legacy Cecil TypeReference.
     /// </summary>
     public class MutableTypeReference : IType
     {

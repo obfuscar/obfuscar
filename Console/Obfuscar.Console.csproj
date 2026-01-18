@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
+    <LangVersion>latest</LangVersion>
     <TargetFramework>net462</TargetFramework>
     <OutputType>Exe</OutputType>
     <RootNamespace>Obfuscar</RootNamespace>

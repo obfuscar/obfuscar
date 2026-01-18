@@ -7,7 +7,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Represents a type definition in the mutable object model.
-    /// This replaces Mono.Cecil.TypeDefinition.
+    /// This replaces the legacy Cecil TypeDefinition.
     /// </summary>
     public class MutableTypeDefinition : MutableTypeReference, ITypeDefinition
     {

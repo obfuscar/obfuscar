@@ -4,7 +4,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Helper class for emitting IL instructions into a method body.
-    /// This replaces Mono.Cecil.Cil.ILProcessor.
+    /// This replaces legacy Mono.Cecil.Cil.ILProcessor.
     /// </summary>
     public class MutableILProcessor
     {

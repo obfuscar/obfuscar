@@ -2,7 +2,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Base class for embedded resources in a module.
-    /// This replaces Mono.Cecil.Resource.
+    /// This replaces legacy Mono.Cecil.Resource.
     /// </summary>
     public abstract class MutableResource
     {
@@ -24,7 +24,7 @@ namespace Obfuscar.Metadata.Mutable
 
     /// <summary>
     /// Represents an embedded resource.
-    /// This replaces Mono.Cecil.EmbeddedResource.
+    /// This replaces legacy Mono.Cecil.EmbeddedResource.
     /// </summary>
     public class MutableEmbeddedResource : MutableResource
     {
@@ -62,7 +62,7 @@ namespace Obfuscar.Metadata.Mutable
 
     /// <summary>
     /// Represents a linked resource.
-    /// This replaces Mono.Cecil.LinkedResource.
+    /// This replaces legacy Mono.Cecil.LinkedResource.
     /// </summary>
     public class MutableLinkedResource : MutableResource
     {
@@ -92,7 +92,7 @@ namespace Obfuscar.Metadata.Mutable
 
     /// <summary>
     /// Represents an assembly-linked resource.
-    /// This replaces Mono.Cecil.AssemblyLinkedResource.
+    /// This replaces legacy Mono.Cecil.AssemblyLinkedResource.
     /// </summary>
     public class MutableAssemblyLinkedResource : MutableResource
     {

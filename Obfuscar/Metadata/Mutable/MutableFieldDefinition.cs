@@ -6,7 +6,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Represents a field reference in the mutable object model.
-    /// This replaces Mono.Cecil.FieldReference.
+    /// This replaces legacy Mono.Cecil.FieldReference.
     /// </summary>
     public class MutableFieldReference : IField
     {
@@ -66,7 +66,7 @@ namespace Obfuscar.Metadata.Mutable
 
     /// <summary>
     /// Represents a field definition in the mutable object model.
-    /// This replaces Mono.Cecil.FieldDefinition.
+    /// This replaces legacy Mono.Cecil.FieldDefinition.
     /// </summary>
     public class MutableFieldDefinition : MutableFieldReference, IFieldDefinition
     {

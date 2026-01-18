@@ -5,7 +5,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Represents a property definition in the mutable object model.
-    /// This replaces Mono.Cecil.PropertyDefinition.
+    /// This replaces legacy Mono.Cecil.PropertyDefinition.
     /// </summary>
     public class MutablePropertyDefinition : IPropertyDefinition
     {
@@ -120,7 +120,7 @@ namespace Obfuscar.Metadata.Mutable
 
     /// <summary>
     /// Represents an event definition in the mutable object model.
-    /// This replaces Mono.Cecil.EventDefinition.
+    /// This replaces legacy Mono.Cecil.EventDefinition.
     /// </summary>
     public class MutableEventDefinition : IEventDefinition
     {

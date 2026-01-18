@@ -6,7 +6,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Provides built-in type references for a module.
-    /// This replaces Mono.Cecil.TypeSystem.
+    /// This replaces legacy Mono.Cecil.TypeSystem.
     /// </summary>
     public class MutableTypeSystem
     {

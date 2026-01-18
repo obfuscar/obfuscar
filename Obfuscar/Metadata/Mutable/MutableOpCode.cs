@@ -4,7 +4,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Represents an IL opcode in the mutable object model.
-    /// This replaces Mono.Cecil.Cil.OpCode.
+    /// This replaces legacy Mono.Cecil.Cil.OpCode.
     /// </summary>
     public readonly struct MutableOpCode
     {

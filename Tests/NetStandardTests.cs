@@ -67,7 +67,7 @@ namespace ObfuscarTests
         public void CheckNetStandard()
         {
 #if NETCOREAPP
-            // IMPORANT: Hit a Mono Cecil resolution dead loop.
+            // IMPORTANT: Hit a legacy Mono.Cecil resolution dead loop.
             return;
 #endif
             string outputPath = TestHelper.OutputPath;

@@ -5,7 +5,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Represents a module definition in the mutable object model.
-    /// This replaces Mono.Cecil.ModuleDefinition.
+    /// This replaces legacy Mono.Cecil.ModuleDefinition.
     /// </summary>
     public class MutableModuleDefinition : IDisposable
     {

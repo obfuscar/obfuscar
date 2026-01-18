@@ -80,7 +80,7 @@ namespace ObfuscarTests
             Assert.True(type.Status == ObfuscationStatus.Renamed, "Type should have been renamed.");
         }
 
-        // TODO: till Mono Cecil support overwriting.         [Fact]
+        // TODO: till legacy Mono.Cecil supports overwriting.         [Fact]
         public void CheckOverwriting()
         {
             string xml = string.Format(

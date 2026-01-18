@@ -8,7 +8,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Represents a method reference in the mutable object model.
-    /// This replaces Mono.Cecil.MethodReference.
+    /// This replaces legacy Mono.Cecil.MethodReference.
     /// </summary>
     public class MutableMethodReference
     {
@@ -90,7 +90,7 @@ namespace Obfuscar.Metadata.Mutable
 
     /// <summary>
     /// Represents a method definition in the mutable object model.
-    /// This replaces Mono.Cecil.MethodDefinition.
+    /// This replaces legacy Mono.Cecil.MethodDefinition.
     /// </summary>
     public class MutableMethodDefinition : MutableMethodReference, IMethodDefinition
     {
@@ -311,7 +311,7 @@ namespace Obfuscar.Metadata.Mutable
 
     /// <summary>
     /// Represents a method parameter.
-    /// This replaces Mono.Cecil.ParameterDefinition.
+    /// This replaces legacy Mono.Cecil.ParameterDefinition.
     /// </summary>
     public class MutableParameterDefinition : IParameter
     {

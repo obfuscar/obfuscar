@@ -11,13 +11,13 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Writes mutable assemblies to PE files using System.Reflection.Metadata.
-    /// This replaces the need for Mono.Cecil.AssemblyDefinition.Write().
+    /// This replaces the need for legacy Cecil AssemblyDefinition.Write().
     /// </summary>
     /// <remarks>
     /// <para>
     /// The writer translates the mutable object model to SRM's MetadataBuilder
     /// and uses PEBuilder to produce the final PE file. This is a complete
-    /// re-implementation of assembly writing without any Cecil dependency.
+    /// Re-implementation of assembly writing without any Cecil dependency.
     /// </para>
     /// <para>
     /// The writing process:
@@ -457,7 +457,8 @@ namespace Obfuscar.Metadata.Mutable
 
             try
             {
-                File.AppendAllText("/tmp/obfuscar_debug.log", message + Environment.NewLine);
+                // Use the library logger instead of ad-hoc file logging.
+                Obfuscar.LoggerService.Logger.LogDebug(message);
             }
             catch
             {
@@ -920,7 +921,7 @@ namespace Obfuscar.Metadata.Mutable
                 {
                     try
                     {
-                        File.AppendAllText("/tmp/obfuscar_debug.log", $"Custom attribute skipped: {attr?.AttributeTypeName}\n");
+                        Obfuscar.LoggerService.Logger.LogDebug($"Custom attribute skipped: {attr?.AttributeTypeName}");
                     }
                     catch
                     {

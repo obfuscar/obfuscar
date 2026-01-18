@@ -5,7 +5,7 @@ namespace Obfuscar.Metadata.Mutable
 {
     /// <summary>
     /// Represents a method body containing IL instructions and local variables.
-    /// This replaces Mono.Cecil.Cil.MethodBody.
+    /// This replaces legacy Mono.Cecil.Cil.MethodBody.
     /// </summary>
     public class MutableMethodBody : IMethodBody
     {
@@ -88,7 +88,7 @@ namespace Obfuscar.Metadata.Mutable
 
     /// <summary>
     /// Represents a local variable in a method body.
-    /// This replaces Mono.Cecil.Cil.VariableDefinition.
+    /// This replaces legacy Mono.Cecil.Cil.VariableDefinition.
     /// </summary>
     public class MutableVariableDefinition : IVariableDefinition
     {
@@ -122,7 +122,7 @@ namespace Obfuscar.Metadata.Mutable
 
     /// <summary>
     /// Represents an exception handler in a method body.
-    /// This replaces Mono.Cecil.Cil.ExceptionHandler.
+    /// This replaces legacy Mono.Cecil.Cil.ExceptionHandler.
     /// </summary>
     public class MutableExceptionHandler : IExceptionHandler
     {
