@@ -224,9 +224,8 @@ namespace Obfuscar
             if (string.IsNullOrEmpty(decorator) && (decoratorAll == null || decoratorAll.Length == 0))
                 return;
 
-            foreach (var typeDef in assembly.GetAllTypeDefinitions())
+            foreach (var type in assembly.GetAllTypes())
             {
-                var type = assembly.CreateTypeAdapter(typeDef);
                 if (MatchesDecorator(type))
                 {
                     AddDecoratorType(type);

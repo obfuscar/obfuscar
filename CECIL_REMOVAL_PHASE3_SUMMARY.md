@@ -144,6 +144,39 @@ Implementing a complete PE writer using System.Reflection.Metadata.Ecma335 is a 
 - `Obfuscar/Metadata/AssemblyWriterFactory.cs` - Dependency injection
 - `Obfuscar/Obfuscator.cs` - Integration with factory
 
+## Phase 4: Type Definition Abstraction (Current)
+
+### Completed Steps
+1. **ITypeDefinition Interface** - Comprehensive type definition abstraction with methods, properties, events, fields, nested types, custom attributes
+2. **CecilTypeDefinitionAdapter** - Cecil-backed implementation exposing all ITypeDefinition members
+3. **IMethodDefinition, IPropertyDefinition, IEventDefinition, IFieldDefinition** - Extended definition interfaces
+4. **CecilMethodDefinitionAdapter, CecilPropertyDefinitionAdapter, CecilEventDefinitionAdapter** - Cecil adapters for all member types
+5. **IILProcessor Abstraction** - IL manipulation abstraction with CecilILProcessor implementation
+6. **AssemblyInfo.GetAllTypes()** - New method returning `IEnumerable<ITypeDefinition>` for Cecil-free type iteration
+7. **C# 14 `field` keyword fixes** - Updated adapters to avoid reserved keyword conflicts
+
+### Files Added (Phase 4)
+- `Obfuscar/Metadata/Abstractions/IAssembly.cs` - Assembly abstraction
+- `Obfuscar/Metadata/Abstractions/IModule.cs` - Module abstraction with types enumeration
+- `Obfuscar/Metadata/Abstractions/IDefinitions.cs` - All extended definition interfaces
+- `Obfuscar/Metadata/Abstractions/IILProcessor.cs` - IL manipulation abstraction
+- `Obfuscar/Metadata/Adapters/CecilAssemblyAdapter.cs` - Cecil IAssembly/IModule adapters
+- `Obfuscar/Metadata/Adapters/CecilTypeDefinitionAdapter.cs` - Cecil ITypeDefinition adapter
+- `Obfuscar/Metadata/Adapters/CecilMethodDefinitionAdapter.cs` - Cecil IMethodDefinition adapter
+- `Obfuscar/Metadata/Adapters/CecilPropertyEventFieldAdapters.cs` - Property/Event/Field adapters
+- `Obfuscar/Metadata/Adapters/CecilILProcessor.cs` - Cecil IILProcessor implementation
+
+### Migration Strategy
+The key helpers (`TypeKey`, `MethodKey`, `FieldKey`, `PropertyKey`, `EventKey`) already support abstraction interfaces alongside Cecil types. This enables gradual migration:
+
+1. **Callers can use either**: `new TypeKey(TypeDefinition)` or `new TypeKey(IType)`
+2. **Adapters expose underlying Cecil**: `CecilTypeDefinitionAdapter.Definition` for interop
+3. **New code should use**: `AssemblyInfo.GetAllTypes()` instead of `GetAllTypeDefinitions()`
+
+### Current Cecil Reference Count
+- **77 files** still have `using Mono.Cecil` directives
+- **Key consumers** to migrate: `AssemblyInfo.cs`, `InheritMap.cs`, `Obfuscator.cs`, test files
+
 ## Conclusion
 
 The abstraction layer is now in place and working. Cecil remains the active writer with full functionality preserved. The SRM writer foundation is ready for incremental development without breaking existing functionality or tests.
@@ -152,6 +185,4 @@ This approach balances:
 - **Risk**: Minimal - Cecil still handles all writes
 - **Progress**: Clear - foundation established
 - **Future**: Flexible - SRM implementation can proceed at own pace
-- **Compatibility**: Perfect - all tests pass
-
-The project is well-positioned for the next phase of development whether that's immediate full SRM implementation or a more gradual transition.
+- **Compatibility**: Perfect - all tests pass (107/107)

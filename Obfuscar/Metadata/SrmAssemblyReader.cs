@@ -62,8 +62,27 @@ namespace Obfuscar.Metadata
 
         // Materialized AssemblyDefinition (lazy)
         private Mono.Cecil.AssemblyDefinition materializedAssembly;
+        private Abstractions.IAssembly assemblyAbstraction;
 
+        [System.Obsolete("Use Assembly property instead. This is for migration compatibility only.")]
         public Mono.Cecil.AssemblyDefinition AssemblyDefinition => materializedAssembly ?? throw new NotSupportedException("AssemblyDefinition not materialized yet. Call CreateAssemblyDefinition().");
+
+        /// <summary>
+        /// Gets the assembly through the Cecil-free abstraction.
+        /// </summary>
+        public Abstractions.IAssembly Assembly
+        {
+            get
+            {
+                if (assemblyAbstraction == null)
+                {
+                    // Ensure the Cecil assembly is materialized first
+                    CreateAssemblyDefinition();
+                    assemblyAbstraction = new Adapters.CecilAssemblyAdapter(materializedAssembly, this);
+                }
+                return assemblyAbstraction;
+            }
+        }
 
         public MetadataReader MetadataReader { get; private set; }
 

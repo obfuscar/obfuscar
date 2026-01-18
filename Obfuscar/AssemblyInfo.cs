@@ -697,9 +697,54 @@ namespace Obfuscar
             }
         }
 
+        private IEnumerable<Metadata.Abstractions.ITypeDefinition> _cachedTypes;
+
+        /// <summary>
+        /// Gets all type definitions using the abstraction layer (Cecil-free interface).
+        /// This is the preferred method for new code during Cecil migration.
+        /// </summary>
+        public IEnumerable<Metadata.Abstractions.ITypeDefinition> GetAllTypes()
+        {
+            if (_cachedTypes != null)
+            {
+                return _cachedTypes;
+            }
+
+            var assemblyMarkedToRename = srmReader != null
+                ? SrmAttributeReader.GetMarkedToRenameForAssembly(srmReader.MetadataReader)
+                : definition.MarkedToRename();
+            if (!assemblyMarkedToRename)
+            {
+                return Array.Empty<Metadata.Abstractions.ITypeDefinition>();
+            }
+
+            try
+            {
+                // Use the IAssembly abstraction when available
+                if (srmReader?.Assembly?.MainModule != null)
+                {
+                    var result = new List<Metadata.Abstractions.ITypeDefinition>(srmReader.Assembly.MainModule.Types);
+                    return _cachedTypes = result;
+                }
+
+                // Fallback to Cecil-backed adapters
+                var types = new List<Metadata.Abstractions.ITypeDefinition>();
+                foreach (var typeDef in GetAllTypeDefinitions())
+                {
+                    types.Add(new Metadata.Adapters.CecilTypeDefinitionAdapter(typeDef, srmReader));
+                }
+                return _cachedTypes = types;
+            }
+            catch (Exception e)
+            {
+                throw new ObfuscarException(string.Format("Failed to get types for {0}", definition.Name), e);
+            }
+        }
+
         public void InvalidateCache()
         {
             _cached = null;
+            _cachedTypes = null;
         }
 
         public void PrepareDecoratorMatches()

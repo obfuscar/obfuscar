@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using Mono.Cecil;
+using Obfuscar.Metadata;
 using Obfuscar.Metadata.Abstractions;
 using Obfuscar.Metadata.Adapters;
 
@@ -68,7 +69,7 @@ namespace Obfuscar
         private readonly Dictionary<MethodKey, MethodGroup> methodGroups = new Dictionary<MethodKey, MethodGroup>();
 
         private readonly Dictionary<TypeKey, TypeKey[]> baseTypes = new Dictionary<TypeKey, TypeKey[]>();
-        private readonly Dictionary<TypeDefinition, TypeDescriptor> typeDescriptors = new Dictionary<TypeDefinition, TypeDescriptor>();
+        private readonly Dictionary<ITypeDefinition, TypeDescriptor> typeDescriptors = new Dictionary<ITypeDefinition, TypeDescriptor>();
         private readonly Dictionary<string, IType> typesByFullName = new Dictionary<string, IType>(StringComparer.Ordinal);
 
         public InheritMap(Project project)
@@ -77,30 +78,33 @@ namespace Obfuscar
             var typeInfos = new List<TypeInfo>();
             foreach (AssemblyInfo info in project.AssemblyList)
             {
-                foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+                foreach (ITypeDefinition type in info.GetAllTypes())
                 {
                     if (type.FullName == "<Module>")
                         continue;
 
-                    var adapter = info.CreateTypeAdapter(type);
-                    var typeKey = new TypeKey(adapter);
-                    typeInfos.Add(new TypeInfo(info, type, typeKey, adapter));
+                    var typeKey = new TypeKey(type);
+                    typeInfos.Add(new TypeInfo(info, type, typeKey));
 
-                    if (!typesByFullName.ContainsKey(adapter.FullName))
-                        typesByFullName[adapter.FullName] = adapter;
+                    if (!typesByFullName.ContainsKey(type.FullName))
+                        typesByFullName[type.FullName] = type;
                 }
             }
 
             foreach (var typeInfo in typeInfos)
             {
-                GetDescriptor(typeInfo.Definition);
+                GetDescriptor(typeInfo.TypeDef);
 
-                baseTypes[typeInfo.Key] = GetBaseTypes(typeInfo.Adapter);
+                baseTypes[typeInfo.Key] = GetBaseTypes(typeInfo.TypeDef);
 
                 int i = 0;
                 int j;
 
-                MethodKey[] methods = GetVirtualMethods(project.Cache, typeInfo.Definition, typeInfo.Owner);
+                // Get Cecil TypeDefinition for methods that still need it
+                TypeDefinition cecilType = typeInfo.TypeDef.TryGetCecilDefinition(out var td) ? td : null;
+                MethodKey[] methods = cecilType != null 
+                    ? GetVirtualMethods(project.Cache, cecilType, typeInfo.Owner)
+                    : Array.Empty<MethodKey>();
                 while (i < methods.Length)
                 {
                     MethodGroup group;
@@ -147,18 +151,16 @@ namespace Obfuscar
 
         private sealed class TypeInfo
         {
-            public TypeInfo(AssemblyInfo owner, TypeDefinition definition, TypeKey key, IType adapter)
+            public TypeInfo(AssemblyInfo owner, ITypeDefinition typeDef, TypeKey key)
             {
                 Owner = owner;
-                Definition = definition;
+                TypeDef = typeDef;
                 Key = key;
-                Adapter = adapter;
             }
 
             public AssemblyInfo Owner { get; }
-            public TypeDefinition Definition { get; }
+            public ITypeDefinition TypeDef { get; }
             public TypeKey Key { get; }
-            public IType Adapter { get; }
         }
 
         static bool MethodsMatch(MethodKey left, MethodKey right)
@@ -368,7 +370,9 @@ namespace Obfuscar
 
         public bool Inherits(TypeDefinition type, string interfaceFullName)
         {
-            var descriptor = GetDescriptor(type);
+            // Wrap in adapter for GetDescriptor
+            var adapter = new CecilTypeDefinitionAdapter(type, null);
+            var descriptor = GetDescriptor(adapter);
             if (descriptor == null)
                 return false;
 
@@ -426,18 +430,14 @@ namespace Obfuscar
             return false;
         }
 
-        private TypeDescriptor GetDescriptor(TypeDefinition type)
+        private TypeDescriptor GetDescriptor(ITypeDefinition type)
         {
             if (type == null)
                 return null;
 
             if (!typeDescriptors.TryGetValue(type, out var descriptor))
             {
-                var info = GetAssemblyInfoFor(type);
-                var adapter = info?.CreateTypeAdapter(type);
-                descriptor = adapter != null
-                    ? TypeDescriptor.FromType(adapter)
-                    : TypeDescriptor.FromDefinition(type);
+                descriptor = TypeDescriptor.FromType(type);
                 typeDescriptors[type] = descriptor;
             }
 

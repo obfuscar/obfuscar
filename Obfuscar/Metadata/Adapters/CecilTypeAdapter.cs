@@ -42,6 +42,6 @@ namespace Obfuscar.Metadata.Adapters
             type?.CustomAttributes?.Select(attr => attr.AttributeType.FullName) ?? Enumerable.Empty<string>();
 
         public IEnumerable<IField> Fields =>
-            type?.Fields?.Select(field => new CecilFieldAdapter(field)) ?? Enumerable.Empty<IField>();
+            type?.Fields?.Select(fld => new CecilFieldAdapter(fld)) ?? Enumerable.Empty<IField>();
     }
 }

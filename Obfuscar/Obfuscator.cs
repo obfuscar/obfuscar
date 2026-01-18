@@ -42,6 +42,8 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Obfuscar.Helpers;
+using Obfuscar.Metadata;
+using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar
 {
@@ -433,8 +435,10 @@ namespace Obfuscar
         {
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
-                foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+                foreach (var typeDef in info.GetAllTypes())
                 {
+                    if (!typeDef.TryGetCecilDefinition(out var type))
+                        continue;
                     foreach (MethodDefinition method in type.Methods)
                     {
                         // ReSharper disable once UnusedVariable
@@ -457,14 +461,17 @@ namespace Obfuscar
             foreach (var info in Project.AssemblyList)
             {
                 // loop through the types
-                foreach (var type in info.GetAllTypeDefinitions())
+                foreach (var typeDef in info.GetAllTypes())
                 {
-                    if (type.FullName == "<Module>")
+                    if (typeDef.FullName == "<Module>")
                     {
                         continue;
                     }
 
-                    var typeKey = new TypeKey(type);
+                    if (!typeDef.TryGetCecilDefinition(out var type))
+                        continue;
+
+                    var typeKey = new TypeKey(typeDef);
 
                     var nameGroups = new Dictionary<string, NameGroup>();
 
@@ -554,12 +561,15 @@ namespace Obfuscar
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 // loop through the types
-                foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+                foreach (var typeDef in info.GetAllTypes())
                 {
-                    if (type.FullName == "<Module>")
+                    if (typeDef.FullName == "<Module>")
                     {
                         continue;
                     }
+
+                    if (!typeDef.TryGetCecilDefinition(out var type))
+                        continue;
 
                     // rename the method parameters
                     foreach (MethodDefinition method in type.Methods)
@@ -567,7 +577,7 @@ namespace Obfuscar
 
                     string skip;
                     // rename the class parameters
-                    if (info.ShouldSkip(new TypeKey(type), Project.InheritMap, Project.Settings.KeepPublicApi,
+                    if (info.ShouldSkip(new TypeKey(typeDef), Project.InheritMap, Project.Settings.KeepPublicApi,
                         Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, 
                         Project.Settings.SkipGenerated, out skip))
                         continue;
@@ -616,21 +626,29 @@ namespace Obfuscar
 
                 // Save the original names of all types because parent (declaring) types of nested types may be already renamed.
                 // The names are used for the mappings file.
-                Dictionary<TypeDefinition, TypeKey> unrenamedTypeKeys =
-                    info.GetAllTypeDefinitions().ToDictionary(type => type, type => new TypeKey(type));
+                // Note: We cache the types list to ensure dictionary keys match during iteration
+                var allTypes = info.GetAllTypes().ToList();
+                var unrenamedTypeKeys = new Dictionary<ITypeDefinition, TypeKey>();
+                foreach (var td in allTypes)
+                {
+                    unrenamedTypeKeys[td] = new TypeKey(td);
+                }
 
                 // loop through the types
                 int typeIndex = 0;
-                foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+                foreach (var typeDef in allTypes)
                 {
-                    if (type.FullName == "<Module>")
+                    if (typeDef.FullName == "<Module>")
+                        continue;
+
+                    if (!typeDef.TryGetCecilDefinition(out var type))
                         continue;
 
                     if (type.FullName.IndexOf("<PrivateImplementationDetails>{", StringComparison.Ordinal) >= 0)
                         continue;
 
-                    TypeKey oldTypeKey = new TypeKey(type);
-                    TypeKey unrenamedTypeKey = unrenamedTypeKeys[type];
+                    TypeKey oldTypeKey = new TypeKey(typeDef);
+                    TypeKey unrenamedTypeKey = unrenamedTypeKeys[typeDef];
                     string fullName = type.FullName;
 
                     string skip;
@@ -924,14 +942,17 @@ namespace Obfuscar
 
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
-                foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+                foreach (var typeDef in info.GetAllTypes())
                 {
-                    if (type.FullName == "<Module>")
+                    if (typeDef.FullName == "<Module>")
                     {
                         continue;
                     }
 
-                    TypeKey typeKey = new TypeKey(type);
+                    if (!typeDef.TryGetCecilDefinition(out var type))
+                        continue;
+
+                    TypeKey typeKey = new TypeKey(typeDef);
 
                     int index = 0;
                     List<PropertyDefinition> propsToDrop = new List<PropertyDefinition>();
@@ -1060,14 +1081,17 @@ namespace Obfuscar
 
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
-                foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+                foreach (var typeDef in info.GetAllTypes())
                 {
-                    if (type.FullName == "<Module>")
+                    if (typeDef.FullName == "<Module>")
                     {
                         continue;
                     }
 
-                    TypeKey typeKey = new TypeKey(type);
+                    if (!typeDef.TryGetCecilDefinition(out var type))
+                        continue;
+
+                    TypeKey typeKey = new TypeKey(typeDef);
                     List<EventDefinition> evtsToDrop = new List<EventDefinition>();
                     foreach (EventDefinition evt in type.Events)
                     {
@@ -1131,14 +1155,17 @@ namespace Obfuscar
             // Do not remove methods marked as Skipped here; rename phase will consult mapping statuses
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
-                foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+                foreach (var typeDef in info.GetAllTypes())
                 {
-                    if (type.FullName == "<Module>")
+                    if (typeDef.FullName == "<Module>")
                     {
                         continue;
                     }
 
-                    TypeKey typeKey = new TypeKey(type);
+                    if (!typeDef.TryGetCecilDefinition(out var type))
+                        continue;
+
+                    TypeKey typeKey = new TypeKey(typeDef);
 
                     Dictionary<ParamSig, NameGroup> sigNames = GetSigNames(baseSigNames, typeKey);
 
@@ -1161,14 +1188,17 @@ namespace Obfuscar
                     }
                 }
 
-                foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+                foreach (var typeDef in info.GetAllTypes())
                 {
-                    if (type.FullName == "<Module>")
+                    if (typeDef.FullName == "<Module>")
                     {
                         continue;
                     }
 
-                    TypeKey typeKey = new TypeKey(type);
+                    if (!typeDef.TryGetCecilDefinition(out var type))
+                        continue;
+
+                    TypeKey typeKey = new TypeKey(typeDef);
                     Dictionary<ParamSig, NameGroup> sigNames = GetSigNames(baseSigNames, typeKey);
 
                     // second pass...marked virtuals and anything not skipped get renamed
@@ -1488,12 +1518,15 @@ namespace Obfuscar
                 StringSqueeze container = new StringSqueeze(library);
 
                 // Look for all string load operations and replace them with calls to indiviual methods in our new class
-                foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+                foreach (var typeDef in info.GetAllTypes())
                 {
-                    if (type.FullName == "<Module>")
+                    if (typeDef.FullName == "<Module>")
                     {
                         continue;
                     }
+
+                    if (!typeDef.TryGetCecilDefinition(out var type))
+                        continue;
 
                     // FIXME: Figure out why this exists if it is never used.
                     // TypeKey typeKey = new TypeKey(type);
@@ -1512,9 +1545,12 @@ namespace Obfuscar
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 info.Definition.CleanAttributes();
-                foreach (TypeDefinition type in info.GetAllTypeDefinitions())
+                foreach (var typeDef in info.GetAllTypes())
                 {
-                    if (type.FullName == "<Module>")
+                    if (typeDef.FullName == "<Module>")
+                        continue;
+
+                    if (!typeDef.TryGetCecilDefinition(out var type))
                         continue;
 
                     type.CleanAttributes();

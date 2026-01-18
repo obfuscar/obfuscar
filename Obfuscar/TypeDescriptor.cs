@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Obfuscar.Helpers;
+using Obfuscar.Metadata;
 using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar
@@ -86,7 +87,16 @@ namespace Obfuscar
                 throw new ArgumentNullException(nameof(type));
 
             var attributes = type.CustomAttributeTypeFullNames?.ToArray() ?? Array.Empty<string>();
-            return new TypeDescriptor(null, type.FullName, type.IsPublic, type.IsSerializable, type.IsSealed, type.IsAbstract, type.IsEnum, attributes);
+            
+            // Extract underlying Cecil TypeDefinition if available for attribute checking
+            TypeDefinition typeDef = null;
+            if (type is ITypeDefinition typeDefInterface &&
+                typeDefInterface.TryGetCecilDefinition(out var cecilType))
+            {
+                typeDef = cecilType;
+            }
+            
+            return new TypeDescriptor(typeDef, type.FullName, type.IsPublic, type.IsSerializable, type.IsSealed, type.IsAbstract, type.IsEnum, attributes);
         }
 
         public static TypeDescriptor FromFullName(string fullName)

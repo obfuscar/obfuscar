@@ -1,11 +1,21 @@
 using System;
-using System.IO;
 using Mono.Cecil;
+using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar.Metadata
 {
     public interface IAssemblyReader : IDisposable
     {
+        /// <summary>
+        /// Gets the assembly abstraction (Cecil-free interface).
+        /// </summary>
+        IAssembly Assembly { get; }
+
+        /// <summary>
+        /// Gets the underlying Cecil AssemblyDefinition for migration compatibility.
+        /// This property will be removed once Cecil is fully eliminated.
+        /// </summary>
+        [Obsolete("Use Assembly property instead. This is for migration compatibility only.")]
         AssemblyDefinition AssemblyDefinition { get; }
     }
 

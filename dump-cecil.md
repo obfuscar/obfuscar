@@ -17,6 +17,69 @@ We already have SRM-based readers/writers working in `Metadata/SrmAssemblyReader
 - Improved SRM full-name handling for nested types in `SrmHandleTypeAdapter`/`SrmHandleFieldAdapter` for consistent keys.
 - Build status: `dotnet build Obfuscar/Obfuscar.csproj` succeeds (warnings only).
 
+## Recent progress (Phase 4)
+- **ITypeDefinition abstraction** - Extended `IType` with full `ITypeDefinition` interface including Methods, Properties, Events, Fields, NestedTypes, GenericParameters, CustomAttributes
+- **Cecil adapters** - Comprehensive Cecil adapters: `CecilTypeDefinitionAdapter`, `CecilMethodDefinitionAdapter`, `CecilPropertyDefinitionAdapter`, `CecilEventDefinitionAdapter`, `CecilFieldDefinitionAdapter`
+- **IILProcessor abstraction** - IL manipulation interface with `CecilILProcessor` implementation for method body editing
+- **AssemblyInfo.GetAllTypes()** - New method returning `IEnumerable<ITypeDefinition>` as Cecil-free alternative to `GetAllTypeDefinitions()`
+- **MigrationBridge helpers** - Extension methods (`TryGetCecilDefinition`, `GetCecilDefinition`) for extracting underlying Cecil types during gradual migration
+- **C# 14 compatibility** - Fixed `field` keyword conflicts in adapters by renaming variables
+- **Test verification** - All 107 tests pass with the new abstraction layer
+
+### Completed migrations (Phase 4.1)
+- **InheritMap.cs** - Constructor now uses `GetAllTypes()` with `ITypeDefinition`. Uses `MigrationBridge.TryGetCecilDefinition()` for Cecil-specific operations like `GetVirtualMethods()`. `TypeInfo` class updated to hold `ITypeDefinition`.
+- **TypeTester.cs** - `InitializeDecoratorMatches()` migrated to use `GetAllTypes()` directly, eliminating need for `CreateTypeAdapter()` call.
+- **Obfuscator.cs** - All 11 `GetAllTypeDefinitions()` usages migrated to `GetAllTypes()`:
+  - `RenameTypes()` - Uses `GetAllTypes()` with cached `.ToList()` for dictionary key stability
+  - `RenameProperties()` - Type iteration loop migrated
+  - `RenameEvents()` - Type iteration loop migrated
+  - `RenameMethods()` - Both passes migrated
+  - `HideStrings()` - Type iteration loop migrated
+  - `PostProcessing()` - Type iteration loop migrated
+- **TypeDescriptor.cs** - `FromType(IType)` now extracts underlying Cecil `TypeDefinition` via `TryGetCecilDefinition()` for attribute checking
+- **CecilTypeDefinitionAdapter.cs** - Added `Equals`/`GetHashCode` based on underlying Cecil type for dictionary key usage
+
+### Test Status (Phase 4.1 Complete)
+- **105/107 tests passing** (2 test failures related to nested type handling)
+- Failing tests: `SkipNestedTypeTests.CheckNestedTypes`, `ObfuscationAttributeTests.CheckExclusion`
+- Issue appears to be nested type skip pattern matching - under investigation
+
+### Files added (Phase 4)
+- `Obfuscar/Metadata/Abstractions/IAssembly.cs` - Top-level assembly abstraction
+- `Obfuscar/Metadata/Abstractions/IModule.cs` - Module abstraction with Types enumeration
+- `Obfuscar/Metadata/Abstractions/IDefinitions.cs` - All extended definition interfaces
+- `Obfuscar/Metadata/Abstractions/IILProcessor.cs` - IL manipulation interface
+- `Obfuscar/Metadata/Adapters/CecilAssemblyAdapter.cs` - IAssembly/IModule Cecil adapters
+- `Obfuscar/Metadata/Adapters/CecilTypeDefinitionAdapter.cs` - ITypeDefinition adapter
+- `Obfuscar/Metadata/Adapters/CecilMethodDefinitionAdapter.cs` - IMethodDefinition adapter
+- `Obfuscar/Metadata/Adapters/CecilPropertyEventFieldAdapters.cs` - Property/Event/Field adapters
+- `Obfuscar/Metadata/Adapters/CecilILProcessor.cs` - IILProcessor implementation
+- `Obfuscar/Metadata/MigrationBridge.cs` - Helper extensions for Cecil extraction during migration
+
+### Current Cecil reference status
+- **77 files** still have `using Mono.Cecil` directives
+- **GetAllTypeDefinitions() usages**: 15 (down from 29)
+- **GetAllTypes() usages**: 6 (new abstraction-based method)
+- **Remaining files to migrate**: `AssemblyInfo.cs` (internal usages), `Obfuscator.cs` (11 usages)
+- Key helpers already support abstractions: `TypeKey`, `MethodKey`, `FieldKey`, `PropertyKey`, `EventKey`
+
+### Current Cecil reference status (Updated)
+- **GetAllTypeDefinitions() usages in Obfuscator.cs**: 0 (all migrated to GetAllTypes())
+- **GetAllTypes() usages**: 17+ (new abstraction-based method)
+- **Remaining files to migrate**: `AssemblyInfo.cs` (3 internal usages)
+
+### Known Issues
+- 2 test failures related to nested type handling:
+  - `SkipNestedTypeTests.CheckNestedTypes`: Type skip pattern not matching as expected
+  - `ObfuscationAttributeTests.CheckExclusion`: Nested class obfuscation behavior differs
+- Root cause appears to be in how skip patterns match nested type names after adapter conversion
+
+### Next steps
+1. **Fix remaining 2 test failures** - Investigate nested type skip pattern matching
+2. Migrate remaining `AssemblyInfo.cs` internal usages
+3. Update test helpers to use SRM-backed assertions
+4. Begin migrating actual obfuscation operations to work with abstractions
+
 ## Migration detail
 The migration succeeds when every remaining Cecil contract is matched by SRM adapters, the big metadata consumers adopt the adapters instead of raw Cecil definitions, and unit tests continue passing. Follow these sequential phases:
 
