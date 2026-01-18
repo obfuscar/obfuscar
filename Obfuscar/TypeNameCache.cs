@@ -26,36 +26,37 @@
 
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
+using Obfuscar.Metadata.Mutable;
 using Obfuscar.Helpers;
+using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar
 {
     static class TypeNameCache
     {
-        public static Dictionary<TypeReference, string> nameCache = new Dictionary<TypeReference, string>();
+        public static Dictionary<MutableTypeReference, string> nameCache = new Dictionary<MutableTypeReference, string>();
 
         /// <summary>
         /// Recursively builds a type name.
         /// </summary>
         /// <param name="builder">Builder the type name will be added to.</param>
         /// <param name="type">Type whose name is to be built.</param>
-        static void BuildTypeName(StringBuilder builder, TypeReference type)
+        static void BuildTypeName(StringBuilder builder, MutableTypeReference type)
         {
-            GenericParameter genParam = type as GenericParameter;
+            MutableGenericParameter genParam = type as MutableGenericParameter;
             if (genParam != null)
             {
                 builder.AppendFormat("!{0}", genParam.Position);
             }
             else
             {
-                GenericInstanceType genType = type as GenericInstanceType;
+                MutableGenericInstanceType genType = type as MutableGenericInstanceType;
                 if (genType != null)
                 {
                     builder.AppendFormat("[{2}]{0}.{1}<", genType.Namespace, genType.Name, type.GetScopeName());
                     for (int i = 0; i < genType.GenericArguments.Count; i++)
                     {
-                        TypeReference argType = genType.GenericArguments[i];
+                        MutableTypeReference argType = genType.GenericArguments[i];
 
                         if (i > 0)
                             builder.Append(',');
@@ -66,14 +67,14 @@ namespace Obfuscar
                 }
                 else
                 {
-                    ArrayType arrType = type as ArrayType;
+                    MutableArrayType arrType = type as MutableArrayType;
                     if (arrType != null)
                     {
                         BuildTypeName(builder, arrType.ElementType);
                         builder.Append("[]");
                     }
                     else
-                        builder.Append(string.Format("[{1}]{0}", type.FullName, type.GetScopeName()));
+                        builder.Append(string.Format("[{1}]{0}", type.GetFullName(), type.GetScopeName()));
                 }
             }
         }
@@ -82,7 +83,7 @@ namespace Obfuscar
         /// Builds a name for a type that can be used for comparing types.  Any generic parameters
         /// are replaced with their placeholder names instead of actual names (e.g., changes T to !0).
         /// </summary>
-        public static string GetTypeName(TypeReference type)
+        public static string GetTypeName(MutableTypeReference type)
         {
             lock (nameCache)
             {
@@ -94,6 +95,52 @@ namespace Obfuscar
                     name = builder.ToString();
 
                     nameCache[type] = name;
+                }
+                return name;
+            }
+        }
+
+        // String-based cache for abstraction layer types
+        private static Dictionary<string, string> stringNameCache = new Dictionary<string, string>();
+
+        /// <summary>
+        /// Gets a comparable type name from an IType abstraction.
+        /// For simple types, returns the full name with scope prefix.
+        /// </summary>
+        public static string GetTypeName(IType type)
+        {
+            if (type == null)
+                return string.Empty;
+
+            string key = $"{type.Scope}|{type.FullName}";
+            lock (stringNameCache)
+            {
+                if (!stringNameCache.TryGetValue(key, out string name))
+                {
+                    // For abstraction layer, we use the full name with scope
+                    // Generic handling is done at the adapter level
+                    name = $"[{type.Scope}]{type.FullName}";
+                    stringNameCache[key] = name;
+                }
+                return name;
+            }
+        }
+
+        /// <summary>
+        /// Gets a comparable type name from a parameter type full name.
+        /// </summary>
+        public static string GetTypeName(string parameterTypeFullName, string scope)
+        {
+            if (string.IsNullOrEmpty(parameterTypeFullName))
+                return string.Empty;
+
+            string key = $"{scope}|{parameterTypeFullName}";
+            lock (stringNameCache)
+            {
+                if (!stringNameCache.TryGetValue(key, out string name))
+                {
+                    name = $"[{scope}]{parameterTypeFullName}";
+                    stringNameCache[key] = name;
                 }
                 return name;
             }

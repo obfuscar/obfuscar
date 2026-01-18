@@ -1,12 +1,12 @@
-﻿using Mono.Cecil;
+﻿using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar.Helpers
 {
     internal static class FieldDefinitionExtensions
     {
-        public static bool IsPublic(this FieldDefinition field)
+        public static bool IsPublic(this IField field)
         {
-            return field != null && (field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly);
+            return field != null && field.IsFieldPublic();
         }
     }
 }

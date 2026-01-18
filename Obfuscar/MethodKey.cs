@@ -26,9 +26,9 @@
 
 using System;
 using MethodAttributes = System.Reflection.MethodAttributes;
-using Mono.Cecil;
-using Obfuscar.Metadata.Adapters;
+using Obfuscar.Helpers;
 using Obfuscar.Metadata.Abstractions;
+using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar
 {
@@ -37,22 +37,22 @@ namespace Obfuscar
         readonly int hashCode;
         private readonly IMethod methodAdapter;
 
-        public MethodKey(MethodDefinition method)
-            : this(new TypeKey((TypeDefinition) method.DeclaringType), method, new CecilMethodAdapter(method))
+        public MethodKey(MutableMethodDefinition method)
+            : this(new TypeKey(method?.DeclaringType), method, method)
         {
         }
 
-        public MethodKey(TypeKey typeKey, MethodDefinition method)
-            : this(typeKey, method, new CecilMethodAdapter(method))
+        public MethodKey(TypeKey typeKey, MutableMethodDefinition method)
+            : this(typeKey, method, method)
         {
         }
 
-        public MethodKey(MethodDefinition method, IMethod metadata)
-            : this(new TypeKey((TypeDefinition)method.DeclaringType), method, metadata ?? new CecilMethodAdapter(method))
+        public MethodKey(MutableMethodDefinition method, IMethod metadata)
+            : this(new TypeKey(method?.DeclaringType), method, metadata ?? method)
         {
         }
 
-        private MethodKey(TypeKey typeKey, MethodDefinition method, IMethod metadata)
+        private MethodKey(TypeKey typeKey, MutableMethodDefinition method, IMethod metadata)
             : base(metadata)
         {
             this.TypeKey = typeKey;
@@ -69,27 +69,26 @@ namespace Obfuscar
 
         public MethodAttributes MethodAttributes
         {
-            get { return methodAdapter?.Attributes ?? (MethodAttributes) Method.Attributes; }
+            get { return methodAdapter?.Attributes ?? Method.Attributes; }
         }
 
-        public TypeDefinition DeclaringType
+        public MutableTypeDefinition DeclaringType
         {
-            get { return Method != null ? (TypeDefinition) Method.DeclaringType : null; }
+            get { return Method?.DeclaringType as MutableTypeDefinition; }
         }
 
         public TypeKey TypeKey { get; }
 
-        public MethodDefinition Method { get; }
+        public MutableMethodDefinition Method { get; }
 
         public IMethod MethodAdapter => methodAdapter;
 
-        public bool Matches(MemberReference member)
+        public bool Matches(MutableMethodReference member)
         {
-            MethodReference methodRef = member as MethodReference;
-            if (methodRef != null)
+            if (member != null)
             {
-                if (TypeKey.Matches(methodRef.DeclaringType))
-                    return MethodMatch(Method, methodRef);
+                if (TypeKey.Matches(member.DeclaringType))
+                    return MethodMatch(Method, member);
             }
 
             return false;
@@ -147,7 +146,7 @@ namespace Obfuscar
         }
 
         // taken from https://github.com/mono/mono/blob/master/mcs/tools/linker/Mono.Linker.Steps/TypeMapStep.cs
-        internal static bool MethodMatch(MethodDefinition candidate, MethodReference method)
+        internal static bool MethodMatch(MutableMethodDefinition candidate, MutableMethodReference method)
         {
             //if (!candidate.IsVirtual)
             //    return false;
@@ -168,26 +167,7 @@ namespace Obfuscar
             return true;
         }
 
-        private static bool TypeMatch(IModifierType a, IModifierType b)
-        {
-            if (!TypeMatch(a.ModifierType, b.ModifierType))
-                return false;
-
-            return TypeMatch(a.ElementType, b.ElementType);
-        }
-
-        private static bool TypeMatch(TypeSpecification a, TypeSpecification b)
-        {
-            if (a is GenericInstanceType)
-                return TypeMatch((GenericInstanceType) a, (GenericInstanceType) b);
-
-            if (a is IModifierType)
-                return TypeMatch((IModifierType) a, (IModifierType) b);
-
-            return TypeMatch(a.ElementType, b.ElementType);
-        }
-
-        private static bool TypeMatch(GenericInstanceType a, GenericInstanceType b)
+        private static bool TypeMatch(MutableGenericInstanceType a, MutableGenericInstanceType b)
         {
             if (!TypeMatch(a.ElementType, b.ElementType))
                 return false;
@@ -205,20 +185,51 @@ namespace Obfuscar
             return true;
         }
 
-        private static bool TypeMatch(TypeReference a, TypeReference b)
+        private static bool TypeMatch(MutableTypeReference a, MutableTypeReference b)
         {
-            if (a is GenericParameter)
+            if (a == null || b == null)
+                return a == b;
+
+            if (a is MutableGenericParameter || b is MutableGenericParameter)
                 return true;
 
-            if (a is TypeSpecification || b is TypeSpecification)
+            if (a is MutableGenericInstanceType ga)
             {
-                if (a.GetType() != b.GetType())
+                if (b is not MutableGenericInstanceType gb)
                     return false;
-
-                return TypeMatch((TypeSpecification) a, (TypeSpecification) b);
+                return TypeMatch(ga, gb);
             }
+            if (b is MutableGenericInstanceType)
+                return false;
 
-            return a.FullName == b.FullName;
+            if (a is MutableArrayType aa)
+            {
+                if (b is not MutableArrayType ab)
+                    return false;
+                return aa.Rank == ab.Rank && TypeMatch(aa.ElementType, ab.ElementType);
+            }
+            if (b is MutableArrayType)
+                return false;
+
+            if (a is MutableByReferenceType bra)
+            {
+                if (b is not MutableByReferenceType brb)
+                    return false;
+                return TypeMatch(bra.ElementType, brb.ElementType);
+            }
+            if (b is MutableByReferenceType)
+                return false;
+
+            if (a is MutablePointerType pa)
+            {
+                if (b is not MutablePointerType pb)
+                    return false;
+                return TypeMatch(pa.ElementType, pb.ElementType);
+            }
+            if (b is MutablePointerType)
+                return false;
+
+            return a.GetFullName() == b.GetFullName();
         }
     }
 }

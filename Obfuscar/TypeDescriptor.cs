@@ -27,7 +27,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Mono.Cecil;
 using Obfuscar.Helpers;
 using Obfuscar.Metadata;
 using Obfuscar.Metadata.Abstractions;
@@ -36,7 +35,7 @@ namespace Obfuscar
 {
     class TypeDescriptor
     {
-        public TypeDescriptor(TypeDefinition typeDefinition, string fullName, bool isPublic, bool isSerializable, bool isSealed, bool isAbstract, bool isEnum, IReadOnlyList<string> customAttributeTypeFullNames)
+        public TypeDescriptor(ITypeDefinition typeDefinition, string fullName, bool isPublic, bool isSerializable, bool isSealed, bool isAbstract, bool isEnum, IReadOnlyList<string> customAttributeTypeFullNames)
         {
             TypeDefinition = typeDefinition;
             FullName = fullName ?? string.Empty;
@@ -49,7 +48,7 @@ namespace Obfuscar
                 customAttributeTypeFullNames ?? Array.Empty<string>();
         }
 
-        public TypeDefinition TypeDefinition { get; }
+        public ITypeDefinition TypeDefinition { get; }
 
         public string FullName { get; }
 
@@ -69,16 +68,15 @@ namespace Obfuscar
 
         public bool HasCustomAttributes => CustomAttributeTypeFullNames != null && CustomAttributeTypeFullNames.Count > 0;
 
-        public static TypeDescriptor FromDefinition(TypeDefinition type)
+        public static TypeDescriptor FromDefinition(ITypeDefinition type)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
 
-            var attributes = type.HasCustomAttributes
-                ? type.CustomAttributes.Select(a => a.AttributeType.FullName).ToArray()
-                : Array.Empty<string>();
+            var attributes = type.CustomAttributeTypeFullNames?.ToArray() ?? Array.Empty<string>();
+            var isPublic = IsTypePublic(type);
 
-            return new TypeDescriptor(type, type.FullName, type.IsTypePublic(), type.IsSerializable, type.IsSealed, type.IsAbstract, type.IsEnum, attributes);
+            return new TypeDescriptor(type, type.FullName, isPublic, type.IsSerializable, type.IsSealed, type.IsAbstract, type.IsEnum, attributes);
         }
 
         public static TypeDescriptor FromType(IType type)
@@ -88,16 +86,8 @@ namespace Obfuscar
 
             var attributes = type.CustomAttributeTypeFullNames?.ToArray() ?? Array.Empty<string>();
             var isPublic = IsTypePublic(type);
-            
-            // Extract underlying Cecil TypeDefinition if available for attribute checking
-            TypeDefinition typeDef = null;
-            if (type is ITypeDefinition typeDefInterface &&
-                typeDefInterface.TryGetCecilDefinition(out var cecilType))
-            {
-                typeDef = cecilType;
-            }
-            
-            return new TypeDescriptor(typeDef, type.FullName, isPublic, type.IsSerializable, type.IsSealed, type.IsAbstract, type.IsEnum, attributes);
+
+            return new TypeDescriptor(type as ITypeDefinition, type.FullName, isPublic, type.IsSerializable, type.IsSealed, type.IsAbstract, type.IsEnum, attributes);
         }
 
         public static TypeDescriptor FromFullName(string fullName)

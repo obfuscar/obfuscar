@@ -40,9 +40,13 @@ We already have SRM-based readers/writers working in `Metadata/SrmAssemblyReader
 - **CecilTypeDefinitionAdapter.cs** - Added `Equals`/`GetHashCode` based on underlying Cecil type for dictionary key usage
 
 ### Test Status (Phase 4.1 Complete)
-- **105/107 tests passing** (2 test failures related to nested type handling)
-- Failing tests: `SkipNestedTypeTests.CheckNestedTypes`, `ObfuscationAttributeTests.CheckExclusion`
-- Issue appears to be nested type skip pattern matching - under investigation
+- **107/107 tests passing** ✅
+- All nested type handling issues resolved
+
+### Completed migrations (Phase 4.2 - AssemblyInfo.cs)
+- **Line 422 loop** - Custom attribute collection migrated to `GetAllTypes()` with `TryGetCecilDefinition()`
+- **Line 773 loop** - Member reference collection (`getMemberReferences()`) migrated
+- **GetAllTypeDefinitions()** - Marked as `[Obsolete]` with migration guidance
 
 ### Files added (Phase 4)
 - `Obfuscar/Metadata/Abstractions/IAssembly.cs` - Top-level assembly abstraction
@@ -55,30 +59,37 @@ We already have SRM-based readers/writers working in `Metadata/SrmAssemblyReader
 - `Obfuscar/Metadata/Adapters/CecilPropertyEventFieldAdapters.cs` - Property/Event/Field adapters
 - `Obfuscar/Metadata/Adapters/CecilILProcessor.cs` - IILProcessor implementation
 - `Obfuscar/Metadata/MigrationBridge.cs` - Helper extensions for Cecil extraction during migration
+- `Obfuscar/Metadata/Abstractions/AbstractionExtensions.cs` - Extension methods for abstraction interfaces (NEW)
 
-### Current Cecil reference status
-- **77 files** still have `using Mono.Cecil` directives
-- **GetAllTypeDefinitions() usages**: 15 (down from 29)
-- **GetAllTypes() usages**: 6 (new abstraction-based method)
-- **Remaining files to migrate**: `AssemblyInfo.cs` (internal usages), `Obfuscator.cs` (11 usages)
-- Key helpers already support abstractions: `TypeKey`, `MethodKey`, `FieldKey`, `PropertyKey`, `EventKey`
+### Phase 4 Status: Complete ✅
+- **GetAllTypeDefinitions() usages**: 1 internal fallback only (marked obsolete)
+- **GetAllTypes() usages**: 20+ (all primary type iteration migrated)
+- **All type iteration loops migrated** in Obfuscator.cs and AssemblyInfo.cs
+- **107/107 tests passing** ✅
 
-### Current Cecil reference status (Updated)
-- **GetAllTypeDefinitions() usages in Obfuscator.cs**: 0 (all migrated to GetAllTypes())
-- **GetAllTypes() usages**: 17+ (new abstraction-based method)
-- **Remaining files to migrate**: `AssemblyInfo.cs` (3 internal usages)
+### Phase 5: Helper Method Migration (In Progress)
+**Completed:**
+- `Helper.cs` - Added `ICustomAttribute` overload for `GetAttributePropertyByName()`
+- `TypeNameCache.cs` - Added `IType` and string-based overloads for `GetTypeName()`
+- `AbstractionExtensions.cs` - Created comprehensive extension methods file with:
+  - `IsMethodPublic()` for IMethodDefinition
+  - `HasCompilerGeneratedAttributes()` for ITypeDefinition
+  - `IsResourcesType()` for ITypeDefinition
+  - `GetCustomAttribute()` / `HasCustomAttribute()` for types and methods
+  - `MarkedToRename()` for ITypeDefinition and IMethodDefinition (ObfuscationAttribute checking)
+  - `IsFieldPublic()` for IField (using FieldAttributes)
 
-### Known Issues
-- 2 test failures related to nested type handling:
-  - `SkipNestedTypeTests.CheckNestedTypes`: Type skip pattern not matching as expected
-  - `ObfuscationAttributeTests.CheckExclusion`: Nested class obfuscation behavior differs
-- Root cause appears to be in how skip patterns match nested type names after adapter conversion
+**Remaining Cecil usages:**
+- `Obfuscator.cs`: 67 lines (core obfuscation logic)
+- `AssemblyInfo.cs`: 36 lines (assembly analysis)
+- `InheritMap.cs`: 22 lines (inheritance tracking)
+- `AssemblyCache.cs`: Cecil resolver infrastructure (keep as-is for now)
 
-### Next steps
-1. **Fix remaining 2 test failures** - Investigate nested type skip pattern matching
-2. Migrate remaining `AssemblyInfo.cs` internal usages
+### Next Steps
+1. Continue migrating helper extension methods to work with abstractions
+2. Migrate IL manipulation code (Instructions, method bodies)
 3. Update test helpers to use SRM-backed assertions
-4. Begin migrating actual obfuscation operations to work with abstractions
+4. Begin replacing Cecil for assembly writing operations
 
 ## Migration detail
 The migration succeeds when every remaining Cecil contract is matched by SRM adapters, the big metadata consumers adopt the adapters instead of raw Cecil definitions, and unit tests continue passing. Follow these sequential phases:

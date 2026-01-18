@@ -24,13 +24,13 @@
 
 #endregion
 
-using Mono.Cecil;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using Obfuscar.Helpers;
+using Obfuscar.Metadata.Mutable;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 
@@ -442,7 +442,7 @@ namespace Obfuscar
 
                 // try to get each assembly referenced by this one.  if it's in
                 // the map (and therefore in the project), set up the mappings
-                foreach (AssemblyNameReference nameRef in info.Definition.MainModule.AssemblyReferences)
+                foreach (MutableAssemblyNameReference nameRef in info.Definition.MainModule.AssemblyReferences)
                 {
                     AssemblyInfo reference;
                     if (assemblyMap.TryGetValue(nameRef.Name, out reference))
@@ -472,7 +472,7 @@ namespace Obfuscar
         /// <summary>
         /// Returns whether the project contains a given type.
         /// </summary>
-        public bool Contains(TypeReference type)
+        public bool Contains(MutableTypeReference type)
         {
             string name = type.GetScopeName();
 
@@ -496,12 +496,12 @@ namespace Obfuscar
             return info;
         }
 
-        public TypeDefinition GetTypeDefinition(TypeReference type)
+        public MutableTypeDefinition GetTypeDefinition(MutableTypeReference type)
         {
             if (type == null)
                 return null;
 
-            TypeDefinition typeDef = type as TypeDefinition;
+            MutableTypeDefinition typeDef = type as MutableTypeDefinition;
             if (typeDef == null)
             {
                 string name = type.GetScopeName();
@@ -509,8 +509,7 @@ namespace Obfuscar
                 AssemblyInfo info;
                 if (assemblyMap.TryGetValue(name, out info))
                 {
-                    string fullName = type.Namespace + "." + type.Name;
-                    typeDef = info.Definition.MainModule.GetType(fullName);
+                    typeDef = info.Definition.MainModule.GetType(type.FullName);
                 }
             }
 

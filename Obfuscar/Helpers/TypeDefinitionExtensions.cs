@@ -1,7 +1,7 @@
-﻿using Mono.Cecil;
-using System;
+﻿using System;
 using System.Linq;
 using System.Runtime.Caching;
+using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar.Helpers
 {
@@ -12,9 +12,9 @@ namespace Obfuscar.Helpers
         /// </summary>
         /// <param name="type">Type to check</param>
         /// <returns>True if the type has compiler-generated and embedded attributes</returns>
-        public static bool HasCompilerGeneratedAttributes(this TypeDefinition type)
+        public static bool HasCompilerGeneratedAttributes(this ITypeDefinition type)
         {
-            if (type == null || !type.HasCustomAttributes)
+            if (type == null || type.CustomAttributes == null)
                 return false;
 
             bool hasCompilerGenerated = false;
@@ -23,15 +23,13 @@ namespace Obfuscar.Helpers
             foreach (var attribute in type.CustomAttributes)
             {
                 // Check if the attribute itself is compiler-generated
-                if (attribute.AttributeType.Name == "CompilerGeneratedAttribute" && 
-                    attribute.AttributeType.Namespace == "System.Runtime.CompilerServices")
+                if (attribute.AttributeTypeName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute")
                 {
                     hasCompilerGenerated = true;
                 }
 
                 // Check if the attribute name or namespace contains "Embedded"
-                if (attribute.AttributeType.Name == "EmbeddedAttribute" && 
-                    attribute.AttributeType.Namespace == "Microsoft.CodeAnalysis")
+                if (attribute.AttributeTypeName == "Microsoft.CodeAnalysis.EmbeddedAttribute")
                 {
                     hasEmbedded = true;
                 }
@@ -42,12 +40,15 @@ namespace Obfuscar.Helpers
             
             return hasCompilerGenerated && hasEmbedded;
         }
-        public static bool IsTypePublic(this TypeDefinition type)
+        public static bool IsTypePublic(this ITypeDefinition type)
         {
             if (type.DeclaringType == null)
                 return type.IsPublic;
 
-            if (type.IsNestedFamily || type.IsNestedFamilyOrAssembly || type.IsNestedPublic)
+            var visibility = type.Attributes & System.Reflection.TypeAttributes.VisibilityMask;
+            if (visibility == System.Reflection.TypeAttributes.NestedPublic ||
+                visibility == System.Reflection.TypeAttributes.NestedFamily ||
+                visibility == System.Reflection.TypeAttributes.NestedFamORAssem)
                 return IsTypePublic(type.DeclaringType);
 
             return false;
@@ -55,13 +56,13 @@ namespace Obfuscar.Helpers
 
         private static CacheItemPolicy policy = new CacheItemPolicy {SlidingExpiration = TimeSpan.FromMinutes(5)};
 
-        public static bool IsResourcesType(this TypeDefinition type)
+        public static bool IsResourcesType(this ITypeDefinition type)
         {
             if (MemoryCache.Default.Contains(type.FullName))
                 return (bool) MemoryCache.Default[type.FullName];
 
             var generated = type.CustomAttributes.FirstOrDefault(attribute =>
-                attribute.AttributeType.FullName == "System.CodeDom.Compiler.GeneratedCodeAttribute");
+                attribute.AttributeTypeName == "System.CodeDom.Compiler.GeneratedCodeAttribute");
             var result = false;
             if (generated == null)
             {
@@ -69,7 +70,7 @@ namespace Obfuscar.Helpers
             }
             else
             {
-                var name = generated.ConstructorArguments[0].Value.ToString();
+                var name = generated.ConstructorArguments?.FirstOrDefault()?.Value?.ToString();
                 result = name == "System.Resources.Tools.StronglyTypedResourceBuilder";
             }
 
@@ -77,7 +78,7 @@ namespace Obfuscar.Helpers
             return result;
         }
 
-        private static bool IsFormOrUserControl(this TypeDefinition type)
+        private static bool IsFormOrUserControl(this ITypeDefinition type)
         {
             if (type == null)
                 return false;
@@ -85,31 +86,11 @@ namespace Obfuscar.Helpers
             if (type.FullName == "System.Windows.Forms.Form" || type.FullName == "System.Windows.Forms.UserControl")
                 return true;
 
-            if (type.BaseType != null)
+            if (!string.IsNullOrEmpty(type.BaseTypeFullName))
             {
-                var baseTypeFullName = type.BaseType.FullName;
-                if (baseTypeFullName == "System.Object")
-                {
-                    // Check if this is a UWP .winmd file
-                    var module = type.BaseType.Module;
-                    if (module?.FileName != null && module.FileName.EndsWith(".winmd", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // IMPORTANT: Resolve call below fails for UWP .winmd files.
-                        return false;
-                    }
-                }
-
-                try
-                {
-                    var resolved = type.BaseType.Resolve();
-                    if (resolved != null)
-                        return resolved.IsFormOrUserControl();
-                }
-                catch (Mono.Cecil.AssemblyResolutionException)
-                {
-                    // If we can't resolve the base type assembly, assume it's not a Form/UserControl
-                    return false;
-                }
+                if (type.BaseTypeFullName == "System.Windows.Forms.Form" ||
+                    type.BaseTypeFullName == "System.Windows.Forms.UserControl")
+                    return true;
             }
 
             return false;

@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+﻿using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar.Helpers
 {
@@ -9,32 +9,60 @@ namespace Obfuscar.Helpers
         /// for example, a type whose module is "Assembly.exe", "Assembly" would be 
         /// returned.
         /// </summary>
-        public static string GetScopeName(this TypeReference type)
+        public static string GetScopeName(this MutableTypeReference type)
         {
-            ModuleDefinition module = type.Scope as ModuleDefinition;
-            if (module != null)
-                return module.Assembly.Name.Name;
-            else
-                return type.Scope.Name;
+            if (type?.Module?.Assembly?.Name?.Name != null)
+                return type.Module.Assembly.Name.Name;
+
+            if (type?.Scope is MutableAssemblyNameReference asmRef)
+                return asmRef.Name;
+
+            if (type?.Scope is MutableAssemblyNameDefinition asmDef)
+                return asmDef.Name;
+
+            if (type?.Scope is MutableModuleDefinition module)
+                return module.Assembly?.Name?.Name ?? module.Name;
+
+            return type?.Scope?.ToString() ?? string.Empty;
         }
 
-        public static string GetFullName(this TypeReference type)
+        public static string GetFullName(this MutableTypeReference type)
         {
+            if (type == null)
+                return string.Empty;
+
             string fullName = null;
-            while (type.IsNested)
+            var current = type;
+            while (current.DeclaringType != null)
             {
                 if (fullName == null)
-                    fullName = type.Name;
+                    fullName = current.Name;
                 else
-                    fullName = type.Name + "/" + fullName;
-                type = type.DeclaringType;
+                    fullName = current.Name + "/" + fullName;
+                current = current.DeclaringType;
             }
 
             if (fullName == null)
-                fullName = type.Namespace + "." + type.Name;
+                fullName = string.IsNullOrEmpty(current.Namespace)
+                    ? current.Name
+                    : current.Namespace + "." + current.Name;
             else
-                fullName = type.Namespace + "." + type.Name + "/" + fullName;
+                fullName = string.IsNullOrEmpty(current.Namespace)
+                    ? current.Name + "/" + fullName
+                    : current.Namespace + "." + current.Name + "/" + fullName;
             return fullName;
+        }
+
+        public static MutableTypeReference GetElementType(this MutableTypeReference type)
+        {
+            return type switch
+            {
+                MutableArrayType arrayType => arrayType.ElementType,
+                MutableByReferenceType byRefType => byRefType.ElementType,
+                MutablePointerType pointerType => pointerType.ElementType,
+                MutableGenericInstanceType genericType => genericType.ElementType,
+                _ => type
+            };
         }
     }
 }

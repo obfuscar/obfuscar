@@ -25,10 +25,11 @@
 #endregion
 
 using System.Text.RegularExpressions;
-using Mono.Cecil;
 using System.Collections.Generic;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
+using Obfuscar.Metadata.Abstractions;
+using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar
 {
@@ -85,7 +86,7 @@ namespace Obfuscar
         /// Builds a name for a parameter type that can be used for comparing parameters.  See 
         /// <see cref="GetTypeName"/> for details.
         /// </summary>
-        public static string GetParameterTypeName(ParameterReference param)
+        public static string GetParameterTypeName(MutableParameterDefinition param)
         {
             return TypeNameCache.GetTypeName(param.ParameterType);
         }
@@ -146,12 +147,18 @@ namespace Obfuscar
                 return MatchWithWildCards(test, pattern);
         }
 
-        public static object GetAttributePropertyByName(CustomAttribute attr, string name)
+        /// <summary>
+        /// Gets a named argument value from an abstraction-based custom attribute.
+        /// </summary>
+        public static object GetAttributePropertyByName(Metadata.Abstractions.ICustomAttribute attr, string name)
         {
-            foreach (CustomAttributeNamedArgument property in attr.Properties)
+            if (attr?.NamedArguments == null)
+                return null;
+
+            foreach (var namedArg in attr.NamedArguments)
             {
-                if (property.Name == name)
-                    return property.Argument.Value;
+                if (namedArg.Name == name)
+                    return namedArg.Argument?.Value;
             }
             return null;
         }

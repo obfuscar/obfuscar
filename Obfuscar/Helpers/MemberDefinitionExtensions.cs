@@ -1,50 +1,60 @@
-﻿using Mono.Cecil;
+﻿using System.Collections.Generic;
+using Obfuscar.Metadata.Abstractions;
+using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar.Helpers
 {
     internal static class MemberDefinitionExtensions
     {
-        public static bool? MarkedToRename(this IMemberDefinition type, bool fromMember = false)
+        public static void CleanAttributes(this MutableTypeDefinition type)
         {
-#pragma warning disable 618
-            var obfuscarObfuscate = typeof(ObfuscateAttribute).FullName;
-#pragma warning restore 618
-            var reflectionObfuscate = typeof(System.Reflection.ObfuscationAttribute).FullName;
-
-            foreach (CustomAttribute attr in type.CustomAttributes)
-            {
-                var attrFullName = attr.Constructor.DeclaringType.FullName;
-                if (attrFullName == obfuscarObfuscate)
-                    return (bool)(Helper.GetAttributePropertyByName(attr, "ShouldObfuscate") ?? true);
-
-                if (attrFullName == reflectionObfuscate)
-                {
-                    var applyToMembers = (bool)(Helper.GetAttributePropertyByName(attr, "ApplyToMembers") ?? true);
-                    var rename = !(bool)(Helper.GetAttributePropertyByName(attr, "Exclude") ?? true);
-
-                    if (fromMember && !applyToMembers)
-                        return !rename;
-
-                    return rename;
-                }
-            }
-
-            return type.DeclaringType == null ? null : MarkedToRename(type.DeclaringType, true);
+            if (type == null)
+                return;
+            CleanAttributes(type.CustomAttributes);
         }
 
-        public static void CleanAttributes(this IMemberDefinition type)
+        public static void CleanAttributes(this MutableMethodDefinition method)
         {
-            var reflectionObfuscate = typeof(System.Reflection.ObfuscationAttribute).FullName;
+            if (method == null)
+                return;
+            CleanAttributes(method.CustomAttributes);
+        }
 
-            for (int i = 0; i < type.CustomAttributes.Count; i++)
+        public static void CleanAttributes(this MutableFieldDefinition field)
+        {
+            if (field == null)
+                return;
+            CleanAttributes(field.CustomAttributes);
+        }
+
+        public static void CleanAttributes(this MutablePropertyDefinition property)
+        {
+            if (property == null)
+                return;
+            CleanAttributes(property.CustomAttributes);
+        }
+
+        public static void CleanAttributes(this MutableEventDefinition eventDefinition)
+        {
+            if (eventDefinition == null)
+                return;
+            CleanAttributes(eventDefinition.CustomAttributes);
+        }
+
+        private static void CleanAttributes(List<MutableCustomAttribute> attributes)
+        {
+            if (attributes == null || attributes.Count == 0)
+                return;
+
+            var reflectionObfuscate = typeof(System.Reflection.ObfuscationAttribute).FullName;
+            for (int i = 0; i < attributes.Count; i++)
             {
-                CustomAttribute attr = type.CustomAttributes[i];
-                var attrFullName = attr.Constructor.DeclaringType.FullName;
-                if (attrFullName == reflectionObfuscate)
+                var attr = attributes[i];
+                if (attr.AttributeTypeName == reflectionObfuscate)
                 {
                     if ((bool)(Helper.GetAttributePropertyByName(attr, "StripAfterObfuscation") ?? true))
                     {
-                        type.CustomAttributes.Remove(attr);
+                        attributes.Remove(attr);
                     }
                 }
             }

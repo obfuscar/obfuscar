@@ -28,15 +28,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
 using Obfuscar.Helpers;
-using Obfuscar.Metadata;
-using Obfuscar.Metadata.Adapters;
 using Obfuscar.Metadata.Abstractions;
+using Obfuscar.Metadata.Mutable;
 using System.Xml.Linq;
-using Microsoft.Extensions.Logging;
 
 namespace Obfuscar
 {
@@ -57,13 +52,12 @@ namespace Obfuscar
         private readonly PredicateCollection<EventKey> forceEvents = new PredicateCollection<EventKey>();
         private readonly PredicateCollection<MethodKey> skipStringHiding = new PredicateCollection<MethodKey>();
         private readonly PredicateCollection<MethodKey> forceStringHiding = new PredicateCollection<MethodKey>();
-        private List<TypeReference> unrenamedTypeReferences;
-        private List<MemberReference> unrenamedReferences;
+        private List<MutableTypeReference> unrenamedTypeReferences;
+        private List<object> unrenamedReferences;
         private string filename;
-        private AssemblyDefinition definition;
+        private MutableAssemblyDefinition definition;
         private string name;
         private bool skipEnums;
-        private Metadata.SrmAssemblyReader srmReader;
 
         public bool Exclude { get; set; }
 
@@ -75,9 +69,9 @@ namespace Obfuscar
             this.project = project;
         }
 
-        private static bool AssemblyIsSigned(AssemblyDefinition def)
+        private static bool AssemblyIsSigned(MutableAssemblyDefinition def)
         {
-            return def.Name.PublicKeyToken.Length != 0;
+            return def?.Name?.PublicKeyToken != null && def.Name.PublicKeyToken.Length != 0;
         }
 
         public static AssemblyInfo FromXml(Project project, XElement reader, string file, Variables vars)
@@ -361,161 +355,229 @@ namespace Obfuscar
         /// </summary>
         internal void Init()
         {
-            unrenamedReferences = new List<MemberReference>();
-            var items = getMemberReferences();
-            foreach (MemberReference member in items)
+            unrenamedReferences = new List<object>();
+            foreach (var member in getMemberReferences())
             {
-                // FIXME: Figure out why these exist if they are never used.
-                // MethodReference mr = member as MethodReference;
-                // FieldReference fr = member as FieldReference;
-                if (project.Contains(member.DeclaringType))
+                var declaringType = GetDeclaringType(member);
+                if (declaringType != null && project.Contains(declaringType))
                     unrenamedReferences.Add(member);
             }
 
-            HashSet<TypeReference> typerefs = new HashSet<TypeReference>();
-            foreach (TypeReference type in definition.MainModule.GetTypeReferences())
+            var typerefs = new HashSet<MutableTypeReference>();
+            CollectTypeReferences(typerefs);
+
+            unrenamedTypeReferences = new List<MutableTypeReference>();
+            foreach (var typeRef in typerefs)
             {
-                if (type.FullName == "<Module>")
+                if (typeRef?.FullName == "<Module>")
                     continue;
-
-                if (project.Contains(type))
-                    typerefs.Add(type);
+                if (typeRef != null && project.Contains(typeRef))
+                    unrenamedTypeReferences.Add(typeRef);
             }
-            
-            // Also add DeclaringType of member references - these may not be in GetTypeReferences()
-            // when the member is accessed via MethodSpec (generic method instantiation)
-            foreach (MemberReference member in unrenamedReferences)
-            {
-                TypeReference declaringType = member.DeclaringType;
-                if (declaringType != null && project.Contains(declaringType))
-                {
-                    // Get the element type to handle generic instances
-                    TypeReference elementType = declaringType.GetElementType();
-                    if (elementType != null && !typerefs.Contains(elementType))
-                        typerefs.Add(elementType);
-                    if (!typerefs.Contains(declaringType))
-                        typerefs.Add(declaringType);
-                }
-                
-                // Also collect type references from method signatures (return type and parameters)
-                // These may contain GenericInstanceTypes with nested type references
-                MethodReference methodRef = member as MethodReference;
-                if (methodRef != null)
-                {
-                    CollectTypeReferencesFromType(methodRef.ReturnType, typerefs);
-                    foreach (var param in methodRef.Parameters)
-                    {
-                        CollectTypeReferencesFromType(param.ParameterType, typerefs);
-                    }
-                }
-                
-                FieldReference fieldRef = member as FieldReference;
-                if (fieldRef != null)
-                {
-                    CollectTypeReferencesFromType(fieldRef.FieldType, typerefs);
-                }
-            }
-
-            // Type references in CustomAttributes
-            List<CustomAttribute> customattributes = new List<CustomAttribute>();
-            customattributes.AddRange(this.Definition.CustomAttributes);
-            foreach (TypeDefinition type in GetAllTypeDefinitions())
-            {
-                customattributes.AddRange(type.CustomAttributes);
-                foreach (MethodDefinition methoddef in type.Methods)
-                    customattributes.AddRange(methoddef.CustomAttributes);
-                foreach (FieldDefinition fielddef in type.Fields)
-                    customattributes.AddRange(fielddef.CustomAttributes);
-                foreach (EventDefinition eventdef in type.Events)
-                    customattributes.AddRange(eventdef.CustomAttributes);
-                foreach (PropertyDefinition propertydef in type.Properties)
-                    customattributes.AddRange(propertydef.CustomAttributes);
-
-                foreach (CustomAttribute customattribute in customattributes)
-                {
-                    // Add the attribute constructor's declaring type so it gets updated when renamed
-                    if (customattribute.Constructor?.DeclaringType != null &&
-                        project.Contains(customattribute.Constructor.DeclaringType))
-                    {
-                        typerefs.Add(customattribute.Constructor.DeclaringType);
-                    }
-                    
-                    // Check Constructor and named parameter for argument of type "System.Type". i.e. typeof()
-                    List<CustomAttributeArgument> customattributearguments = new List<CustomAttributeArgument>();
-                    customattributearguments.AddRange(customattribute.ConstructorArguments);
-                    foreach (CustomAttributeNamedArgument namedargument in customattribute.Properties)
-                        customattributearguments.Add(namedargument.Argument);
-
-                    foreach (CustomAttributeArgument ca in customattributearguments)
-                    {
-                        if (ca.Type.FullName == "System.Type" && ca.Value != null)
-                            typerefs.Add((TypeReference) ca.Value);
-                    }
-                }
-                customattributes.Clear();
-            }
-
-            unrenamedTypeReferences = new List<TypeReference>(typerefs);
 
             initialized = true;
         }
-        
-        /// <summary>
-        /// Recursively collects type references from a type, including nested generic type arguments.
-        /// This is needed to update type references in method signatures when types are renamed.
-        /// </summary>
-        private void CollectTypeReferencesFromType(TypeReference type, HashSet<TypeReference> typerefs)
+
+        private static MutableTypeReference GetDeclaringType(object member)
+        {
+            if (member is MutableMethodReference methodRef)
+                return methodRef.DeclaringType;
+            if (member is MutableFieldReference fieldRef)
+                return fieldRef.DeclaringType;
+            return null;
+        }
+
+        private void CollectTypeReferences(HashSet<MutableTypeReference> typerefs)
+        {
+            if (definition?.CustomAttributes != null)
+                CollectCustomAttributeTypeReferences(definition.CustomAttributes, typerefs);
+
+            foreach (var typeDef in GetAllTypes())
+            {
+                if (typeDef is MutableTypeDefinition type)
+                    CollectTypeReferencesFromTypeDefinition(type, typerefs);
+            }
+
+            foreach (var member in unrenamedReferences)
+            {
+                if (member is MutableMethodReference methodRef)
+                {
+                    CollectTypeReferencesFromType(methodRef.DeclaringType, typerefs);
+                    CollectTypeReferencesFromType(methodRef.ReturnType, typerefs);
+                    foreach (var param in methodRef.Parameters)
+                        CollectTypeReferencesFromType(param.ParameterType, typerefs);
+                }
+                else if (member is MutableFieldReference fieldRef)
+                {
+                    CollectTypeReferencesFromType(fieldRef.DeclaringType, typerefs);
+                    CollectTypeReferencesFromType(fieldRef.FieldType, typerefs);
+                }
+            }
+        }
+
+        private void CollectTypeReferencesFromTypeDefinition(MutableTypeDefinition type, HashSet<MutableTypeReference> typerefs)
         {
             if (type == null)
                 return;
-            
-            // Skip generic parameters (like !0, !1, !!0, !!1) - they are not actual type references
-            if (type is GenericParameter)
-                return;
-            
-            // Handle GenericInstanceType - collect the element type and all generic arguments
-            GenericInstanceType genericInstance = type as GenericInstanceType;
-            if (genericInstance != null)
+
+            CollectTypeReferencesFromType(type.BaseType, typerefs);
+            if (type.DeclaringType != null)
+                CollectTypeReferencesFromType(type.DeclaringType, typerefs);
+
+            foreach (var iface in type.Interfaces)
+                CollectTypeReferencesFromType(iface.InterfaceType, typerefs);
+
+            CollectCustomAttributeTypeReferences(type.CustomAttributes, typerefs);
+
+            foreach (var field in type.Fields)
             {
-                // Add the element type (the generic type definition)
-                TypeReference elementType = genericInstance.ElementType;
-                if (elementType != null && project.Contains(elementType))
+                CollectTypeReferencesFromType(field.FieldType, typerefs);
+                CollectCustomAttributeTypeReferences(field.CustomAttributes, typerefs);
+            }
+
+            foreach (var method in type.Methods)
+            {
+                CollectTypeReferencesFromType(method.ReturnType, typerefs);
+                foreach (var param in method.Parameters)
                 {
-                    if (!typerefs.Contains(elementType))
-                        typerefs.Add(elementType);
+                    CollectTypeReferencesFromType(param.ParameterType, typerefs);
+                    CollectCustomAttributeTypeReferences(param.CustomAttributes, typerefs);
                 }
-                
-                // Recursively collect from generic arguments
-                foreach (TypeReference arg in genericInstance.GenericArguments)
+
+                CollectCustomAttributeTypeReferences(method.CustomAttributes, typerefs);
+
+                if (method.Body != null)
                 {
+                    foreach (var instruction in method.Body.Instructions)
+                    {
+                        CollectInstructionTypeReferences(instruction, typerefs);
+                    }
+                }
+            }
+
+            foreach (var prop in type.Properties)
+            {
+                CollectTypeReferencesFromType(prop.PropertyType, typerefs);
+                foreach (var param in prop.Parameters)
+                    CollectTypeReferencesFromType(param.ParameterType, typerefs);
+                CollectCustomAttributeTypeReferences(prop.CustomAttributes, typerefs);
+            }
+
+            foreach (var evt in type.Events)
+            {
+                CollectTypeReferencesFromType(evt.EventType, typerefs);
+                CollectCustomAttributeTypeReferences(evt.CustomAttributes, typerefs);
+            }
+        }
+
+        private void CollectInstructionTypeReferences(MutableInstruction instruction, HashSet<MutableTypeReference> typerefs)
+        {
+            if (instruction?.Operand is MutableTypeReference typeRef)
+            {
+                CollectTypeReferencesFromType(typeRef, typerefs);
+            }
+            else if (instruction?.Operand is MutableMethodReference methodRef)
+            {
+                CollectTypeReferencesFromType(methodRef.DeclaringType, typerefs);
+                CollectTypeReferencesFromType(methodRef.ReturnType, typerefs);
+                foreach (var param in methodRef.Parameters)
+                    CollectTypeReferencesFromType(param.ParameterType, typerefs);
+            }
+            else if (instruction?.Operand is MutableFieldReference fieldRef)
+            {
+                CollectTypeReferencesFromType(fieldRef.DeclaringType, typerefs);
+                CollectTypeReferencesFromType(fieldRef.FieldType, typerefs);
+            }
+        }
+
+        private void CollectCustomAttributeTypeReferences(IEnumerable<MutableCustomAttribute> attributes, HashSet<MutableTypeReference> typerefs)
+        {
+            if (attributes == null)
+                return;
+
+            foreach (var customAttribute in attributes)
+            {
+                if (customAttribute?.Constructor?.DeclaringType != null)
+                    CollectTypeReferencesFromType(customAttribute.Constructor.DeclaringType, typerefs);
+
+                foreach (var arg in customAttribute.ConstructorArguments)
+                    CollectCustomAttributeArgumentTypeReferences(arg, typerefs);
+                foreach (var named in customAttribute.Fields)
+                    CollectCustomAttributeArgumentTypeReferences(named.Argument, typerefs);
+                foreach (var named in customAttribute.Properties)
+                    CollectCustomAttributeArgumentTypeReferences(named.Argument, typerefs);
+            }
+        }
+
+        private void CollectCustomAttributeArgumentTypeReferences(MutableCustomAttributeArgument arg, HashSet<MutableTypeReference> typerefs)
+        {
+            if (arg == null)
+                return;
+
+            if (arg.Type?.FullName == "System.Type" && arg.Value is MutableTypeReference typeRef)
+            {
+                CollectTypeReferencesFromType(typeRef, typerefs);
+            }
+
+            if (arg.Value is IEnumerable<MutableCustomAttributeArgument> arrayArgs)
+            {
+                foreach (var item in arrayArgs)
+                    CollectCustomAttributeArgumentTypeReferences(item, typerefs);
+            }
+        }
+
+        /// <summary>
+        /// Recursively collects type references from a type, including nested generic type arguments.
+        /// </summary>
+        private void CollectTypeReferencesFromType(MutableTypeReference type, HashSet<MutableTypeReference> typerefs)
+        {
+            if (type == null)
+                return;
+
+            if (type is MutableGenericParameter)
+                return;
+
+            if (type.DeclaringType != null)
+                CollectTypeReferencesFromType(type.DeclaringType, typerefs);
+
+            if (type is MutableGenericInstanceType genericInstance)
+            {
+                CollectTypeReferencesFromType(genericInstance.ElementType, typerefs);
+                foreach (var arg in genericInstance.GenericArguments)
                     CollectTypeReferencesFromType(arg, typerefs);
-                }
                 return;
             }
-            
-            // Handle arrays, pointers, etc.
-            TypeSpecification typeSpec = type as TypeSpecification;
-            if (typeSpec != null)
+
+            if (type is MutableArrayType arrayType)
             {
-                CollectTypeReferencesFromType(typeSpec.ElementType, typerefs);
+                CollectTypeReferencesFromType(arrayType.ElementType, typerefs);
                 return;
             }
-            
-            // For regular type references
-            if (project.Contains(type) && !typerefs.Contains(type))
+
+            if (type is MutableByReferenceType byRefType)
             {
+                CollectTypeReferencesFromType(byRefType.ElementType, typerefs);
+                return;
+            }
+
+            if (type is MutablePointerType pointerType)
+            {
+                CollectTypeReferencesFromType(pointerType.ElementType, typerefs);
+                return;
+            }
+
+            if (!typerefs.Contains(type))
                 typerefs.Add(type);
-            }
         }
 
         private class Graph
         {
-            public readonly List<Node<TypeDefinition>> Root = new List<Node<TypeDefinition>>();
+            public readonly List<Node<MutableTypeDefinition>> Root = new List<Node<MutableTypeDefinition>>();
 
-            public readonly Dictionary<string, Node<TypeDefinition>> _map =
-                new Dictionary<string, Node<TypeDefinition>>();
+            public readonly Dictionary<string, Node<MutableTypeDefinition>> _map =
+                new Dictionary<string, Node<MutableTypeDefinition>>();
 
-            public Graph(IEnumerable<TypeDefinition> items)
+            public Graph(IEnumerable<MutableTypeDefinition> items)
             {
                 foreach (var item in items)
                 {
@@ -524,7 +586,7 @@ namespace Obfuscar
                     if (string.IsNullOrEmpty(fullName) || fullName == "<Module>")
                         continue;
                     
-                    var node = new Node<TypeDefinition> {Item = item};
+                    var node = new Node<MutableTypeDefinition> {Item = item};
                     Root.Add(node);
                     
                     // Use indexer to avoid exceptions on duplicate keys (can happen with SRM reader)
@@ -535,11 +597,11 @@ namespace Obfuscar
                 AddParents(Root);
             }
 
-            private void AddParents(List<Node<TypeDefinition>> nodes)
+            private void AddParents(List<Node<MutableTypeDefinition>> nodes)
             {
                 foreach (var node in nodes)
                 {
-                    Node<TypeDefinition> parent;
+                    Node<MutableTypeDefinition> parent;
                     var baseType = node.Item.BaseType;
                     if (baseType != null)
                     {
@@ -549,7 +611,7 @@ namespace Obfuscar
                         }
                     }
 
-                    if (node.Item.HasInterfaces)
+                    if (node.Item.Interfaces.Count > 0)
                     {
                         foreach (var inter in node.Item.Interfaces)
                         {
@@ -560,7 +622,7 @@ namespace Obfuscar
                         }
                     }
 
-                    var nestedParent = node.Item.DeclaringType;
+                    var nestedParent = node.Item.DeclaringType as MutableTypeDefinition;
                     if (nestedParent != null)
                     {
                         if (TrySearchNode(nestedParent, out parent))
@@ -571,33 +633,29 @@ namespace Obfuscar
                 }
             }
 
-            private bool TrySearchNode(TypeReference baseType, out Node<TypeDefinition> parent)
+            private bool TrySearchNode(MutableTypeReference baseType, out Node<MutableTypeDefinition> parent)
             {
                 var key = baseType.FullName;
                 parent = null;
                 if (_map.ContainsKey(key))
                 {
                     parent = _map[key];
-                    if (parent.Item.Scope.Name != baseType.Scope.Name)
-                    {
-                        parent = null;
-                    }
                 }
                 return parent != null;
             }
 
-            internal IEnumerable<TypeDefinition> GetOrderedList()
+            internal IEnumerable<MutableTypeDefinition> GetOrderedList()
             {
-                var result = new List<TypeDefinition>();
+                var result = new List<MutableTypeDefinition>();
                 CleanPool(Root, result);
                 return result;
             }
 
-            private void CleanPool(List<Node<TypeDefinition>> pool, List<TypeDefinition> result)
+            private void CleanPool(List<Node<MutableTypeDefinition>> pool, List<MutableTypeDefinition> result)
             {
                 while (pool.Count > 0)
                 {
-                    var toRemove = new List<Node<TypeDefinition>>();
+                    var toRemove = new List<Node<MutableTypeDefinition>>();
                     foreach (var node in pool)
                     {
                         if (node.Parents.Count == 0)
@@ -625,7 +683,7 @@ namespace Obfuscar
                             }
                         }
 
-                        bool IsLoop(Node<TypeDefinition> node)
+                        bool IsLoop(Node<MutableTypeDefinition> node)
                         {
                             foreach (var nodeParent in node.Parents)
                             {
@@ -645,8 +703,8 @@ namespace Obfuscar
                         foreach (var node in pool)
                         {
                             var parents = string.Join(", ",
-                                node.Parents.Select(p => p.Item.FullName + " " + p.Item.Scope.Name));
-                            Console.Error.WriteLine("{0} {1} : [{2}]", node.Item.FullName, node.Item.Scope.Name,
+                                node.Parents.Select(p => p.Item.FullName));
+                            Console.Error.WriteLine("{0} : [{1}]", node.Item.FullName,
                                 parents);
                         }
                         throw new ObfuscarException("Cannot clean pool");
@@ -667,36 +725,6 @@ namespace Obfuscar
             }
         }
 
-        private IEnumerable<TypeDefinition> _cached;
-
-        public IEnumerable<TypeDefinition> GetAllTypeDefinitions()
-        {
-            if (_cached != null)
-            {
-                return _cached;
-            }
-
-            var assemblyMarkedToRename = srmReader != null
-                ? SrmAttributeReader.GetMarkedToRenameForAssembly(srmReader.MetadataReader)
-                : definition.MarkedToRename();
-            if (!assemblyMarkedToRename)
-            {
-                return new TypeDefinition[0];
-            }
-
-            try
-            {
-                var result = definition.MainModule.GetAllTypes();
-                var graph = new Graph(result);
-                return _cached = graph.GetOrderedList();
-            }
-            catch (Exception e)
-            {
-                throw new ObfuscarException(string.Format("Failed to get type definitions for {0}", definition.Name),
-                    e);
-            }
-        }
-
         private IEnumerable<Metadata.Abstractions.ITypeDefinition> _cachedTypes;
 
         /// <summary>
@@ -710,9 +738,7 @@ namespace Obfuscar
                 return _cachedTypes;
             }
 
-            var assemblyMarkedToRename = srmReader != null
-                ? SrmAttributeReader.GetMarkedToRenameForAssembly(srmReader.MetadataReader)
-                : definition.MarkedToRename();
+            var assemblyMarkedToRename = definition.MarkedToRename();
             if (!assemblyMarkedToRename)
             {
                 return Array.Empty<Metadata.Abstractions.ITypeDefinition>();
@@ -720,24 +746,20 @@ namespace Obfuscar
 
             try
             {
-                // Use the IAssembly abstraction when available
-                if (srmReader?.Assembly?.MainModule != null)
+                var types = new List<MutableTypeDefinition>();
+                foreach (var typeDef in definition.MainModule.Types)
                 {
-                    var result = new List<Metadata.Abstractions.ITypeDefinition>();
-                    foreach (var typeDef in srmReader.Assembly.MainModule.TopLevelTypes)
-                    {
-                        AddTypeWithNested(typeDef, result);
-                    }
-                    return _cachedTypes = result;
+                    AddTypeWithNested(typeDef, types);
                 }
 
-                // Fallback to Cecil-backed adapters
-                var types = new List<Metadata.Abstractions.ITypeDefinition>();
-                foreach (var typeDef in GetAllTypeDefinitions())
+                var graph = new Graph(types);
+                var ordered = new List<Metadata.Abstractions.ITypeDefinition>();
+                foreach (var orderedType in graph.GetOrderedList())
                 {
-                    types.Add(new Metadata.Adapters.CecilTypeDefinitionAdapter(typeDef, srmReader));
+                    ordered.Add(orderedType);
                 }
-                return _cachedTypes = types;
+
+                return _cachedTypes = ordered;
             }
             catch (Exception e)
             {
@@ -745,8 +767,8 @@ namespace Obfuscar
             }
         }
 
-        private static void AddTypeWithNested(Metadata.Abstractions.ITypeDefinition typeDef,
-            List<Metadata.Abstractions.ITypeDefinition> types)
+        private static void AddTypeWithNested(MutableTypeDefinition typeDef,
+            List<MutableTypeDefinition> types)
         {
             types.Add(typeDef);
             foreach (var nested in typeDef.NestedTypes)
@@ -757,7 +779,6 @@ namespace Obfuscar
 
         public void InvalidateCache()
         {
-            _cached = null;
             _cachedTypes = null;
         }
 
@@ -767,65 +788,35 @@ namespace Obfuscar
                 tester.InitializeDecoratorMatches(this);
         }
 
-        private IEnumerable<MemberReference> getMemberReferences()
+        private IEnumerable<object> getMemberReferences()
         {
-            HashSet<MemberReference> memberReferences = new HashSet<MemberReference>();
-            foreach (TypeDefinition type in this.GetAllTypeDefinitions())
+            var memberReferences = new HashSet<object>();
+            foreach (var typeDef in GetAllTypes())
             {
-                foreach (MethodDefinition method in type.Methods)
+                if (typeDef is not MutableTypeDefinition type)
+                    continue;
+
+                foreach (var method in type.Methods)
                 {
-                    foreach (MethodReference memberRef in method.Overrides)
+                    if (method.Body == null)
+                        continue;
+
+                    foreach (var inst in method.Body.Instructions)
                     {
-                        if (IsOnlyReference(memberRef))
+                        if (inst.Operand is MutableMethodReference methodRef)
                         {
-                            memberReferences.Add(memberRef);
+                            if (methodRef is not MutableMethodDefinition)
+                                memberReferences.Add(methodRef);
                         }
-                    }
-                    if (method.Body != null)
-                    {
-                        foreach (Instruction inst in method.Body.Instructions)
+                        else if (inst.Operand is MutableFieldReference fieldRef)
                         {
-                            MemberReference memberRef = inst.Operand as MemberReference;
-                            if (memberRef != null)
-                            {
-                                if (IsOnlyReference(memberRef) ||
-                                    memberRef is FieldReference && !(memberRef is FieldDefinition))
-                                {
-                                    // FIXME: Figure out why this exists if it is never used.
-                                    // int c = memberreferences.Count;
-                                    memberReferences.Add(memberRef);
-                                }
-                            }
+                            if (fieldRef is not MutableFieldDefinition)
+                                memberReferences.Add(fieldRef);
                         }
                     }
                 }
             }
             return memberReferences;
-        }
-
-        private bool IsOnlyReference(MemberReference memberref)
-        {
-            if (memberref is MethodReference)
-            {
-                if (memberref is MethodDefinition)
-                {
-                    return false;
-                }
-
-                if (memberref is MethodSpecification)
-                {
-                    if (memberref is GenericInstanceMethod)
-                    {
-                        return true;
-                    }
-
-                    return false;
-                }
-
-                return !(memberref is CallSite);
-            }
-
-            return false;
         }
 
         private void LoadAssembly(string filename)
@@ -834,227 +825,22 @@ namespace Obfuscar
 
             try
             {
-                var reader = Metadata.AssemblyReaderFactory.Create(filename);
-                bool keepReader = reader is Metadata.SrmAssemblyReader;
-                try
+                bool readSymbols = project.Settings.RegenerateDebugInfo &&
+                                   System.IO.File.Exists(System.IO.Path.ChangeExtension(filename, "pdb"));
+                var parameters = new MutableReaderParameters
                 {
-                    if (reader is Metadata.CecilAssemblyReader cecilReader)
-                    {
-                        bool readSymbols = project.Settings.RegenerateDebugInfo &&
-                                           System.IO.File.Exists(System.IO.Path.ChangeExtension(filename, "pdb"));
+                    ReadSymbols = readSymbols,
+                    AssemblyResolver = project.Cache
+                };
 
-                        try
-                        {
-                            definition = cecilReader.AssemblyDefinition;
-                        }
-                        catch
-                        {
-                            definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
-                            {
-                                ReadingMode = ReadingMode.Deferred,
-                                ReadSymbols = readSymbols,
-                                AssemblyResolver = project.Cache
-                            });
-                        }
-
-                        project.Cache.RegisterAssembly(definition);
-
-                        try
-                        {
-                            definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
-                            {
-                                ReadingMode = ReadingMode.Immediate,
-                                ReadSymbols = readSymbols,
-                                AssemblyResolver = project.Cache
-                            });
-                        }
-                        catch
-                        {
-                            if (!readSymbols)
-                                throw;
-                            definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
-                            {
-                                ReadingMode = ReadingMode.Immediate,
-                                ReadSymbols = false,
-                                AssemblyResolver = project.Cache
-                            });
-                        }
-
-                        name = definition.Name.Name;
-                    }
-                    else if (reader is Metadata.SrmAssemblyReader srm)
-                    {
-                        bool fallbackToCecil = false;
-                        bool readSymbols = project.Settings.RegenerateDebugInfo &&
-                                           System.IO.File.Exists(System.IO.Path.ChangeExtension(filename, "pdb"));
-
-                        definition = null;
-                        srmReader = srm;
-                        try
-                        {
-                            definition = srm.CreateAssemblyDefinition();
-                        }
-                        catch (OverflowException ex)
-                        {
-                            fallbackToCecil = true;
-                            LoggerService.Logger.LogInformation("Srm reader failed for {0} ({1}); falling back to Cecil reader.",
-                                filename, ex.Message);
-                            definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
-                            {
-                                ReadingMode = ReadingMode.Immediate,
-                                ReadSymbols = readSymbols,
-                                AssemblyResolver = project.Cache
-                            });
-                        }
-
-                        if (fallbackToCecil)
-                        {
-                            srmReader = null;
-                            keepReader = false;
-                        }
-
-                        project.Cache.RegisterAssembly(definition);
-                        name = definition.Name.Name;
-
-                        if (!fallbackToCecil)
-                        {
-                            try
-                            {
-                                var module = definition.MainModule;
-                                var candidates = new[] { "mscorlib", "System.Private.CoreLib", "netstandard", "System.Runtime" };
-                                Mono.Cecil.AssemblyDefinition coreAsm = null;
-                                foreach (var cand in candidates)
-                                {
-                                    var aref = module.AssemblyReferences.FirstOrDefault(a => a.Name == cand);
-                                    if (aref == null)
-                                        continue;
-
-                                    try
-                                    {
-                                        coreAsm = project.Cache.Resolve(aref);
-                                        if (coreAsm != null)
-                                            break;
-                                    }
-                                    catch
-                                    {
-                                    }
-                                }
-
-                                if (coreAsm != null)
-                                {
-                                    var ts = module.TypeSystem;
-                                    var tsType = ts.GetType();
-                                    var fi = tsType.GetField("core_library", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                                             ?? tsType.GetField("_coreLibrary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                                             ?? tsType.GetField("coreLibrary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                                    if (fi != null)
-                                    {
-                                        fi.SetValue(ts, coreAsm.MainModule);
-                                    }
-                                }
-                            }
-                            catch
-                            {
-                                // best-effort only
-                            }
-                        }
-                    }
-                    else
-                    {
-                        definition = reader.AssemblyDefinition;
-                        project.Cache.RegisterAssembly(definition);
-                        name = definition.Name?.Name ?? string.Empty;
-                    }
-                }
-                finally
-                {
-                    if (!keepReader)
-                    {
-                        reader.Dispose();
-                    }
-                }
+                definition = MutableAssemblyDefinition.ReadAssembly(filename, parameters);
+                project.Cache.RegisterAssembly(definition);
+                name = definition.Name?.Name ?? string.Empty;
             }
             catch (System.IO.IOException e)
             {
                 throw new ObfuscarException("Unable to find assembly:  " + filename, e);
             }
-        }
-
-        internal IMethod CreateMethodAdapter(MethodDefinition method)
-        {
-            if (method == null)
-                return null;
-
-            if (srmReader != null && srmReader.TryGetMethodHandle(method, out var handle))
-                return new SrmHandleMethodAdapter(definition?.MainModule, srmReader.MetadataReader, handle);
-
-            return new CecilMethodAdapter(method);
-        }
-
-        internal IField CreateFieldAdapter(FieldDefinition field)
-        {
-            if (field == null)
-                return null;
-
-            if (srmReader != null && srmReader.TryGetFieldHandle(field, out var handle))
-                return new SrmHandleFieldAdapter(srmReader.MetadataReader, handle);
-
-            return new CecilFieldAdapter(field);
-        }
-
-        internal IProperty CreatePropertyAdapter(PropertyDefinition property)
-        {
-            if (property == null)
-                return null;
-
-            if (srmReader != null && srmReader.TryGetPropertyHandle(property, out var handle))
-                return new SrmHandlePropertyAdapter(srmReader.MetadataReader, handle);
-
-            return new CecilPropertyAdapter(property);
-        }
-
-        internal IEvent CreateEventAdapter(EventDefinition evt)
-        {
-            if (evt == null)
-                return null;
-
-            if (srmReader != null && srmReader.TryGetEventHandle(evt, out var handle))
-                return new SrmHandleEventAdapter(srmReader.MetadataReader, handle);
-
-            return new CecilEventAdapter(evt);
-        }
-
-        internal IType CreateTypeAdapter(TypeDefinition type)
-        {
-            if (type == null)
-                return null;
-
-            if (srmReader != null && srmReader.TryGetTypeHandle(type, out var handle))
-                return new SrmHandleTypeAdapter(srmReader.MetadataReader, handle, name);
-
-            return new CecilTypeAdapter(type);
-        }
-
-        internal bool? GetMarkedToRename(TypeDefinition type)
-        {
-            if (type == null)
-                return null;
-
-            if (srmReader != null && srmReader.TryGetTypeHandle(type, out var handle))
-                return SrmAttributeReader.GetMarkedToRenameForType(srmReader.MetadataReader, handle);
-
-            return type.MarkedToRename();
-        }
-
-        internal bool? GetMarkedToRename(PropertyDefinition property)
-        {
-            if (property == null)
-                return null;
-
-            if (srmReader != null && srmReader.TryGetPropertyHandle(property, out var handle))
-                return SrmAttributeReader.GetMarkedToRenameForProperty(srmReader.MetadataReader, handle);
-
-            return property.MarkedToRename();
         }
 
         public string FileName
@@ -1068,7 +854,7 @@ namespace Obfuscar
 
         public string OutputFileName { get; set; }
 
-        public AssemblyDefinition Definition
+        public MutableAssemblyDefinition Definition
         {
             get
             {
@@ -1086,7 +872,7 @@ namespace Obfuscar
             }
         }
 
-        public List<MemberReference> UnrenamedReferences
+        public List<object> UnrenamedReferences
         {
             get
             {
@@ -1095,7 +881,7 @@ namespace Obfuscar
             }
         }
 
-        public List<TypeReference> UnrenamedTypeReferences
+        public List<MutableTypeReference> UnrenamedTypeReferences
         {
             get
             {
@@ -1155,15 +941,7 @@ namespace Obfuscar
         {
             var descriptor = type.Descriptor;
             var typeDef = descriptor?.TypeDefinition;
-            bool? attribute = null;
-            if (srmReader != null && typeDef != null && srmReader.TryGetTypeHandle(typeDef, out var typeHandle))
-            {
-                attribute = SrmAttributeReader.GetMarkedToRenameForType(srmReader.MetadataReader, typeHandle);
-            }
-            if (attribute == null)
-            {
-                attribute = typeDef?.MarkedToRename();
-            }
+            bool? attribute = typeDef?.MarkedToRename();
             if (attribute != null)
             {
                 message = "attribute";
@@ -1235,9 +1013,7 @@ namespace Obfuscar
 
             if (methodAdapter != null ? methodAdapter.IsSpecialName : method.Method.IsSpecialName)
             {
-                var semantics = methodAdapter != null
-                    ? methodAdapter.SemanticsAttributes
-                    : (MethodSemantics)method.Method.SemanticsAttributes;
+                var semantics = methodAdapter?.SemanticsAttributes ?? MethodSemantics.None;
                 switch (semantics)
                 {
                     case MethodSemantics.Getter:
@@ -1261,15 +1037,7 @@ namespace Obfuscar
             bool markedOnly, out string message)
         {
             var methodAdapter = method.MethodAdapter;
-            bool? attribute = null;
-            if (srmReader != null && method.Method != null && srmReader.TryGetMethodHandle(method.Method, out var methodHandle))
-            {
-                attribute = SrmAttributeReader.GetMarkedToRenameForMethod(srmReader.MetadataReader, methodHandle);
-            }
-            else
-            {
-                attribute = method.Method.MarkedToRename();
-            }
+            bool? attribute = method.Method.MarkedToRename();
             // skip runtime methods
             if (attribute != null)
             {
@@ -1277,16 +1045,7 @@ namespace Obfuscar
                 return !attribute.Value;
             }
 
-            bool? parent = null;
-            var typeDef = method.TypeKey.Descriptor?.TypeDefinition;
-            if (srmReader != null && typeDef != null && srmReader.TryGetTypeHandle(typeDef, out var typeHandle))
-            {
-                parent = SrmAttributeReader.GetMarkedToRenameForType(srmReader.MetadataReader, typeHandle);
-            }
-            else
-            {
-                parent = typeDef?.MarkedToRename();
-            }
+            bool? parent = method.TypeKey.Descriptor?.TypeDefinition?.MarkedToRename();
             if (parent != null)
             {
                 message = "type attribute";
@@ -1363,49 +1122,24 @@ namespace Obfuscar
         public bool ShouldSkip(FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
             out string message)
         {
-            var fieldAdapter = field.FieldAdapter ?? CreateFieldAdapter(field.Field);
-            // skip runtime methods
-            var fieldAttributes = fieldAdapter != null
-                ? fieldAdapter.Attributes
-                : (System.Reflection.FieldAttributes)field.Field.Attributes;
+            var fieldAdapter = field.FieldAdapter;
+            var fieldAttributes = fieldAdapter?.Attributes ?? field.Field?.Attributes ?? 0;
             if ((fieldAttributes & System.Reflection.FieldAttributes.RTSpecialName) != 0 && field.Name == "value__")
             {
                 message = "special name";
                 return true;
             }
 
-            bool? attribute = null;
-            if (srmReader != null)
-            {
-                if (field.Field != null && srmReader.TryGetFieldHandle(field.Field, out var fieldHandle))
-                {
-                    attribute = SrmAttributeReader.GetMarkedToRenameForField(srmReader.MetadataReader, fieldHandle);
-                }
-                else if (fieldAdapter is SrmHandleFieldAdapter srmField)
-                {
-                    attribute = SrmAttributeReader.GetMarkedToRenameForField(srmReader.MetadataReader, srmField.Handle);
-                }
-            }
-            else
-            {
-                attribute = field.Field?.MarkedToRename();
-            }
+            bool? attribute = field.Field?.MarkedToRename();
+            if (attribute == null && fieldAdapter is IFieldDefinition fieldDefinition)
+                attribute = fieldDefinition.MarkedToRename();
             if (attribute != null)
             {
                 message = "attribute";
                 return !attribute.Value;
             }
 
-            bool? parent = null;
-            var declaringType = field.DeclaringType;
-            if (srmReader != null && declaringType != null && srmReader.TryGetTypeHandle(declaringType, out var typeHandle))
-            {
-                parent = SrmAttributeReader.GetMarkedToRenameForType(srmReader.MetadataReader, typeHandle);
-            }
-            else
-            {
-                parent = declaringType.MarkedToRename();
-            }
+            bool? parent = field.DeclaringType?.MarkedToRename();
             if (parent != null)
             {
                 message = "type attribute";
@@ -1464,33 +1198,20 @@ namespace Obfuscar
         public bool ShouldSkip(PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
             bool markedOnly, out string message)
         {
-            var propAdapter = prop.PropertyAdapter ?? CreatePropertyAdapter(prop.Property);
+            var propAdapter = prop.PropertyAdapter;
             if (propAdapter != null ? propAdapter.IsRuntimeSpecialName : prop.Property?.IsRuntimeSpecialName == true)
             {
                 message = "runtime special name";
                 return true;
             }
 
-            bool? attribute = null;
-            var propMethod = prop.Property?.GetMethod ?? prop.Property?.SetMethod;
-            if (srmReader != null)
+            bool? attribute = prop.Property?.MarkedToRename();
+            if (attribute == null && propAdapter is IPropertyDefinition propDefinition)
+                attribute = propDefinition.MarkedToRename();
+
+            if (attribute == null && prop.Property != null)
             {
-                if (prop.Property != null && srmReader.TryGetPropertyHandle(prop.Property, out var propHandle))
-                {
-                    attribute = SrmAttributeReader.GetMarkedToRenameForProperty(srmReader.MetadataReader, propHandle);
-                }
-                else if (propAdapter is SrmHandlePropertyAdapter srmProp)
-                {
-                    attribute = SrmAttributeReader.GetMarkedToRenameForProperty(srmReader.MetadataReader, srmProp.Handle);
-                }
-                else if (propMethod != null && srmReader.TryGetMethodHandle(propMethod, out var methodHandle))
-                {
-                    attribute = SrmAttributeReader.GetMarkedToRenameForMethod(srmReader.MetadataReader, methodHandle);
-                }
-            }
-            else
-            {
-                attribute = prop.Property?.MarkedToRename();
+                attribute = prop.Property.GetMethod?.MarkedToRename() ?? prop.Property.SetMethod?.MarkedToRename();
             }
             if (attribute != null)
             {
@@ -1498,16 +1219,7 @@ namespace Obfuscar
                 return !attribute.Value;
             }
 
-            bool? parent = null;
-            var declaringType = prop.DeclaringType;
-            if (srmReader != null && declaringType != null && srmReader.TryGetTypeHandle(declaringType, out var typeHandle))
-            {
-                parent = SrmAttributeReader.GetMarkedToRenameForType(srmReader.MetadataReader, typeHandle);
-            }
-            else
-            {
-                parent = declaringType?.MarkedToRename();
-            }
+            bool? parent = prop.DeclaringType?.MarkedToRename();
             if (parent != null)
             {
                 message = "type attribute";
@@ -1568,33 +1280,20 @@ namespace Obfuscar
             out string message)
         {
             // skip runtime special events
-            var evtAdapter = evt.EventAdapter ?? CreateEventAdapter(evt.Event);
+            var evtAdapter = evt.EventAdapter;
             if (evtAdapter != null ? evtAdapter.IsRuntimeSpecialName : evt.Event?.IsRuntimeSpecialName == true)
             {
                 message = "runtime special name";
                 return true;
             }
 
-            bool? attribute = null;
-            var evtMethod = evt.Event?.AddMethod ?? evt.Event?.RemoveMethod;
-            if (srmReader != null)
+            bool? attribute = evt.Event?.MarkedToRename();
+            if (attribute == null && evtAdapter is IEventDefinition evtDefinition)
+                attribute = evtDefinition.MarkedToRename();
+
+            if (attribute == null && evt.Event != null)
             {
-                if (evt.Event != null && srmReader.TryGetEventHandle(evt.Event, out var evtHandle))
-                {
-                    attribute = SrmAttributeReader.GetMarkedToRenameForEvent(srmReader.MetadataReader, evtHandle);
-                }
-                else if (evtAdapter is SrmHandleEventAdapter srmEvent)
-                {
-                    attribute = SrmAttributeReader.GetMarkedToRenameForEvent(srmReader.MetadataReader, srmEvent.Handle);
-                }
-                else if (evtMethod != null && srmReader.TryGetMethodHandle(evtMethod, out var methodHandle))
-                {
-                    attribute = SrmAttributeReader.GetMarkedToRenameForMethod(srmReader.MetadataReader, methodHandle);
-                }
-            }
-            else
-            {
-                attribute = evt.Event?.MarkedToRename();
+                attribute = evt.Event.AddMethod?.MarkedToRename() ?? evt.Event.RemoveMethod?.MarkedToRename();
             }
             // skip runtime methods
             if (attribute != null)
@@ -1603,16 +1302,7 @@ namespace Obfuscar
                 return !attribute.Value;
             }
 
-            bool? parent = null;
-            var declaringType = evt.DeclaringType;
-            if (srmReader != null && declaringType != null && srmReader.TryGetTypeHandle(declaringType, out var typeHandle))
-            {
-                parent = SrmAttributeReader.GetMarkedToRenameForType(srmReader.MetadataReader, typeHandle);
-            }
-            else
-            {
-                parent = declaringType?.MarkedToRename();
-            }
+            bool? parent = evt.DeclaringType?.MarkedToRename();
             if (parent != null)
             {
                 message = "type attribute";

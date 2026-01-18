@@ -1,31 +1,34 @@
-﻿using Mono.Cecil;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using NuGet.Versioning;  // Add reference to NuGet.Versioning
+using Obfuscar.Metadata.Abstractions;
+using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar.Helpers
 {
     public static class AssemblyDefinitionExtensions
     {
-        public static string GetPortableProfileDirectory(this AssemblyDefinition assembly)
+        public static string GetPortableProfileDirectory(this MutableAssemblyDefinition assembly)
         {
             foreach (var custom in assembly.CustomAttributes)
             {
-                if (custom.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute")
+                if (custom.AttributeTypeName == "System.Runtime.Versioning.TargetFrameworkAttribute")
                 {
-                    if (!custom.HasProperties)
+                    var displayName = Helper.GetAttributePropertyByName(custom, "FrameworkDisplayName")?.ToString();
+                    if (string.IsNullOrEmpty(displayName))
                         continue;
-                    var framework = custom.Properties.First(property => property.Name == "FrameworkDisplayName");
-                    var content = framework.Argument.Value.ToString();
-                    if (!string.Equals(content, ".NET Portable Subset"))
+                    if (!string.Equals(displayName, ".NET Portable Subset"))
                     {
                         return null;
                     }
 
-                    var parts = custom.ConstructorArguments[0].Value.ToString().Split(',');
+                    var ctorValue = custom.ConstructorArguments?.FirstOrDefault()?.Value?.ToString();
+                    if (string.IsNullOrEmpty(ctorValue))
+                        return null;
+                    var parts = ctorValue.Split(',');
                     var root = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
                     return Environment.ExpandEnvironmentVariables(
                         Path.Combine(
@@ -43,15 +46,15 @@ namespace Obfuscar.Helpers
             return null;
         }
 
-        public static IEnumerable<string> GetNetCoreDirectories(this AssemblyDefinition assembly)
+        public static IEnumerable<string> GetNetCoreDirectories(this MutableAssemblyDefinition assembly)
         {
             var seenFrameworks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var custom in assembly.CustomAttributes)
             {
-                if (custom.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute")
+                if (custom.AttributeTypeName == "System.Runtime.Versioning.TargetFrameworkAttribute")
                 {
-                    var framework = custom.ConstructorArguments[0].Value.ToString();
+                    var framework = custom.ConstructorArguments?.FirstOrDefault()?.Value?.ToString() ?? string.Empty;
 
                     // Normalize framework string (e.g., ".NETCoreApp,Version=6.0" -> ".NETCoreApp,Version=v6.0")
                     if (framework.StartsWith(".NETCoreApp,Version=") && !framework.Contains("v"))
@@ -227,11 +230,11 @@ namespace Obfuscar.Helpers
             return Path.GetFileName(bestMatch.Path);
         }
 
-        public static bool MarkedToRename(this AssemblyDefinition assembly)
+        public static bool MarkedToRename(this MutableAssemblyDefinition assembly)
         {
             foreach (var custom in assembly.CustomAttributes)
             {
-                if (custom.AttributeType.FullName == typeof(ObfuscateAssemblyAttribute).FullName)
+                if (custom.AttributeTypeName == typeof(ObfuscateAssemblyAttribute).FullName)
                 {
                     var rename = (bool)(Helper.GetAttributePropertyByName(custom, "AssemblyIsPrivate") ?? true);
                     return rename;
@@ -242,12 +245,12 @@ namespace Obfuscar.Helpers
             return true;
         }
 
-        public static bool CleanAttributes(this AssemblyDefinition assembly)
+        public static bool CleanAttributes(this MutableAssemblyDefinition assembly)
         {
             for (int i = 0; i < assembly.CustomAttributes.Count; i++)
             {
-                CustomAttribute custom = assembly.CustomAttributes[i];
-                if (custom.AttributeType.FullName == typeof(ObfuscateAssemblyAttribute).FullName)
+                var custom = assembly.CustomAttributes[i];
+                if (custom.AttributeTypeName == typeof(ObfuscateAssemblyAttribute).FullName)
                 {
                     if ((bool)(Helper.GetAttributePropertyByName(custom, "StripAfterObfuscation") ?? true))
                     {

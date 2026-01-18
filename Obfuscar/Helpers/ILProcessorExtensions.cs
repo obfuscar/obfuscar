@@ -1,18 +1,29 @@
-﻿using Mono.Cecil.Cil;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar.Helpers
 {
+    /// <summary>
+    /// Extension methods for MutableILProcessor to support instruction replacement.
+    /// </summary>
+    /// <remarks>
+    /// These extensions are used during string obfuscation to replace ldstr instructions
+    /// with calls to string accessor methods, while preserving branch targets and
+    /// exception handler boundaries.
+    /// </remarks>
     static class ILProcessorExtensions
     {
-        public static void ReplaceAndFixReferences(this ILProcessor processor, MethodBody body, Dictionary<Instruction, LdStrInstructionReplacement> oldToNewStringInstructions)
+        /// <summary>
+        /// Replaces instructions and fixes all references (branch targets, exception handlers).
+        /// </summary>
+        public static void ReplaceAndFixReferences(this MutableILProcessor processor, MutableMethodBody body, Dictionary<MutableInstruction, LdStrInstructionReplacement> oldToNewStringInstructions)
         {
-            foreach (KeyValuePair<Instruction, LdStrInstructionReplacement> oldToNew in oldToNewStringInstructions)
+            foreach (KeyValuePair<MutableInstruction, LdStrInstructionReplacement> oldToNew in oldToNewStringInstructions)
             {
-                Instruction oldInstruction = oldToNew.Key;
+                MutableInstruction oldInstruction = oldToNew.Key;
                 int oldIndex = oldToNew.Value.OldIndex;
-                Instruction newInstruction = oldToNew.Value.NewInstruction;
+                MutableInstruction newInstruction = oldToNew.Value.NewInstruction;
 
                 newInstruction.Offset = oldInstruction.Offset;
                 body.Instructions[oldIndex] = newInstruction;
@@ -23,29 +34,29 @@ namespace Obfuscar.Helpers
             ReplaceExceptionHandlers(processor, oldToNewStringInstructions);
         }
 
-        private static void ReplaceInstructions(ILProcessor processor, Dictionary<Instruction, LdStrInstructionReplacement> oldToNewStringInstructions)
+        private static void ReplaceInstructions(MutableILProcessor processor, Dictionary<MutableInstruction, LdStrInstructionReplacement> oldToNewStringInstructions)
         {
-            foreach (Instruction bodyInstruction in processor.Body.Instructions)
+            foreach (MutableInstruction bodyInstruction in processor.Body.Instructions)
             {
                 ReplaceOperandInstruction(bodyInstruction, oldToNewStringInstructions);
             }
         }
 
-        private static void ReplaceOperandInstruction(Instruction bodyInstruction, Dictionary<Instruction, LdStrInstructionReplacement> oldToNewStringInstructions)
+        private static void ReplaceOperandInstruction(MutableInstruction bodyInstruction, Dictionary<MutableInstruction, LdStrInstructionReplacement> oldToNewStringInstructions)
         {
             if (bodyInstruction == null)
             {
                 return;
             }
 
-            if (bodyInstruction.Operand is Instruction instructionOperand)
+            if (bodyInstruction.Operand is MutableInstruction instructionOperand)
             {
                 if (oldToNewStringInstructions.TryGetValue(instructionOperand, out LdStrInstructionReplacement oldToNew))
                 {
                     bodyInstruction.Operand = oldToNew.NewInstruction;
                 }
             }
-            else if (bodyInstruction.Operand is Instruction[] instructionArrayOperand)
+            else if (bodyInstruction.Operand is MutableInstruction[] instructionArrayOperand)
             {
                 for (int i = 0; i < instructionArrayOperand.Length; i++)
                 {
@@ -59,9 +70,9 @@ namespace Obfuscar.Helpers
             }
         }
 
-        private static void ReplaceExceptionHandlers(ILProcessor processor, Dictionary<Instruction, LdStrInstructionReplacement> oldToNewStringInstructions)
+        private static void ReplaceExceptionHandlers(MutableILProcessor processor, Dictionary<MutableInstruction, LdStrInstructionReplacement> oldToNewStringInstructions)
         {
-            foreach (ExceptionHandler exceptionHandler in processor.Body.ExceptionHandlers)
+            foreach (MutableExceptionHandler exceptionHandler in processor.Body.ExceptionHandlers)
             {
                 ReplaceInstruction(
                     exceptionHandler.FilterStart,
@@ -87,9 +98,9 @@ namespace Obfuscar.Helpers
         }
 
         private static void ReplaceInstruction
-            ( Instruction instruction
-            , Action<Instruction> setInstruction
-            , Dictionary<Instruction, LdStrInstructionReplacement> oldToNewStringInstructions
+            ( MutableInstruction instruction
+            , Action<MutableInstruction> setInstruction
+            , Dictionary<MutableInstruction, LdStrInstructionReplacement> oldToNewStringInstructions
             )
         {
             if (instruction != null && oldToNewStringInstructions.TryGetValue(instruction, out LdStrInstructionReplacement oldToNew))

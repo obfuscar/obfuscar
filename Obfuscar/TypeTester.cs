@@ -189,15 +189,7 @@ namespace Obfuscar
             // type's name matches
             if (!string.IsNullOrEmpty(name) && !Helper.CompareOptionalRegex(type.Fullname, name))
             {
-                System.IO.File.AppendAllText("/tmp/skip_debug.log", 
-                    $"TypeTester: pattern='{name}' vs type='{type.Fullname}' - NO MATCH\n");
                 return false;
-            }
-            
-            if (!string.IsNullOrEmpty(name))
-            {
-                System.IO.File.AppendAllText("/tmp/skip_debug.log", 
-                    $"TypeTester: pattern='{name}' vs type='{type.Fullname}' - MATCH!\n");
             }
 
             if (isSerializable.HasValue)

@@ -25,9 +25,9 @@
 #endregion
 
 using MethodAttributes = System.Reflection.MethodAttributes;
-using Mono.Cecil;
+using Obfuscar.Helpers;
 using Obfuscar.Metadata.Abstractions;
-using Obfuscar.Metadata.Adapters;
+using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar
 {
@@ -38,23 +38,22 @@ namespace Obfuscar
         {
         }
 
-        public EventKey(EventDefinition evt)
-            : this(new TypeKey((TypeDefinition) evt.DeclaringType), evt)
+        public EventKey(MutableEventDefinition evt)
+            : this(new TypeKey(evt?.DeclaringType), evt)
         {
         }
 
-        public EventKey(TypeKey typeKey, EventDefinition evt)
-            : this(typeKey, evt.EventType.FullName, evt.Name, evt, new CecilEventAdapter(evt))
+        public EventKey(TypeKey typeKey, MutableEventDefinition evt)
+            : this(typeKey, evt?.EventType?.GetFullName() ?? string.Empty, evt?.Name ?? string.Empty, evt, evt)
         {
         }
 
-        public EventKey(TypeKey typeKey, string type, string name, EventDefinition eventDefinition)
-            : this(typeKey, type, name, eventDefinition,
-                eventDefinition != null ? new CecilEventAdapter(eventDefinition) : null)
+        public EventKey(TypeKey typeKey, string type, string name, MutableEventDefinition eventDefinition)
+            : this(typeKey, type, name, eventDefinition, eventDefinition)
         {
         }
 
-        public EventKey(TypeKey typeKey, string type, string name, EventDefinition eventDefinition, IEvent eventAdapter)
+        public EventKey(TypeKey typeKey, string type, string name, MutableEventDefinition eventDefinition, IEvent eventAdapter)
         {
             this.TypeKey = typeKey;
             this.Type = type;
@@ -76,26 +75,25 @@ namespace Obfuscar
                 if (EventAdapter != null)
                     return EventAdapter.AddMethodAttributes;
 
-                return Event.AddMethod != null ? (MethodAttributes) Event.AddMethod.Attributes : 0;
+                return Event.AddMethod != null ? Event.AddMethod.Attributes : 0;
             }
         }
 
-        public TypeDefinition DeclaringType
+        public MutableTypeDefinition DeclaringType
         {
-            get { return Event != null ? (TypeDefinition) Event.DeclaringType : null; }
+            get { return Event?.DeclaringType; }
         }
 
-        public EventDefinition Event { get; }
+        public MutableEventDefinition Event { get; }
 
         public IEvent EventAdapter { get; }
 
-        public virtual bool Matches(MemberReference member)
+        public virtual bool Matches(MutableEventDefinition member)
         {
-            EventReference evtRef = member as EventReference;
-            if (evtRef != null)
+            if (member != null)
             {
-                if (TypeKey.Matches(evtRef.DeclaringType))
-                    return Type == evtRef.EventType.FullName && Name == evtRef.Name;
+                if (TypeKey.Matches(member.DeclaringType))
+                    return Type == member.EventType?.GetFullName() && Name == member.Name;
             }
 
             return false;

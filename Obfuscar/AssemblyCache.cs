@@ -2,17 +2,17 @@
 
 /// <copyright>
 /// Copyright (c) 2007 Ryan Williams <drcforbin@gmail.com>
-/// 
+///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
 /// in the Software without restriction, including without limitation the rights
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-/// 
+///
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-/// 
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,18 +24,26 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using Microsoft.Extensions.Logging;
-using Mono.Cecil;
 using Obfuscar.Helpers;
+using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar
 {
-    class AssemblyCache : DefaultAssemblyResolver
+    class AssemblyCache : IMutableAssemblyResolver
     {
-        private List<string> pathsPortable = new List<string>();
-        private List<string> pathsNetCore = new List<string>();
+        private readonly Dictionary<string, MutableAssemblyDefinition> assemblies =
+            new Dictionary<string, MutableAssemblyDefinition>(StringComparer.OrdinalIgnoreCase);
+
+        private readonly HashSet<string> searchDirectories =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        private readonly List<string> pathsPortable = new List<string>();
+        private readonly List<string> pathsNetCore = new List<string>();
 
         public AssemblyCache(Project project)
         {
@@ -46,116 +54,119 @@ namespace Obfuscar
                 AddSearchDirectory(Path.GetDirectoryName(info.FileName));
         }
 
-        public TypeDefinition GetTypeDefinition(TypeReference type)
+        public void AddSearchDirectory(string path)
         {
-            if (type == null)
-                return null;
+            if (string.IsNullOrWhiteSpace(path))
+                return;
 
-            TypeDefinition typeDef = type as TypeDefinition;
-            if (typeDef != null)
-                return typeDef;
-
-            AssemblyNameReference name = type.Scope as AssemblyNameReference;
-            if (name == null)
-            {
-                GenericInstanceType gi = type as GenericInstanceType;
-                return gi == null ? null : GetTypeDefinition(gi.ElementType);
-            }
-
-            AssemblyDefinition assmDef;
-            try
-            {
-                assmDef = Resolve(name);
-            }
-            catch (FileNotFoundException)
-            {
-                throw new ObfuscarException("Unable to resolve dependency:  " + name.Name);
-            }
-
-            string fullName = type.GetFullName();
-            typeDef = assmDef.MainModule.GetType(fullName);
-            if (typeDef != null)
-                return typeDef;
-
-            // IMPORTANT: handle type forwarding
-            if (!assmDef.MainModule.HasExportedTypes)
-                return null;
-
-            foreach (var exported in assmDef.MainModule.ExportedTypes)
-            {
-                if (exported.FullName == fullName)
-                    return exported.Resolve();
-            }
-
-            return null;
+            if (Directory.Exists(path))
+                searchDirectories.Add(path);
         }
 
-        public new void RegisterAssembly(AssemblyDefinition assembly)
+        public void RegisterAssembly(MutableAssemblyDefinition assembly)
         {
+            if (assembly?.Name?.Name == null)
+                return;
+
+            if (!assemblies.ContainsKey(assembly.Name.Name))
+                assemblies[assembly.Name.Name] = assembly;
+
             var portablePath = assembly.GetPortableProfileDirectory();
-            if (portablePath != null)
+            if (!string.IsNullOrEmpty(portablePath))
             {
                 if (Directory.Exists(portablePath))
-                {
                     pathsPortable.Add(portablePath);
-                }
                 else
-                {
                     LoggerService.Logger.LogWarning("Portable profile directory does not exist: {Path}", portablePath);
-                }
             }
 
             foreach (var netCorePath in assembly.GetNetCoreDirectories())
             {
                 if (Directory.Exists(netCorePath))
-                {
                     pathsNetCore.Add(netCorePath);
-                }
                 else
-                {
                     LoggerService.Logger.LogWarning(".NET Core/.NET Standard/.NET referenced assembly directory does not exist: {Path}", netCorePath);
-                }
             }
-
-            base.RegisterAssembly(assembly);
         }
 
-        public override AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
+        public MutableAssemblyDefinition Resolve(MutableAssemblyNameReference name)
         {
-            AssemblyDefinition result;
-            if (name.IsRetargetable)
-            {
-                LoggerService.Logger.LogDebug("Assembly {Name} is retargetable, adding {paths} search paths", name.Name, pathsPortable.Count);
-                foreach (var path in pathsPortable)
-                {
-                    LoggerService.Logger.LogDebug("Adding search path {Path}", path);
-                    AddSearchDirectory(path);
-                }
+            return Resolve(name, new MutableReaderParameters { AssemblyResolver = this });
+        }
 
-                result = base.Resolve(name, parameters);
-                foreach (var path in pathsPortable)
-                    RemoveSearchDirectory(path);
-            }
-            else if (pathsNetCore.Count > 0)
-            {
-                LoggerService.Logger.LogDebug("Assembly {Name} is not retargetable, adding {paths} search paths", name.Name, pathsNetCore.Count);
-                foreach (var path in pathsNetCore)
-                {
-                    LoggerService.Logger.LogDebug("Adding search path {Path}", path);
-                    AddSearchDirectory(path);
-                }
+        public MutableAssemblyDefinition Resolve(MutableAssemblyNameReference name, MutableReaderParameters parameters)
+        {
+            if (name == null)
+                return null;
 
-                result = base.Resolve(name, parameters);
-                foreach (var path in pathsNetCore)
-                    RemoveSearchDirectory(path);
+            if (assemblies.TryGetValue(name.Name, out var cached))
+                return cached;
+
+            var searchPaths = new List<string>(searchDirectories);
+            if ((name.Attributes & AssemblyNameFlags.Retargetable) != 0)
+            {
+                searchPaths.AddRange(pathsPortable);
             }
             else
             {
-                LoggerService.Logger.LogDebug("Assembly {Name} is using default search paths", name.Name);
-                result = base.Resolve(name, parameters);
+                searchPaths.AddRange(pathsNetCore);
             }
 
-            return result;
+            foreach (var dir in searchPaths)
+            {
+                var dllPath = Path.Combine(dir, name.Name + ".dll");
+                if (File.Exists(dllPath))
+                    return LoadAssembly(dllPath, parameters);
+
+                var exePath = Path.Combine(dir, name.Name + ".exe");
+                if (File.Exists(exePath))
+                    return LoadAssembly(exePath, parameters);
+            }
+
+            throw new FileNotFoundException("Unable to resolve dependency: " + name.Name);
+        }
+
+        private MutableAssemblyDefinition LoadAssembly(string path, MutableReaderParameters parameters)
+        {
+            var readerParams = parameters ?? new MutableReaderParameters();
+            if (readerParams.AssemblyResolver == null)
+                readerParams.AssemblyResolver = this;
+
+            var assembly = MutableAssemblyDefinition.ReadAssembly(path, readerParams);
+            RegisterAssembly(assembly);
+            return assembly;
+        }
+
+        public MutableTypeDefinition GetTypeDefinition(MutableTypeReference type)
+        {
+            if (type == null)
+                return null;
+
+            if (type is MutableTypeDefinition typeDef)
+                return typeDef;
+
+            if (type is MutableGenericInstanceType generic)
+                return GetTypeDefinition(generic.ElementType);
+
+            if (type is MutableArrayType arrayType)
+                return GetTypeDefinition(arrayType.ElementType);
+
+            if (type is MutableByReferenceType byRefType)
+                return GetTypeDefinition(byRefType.ElementType);
+
+            if (type is MutablePointerType pointerType)
+                return GetTypeDefinition(pointerType.ElementType);
+
+            string scopeName = type.GetScopeName();
+            if (string.IsNullOrEmpty(scopeName))
+                return null;
+
+            if (!assemblies.TryGetValue(scopeName, out var assembly))
+            {
+                assembly = Resolve(new MutableAssemblyNameReference(scopeName, new Version(0, 0, 0, 0)));
+            }
+
+            return assembly?.MainModule?.GetType(type.FullName);
         }
     }
 }

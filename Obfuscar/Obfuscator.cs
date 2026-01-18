@@ -32,18 +32,39 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Resources;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml.Linq;
 using ICSharpCode.BamlDecompiler.Baml;
 using Microsoft.Extensions.Logging;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
 using Obfuscar.Helpers;
 using Obfuscar.Metadata;
 using Obfuscar.Metadata.Abstractions;
+using Obfuscar.Metadata.Mutable;
+using ArrayType = Obfuscar.Metadata.Mutable.MutableArrayType;
+using AssemblyDefinition = Obfuscar.Metadata.Mutable.MutableAssemblyDefinition;
+using EmbeddedResource = Obfuscar.Metadata.Mutable.MutableEmbeddedResource;
+using EventDefinition = Obfuscar.Metadata.Mutable.MutableEventDefinition;
+using FieldDefinition = Obfuscar.Metadata.Mutable.MutableFieldDefinition;
+using FieldReference = Obfuscar.Metadata.Mutable.MutableFieldReference;
+using GenericInstanceMethod = Obfuscar.Metadata.Mutable.MutableGenericInstanceMethod;
+using GenericParameter = Obfuscar.Metadata.Mutable.MutableGenericParameter;
+using ILProcessor = Obfuscar.Metadata.Mutable.MutableILProcessor;
+using Instruction = Obfuscar.Metadata.Mutable.MutableInstruction;
+using MethodBody = Obfuscar.Metadata.Mutable.MutableMethodBody;
+using MethodDefinition = Obfuscar.Metadata.Mutable.MutableMethodDefinition;
+using MethodReference = Obfuscar.Metadata.Mutable.MutableMethodReference;
+using MethodSemanticsAttributes = Obfuscar.Metadata.Mutable.MutableMethodSemanticsAttributes;
+using ModuleAttributes = Obfuscar.Metadata.Mutable.MutableModuleAttributes;
+using OpCodes = Obfuscar.Metadata.Mutable.MutableOpCodes;
+using ParameterDefinition = Obfuscar.Metadata.Mutable.MutableParameterDefinition;
+using PropertyDefinition = Obfuscar.Metadata.Mutable.MutablePropertyDefinition;
+using Resource = Obfuscar.Metadata.Mutable.MutableResource;
+using TypeDefinition = Obfuscar.Metadata.Mutable.MutableTypeDefinition;
+using TypeReference = Obfuscar.Metadata.Mutable.MutableTypeReference;
+using VariableDefinition = Obfuscar.Metadata.Mutable.MutableVariableDefinition;
 
 namespace Obfuscar
 {
@@ -89,20 +110,6 @@ namespace Obfuscar
 
         public void RunRules()
         {
-            // DEBUG: Log properties at start
-            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
-                $"RunRules: AssemblyList.Count={Project.AssemblyList.Count}\n");
-            foreach (AssemblyInfo info in Project.AssemblyList)
-            {
-                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
-                    $"RunRules: Checking assembly {info.Name}, Types.Count={info.Definition.MainModule.Types.Count}\n");
-                foreach (var t in info.Definition.MainModule.Types)
-                {
-                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
-                        $"StartOfRules: Type={t.FullName}, PropertiesCount={t.Properties.Count}\n");
-                }
-            }
-            
             // The SemanticAttributes of MethodDefinitions have to be loaded before any fields,properties or events are removed
             LoadMethodSemantics();
 
@@ -188,23 +195,6 @@ namespace Obfuscar
                     writer.Write(copyInfo.Definition, outName);
                 }
 
-                // Cecil does not properly update the name cache, so force that:
-                foreach (AssemblyInfo info in Project.AssemblyList)
-                {
-                    var types = info.Definition.MainModule.Types;
-                    // DEBUG: Log type properties before saving
-                    foreach (var t in types)
-                    {
-                        if (t.Properties.Count > 0)
-                        {
-                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log",
-                                $"BeforeSave: Type={t.FullName}, PropertiesCount={t.Properties.Count}\n");
-                        }
-                    }
-                    for (int i = 0; i < types.Count; i++)
-                        types[i] = types[i];
-                }
-
                 // save the modified assemblies
                 foreach (AssemblyInfo info in Project.AssemblyList)
                 {
@@ -215,21 +205,15 @@ namespace Obfuscar
                         Debug.Assert(fileName != null, "fileName != null");
                         // ReSharper disable once AssignNullToNotNullAttribute
                         string outName = Path.Combine(outPath, fileName);
-                        var parameters = new WriterParameters();
+                        var parameters = new MutableWriterParameters();
                         if (Project.Settings.RegenerateDebugInfo)
                         {
                             LoggerService.Logger.LogDebug("Regenerating debug info for assembly: {0}", info.Name);
-                            if (IsOnWindows)
-                            {
-                                parameters.SymbolWriterProvider = new Mono.Cecil.Cil.PortablePdbWriterProvider();
-                            }
-                            else
-                            {
-                                parameters.SymbolWriterProvider = new Mono.Cecil.Pdb.PdbWriterProvider();
-                            }
+                            parameters.WriteSymbols = true;
                         }
 
-                        if (info.Definition.Name.HasPublicKey)
+                        var hasPublicKey = info.Definition.Name.PublicKey != null && info.Definition.Name.PublicKey.Length > 0;
+                        if (hasPublicKey)
                         {
                             LoggerService.Logger.LogDebug("Assembly {0} is signed, processing key information", info.Name);
                             // source assembly was signed.
@@ -242,20 +226,28 @@ namespace Obfuscar
                                     LoggerService.Logger.LogDebug("Using 'auto' key mode for assembly: {0}", info.Name);
                                     // if key file is "auto", resolve key file from assembly's attribute.
                                     var attribute = info.Definition.CustomAttributes
-                                        .FirstOrDefault(item => item.AttributeType.FullName == "System.Reflection.AssemblyKeyFileAttribute");
-                                    if (attribute != null && attribute?.ConstructorArguments.Count == 1)
+                                        .FirstOrDefault(item => item.AttributeTypeName == "System.Reflection.AssemblyKeyFileAttribute");
+                                    if (attribute != null && attribute.ConstructorArguments.Count == 1)
                                     {
-                                        fileName = attribute.ConstructorArguments[0].Value.ToString();
-                                        if (!File.Exists(fileName))
+                                        var attrValue = attribute.ConstructorArguments[0].Value?.ToString();
+                                        if (string.IsNullOrEmpty(attrValue))
                                         {
-                                            // assume relative path.
-                                            keyFile = Path.Combine(Project.Settings.InPath, fileName);
+                                            LoggerService.Logger.LogDebug("Assembly key file attribute present but empty for {0}", info.Name);
                                         }
                                         else
                                         {
-                                           keyFile = fileName;
+                                            fileName = attrValue;
+                                            if (!File.Exists(fileName))
+                                            {
+                                                // assume relative path.
+                                                keyFile = Path.Combine(Project.Settings.InPath, fileName);
+                                            }
+                                            else
+                                            {
+                                               keyFile = fileName;
+                                            }
+                                            LoggerService.Logger.LogDebug("Auto-resolved key file for assembly {0}: {1}", info.Name, keyFile);
                                         }
-                                        LoggerService.Logger.LogDebug("Auto-resolved key file for assembly {0}: {1}", info.Name, keyFile);
                                     }
                                 }
 
@@ -437,7 +429,7 @@ namespace Obfuscar
             {
                 foreach (var typeDef in info.GetAllTypes())
                 {
-                    if (!typeDef.TryGetCecilDefinition(out var type))
+                    if (typeDef is not MutableTypeDefinition type)
                         continue;
                     foreach (MethodDefinition method in type.Methods)
                     {
@@ -468,7 +460,7 @@ namespace Obfuscar
                         continue;
                     }
 
-                    if (!typeDef.TryGetCecilDefinition(out var type))
+                    if (typeDef is not MutableTypeDefinition type)
                         continue;
 
                     var typeKey = new TypeKey(typeDef);
@@ -488,20 +480,15 @@ namespace Obfuscar
             AssemblyInfo info)
         {
             string sig = field.FieldType.FullName;
-            var adapter = info?.CreateFieldAdapter(field);
-            var fieldKey = new FieldKey(typeKey, sig, field.Name, field, null, adapter);
+            var fieldKey = new FieldKey(typeKey, sig, field.Name, field, field.Attributes, field);
             NameGroup nameGroup = GetNameGroup(nameGroups, sig);
 
             // skip filtered fields
             string skip;
-            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                $"ProcessField: {typeKey.Fullname}.{field.Name}, Scope={typeKey.Scope}, FieldKey={fieldKey}, HidePrivateApi={Project.Settings.HidePrivateApi}\n");
             if (info.ShouldSkip(fieldKey, Project.InheritMap, Project.Settings.KeepPublicApi,
                 Project.Settings.HidePrivateApi,
                 Project.Settings.MarkedOnly, out skip))
             {
-                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                    $"  -> Skipped: {skip}\n");
                 LoggerService.Logger.LogDebug("Field {0} in type {1} skipped: {2}", field.Name, typeKey, skip);
                 Mapping.UpdateField(fieldKey, ObfuscationStatus.Skipped, skip);
                 nameGroup.Add(fieldKey.Name);
@@ -512,8 +499,6 @@ namespace Obfuscar
                 ? nameGroup.GetNext()
                 : NameMaker.UniqueName(_uniqueMemberNameIndex++);
 
-            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                $"  -> Renamed to: {newName}\n");
             LoggerService.Logger.LogDebug("Renaming field {0} in type {1} to {2}", field.Name, typeKey, newName);
             RenameField(info, fieldKey, field, newName);
             nameGroup.Add(newName);
@@ -529,14 +514,8 @@ namespace Obfuscar
                     FieldReference member = reference.UnrenamedReferences[i] as FieldReference;
                     if (member != null)
                     {
-                        // DEBUG: Log field reference matching
-                        System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                            $"  Checking FieldRef: {member.DeclaringType?.FullName}.{member.Name}, Type={member.FieldType?.FullName} vs Key Type={fieldKey.Type}, Name={fieldKey.Name}\n");
-                        
                         if (fieldKey.Matches(member))
                         {
-                            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                                $"    -> MATCHED! Renaming to {newName}\n");
                             member.Name = newName;
                             reference.UnrenamedReferences.RemoveAt(i);
 
@@ -568,7 +547,7 @@ namespace Obfuscar
                         continue;
                     }
 
-                    if (!typeDef.TryGetCecilDefinition(out var type))
+                    if (typeDef is not MutableTypeDefinition type)
                         continue;
 
                     // rename the method parameters
@@ -641,7 +620,7 @@ namespace Obfuscar
                     if (typeDef.FullName == "<Module>")
                         continue;
 
-                    if (!typeDef.TryGetCecilDefinition(out var type))
+                    if (typeDef is not MutableTypeDefinition type)
                         continue;
 
                     if (type.FullName.IndexOf("<PrivateImplementationDetails>{", StringComparison.Ordinal) >= 0)
@@ -705,7 +684,9 @@ namespace Obfuscar
                     if (type.IsNested)
                     {
                         ns = "";
-                        name = NameMaker.UniqueNestedTypeName(type.DeclaringType.NestedTypes.IndexOf(type));
+                        var declaringType = type.DeclaringType as MutableTypeDefinition;
+                        var nestedIndex = declaringType != null ? declaringType.NestedTypes.IndexOf(type) : 0;
+                        name = NameMaker.UniqueNestedTypeName(nestedIndex);
                     }
                     else
                     {
@@ -743,6 +724,9 @@ namespace Obfuscar
             }
         }
 
+        /// <summary>
+        /// Fixes ResourceManager type references when types are renamed.
+        /// </summary>
         private void FixResouceManager(List<Resource> resources, TypeDefinition type, string fullName,
             TypeKey newTypeKey)
         {
@@ -763,6 +747,9 @@ namespace Obfuscar
                     foreach (MethodDefinition method in type.Methods)
                     {
                         if (method.ReturnType.FullName != "System.Resources.ResourceManager")
+                            continue;
+
+                        if (method.Body == null)
                             continue;
 
                         foreach (Instruction instruction in method.Body.Instructions)
@@ -819,46 +806,42 @@ namespace Obfuscar
 
             foreach (Resource res in library.MainModule.Resources)
             {
-                var embed = res as EmbeddedResource;
-                if (embed == null)
+                if (res is not EmbeddedResource embed)
                     continue;
 
-                Stream s = embed.GetResourceStream();
+                using var s = new MemoryStream(embed.GetResourceData());
                 s.Position = 0;
-                ResourceReader reader;
                 try
                 {
-                    reader = new ResourceReader(s);
+                    using var reader = new ResourceReader(s);
+                    foreach (DictionaryEntry entry in reader.Cast<DictionaryEntry>().OrderBy(e => e.Key.ToString()))
+                    {
+                        if (entry.Key.ToString().EndsWith(".baml", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Stream stream;
+                            var value = entry.Value as Stream;
+                            if (value != null)
+                                stream = value;
+                            else if (entry.Value is byte[] bytes)
+                                stream = new MemoryStream(bytes);
+                            else
+                                continue;
+
+                            try
+                            {
+                                result.Add(BamlReader.ReadDocument(stream, CancellationToken.None));
+                            }
+                            catch (ArgumentException)
+                            {
+                            }
+                            catch (FileNotFoundException)
+                            {
+                            }
+                        }
+                    }
                 }
                 catch (ArgumentException)
                 {
-                    continue;
-                }
-
-                foreach (DictionaryEntry entry in reader.Cast<DictionaryEntry>().OrderBy(e => e.Key.ToString()))
-                {
-                    if (entry.Key.ToString().EndsWith(".baml", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Stream stream;
-                        var value = entry.Value as Stream;
-                        if (value != null)
-                            stream = value;
-                        else if (entry.Value is byte[])
-                            stream = new MemoryStream((byte[]) entry.Value);
-                        else
-                            continue;
-
-                        try
-                        {
-                            result.Add(BamlReader.ReadDocument(stream, CancellationToken.None));
-                        }
-                        catch (ArgumentException)
-                        {
-                        }
-                        catch (FileNotFoundException)
-                        {
-                        }
-                    }
                 }
             }
 
@@ -949,7 +932,7 @@ namespace Obfuscar
                         continue;
                     }
 
-                    if (!typeDef.TryGetCecilDefinition(out var type))
+                    if (typeDef is not MutableTypeDefinition type)
                         continue;
 
                     TypeKey typeKey = new TypeKey(typeDef);
@@ -979,7 +962,6 @@ namespace Obfuscar
         {
             PropertyKey propKey = new PropertyKey(typeKey, prop);
             ObfuscatedThing m = Mapping.GetProperty(propKey);
-            var propAdapter = info.CreatePropertyAdapter(prop);
 
             string skip;
             // skip filtered props
@@ -1015,19 +997,15 @@ namespace Obfuscar
             else
             {
                 bool keepForMarkedOnly = Project.Settings.MarkedOnly &&
-                    (info.GetMarkedToRename(prop) == true || info.GetMarkedToRename(prop.DeclaringType) == true);
+                    (prop.MarkedToRename() == true || prop.DeclaringType?.MarkedToRename() == true);
 
-                var hasCustomAttributes = propAdapter != null
-                    ? propAdapter.HasCustomAttributes
-                    : prop.CustomAttributes.Count > 0;
+                var hasCustomAttributes = prop.HasCustomAttributes;
                 if (hasCustomAttributes || Project.Settings.KeepProperties || keepForMarkedOnly)
                 {
                     // If a property has custom attributes we don't remove the property but rename it instead.
                     // Does the same if KeepProperties is set to true or marked-only should keep it.
                     var newName = NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
-                    var attributeCount = propAdapter != null
-                        ? propAdapter.CustomAttributeTypeFullNames.Count()
-                        : prop.CustomAttributes.Count;
+                    var attributeCount = prop.CustomAttributes.Count;
                     LoggerService.Logger.LogDebug("Renaming property {0} in type {1} to {2} (has {3} custom attributes, KeepProperties={4})",
                         prop.Name, typeKey, newName, attributeCount, Project.Settings.KeepProperties);
                     RenameProperty(info, propKey, prop, newName);
@@ -1045,28 +1023,6 @@ namespace Obfuscar
         private void RenameProperty(AssemblyInfo info, PropertyKey propertyKey, PropertyDefinition property,
             string newName)
         {
-            // find references, rename them, then rename the property itself
-            foreach (AssemblyInfo reference in info.ReferencedBy)
-            {
-                for (int i = 0; i < reference.UnrenamedReferences.Count;)
-                {
-                    PropertyReference member = reference.UnrenamedReferences[i] as PropertyReference;
-                    if (member != null)
-                    {
-                        if (propertyKey.Matches(member))
-                        {
-                            member.Name = newName;
-                            reference.UnrenamedReferences.RemoveAt(i);
-
-                            // since we removed one, continue without the increment
-                            continue;
-                        }
-                    }
-
-                    i++;
-                }
-            }
-
             property.Name = newName;
             Mapping.UpdateProperty(propertyKey, ObfuscationStatus.Renamed, newName);
         }
@@ -1088,7 +1044,7 @@ namespace Obfuscar
                         continue;
                     }
 
-                    if (!typeDef.TryGetCecilDefinition(out var type))
+                    if (typeDef is not MutableTypeDefinition type)
                         continue;
 
                     TypeKey typeKey = new TypeKey(typeDef);
@@ -1162,7 +1118,7 @@ namespace Obfuscar
                         continue;
                     }
 
-                    if (!typeDef.TryGetCecilDefinition(out var type))
+                    if (typeDef is not MutableTypeDefinition type)
                         continue;
 
                     TypeKey typeKey = new TypeKey(typeDef);
@@ -1195,7 +1151,7 @@ namespace Obfuscar
                         continue;
                     }
 
-                    if (!typeDef.TryGetCecilDefinition(out var type))
+                    if (typeDef is not MutableTypeDefinition type)
                         continue;
 
                     TypeKey typeKey = new TypeKey(typeDef);
@@ -1394,7 +1350,15 @@ namespace Obfuscar
 
             HashSet<TypeKey> parentTypes = new HashSet<TypeKey>();
             foreach (TypeKey type in typeKeys)
-                InheritMap.GetBaseTypes(Project, parentTypes, type.TypeDefinition);
+            {
+                // Use instance method GetBaseTypes which handles both Cecil and abstraction types
+                var bases = Project.InheritMap.GetBaseTypes(type);
+                if (bases != null)
+                {
+                    foreach (var baseType in bases)
+                        parentTypes.Add(baseType);
+                }
+            }
 
             typeKeys.UnionWith(parentTypes);
 
@@ -1510,10 +1474,8 @@ namespace Obfuscar
         /// </summary>
         internal void HideStrings()
         {
-            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", "HideStrings() called\n");
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
-                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"Processing assembly {info.Definition.Name}\n");
                 AssemblyDefinition library = info.Definition;
                 StringSqueeze container = new StringSqueeze(library);
 
@@ -1525,11 +1487,9 @@ namespace Obfuscar
                         continue;
                     }
 
-                    if (!typeDef.TryGetCecilDefinition(out var type))
+                    if (typeDef is not MutableTypeDefinition type)
                         continue;
 
-                    // FIXME: Figure out why this exists if it is never used.
-                    // TypeKey typeKey = new TypeKey(type);
                     foreach (MethodDefinition method in type.Methods)
                     {
                         container.ProcessStrings(method, info, Project);
@@ -1550,7 +1510,7 @@ namespace Obfuscar
                     if (typeDef.FullName == "<Module>")
                         continue;
 
-                    if (!typeDef.TryGetCecilDefinition(out var type))
+                    if (typeDef is not MutableTypeDefinition type)
                         continue;
 
                     type.CleanAttributes();
@@ -1584,31 +1544,45 @@ namespace Obfuscar
                     continue;
 
                 var module = info.Definition.MainModule;
-                var attribute = new TypeReference("System.Runtime.CompilerServices", "SuppressIldasmAttribute", module,
-                    module.TypeSystem.CoreLibrary).Resolve();
-                if (attribute == null || attribute.Module != module.TypeSystem.CoreLibrary)
-                    return;
+                var suppressType = typeof(System.Runtime.CompilerServices.SuppressIldasmAttribute);
+                var suppressCtor = suppressType.GetConstructor(Type.EmptyTypes);
+                if (suppressCtor == null)
+                    continue;
 
-                CustomAttribute found = module.CustomAttributes.FirstOrDefault(existing =>
-                    existing.Constructor.DeclaringType.FullName == attribute.FullName);
+                var suppressCtorRef = module.ImportReference(suppressCtor);
+                var suppressTypeName = suppressType.FullName ?? "System.Runtime.CompilerServices.SuppressIldasmAttribute";
+                var found = module.CustomAttributes.FirstOrDefault(existing =>
+                    existing.AttributeTypeName == suppressTypeName);
 
                 //Only add if it's not there already
                 if (found != null)
                     continue;
 
                 //Add one
-                var add = module.ImportReference(attribute.GetConstructors().FirstOrDefault(item => !item.HasParameters));
-                MethodReference constructor = module.ImportReference(add);
-                CustomAttribute attr = new CustomAttribute(constructor);
-                module.CustomAttributes.Add(attr);
-                module.Assembly.CustomAttributes.Add(attr);
+                module.CustomAttributes.Add(new MutableCustomAttribute(suppressCtorRef));
+                module.Assembly?.CustomAttributes.Add(new MutableCustomAttribute(suppressCtorRef));
             }
         }
 
+        /// <summary>
+        /// Handles string obfuscation by replacing string literals with method calls.
+        /// </summary>
+        /// <remarks>
+        /// This class uses the mutable SRM-backed object model for IL manipulation and metadata updates.
+        /// The final assembly is written using SrmAssemblyWriter to PE format via System.Reflection.Metadata.
+        ///
+        /// The class creates a helper type with:
+        /// - An encrypted byte array containing all string data
+        /// - A static constructor to initialize the data
+        /// - Per-string accessor methods that decode on first access
+        /// - A caching mechanism to avoid repeated decoding
+        /// 
+        /// Each ldstr instruction is replaced with a call to the corresponding accessor method.
+        /// </remarks>
         private class StringSqueeze
         {
             /// <summary>
-            /// Store the class to generate so we can generate it later on.
+            /// Stores data for generated string obfuscation helper types.
             /// </summary>
             private class StringSqueezeData
             {
@@ -1646,7 +1620,9 @@ namespace Obfuscar
 
             private MethodReference InitializeArrayMethod { get; set; }
 
-            private TypeDefinition EncodingTypeDefinition { get; set; }
+            private MethodReference EncodingGetUtf8Method { get; set; }
+
+            private MethodReference EncodingGetStringMethod { get; set; }
 
             private readonly List<StringSqueezeData> newDatas = new List<StringSqueezeData>();
 
@@ -1678,22 +1654,29 @@ namespace Obfuscar
                 SystemByteTypeReference = library.MainModule.TypeSystem.Byte;
                 SystemIntTypeReference = library.MainModule.TypeSystem.Int32;
                 SystemObjectTypeReference = library.MainModule.TypeSystem.Object;
-                SystemValueTypeTypeReference = new TypeReference("System", "ValueType", library.MainModule,
-                    library.MainModule.TypeSystem.CoreLibrary);
+                SystemValueTypeTypeReference = library.MainModule.TypeSystem.Import(typeof(ValueType));
 
-                EncodingTypeDefinition = new TypeReference("System.Text", "Encoding", library.MainModule,
-                    library.MainModule.TypeSystem.CoreLibrary).Resolve();
-                if (EncodingTypeDefinition == null)
+                var encodingType = typeof(System.Text.Encoding);
+                var getUtf8 = encodingType.GetProperty("UTF8", BindingFlags.Public | BindingFlags.Static)?.GetGetMethod();
+                var getString = encodingType.GetMethod("GetString", new[] { typeof(byte[]), typeof(int), typeof(int) });
+                if (getUtf8 == null || getString == null)
                 {
                     _disabled = true;
                     return;
                 }
 
-                // IMPORTANT: this runtime helpers resolution must be after encoding resolution. 
-                var runtimeHelpers = new TypeReference("System.Runtime.CompilerServices", "RuntimeHelpers",
-                    library.MainModule, library.MainModule.TypeSystem.CoreLibrary).Resolve();
-                InitializeArrayMethod = library.MainModule.ImportReference(
-                    runtimeHelpers.Methods.FirstOrDefault(method => method.Name == "InitializeArray"));
+                EncodingGetUtf8Method = library.MainModule.ImportReference(getUtf8);
+                EncodingGetStringMethod = library.MainModule.ImportReference(getString);
+
+                var runtimeHelpers = typeof(System.Runtime.CompilerServices.RuntimeHelpers);
+                var initializeArray = runtimeHelpers.GetMethod("InitializeArray", new[] { typeof(Array), typeof(RuntimeFieldHandle) });
+                if (initializeArray == null)
+                {
+                    _disabled = true;
+                    return;
+                }
+
+                InitializeArrayMethod = library.MainModule.ImportReference(initializeArray);
             }
 
             private StringSqueezeData GetNewType()
@@ -1708,11 +1691,8 @@ namespace Obfuscar
                 {
                     var library = _library;
 
-                    var encodingGetUtf8Method =
-                        library.MainModule.ImportReference(EncodingTypeDefinition.Methods.FirstOrDefault(method => method.Name == "get_UTF8"));
-                    var encodingGetStringMethod = library.MainModule.ImportReference(EncodingTypeDefinition.Methods.FirstOrDefault(method =>
-                        method.FullName ==
-                        "System.String System.Text.Encoding::GetString(System.Byte[],System.Int32,System.Int32)"));
+                    var encodingGetUtf8Method = EncodingGetUtf8Method;
+                    var encodingGetStringMethod = EncodingGetStringMethod;
 
                     // New static class with a method for each unique string we substitute.
                     string guid = Guid.NewGuid().ToString().ToUpper();
@@ -1727,6 +1707,7 @@ namespace Obfuscar
                     TypeDefinition structType = new TypeDefinition("1{" + guid + "}", "2",
                         TypeAttributes.ExplicitLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed |
                         TypeAttributes.NestedPrivate, SystemValueTypeTypeReference);
+                    structType.DeclaringType = newType;
                     structType.PackingSize = 1;
                     newType.NestedTypes.Add(structType);
 
@@ -1734,29 +1715,33 @@ namespace Obfuscar
                     FieldDefinition dataConstantField = new FieldDefinition("3",
                         FieldAttributes.HasFieldRVA | FieldAttributes.Private | FieldAttributes.Static |
                         FieldAttributes.Assembly, structType);
+                    dataConstantField.DeclaringType = newType;
                     newType.Fields.Add(dataConstantField);
 
                     // Add data field where constructor copies the data to
                     FieldDefinition dataField = new FieldDefinition("4",
                         FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly,
                         new ArrayType(SystemByteTypeReference));
+                    dataField.DeclaringType = newType;
                     newType.Fields.Add(dataField);
 
                     // Add string array of deobfuscated strings
                     FieldDefinition stringArrayField = new FieldDefinition("5",
                         FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.Assembly,
                         new ArrayType(SystemStringTypeReference));
+                    stringArrayField.DeclaringType = newType;
                     newType.Fields.Add(stringArrayField);
 
                     // Add method to extract a string from the byte array. It is called by the indiviual string getter methods we add later to the class.
                     MethodDefinition stringGetterMethodDefinition = new MethodDefinition("6",
                         MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig,
                         SystemStringTypeReference);
-                    stringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(SystemIntTypeReference));
-                    stringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(SystemIntTypeReference));
-                    stringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(SystemIntTypeReference));
+                    stringGetterMethodDefinition.DeclaringType = newType;
+                    stringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(null, ParameterAttributes.None, SystemIntTypeReference) { Index = 0 });
+                    stringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(null, ParameterAttributes.None, SystemIntTypeReference) { Index = 1 });
+                    stringGetterMethodDefinition.Parameters.Add(new ParameterDefinition(null, ParameterAttributes.None, SystemIntTypeReference) { Index = 2 });
+                    ILProcessor worker3 = stringGetterMethodDefinition.GetILProcessor();
                     stringGetterMethodDefinition.Body.Variables.Add(new VariableDefinition(SystemStringTypeReference));
-                    ILProcessor worker3 = stringGetterMethodDefinition.Body.GetILProcessor();
 
                     worker3.Emit(OpCodes.Call, encodingGetUtf8Method);
                     worker3.Emit(OpCodes.Ldsfld, dataField);
@@ -1811,11 +1796,12 @@ namespace Obfuscar
                     MethodDefinition ctorMethodDefinition = new MethodDefinition(".cctor",
                         MethodAttributes.Static | MethodAttributes.Private | MethodAttributes.HideBySig |
                         MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, SystemVoidTypeReference);
+                    ctorMethodDefinition.DeclaringType = data.NewType;
                     data.NewType.Methods.Add(ctorMethodDefinition);
                     ctorMethodDefinition.Body = new MethodBody(ctorMethodDefinition);
                     ctorMethodDefinition.Body.Variables.Add(new VariableDefinition(SystemIntTypeReference));
 
-                    ILProcessor worker2 = ctorMethodDefinition.Body.GetILProcessor();
+                    ILProcessor worker2 = ctorMethodDefinition.GetILProcessor();
                     worker2.Emit(OpCodes.Ldc_I4, data.StringIndex);
                     worker2.Emit(OpCodes.Newarr, SystemStringTypeReference);
                     worker2.Emit(OpCodes.Stsfld, data.StringArrayField);
@@ -1864,11 +1850,9 @@ namespace Obfuscar
 
             public void ProcessStrings(MethodDefinition method, AssemblyInfo info, Project project)
             {
-                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"ProcessStrings: {method.FullName}\n");
                 if (info.ShouldSkipStringHiding(new MethodKey(method), project.InheritMap,
                         project.Settings.HideStrings) || method.Body == null)
                 {
-                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  Skipping: Body={method.Body != null}\n");
                     return;
                 }
 
@@ -1878,25 +1862,11 @@ namespace Obfuscar
                     return;
 
                 LoggerService.Logger.LogDebug("Processing strings in method {0}", method.FullName);
-                
-                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  Body.Variables.Count={method.Body.Variables.Count}, Instructions.Count={method.Body.Instructions.Count}\n");
 
                 // Unroll short form instructions so they can be auto-fixed by Cecil
                 // automatically when instructions are inserted/replaced
                 // method.Body.SimplifyMacros();
-                ILProcessor worker = method.Body.GetILProcessor();
-
-                // DEBUG: Count ldstr instructions
-                int ldstrCount = 0;
-                foreach (var instr in method.Body.Instructions)
-                {
-                    if (instr.OpCode == OpCodes.Ldstr)
-                    {
-                        ldstrCount++;
-                        System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  Found ldstr operand type={instr.Operand?.GetType()?.Name ?? "null"}, value={instr.Operand}\n");
-                    }
-                }
-                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", $"  Instructions={method.Body.Instructions.Count}, ldstr={ldstrCount}\n");
+                ILProcessor worker = method.GetILProcessor();
 
                 //
                 // Make a dictionary of all instructions to replace and their replacement.
@@ -1931,8 +1901,9 @@ namespace Obfuscar
                                 methodName,
                                 MethodAttributes.Static | MethodAttributes.Public | MethodAttributes.HideBySig,
                                 SystemStringTypeReference);
+                            individualStringMethodDefinition.DeclaringType = data.NewType;
                             individualStringMethodDefinition.Body = new MethodBody(individualStringMethodDefinition);
-                            ILProcessor worker4 = individualStringMethodDefinition.Body.GetILProcessor();
+                            ILProcessor worker4 = individualStringMethodDefinition.GetILProcessor();
 
                             worker4.Emit(OpCodes.Ldsfld, data.StringArrayField);
                             worker4.Emit(OpCodes.Ldc_I4, data.StringIndex);
@@ -1970,87 +1941,12 @@ namespace Obfuscar
                     worker.ReplaceAndFixReferences(method.Body, oldToNewStringInstructions);
                 }
 
-                // Optimize method back
-                if (project.Settings.Optimize)
-                {
-                    try
-                    {
-                        // Debug: Check ThisParameter
-                        if (method.HasThis)
-                        {
-                            try
-                            {
-                                var thisPar = method.Body.ThisParameter;
-                                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                                    $"  ThisParameter: {(thisPar == null ? "NULL" : thisPar.ParameterType?.FullName)}\n");
-                            }
-                            catch (Exception ex)
-                            {
-                                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                                    $"  ThisParameter THREW: {ex.GetType().Name}: {ex.Message}\n");
-                            }
-                        }
-                        
-                        // Debug: Check for problematic operands before Optimize
-                        System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                            $"  Pre-optimize: Method.HasThis={method.HasThis}, Parameters.Count={method.Parameters.Count}\n");
-                        foreach (var instr in method.Body.Instructions)
-                        {
-                            // Log all ldarg-family instructions
-                            if (instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg ||
-                                instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg_S ||
-                                instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg_0 ||
-                                instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg_1 ||
-                                instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg_2 ||
-                                instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg_3)
-                            {
-                                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                                    $"  Instr@{instr.Offset}: {instr.OpCode} operand={instr.Operand?.GetType()?.Name ?? "null"}\n");
-                            }
-                            
-                            if (instr.OpCode.OperandType == Mono.Cecil.Cil.OperandType.InlineBrTarget ||
-                                instr.OpCode.OperandType == Mono.Cecil.Cil.OperandType.ShortInlineBrTarget)
-                            {
-                                if (instr.Operand != null && !(instr.Operand is Mono.Cecil.Cil.Instruction))
-                                {
-                                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                                        $"  ERROR: {instr.OpCode} has operand of type {instr.Operand?.GetType()?.Name}, expected Instruction\n");
-                                }
-                            }
-                            else if (instr.OpCode.OperandType == Mono.Cecil.Cil.OperandType.ShortInlineVar ||
-                                     instr.OpCode.OperandType == Mono.Cecil.Cil.OperandType.InlineVar)
-                            {
-                                if (!(instr.Operand is Mono.Cecil.Cil.VariableDefinition))
-                                {
-                                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                                        $"  ERROR: {instr.OpCode} has operand of type {instr.Operand?.GetType()?.Name ?? "null"}, expected VariableDefinition\n");
-                                }
-                            }
-                            else if (instr.OpCode.OperandType == Mono.Cecil.Cil.OperandType.ShortInlineArg ||
-                                     instr.OpCode.OperandType == Mono.Cecil.Cil.OperandType.InlineArg)
-                            {
-                                if (!(instr.Operand is Mono.Cecil.ParameterDefinition))
-                                {
-                                    System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                                        $"  ERROR: {instr.OpCode} has operand of type {instr.Operand?.GetType()?.Name ?? "null"}, expected ParameterDefinition\n");
-                                }
-                            }
-                            // Check for null operands on Ldarg/Ldloc after SimplifyMacros style expansion
-                            if (instr.OpCode.Code == Mono.Cecil.Cil.Code.Ldarg && instr.Operand == null)
-                            {
-                                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                                    $"  ERROR: {instr.OpCode} at offset {instr.Offset} has NULL operand\n");
-                            }
-                        }
-                        // method.Body.Optimize();
-                    }
-                    catch (Exception ex)
-                    {
-                        System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                            $"  OPTIMIZE FAILED for {method.FullName}: {ex.GetType().Name}: {ex.Message}\n");
-                        throw;
-                    }
-                }
+                // Optimize method if requested
+                // Note: Currently disabled as method.Body.Optimize() may have issues
+                // if (project.Settings.Optimize)
+                // {
+                //     method.Body.Optimize();
+                // }
             }
         }
 

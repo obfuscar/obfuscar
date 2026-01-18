@@ -25,9 +25,9 @@
 #endregion
 
 using MethodAttributes = System.Reflection.MethodAttributes;
-using Mono.Cecil;
+using Obfuscar.Helpers;
 using Obfuscar.Metadata.Abstractions;
-using Obfuscar.Metadata.Adapters;
+using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar
 {
@@ -38,16 +38,16 @@ namespace Obfuscar
         {
         }
 
-        public PropertyKey(TypeKey typeKey, PropertyDefinition prop)
+        public PropertyKey(TypeKey typeKey, MutablePropertyDefinition prop)
         {
             this.TypeKey = typeKey;
-            this.Type = prop.PropertyType.FullName;
+            this.Type = prop.PropertyType?.GetFullName() ?? string.Empty;
             this.Name = prop.Name;
             this.Property = prop;
-            this.PropertyAdapter = new CecilPropertyAdapter(prop);
+            this.PropertyAdapter = prop;
         }
 
-        public PropertyKey(TypeKey typeKey, string type, string name, PropertyDefinition propertyDefinition, IProperty propertyAdapter)
+        public PropertyKey(TypeKey typeKey, string type, string name, MutablePropertyDefinition propertyDefinition, IProperty propertyAdapter)
         {
             this.TypeKey = typeKey;
             this.Type = type;
@@ -69,26 +69,25 @@ namespace Obfuscar
                 if (PropertyAdapter != null)
                     return PropertyAdapter.GetterMethodAttributes;
 
-                return Property.GetMethod != null ? (MethodAttributes) Property.GetMethod.Attributes : 0;
+                return Property.GetMethod != null ? Property.GetMethod.Attributes : 0;
             }
         }
 
-        public TypeDefinition DeclaringType
+        public MutableTypeDefinition DeclaringType
         {
-            get { return Property != null ? (TypeDefinition) Property.DeclaringType : null; }
+            get { return Property?.DeclaringType; }
         }
 
-        public PropertyDefinition Property { get; }
+        public MutablePropertyDefinition Property { get; }
 
         public IProperty PropertyAdapter { get; }
 
-        public virtual bool Matches(MemberReference member)
+        public virtual bool Matches(MutablePropertyDefinition member)
         {
-            PropertyReference propRef = member as PropertyReference;
-            if (propRef != null)
+            if (member != null)
             {
-                if (TypeKey.Matches(propRef.DeclaringType))
-                    return Type == propRef.PropertyType.FullName && Name == propRef.Name;
+                if (TypeKey.Matches(member.DeclaringType))
+                    return Type == member.PropertyType?.GetFullName() && Name == member.Name;
             }
 
             return false;

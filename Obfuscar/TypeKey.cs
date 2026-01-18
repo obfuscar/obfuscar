@@ -25,34 +25,26 @@
 #endregion
 
 using System;
-using Mono.Cecil;
 using Obfuscar.Helpers;
 using Obfuscar.Metadata.Abstractions;
+using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar
 {
     class TypeKey : IComparable<TypeKey>
     {
-        readonly TypeReference typeReference;
+        readonly MutableTypeReference typeReference;
         readonly int hashCode;
         readonly TypeDescriptor descriptor;
 
-        public TypeKey(TypeReference type)
+        public TypeKey(MutableTypeReference type)
         {
             this.typeReference = type;
             this.Scope = type.GetScopeName();
-            InitializeFromFullName(type.FullName);
-
-            // Ensure the parsed name matches Cecil's view for consistency.
-            // This is important to the Match method.
-            GenericInstanceType gi = type as GenericInstanceType;
-            type.DeclaringType = type.DeclaringType; // Hack: Update fullname of nested type
-            if (this.Fullname != type.ToString() && (gi == null || this.Fullname != gi.ElementType.FullName))
-                throw new InvalidOperationException(string.Format("Type names do not match: \"{0}\" != \"{1}\"",
-                    this.Fullname, type.ToString()));
+            InitializeFromFullName(type.GetFullName());
 
             this.hashCode = CalcHashCode();
-            this.descriptor = type is TypeDefinition td
+            this.descriptor = type is ITypeDefinition td
                 ? TypeDescriptor.FromDefinition(td)
                 : TypeDescriptor.FromFullName(this.Fullname);
         }
@@ -116,9 +108,9 @@ namespace Obfuscar
 
         public TypeDescriptor Descriptor => descriptor;
 
-        public TypeDefinition TypeDefinition
+        public ITypeDefinition TypeDefinition
         {
-            get { return descriptor?.TypeDefinition ?? typeReference as TypeDefinition; }
+            get { return descriptor?.TypeDefinition ?? typeReference as ITypeDefinition; }
         }
 
         public string Scope { get; }
@@ -129,16 +121,17 @@ namespace Obfuscar
 
         public string Fullname { get; private set; }
 
-        public bool Matches(TypeReference type)
+        public bool Matches(MutableTypeReference type)
         {
-            // Remove generic type parameters and compare full names
-            var instanceType = type as GenericInstanceType;
-            if (instanceType == null)
-                type.DeclaringType = type.DeclaringType; // Hack: Update full name
-            string typefullname = type.ToString();
-            if (instanceType != null)
-                typefullname = instanceType.ElementType.ToString();
-            return typefullname == Fullname;
+            if (type == null)
+                return false;
+
+            if (type is MutableGenericInstanceType instanceType)
+            {
+                return instanceType.ElementType.GetFullName() == Fullname;
+            }
+
+            return type.GetFullName() == Fullname;
         }
 
         public bool Equals(TypeKey other)

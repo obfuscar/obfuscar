@@ -25,9 +25,9 @@
 #endregion
 
 using FieldAttributes = System.Reflection.FieldAttributes;
-using Mono.Cecil;
-using Obfuscar.Metadata.Adapters;
+using Obfuscar.Helpers;
 using Obfuscar.Metadata.Abstractions;
+using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar
 {
@@ -38,12 +38,12 @@ namespace Obfuscar
         {
         }
 
-        public FieldKey(FieldDefinition field)
-            : this(new TypeKey((TypeDefinition) field.DeclaringType), field.FieldType.FullName, field.Name, field, (FieldAttributes) field.Attributes, new CecilFieldAdapter(field))
+        public FieldKey(MutableFieldDefinition field)
+            : this(new TypeKey(field?.DeclaringType), field?.FieldType?.GetFullName() ?? string.Empty, field?.Name ?? string.Empty, field, field?.Attributes, field)
         {
         }
 
-        public FieldKey(TypeKey typeKey, string type, string name, FieldDefinition fieldDefinition, FieldAttributes? attributes = null, IField fieldAdapter = null)
+        public FieldKey(TypeKey typeKey, string type, string name, MutableFieldDefinition fieldDefinition, FieldAttributes? attributes = null, IField fieldAdapter = null)
         {
             this.TypeKey = typeKey;
             this.Type = type;
@@ -63,7 +63,7 @@ namespace Obfuscar
                     return overriddenAttributes.Value;
 
                 if (Field != null)
-                    return (FieldAttributes) Field.Attributes;
+                    return Field.Attributes;
 
                 if (FieldAdapter != null)
                     return FieldAdapter.Attributes;
@@ -72,12 +72,12 @@ namespace Obfuscar
             }
         }
 
-        public TypeDefinition DeclaringType
+        public MutableTypeDefinition DeclaringType
         {
-            get { return Field != null ? (TypeDefinition) Field.DeclaringType : null; }
+            get { return Field?.DeclaringType as MutableTypeDefinition; }
         }
 
-        public FieldDefinition Field { get; }
+        public MutableFieldDefinition Field { get; }
 
         public IField FieldAdapter { get; }
 
@@ -87,17 +87,15 @@ namespace Obfuscar
 
         public string Name { get; }
 
-        public virtual bool Matches(MemberReference member)
+        public virtual bool Matches(MutableFieldReference member)
         {
-            FieldReference fieldRef = member as FieldReference;
-            if (fieldRef != null)
+            if (member != null)
             {
-                if (TypeKey.Matches(fieldRef.DeclaringType))
+                if (TypeKey.Matches(member.DeclaringType))
                 {
                     if (Field != null)
-                        return Type == fieldRef.FieldType.FullName && Name == fieldRef.Name;
-                    // If we don't have a FieldDefinition (from IField), match by name and type string
-                    return Type == fieldRef.FieldType.FullName && Name == fieldRef.Name;
+                        return Type == member.FieldType?.GetFullName() && Name == member.Name;
+                    return Type == member.FieldType?.GetFullName() && Name == member.Name;
                 }
             }
 
