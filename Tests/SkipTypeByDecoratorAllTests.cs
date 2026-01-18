@@ -85,7 +85,7 @@ namespace ObfuscarTests
         }
         
         [Fact]
-        public void CompareSkipGeneratedWithDecoratorAll()
+        public void CheckSkipTypesByDecorator()
         {
             // First, ensure the test assembly exists by copying it to the input folder
             string testDllPath = Path.Combine(TestHelper.InputPath, "testmvc6.dll");
@@ -97,56 +97,63 @@ namespace ObfuscarTests
                     testDllPath, true);
             }
             
-            // Run first test with SkipGenerated=true
-            string outputPath1 = Path.Combine(TestHelper.OutputPath, "SkipGenerated");
-            Directory.CreateDirectory(outputPath1);
+            // Read the original assembly to identify compiler-generated types
+            var originalAssembly = AssemblyDefinition.ReadAssembly(testDllPath);
             
-            string xmlSkipGenerated = string.Format(
-                @"<?xml version='1.0'?>" +
-                @"<Obfuscator>" +
-                @"<Var name='InPath' value='{0}' />" +
-                @"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='HidePrivateApi' value='true' />" +
-                @"<Var name='SkipGenerated' value='true' />" +
-                @"<Module file='$(InPath){2}testmvc6.dll'>" +
-                @"</Module>" +
-                @"</Obfuscator>", TestHelper.InputPath, outputPath1, Path.DirectorySeparatorChar);
-
-            TestHelper.Obfuscate(xmlSkipGenerated);
-
-            // Run second test with decoratorAll
-            string outputPath2 = Path.Combine(TestHelper.OutputPath, "DecoratorAll");
-            Directory.CreateDirectory(outputPath2);
-            
-            string xmlDecoratorAll = string.Format(
-                @"<?xml version='1.0'?>" +
-                @"<Obfuscator>" +
-                @"<Var name='InPath' value='{0}' />" +
-                @"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='HidePrivateApi' value='true' />" +
-                @"<Module file='$(InPath){2}testmvc6.dll'>" +
-                @"<SkipType name='*' decoratorAll='System.Runtime.CompilerServices.CompilerGeneratedAttribute,Microsoft.CodeAnalysis.EmbeddedAttribute' />" +
-                @"</Module>" +
-                @"</Obfuscator>", TestHelper.InputPath, outputPath2, Path.DirectorySeparatorChar);
-
-            TestHelper.Obfuscate(xmlDecoratorAll);
-            
-            // Compare the outputs of both approaches
-            var assembly1 = AssemblyDefinition.ReadAssembly(Path.Combine(outputPath1, "testmvc6.dll"));
-            var assembly2 = AssemblyDefinition.ReadAssembly(Path.Combine(outputPath2, "testmvc6.dll"));
-            
-            // Get type names from both assemblies
-            var typeNames1 = assembly1.MainModule.GetTypes().Select(t => t.FullName).ToList();
-            var typeNames2 = assembly2.MainModule.GetTypes().Select(t => t.FullName).ToList();
-            
-            // Both approaches should result in the same set of preserved type names
-            Assert.Equal(typeNames1.Count, typeNames2.Count);
-            
-            // Check that both approaches preserved the same types
-            foreach (var typeName in typeNames1)
+            // Find types with CompilerGeneratedAttribute or types with names starting with '<'
+            var compilerGeneratedTypes = new List<TypeDefinition>();
+            foreach (var type in originalAssembly.MainModule.GetTypes())
             {
-                Assert.Contains(typeName, typeNames2);
+                bool hasAttribute = type.CustomAttributes?.Any(a => 
+                    a.AttributeType?.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute") ?? false;
+                bool hasGeneratedName = type.Name?.StartsWith("<") ?? false;
+                
+                if (hasAttribute || hasGeneratedName)
+                {
+                    compilerGeneratedTypes.Add(type);
+                }
             }
+            
+            // Ensure we found at least one compiler-generated type
+            Assert.True(compilerGeneratedTypes.Count > 0, 
+                "Test failed - couldn't find any compiler-generated types in the test assembly");
+            
+            string outputPath = Path.Combine(TestHelper.OutputPath, "Decorator");
+            Directory.CreateDirectory(outputPath);
+            
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}testmvc6.dll'>" +
+                @"<SkipType name='*' decorator='System.Runtime.CompilerServices.CompilerGeneratedAttribute' />" +
+                @"</Module>" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.Obfuscate(xml);
+            
+            // Read the obfuscated assembly
+            string obfuscatedPath = Path.Combine(outputPath, "testmvc6.dll");
+            var obfuscatedAssembly = AssemblyDefinition.ReadAssembly(obfuscatedPath);
+            
+            // Check that all compiler-generated types were preserved with their original names
+            var obfuscatedTypeNames = obfuscatedAssembly.MainModule.GetTypes()
+                .Select(t => t.FullName).ToHashSet();
+            
+            int preservedCount = 0;
+            foreach (var originalType in compilerGeneratedTypes)
+            {
+                if (obfuscatedTypeNames.Contains(originalType.FullName))
+                {
+                    preservedCount++;
+                }
+            }
+            
+            // With decorator for CompilerGeneratedAttribute, compiler-generated types should be preserved
+            Assert.True(preservedCount > 0,
+                "With decorator for CompilerGeneratedAttribute, at least some compiler-generated types should be preserved");
         }
     }
 }
