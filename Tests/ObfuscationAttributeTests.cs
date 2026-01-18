@@ -138,6 +138,14 @@ namespace ObfuscarTests
         public void CheckCrossAssembly()
         {
             string outputPath = TestHelper.OutputPath;
+            
+            // Clean up output directory to ensure no leftover files from previous runs
+            if (Directory.Exists(outputPath))
+            {
+                Directory.Delete(outputPath, true);
+            }
+            Directory.CreateDirectory(outputPath);
+            
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
@@ -149,7 +157,6 @@ namespace ObfuscarTests
                 @"								</Module>" +
                 @"								<Module file='$(InPath){2}AssemblyG.dll' />" +
                 @"								</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
-            // Directory.Delete (TestHelper.OutputPath, true);
             string destFileName = Path.Combine(TestHelper.InputPath, "AssemblyG.dll");
             if (!File.Exists(destFileName))
             {
