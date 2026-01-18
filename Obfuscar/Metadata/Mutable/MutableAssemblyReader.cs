@@ -19,6 +19,7 @@ namespace Obfuscar.Metadata.Mutable
         private MetadataReader _metadataReader;
         private MutableModuleDefinition _module;
         private MutableAssemblyDefinition _assembly;
+        private string _fileName;
         
         // Handle caches
         private Dictionary<TypeDefinitionHandle, MutableTypeDefinition> _typeDefCache;
@@ -45,6 +46,7 @@ namespace Obfuscar.Metadata.Mutable
         /// </summary>
         public MutableAssemblyDefinition Read(string fileName, MutableReaderParameters parameters)
         {
+            _fileName = fileName;
             var fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read);
             return Read(fileStream, parameters ?? new MutableReaderParameters());
         }
@@ -65,6 +67,7 @@ namespace Obfuscar.Metadata.Mutable
             // Create main module
             _module = ReadModuleDefinition();
             _module.Assembly = _assembly;
+            _module.FileName = _fileName;
             _assembly.Modules.Add(_module);
             _module.InitializeTypeSystem();
             

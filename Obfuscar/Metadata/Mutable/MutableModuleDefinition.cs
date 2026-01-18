@@ -31,6 +31,11 @@ namespace Obfuscar.Metadata.Mutable
         public string Name { get; set; }
 
         /// <summary>
+        /// The full path to the module on disk, if known.
+        /// </summary>
+        public string FileName { get; set; }
+
+        /// <summary>
         /// The kind of module (Dll, Console, Windows, etc.).
         /// </summary>
         public MutableModuleKind Kind { get; set; }

@@ -91,6 +91,8 @@ namespace Obfuscar.Metadata.Mutable
         /// </summary>
         public List<MutableCustomAttribute> CustomAttributes { get; }
 
+        public bool HasCustomAttributes => CustomAttributes.Count > 0;
+
         /// <summary>
         /// Whether this type has generic parameters.
         /// </summary>
