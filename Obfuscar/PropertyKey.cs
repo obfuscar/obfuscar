@@ -26,17 +26,34 @@
 
 using MethodAttributes = System.Reflection.MethodAttributes;
 using Mono.Cecil;
+using Obfuscar.Metadata.Abstractions;
+using Obfuscar.Metadata.Adapters;
 
 namespace Obfuscar
 {
     class PropertyKey
     {
+        public PropertyKey(IProperty prop)
+            : this(new TypeKey(prop.DeclaringTypeFullName), prop.PropertyTypeFullName, prop.Name, null, prop)
+        {
+        }
+
         public PropertyKey(TypeKey typeKey, PropertyDefinition prop)
         {
             this.TypeKey = typeKey;
             this.Type = prop.PropertyType.FullName;
             this.Name = prop.Name;
             this.Property = prop;
+            this.PropertyAdapter = new CecilPropertyAdapter(prop);
+        }
+
+        public PropertyKey(TypeKey typeKey, string type, string name, PropertyDefinition propertyDefinition, IProperty propertyAdapter)
+        {
+            this.TypeKey = typeKey;
+            this.Type = type;
+            this.Name = name;
+            this.Property = propertyDefinition;
+            this.PropertyAdapter = propertyAdapter;
         }
 
         public TypeKey TypeKey { get; }
@@ -47,15 +64,23 @@ namespace Obfuscar
 
         public MethodAttributes GetterMethodAttributes
         {
-            get { return Property.GetMethod != null ? (MethodAttributes) Property.GetMethod.Attributes : 0; }
+            get
+            {
+                if (PropertyAdapter != null)
+                    return PropertyAdapter.GetterMethodAttributes;
+
+                return Property.GetMethod != null ? (MethodAttributes) Property.GetMethod.Attributes : 0;
+            }
         }
 
         public TypeDefinition DeclaringType
         {
-            get { return (TypeDefinition) Property.DeclaringType; }
+            get { return Property != null ? (TypeDefinition) Property.DeclaringType : null; }
         }
 
         public PropertyDefinition Property { get; }
+
+        public IProperty PropertyAdapter { get; }
 
         public virtual bool Matches(MemberReference member)
         {

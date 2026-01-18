@@ -1,22 +1,47 @@
 using System.Collections.Generic;
 using System.Linq;
+using Mono.Cecil;
+using Obfuscar.Helpers;
 using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar.Metadata.Adapters
 {
     public class CecilTypeAdapter : IType
     {
-        private readonly Mono.Cecil.TypeDefinition typeDef;
+        private readonly TypeDefinition type;
 
-        public CecilTypeAdapter(Mono.Cecil.TypeDefinition typeDef)
+        public CecilTypeAdapter(TypeDefinition type)
         {
-            this.typeDef = typeDef;
+            this.type = type;
         }
 
-        public string FullName => typeDef.FullName;
-        public string Name => typeDef.Name;
-        public string Namespace => typeDef.Namespace;
+        public string Scope => type?.GetScopeName() ?? string.Empty;
 
-        public IEnumerable<IField> Fields => typeDef.Fields.Select(f => new CecilFieldAdapter(f));
+        public string FullName => type?.FullName ?? string.Empty;
+
+        public string Name => type?.Name ?? string.Empty;
+
+        public string Namespace => type?.Namespace ?? string.Empty;
+
+        public string BaseTypeFullName => type?.BaseType?.FullName ?? string.Empty;
+
+        public IEnumerable<string> InterfaceTypeFullNames =>
+            type?.Interfaces?.Select(iface => iface.InterfaceType.FullName) ?? Enumerable.Empty<string>();
+
+        public bool IsPublic => type != null && type.IsTypePublic();
+
+        public bool IsSerializable => type?.IsSerializable == true;
+
+        public bool IsSealed => type?.IsSealed == true;
+
+        public bool IsAbstract => type?.IsAbstract == true;
+
+        public bool IsEnum => type?.IsEnum == true;
+
+        public IEnumerable<string> CustomAttributeTypeFullNames =>
+            type?.CustomAttributes?.Select(attr => attr.AttributeType.FullName) ?? Enumerable.Empty<string>();
+
+        public IEnumerable<IField> Fields =>
+            type?.Fields?.Select(field => new CecilFieldAdapter(field)) ?? Enumerable.Empty<IField>();
     }
 }

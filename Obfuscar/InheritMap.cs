@@ -24,10 +24,13 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using Mono.Cecil;
+using Obfuscar.Metadata.Abstractions;
+using Obfuscar.Metadata.Adapters;
 
 namespace Obfuscar
 {
@@ -65,10 +68,13 @@ namespace Obfuscar
         private readonly Dictionary<MethodKey, MethodGroup> methodGroups = new Dictionary<MethodKey, MethodGroup>();
 
         private readonly Dictionary<TypeKey, TypeKey[]> baseTypes = new Dictionary<TypeKey, TypeKey[]>();
+        private readonly Dictionary<TypeDefinition, TypeDescriptor> typeDescriptors = new Dictionary<TypeDefinition, TypeDescriptor>();
+        private readonly Dictionary<string, IType> typesByFullName = new Dictionary<string, IType>(StringComparer.Ordinal);
 
         public InheritMap(Project project)
         {
             this.project = project;
+            var typeInfos = new List<TypeInfo>();
             foreach (AssemblyInfo info in project.AssemblyList)
             {
                 foreach (TypeDefinition type in info.GetAllTypeDefinitions())
@@ -76,57 +82,83 @@ namespace Obfuscar
                     if (type.FullName == "<Module>")
                         continue;
 
-                    TypeKey typeKey = new TypeKey(type);
+                    var adapter = info.CreateTypeAdapter(type);
+                    var typeKey = new TypeKey(adapter);
+                    typeInfos.Add(new TypeInfo(info, type, typeKey, adapter));
 
-                    baseTypes[typeKey] = GetBaseTypes(type);
+                    if (!typesByFullName.ContainsKey(adapter.FullName))
+                        typesByFullName[adapter.FullName] = adapter;
+                }
+            }
 
-                    int i = 0;
-                    int j;
+            foreach (var typeInfo in typeInfos)
+            {
+                GetDescriptor(typeInfo.Definition);
 
-                    MethodKey[] methods = GetVirtualMethods(project.Cache, type);
-                    while (i < methods.Length)
+                baseTypes[typeInfo.Key] = GetBaseTypes(typeInfo.Adapter);
+
+                int i = 0;
+                int j;
+
+                MethodKey[] methods = GetVirtualMethods(project.Cache, typeInfo.Definition, typeInfo.Owner);
+                while (i < methods.Length)
+                {
+                    MethodGroup group;
+                    var left = methods[i];
+                    if (!methodGroups.TryGetValue(left, out group))
+                        group = null;
+
+                    for (j = i + 1; j < methods.Length; j++)
                     {
-                        MethodGroup group;
-                        var left = methods[i];
-                        if (!methodGroups.TryGetValue(left, out group))
-                            group = null;
+                        var right = methods[j];
+                        if (!MethodsMatch(left, right))
+                            continue;
 
-                        for (j = i + 1; j < methods.Length; j++)
+                        // found an override
+
+                        // see if either method is already in a group
+                        if (group != null)
+                            group = AddToGroup(group, right);
+                        else if (methodGroups.TryGetValue(right, out group))
+                            group = AddToGroup(group, left);
+                        else
                         {
-                            var right = methods[j];
-                            if (!MethodsMatch(left, right))
-                                continue;
+                            group = new MethodGroup();
 
-                            // found an override
-
-                            // see if either method is already in a group
-                            if (group != null)
-                                group = AddToGroup(group, right);
-                            else if (methodGroups.TryGetValue(right, out group))
-                                group = AddToGroup(group, left);
-                            else
-                            {
-                                group = new MethodGroup();
-
-                                group = AddToGroup(group, left);
-                                group = AddToGroup(group, right);
-                            }
-
-                            // if the group isn't already external, see if it should be
-                            Debug.Assert(group != null, "should have a group by now");
-                            if (!group.External && !project.Contains(right.TypeKey))
-                                group.External = true;
+                            group = AddToGroup(group, left);
+                            group = AddToGroup(group, right);
                         }
 
                         // if the group isn't already external, see if it should be
-                        if (group != null && !group.External && !project.Contains(left.TypeKey))
+                        Debug.Assert(group != null, "should have a group by now");
+                        if (!group.External && !project.Contains(right.TypeKey))
                             group.External = true;
-
-                        // move on to the next thing that doesn't match
-                        i++;
                     }
+
+                    // if the group isn't already external, see if it should be
+                    if (group != null && !group.External && !project.Contains(left.TypeKey))
+                        group.External = true;
+
+                    // move on to the next thing that doesn't match
+                    i++;
                 }
             }
+        }
+
+        private sealed class TypeInfo
+        {
+            public TypeInfo(AssemblyInfo owner, TypeDefinition definition, TypeKey key, IType adapter)
+            {
+                Owner = owner;
+                Definition = definition;
+                Key = key;
+                Adapter = adapter;
+            }
+
+            public AssemblyInfo Owner { get; }
+            public TypeDefinition Definition { get; }
+            public TypeKey Key { get; }
+            public IType Adapter { get; }
         }
 
         static bool MethodsMatch(MethodKey left, MethodKey right)
@@ -157,14 +189,47 @@ namespace Obfuscar
             }
         }
 
-        TypeKey[] GetBaseTypes(TypeDefinition type)
+        TypeKey[] GetBaseTypes(IType type)
         {
             HashSet<TypeKey> baseTypes = new HashSet<TypeKey>();
-            GetBaseTypes(project, baseTypes, type);
+            var visited = new HashSet<string>(StringComparer.Ordinal);
+            CollectBaseTypes(type, baseTypes, visited);
             return new List<TypeKey>(baseTypes).ToArray();
         }
 
-        void GetVirtualMethods(AssemblyCache cache, HashSet<MethodKey> methods, TypeDefinition type)
+        private void CollectBaseTypes(IType type, HashSet<TypeKey> baseTypes, HashSet<string> visited)
+        {
+            if (type == null)
+                return;
+
+            if (!string.IsNullOrEmpty(type.FullName) && !visited.Add(type.FullName))
+                return;
+
+            if (type.InterfaceTypeFullNames != null)
+            {
+                foreach (var ifaceName in type.InterfaceTypeFullNames)
+                {
+                    if (string.IsNullOrEmpty(ifaceName))
+                        continue;
+
+                    if (typesByFullName.TryGetValue(ifaceName, out var ifaceType))
+                        CollectBaseTypes(ifaceType, baseTypes, visited);
+
+                    baseTypes.Add(new TypeKey(ifaceName));
+                }
+            }
+
+            var baseTypeName = type.BaseTypeFullName;
+            if (!string.IsNullOrEmpty(baseTypeName) && baseTypeName != "System.Object")
+            {
+                if (typesByFullName.TryGetValue(baseTypeName, out var baseType))
+                    CollectBaseTypes(baseType, baseTypes, visited);
+
+                baseTypes.Add(new TypeKey(baseTypeName));
+            }
+        }
+
+        void GetVirtualMethods(AssemblyCache cache, HashSet<MethodKey> methods, TypeDefinition type, AssemblyInfo ownerInfo)
         {
             // check the interfaces
             foreach (var ifaceRef in type.Interfaces)
@@ -177,7 +242,7 @@ namespace Obfuscar
 
                 // search interface
                 if (iface != null)
-                    GetVirtualMethods(cache, methods, iface);
+                    GetVirtualMethods(cache, methods, iface, GetAssemblyInfoFor(iface));
             }
 
             // check the base type unless it isn't in the project, or we don't have one
@@ -189,38 +254,69 @@ namespace Obfuscar
 
             // search base
             if (baseType != null)
-                GetVirtualMethods(cache, methods, baseType);
+                GetVirtualMethods(cache, methods, baseType, GetAssemblyInfoFor(baseType));
 
             foreach (MethodDefinition method in type.Methods)
             {
                 if (method.IsVirtual)
-                    methods.Add(new MethodKey(method));
+                {
+                    IMethod adapter = ownerInfo?.CreateMethodAdapter(method) ?? new CecilMethodAdapter(method);
+                    methods.Add(new MethodKey(method, adapter));
+                }
             }
 
             foreach (PropertyDefinition property in type.Properties)
             {
                 if (property.GetMethod != null && property.GetMethod.IsVirtual)
-                    methods.Add(new MethodKey(property.GetMethod));
+                {
+                    IMethod adapter = ownerInfo?.CreateMethodAdapter(property.GetMethod) ?? new CecilMethodAdapter(property.GetMethod);
+                    methods.Add(new MethodKey(property.GetMethod, adapter));
+                }
 
                 if (property.SetMethod != null && property.SetMethod.IsVirtual)
-                    methods.Add(new MethodKey(property.SetMethod));
+                {
+                    IMethod adapter = ownerInfo?.CreateMethodAdapter(property.SetMethod) ?? new CecilMethodAdapter(property.SetMethod);
+                    methods.Add(new MethodKey(property.SetMethod, adapter));
+                }
             }
 
             foreach (EventDefinition @event in type.Events)
             {
                 if (@event.AddMethod != null && @event.AddMethod.IsVirtual)
-                    methods.Add(new MethodKey(@event.AddMethod));
+                {
+                    IMethod adapter = ownerInfo?.CreateMethodAdapter(@event.AddMethod) ?? new CecilMethodAdapter(@event.AddMethod);
+                    methods.Add(new MethodKey(@event.AddMethod, adapter));
+                }
 
                 if (@event.RemoveMethod != null && @event.RemoveMethod.IsVirtual)
-                    methods.Add(new MethodKey(@event.RemoveMethod));
+                {
+                    IMethod adapter = ownerInfo?.CreateMethodAdapter(@event.RemoveMethod) ?? new CecilMethodAdapter(@event.RemoveMethod);
+                    methods.Add(new MethodKey(@event.RemoveMethod, adapter));
+                }
             }
         }
 
-        MethodKey[] GetVirtualMethods(AssemblyCache cache, TypeDefinition type)
+        MethodKey[] GetVirtualMethods(AssemblyCache cache, TypeDefinition type, AssemblyInfo ownerInfo)
         {
             HashSet<MethodKey> methods = new HashSet<MethodKey>();
-            GetVirtualMethods(cache, methods, type);
+            GetVirtualMethods(cache, methods, type, ownerInfo);
             return new List<MethodKey>(methods).ToArray();
+        }
+
+        private AssemblyInfo GetAssemblyInfoFor(TypeDefinition type)
+        {
+            if (type == null)
+                return null;
+
+            var module = type.Module;
+            if (module == null)
+                return null;
+
+            var asm = module.Assembly;
+            if (asm == null)
+                return null;
+
+            return project.GetAssemblyInfoByName(asm.Name.Name);
         }
 
         MethodGroup AddToGroup(MethodGroup group, MethodKey methodKey)
@@ -272,17 +368,17 @@ namespace Obfuscar
 
         public bool Inherits(TypeDefinition type, string interfaceFullName)
         {
-            if (type.FullName == interfaceFullName)
-            {
-                return true;
-            }
+            var descriptor = GetDescriptor(type);
+            if (descriptor == null)
+                return false;
 
+            if (descriptor.FullName == interfaceFullName)
+                return true;
 
             if (type.BaseType != null)
             {
                 var typeDef = project.Cache.GetTypeDefinition(type.BaseType);
-
-                return Inherits(typeDef, interfaceFullName);
+                return typeDef != null && Inherits(typeDef, interfaceFullName);
             }
 
             return false;
@@ -291,6 +387,61 @@ namespace Obfuscar
         public TypeKey[] GetBaseTypes(TypeKey typeKey)
         {
             return baseTypes[typeKey];
+        }
+
+        public bool Inherits(TypeKey typeKey, string interfaceFullName)
+        {
+            if (typeKey == null)
+                return false;
+
+            if (typeKey.Fullname == interfaceFullName)
+                return true;
+
+            if (!baseTypes.TryGetValue(typeKey, out var bases))
+            {
+                IType adapter = null;
+                TypeDefinition typeDef = typeKey.TypeDefinition;
+                if (typeDef != null)
+                {
+                    var info = GetAssemblyInfoFor(typeDef);
+                    adapter = info?.CreateTypeAdapter(typeDef);
+                }
+
+                if (adapter == null && !string.IsNullOrEmpty(typeKey.Fullname))
+                    typesByFullName.TryGetValue(typeKey.Fullname, out adapter);
+
+                if (adapter == null)
+                    return false;
+
+                bases = GetBaseTypes(adapter);
+                baseTypes[typeKey] = bases;
+            }
+
+            foreach (var baseType in bases)
+            {
+                if (baseType.Fullname == interfaceFullName)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private TypeDescriptor GetDescriptor(TypeDefinition type)
+        {
+            if (type == null)
+                return null;
+
+            if (!typeDescriptors.TryGetValue(type, out var descriptor))
+            {
+                var info = GetAssemblyInfoFor(type);
+                var adapter = info?.CreateTypeAdapter(type);
+                descriptor = adapter != null
+                    ? TypeDescriptor.FromType(adapter)
+                    : TypeDescriptor.FromDefinition(type);
+                typeDescriptors[type] = descriptor;
+            }
+
+            return descriptor;
         }
     }
 }

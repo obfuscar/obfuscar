@@ -29,8 +29,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
 using Obfuscar.Helpers;
+using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar
 {
@@ -146,7 +146,7 @@ namespace Obfuscar
             {
                 if (string.Equals(attrib, "public", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if (!type.TypeDefinition.IsTypePublic())
+                    if (!type.Descriptor.IsPublic)
                     {
                         return false;
                     }
@@ -160,39 +160,23 @@ namespace Obfuscar
             }
             
             if ((!string.IsNullOrEmpty(decorator) || (decoratorAll != null && decoratorAll.Length > 0)) &&
-                !decoratorTypeNames.Contains(type.TypeDefinition.FullName))
+                !decoratorTypeNames.Contains(type.Descriptor.FullName))
             {
                 return false;
             }
             
             if (decoratorAll != null && decoratorAll.Length > 0)
             {
-                if (!type.TypeDefinition.HasCustomAttributes)
+                if (!type.Descriptor.HasCustomAttributes)
                 {
                     return false;
                 }
-                
-                // Track whether each required attribute is found
-                var foundAttributes = new bool[decoratorAll.Length];
-                
-                foreach (var customAttr in type.TypeDefinition.CustomAttributes)
+
+                var attrNames = type.Descriptor.CustomAttributeTypeFullNames;
+                for (int i = 0; i < decoratorAll.Length; i++)
                 {
-                    for (int i = 0; i < decoratorAll.Length; i++)
-                    {
-                        if (customAttr.AttributeType.FullName == decoratorAll[i])
-                        {
-                            foundAttributes[i] = true;
-                        }
-                    }
-                }
-                
-                // Check if all required attributes were found
-                foreach (var found in foundAttributes)
-                {
-                    if (!found)
-                    {
+                    if (!attrNames.Contains(decoratorAll[i]))
                         return false;
-                    }
                 }
             }
 
@@ -210,7 +194,7 @@ namespace Obfuscar
 
             if (isSerializable.HasValue)
             {
-                if (isSerializable != type.TypeDefinition.IsSerializable)
+                if (isSerializable != type.Descriptor.IsSerializable)
                 {
                     return false;
                 }
@@ -218,19 +202,14 @@ namespace Obfuscar
 
             if (isStatic.HasValue)
             {
-                if (isStatic != (type.TypeDefinition.IsSealed && type.TypeDefinition.IsAbstract))
+                if (isStatic != type.Descriptor.IsStatic)
                 {
                     return false;
                 }
             }
 
-            if (!string.IsNullOrEmpty(inherits))
-            {
-                if (!map.Inherits(type.TypeDefinition, inherits))
-                {
-                    return false;
-                }
-            }
+            if (!string.IsNullOrEmpty(inherits) && !map.Inherits(type, inherits))
+                return false;
 
             return true;
         }
@@ -245,8 +224,9 @@ namespace Obfuscar
             if (string.IsNullOrEmpty(decorator) && (decoratorAll == null || decoratorAll.Length == 0))
                 return;
 
-            foreach (TypeDefinition type in assembly.GetAllTypeDefinitions())
+            foreach (var typeDef in assembly.GetAllTypeDefinitions())
             {
+                var type = assembly.CreateTypeAdapter(typeDef);
                 if (MatchesDecorator(type))
                 {
                     AddDecoratorType(type);
@@ -254,18 +234,18 @@ namespace Obfuscar
             }
         }
 
-        private bool MatchesDecorator(TypeDefinition type)
+        private bool MatchesDecorator(IType type)
         {
             if (type == null)
                 return false;
 
             if (!string.IsNullOrEmpty(decorator))
             {
-                bool found = type.HasCustomAttributes && type.CustomAttributes.Any(attr =>
-                    attr.AttributeType.FullName == decorator);
+                bool found = type.CustomAttributeTypeFullNames != null &&
+                             type.CustomAttributeTypeFullNames.Contains(decorator);
                 if (!found &&
                     decorator == "System.Runtime.CompilerServices.CompilerGeneratedAttribute" &&
-                    type.Name.StartsWith("<"))
+                    (type.Name?.StartsWith("<") ?? false))
                 {
                     found = true;
                 }
@@ -276,12 +256,12 @@ namespace Obfuscar
 
             if (decoratorAll != null && decoratorAll.Length > 0)
             {
-                if (!type.HasCustomAttributes)
+                if (type.CustomAttributeTypeFullNames == null)
                     return false;
 
                 foreach (string attrName in decoratorAll)
                 {
-                    if (!type.CustomAttributes.Any(attr => attr.AttributeType.FullName == attrName))
+                    if (!type.CustomAttributeTypeFullNames.Contains(attrName))
                         return false;
                 }
             }
@@ -289,11 +269,16 @@ namespace Obfuscar
             return true;
         }
 
-        private void AddDecoratorType(TypeDefinition type)
+        private void AddDecoratorType(IType type)
         {
-            for (TypeDefinition current = type; current != null; current = current.DeclaringType)
+            var fullName = type.FullName ?? string.Empty;
+            if (fullName.Length == 0)
+                return;
+
+            var parts = fullName.Split('/');
+            for (int i = parts.Length; i > 0; i--)
             {
-                decoratorTypeNames.Add(current.FullName);
+                decoratorTypeNames.Add(string.Join("/", parts.Take(i)));
             }
         }
     }

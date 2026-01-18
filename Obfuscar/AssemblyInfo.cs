@@ -32,6 +32,9 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Obfuscar.Helpers;
+using Obfuscar.Metadata;
+using Obfuscar.Metadata.Adapters;
+using Obfuscar.Metadata.Abstractions;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 
@@ -60,6 +63,7 @@ namespace Obfuscar
         private AssemblyDefinition definition;
         private string name;
         private bool skipEnums;
+        private Metadata.SrmAssemblyReader srmReader;
 
         public bool Exclude { get; set; }
 
@@ -672,7 +676,10 @@ namespace Obfuscar
                 return _cached;
             }
 
-            if (!definition.MarkedToRename())
+            var assemblyMarkedToRename = srmReader != null
+                ? SrmAttributeReader.GetMarkedToRenameForAssembly(srmReader.MetadataReader)
+                : definition.MarkedToRename();
+            if (!assemblyMarkedToRename)
             {
                 return new TypeDefinition[0];
             }
@@ -768,13 +775,12 @@ namespace Obfuscar
 
             try
             {
-                // Use the configured factory to create an assembly reader. By default this is the Cecil-based reader.
-                using (var reader = Metadata.AssemblyReaderFactory.Create(filename))
+                var reader = Metadata.AssemblyReaderFactory.Create(filename);
+                bool keepReader = reader is Metadata.SrmAssemblyReader;
+                try
                 {
-                    // If the reader exposes a Mono.Cecil AssemblyDefinition, use it to preserve behavior.
                     if (reader is Metadata.CecilAssemblyReader cecilReader)
                     {
-                        // Preserve previous two-pass read behavior by re-reading via AssemblyDefinition.ReadAssembly
                         bool readSymbols = project.Settings.RegenerateDebugInfo &&
                                            System.IO.File.Exists(System.IO.Path.ChangeExtension(filename, "pdb"));
 
@@ -784,7 +790,6 @@ namespace Obfuscar
                         }
                         catch
                         {
-                            // fall back to direct read if wrapper couldn't provide it
                             definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
                             {
                                 ReadingMode = ReadingMode.Deferred,
@@ -795,7 +800,6 @@ namespace Obfuscar
 
                         project.Cache.RegisterAssembly(definition);
 
-                        // Re-read with immediate reading mode to populate structures.
                         try
                         {
                             definition = AssemblyDefinition.ReadAssembly(filename, new ReaderParameters
@@ -825,9 +829,10 @@ namespace Obfuscar
                         bool readSymbols = project.Settings.RegenerateDebugInfo &&
                                            System.IO.File.Exists(System.IO.Path.ChangeExtension(filename, "pdb"));
 
+                        definition = null;
+                        srmReader = srm;
                         try
                         {
-                            // Materialize a minimal AssemblyDefinition from SRM and register it in the cache.
                             definition = srm.CreateAssemblyDefinition();
                         }
                         catch (OverflowException ex)
@@ -843,10 +848,15 @@ namespace Obfuscar
                             });
                         }
 
+                        if (fallbackToCecil)
+                        {
+                            srmReader = null;
+                            keepReader = false;
+                        }
+
                         project.Cache.RegisterAssembly(definition);
                         name = definition.Name.Name;
-                        // Try to resolve a core library module (mscorlib / System.Private.CoreLib) and patch
-                        // the TypeSystem.CoreLibrary via reflection so Resolve() works for core types.
+
                         if (!fallbackToCecil)
                         {
                             try
@@ -892,7 +902,16 @@ namespace Obfuscar
                     }
                     else
                     {
-                        throw new NotSupportedException("Non-Cecil assembly readers are not yet supported for loading into AssemblyInfo.");
+                        definition = reader.AssemblyDefinition;
+                        project.Cache.RegisterAssembly(definition);
+                        name = definition.Name?.Name ?? string.Empty;
+                    }
+                }
+                finally
+                {
+                    if (!keepReader)
+                    {
+                        reader.Dispose();
                     }
                 }
             }
@@ -900,6 +919,83 @@ namespace Obfuscar
             {
                 throw new ObfuscarException("Unable to find assembly:  " + filename, e);
             }
+        }
+
+        internal IMethod CreateMethodAdapter(MethodDefinition method)
+        {
+            if (method == null)
+                return null;
+
+            if (srmReader != null && srmReader.TryGetMethodHandle(method, out var handle))
+                return new SrmHandleMethodAdapter(definition?.MainModule, srmReader.MetadataReader, handle);
+
+            return new CecilMethodAdapter(method);
+        }
+
+        internal IField CreateFieldAdapter(FieldDefinition field)
+        {
+            if (field == null)
+                return null;
+
+            if (srmReader != null && srmReader.TryGetFieldHandle(field, out var handle))
+                return new SrmHandleFieldAdapter(srmReader.MetadataReader, handle);
+
+            return new CecilFieldAdapter(field);
+        }
+
+        internal IProperty CreatePropertyAdapter(PropertyDefinition property)
+        {
+            if (property == null)
+                return null;
+
+            if (srmReader != null && srmReader.TryGetPropertyHandle(property, out var handle))
+                return new SrmHandlePropertyAdapter(srmReader.MetadataReader, handle);
+
+            return new CecilPropertyAdapter(property);
+        }
+
+        internal IEvent CreateEventAdapter(EventDefinition evt)
+        {
+            if (evt == null)
+                return null;
+
+            if (srmReader != null && srmReader.TryGetEventHandle(evt, out var handle))
+                return new SrmHandleEventAdapter(srmReader.MetadataReader, handle);
+
+            return new CecilEventAdapter(evt);
+        }
+
+        internal IType CreateTypeAdapter(TypeDefinition type)
+        {
+            if (type == null)
+                return null;
+
+            if (srmReader != null && srmReader.TryGetTypeHandle(type, out var handle))
+                return new SrmHandleTypeAdapter(srmReader.MetadataReader, handle, name);
+
+            return new CecilTypeAdapter(type);
+        }
+
+        internal bool? GetMarkedToRename(TypeDefinition type)
+        {
+            if (type == null)
+                return null;
+
+            if (srmReader != null && srmReader.TryGetTypeHandle(type, out var handle))
+                return SrmAttributeReader.GetMarkedToRenameForType(srmReader.MetadataReader, handle);
+
+            return type.MarkedToRename();
+        }
+
+        internal bool? GetMarkedToRename(PropertyDefinition property)
+        {
+            if (property == null)
+                return null;
+
+            if (srmReader != null && srmReader.TryGetPropertyHandle(property, out var handle))
+                return SrmAttributeReader.GetMarkedToRenameForProperty(srmReader.MetadataReader, handle);
+
+            return property.MarkedToRename();
         }
 
         public string FileName
@@ -998,7 +1094,17 @@ namespace Obfuscar
         public bool ShouldSkip(TypeKey type, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
             bool skipCompilerGeneratedTypes, out string message)
         {
-            var attribute = type.TypeDefinition.MarkedToRename();
+            var descriptor = type.Descriptor;
+            var typeDef = descriptor?.TypeDefinition;
+            bool? attribute = null;
+            if (srmReader != null && typeDef != null && srmReader.TryGetTypeHandle(typeDef, out var typeHandle))
+            {
+                attribute = SrmAttributeReader.GetMarkedToRenameForType(srmReader.MetadataReader, typeHandle);
+            }
+            if (attribute == null)
+            {
+                attribute = typeDef?.MarkedToRename();
+            }
             if (attribute != null)
             {
                 message = "attribute";
@@ -1035,19 +1141,20 @@ namespace Obfuscar
                 return true;
             }
 
-            if (skipCompilerGeneratedTypes && type.TypeDefinition.HasCompilerGeneratedAttributes())
+            if (skipCompilerGeneratedTypes &&
+                descriptor?.CustomAttributeTypeFullNames?.Contains("System.Runtime.CompilerServices.CompilerGeneratedAttribute") == true)
             {
                 message = "compiler generated attribute rule in configuration";
                 return true;
             }
 
-            if (type.TypeDefinition.IsEnum && skipEnums)
+            if (descriptor?.IsEnum == true && skipEnums)
             {
                 message = "enum rule in configuration";
                 return true;
             }
 
-            if (type.TypeDefinition.IsTypePublic())
+            if (descriptor?.IsPublic == true)
             {
                 message = "KeepPublicApi option in configuration";
                 return keepPublicApi;
@@ -1060,22 +1167,26 @@ namespace Obfuscar
         public bool ShouldSkip(MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
             bool markedOnly, out string message)
         {
-            if (method.Method.IsRuntime)
+            var methodAdapter = method.MethodAdapter;
+            if (methodAdapter != null ? methodAdapter.IsRuntime : method.Method.IsRuntime)
             {
                 message = "runtime method";
                 return true;
             }
 
-            if (method.Method.IsSpecialName)
+            if (methodAdapter != null ? methodAdapter.IsSpecialName : method.Method.IsSpecialName)
             {
-                switch (method.Method.SemanticsAttributes)
+                var semantics = methodAdapter != null
+                    ? methodAdapter.SemanticsAttributes
+                    : (MethodSemantics)method.Method.SemanticsAttributes;
+                switch (semantics)
                 {
-                    case MethodSemanticsAttributes.Getter:
-                    case MethodSemanticsAttributes.Setter:
+                    case MethodSemantics.Getter:
+                    case MethodSemantics.Setter:
                         message = "skipping properties";
                         return !project.Settings.RenameProperties;
-                    case MethodSemanticsAttributes.AddOn:
-                    case MethodSemanticsAttributes.RemoveOn:
+                    case MethodSemantics.AddOn:
+                    case MethodSemantics.RemoveOn:
                         message = "skipping events";
                         return !project.Settings.RenameEvents;
                     default:
@@ -1090,7 +1201,16 @@ namespace Obfuscar
         public bool ShouldSkipParams(MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
             bool markedOnly, out string message)
         {
-            var attribute = method.Method.MarkedToRename();
+            var methodAdapter = method.MethodAdapter;
+            bool? attribute = null;
+            if (srmReader != null && method.Method != null && srmReader.TryGetMethodHandle(method.Method, out var methodHandle))
+            {
+                attribute = SrmAttributeReader.GetMarkedToRenameForMethod(srmReader.MetadataReader, methodHandle);
+            }
+            else
+            {
+                attribute = method.Method.MarkedToRename();
+            }
             // skip runtime methods
             if (attribute != null)
             {
@@ -1098,7 +1218,16 @@ namespace Obfuscar
                 return !attribute.Value;
             }
 
-            var parent = method.DeclaringType.MarkedToRename();
+            bool? parent = null;
+            var typeDef = method.TypeKey.Descriptor?.TypeDefinition;
+            if (srmReader != null && typeDef != null && srmReader.TryGetTypeHandle(typeDef, out var typeHandle))
+            {
+                parent = SrmAttributeReader.GetMarkedToRenameForType(srmReader.MetadataReader, typeHandle);
+            }
+            else
+            {
+                parent = typeDef?.MarkedToRename();
+            }
             if (parent != null)
             {
                 message = "type attribute";
@@ -1135,10 +1264,13 @@ namespace Obfuscar
                 return true;
             }
 
-            if (method.Method.IsPublic() && (
-                method.DeclaringType.IsTypePublic() ||
-                map.GetMethodGroup(method)?.Methods.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
-            ))
+            var methodIsPublic = methodAdapter != null
+                ? (methodAdapter.IsPublic || methodAdapter.IsFamily || methodAdapter.IsFamilyOrAssembly)
+                : method.Method.IsPublic();
+            if (methodIsPublic && (
+                    method.TypeKey.Descriptor?.IsPublic == true ||
+                    map.GetMethodGroup(method)?.Methods.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
+                ))
             {
                 message = "KeepPublicApi option in configuration";
                 return keepPublicApi;
@@ -1172,21 +1304,49 @@ namespace Obfuscar
         public bool ShouldSkip(FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
             out string message)
         {
+            var fieldAdapter = field.FieldAdapter ?? CreateFieldAdapter(field.Field);
             // skip runtime methods
-            if ((field.Field.IsRuntimeSpecialName && field.Field.Name == "value__"))
+            var fieldAttributes = fieldAdapter != null
+                ? fieldAdapter.Attributes
+                : (System.Reflection.FieldAttributes)field.Field.Attributes;
+            if ((fieldAttributes & System.Reflection.FieldAttributes.RTSpecialName) != 0 && field.Name == "value__")
             {
                 message = "special name";
                 return true;
             }
 
-            var attribute = field.Field.MarkedToRename();
+            bool? attribute = null;
+            if (srmReader != null)
+            {
+                if (field.Field != null && srmReader.TryGetFieldHandle(field.Field, out var fieldHandle))
+                {
+                    attribute = SrmAttributeReader.GetMarkedToRenameForField(srmReader.MetadataReader, fieldHandle);
+                }
+                else if (fieldAdapter is SrmHandleFieldAdapter srmField)
+                {
+                    attribute = SrmAttributeReader.GetMarkedToRenameForField(srmReader.MetadataReader, srmField.Handle);
+                }
+            }
+            else
+            {
+                attribute = field.Field?.MarkedToRename();
+            }
             if (attribute != null)
             {
                 message = "attribute";
                 return !attribute.Value;
             }
 
-            var parent = field.DeclaringType.MarkedToRename();
+            bool? parent = null;
+            var declaringType = field.DeclaringType;
+            if (srmReader != null && declaringType != null && srmReader.TryGetTypeHandle(declaringType, out var typeHandle))
+            {
+                parent = SrmAttributeReader.GetMarkedToRenameForType(srmReader.MetadataReader, typeHandle);
+            }
+            else
+            {
+                parent = declaringType.MarkedToRename();
+            }
             if (parent != null)
             {
                 message = "type attribute";
@@ -1229,7 +1389,10 @@ namespace Obfuscar
                 return true;
             }
 
-            if (field.Field.IsPublic() && field.DeclaringType.IsTypePublic())
+            var fieldIsPublic = fieldAdapter != null
+                ? (fieldAdapter.Attributes & System.Reflection.FieldAttributes.Public) == System.Reflection.FieldAttributes.Public
+                : field.Field.IsPublic();
+            if (fieldIsPublic && field.DeclaringType.IsTypePublic())
             {
                 message = "KeepPublicApi option in configuration";
                 return keepPublicApi;
@@ -1242,20 +1405,50 @@ namespace Obfuscar
         public bool ShouldSkip(PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
             bool markedOnly, out string message)
         {
-            if (prop.Property.IsRuntimeSpecialName)
+            var propAdapter = prop.PropertyAdapter ?? CreatePropertyAdapter(prop.Property);
+            if (propAdapter != null ? propAdapter.IsRuntimeSpecialName : prop.Property?.IsRuntimeSpecialName == true)
             {
                 message = "runtime special name";
                 return true;
             }
 
-            var attribute = prop.Property.MarkedToRename();
+            bool? attribute = null;
+            var propMethod = prop.Property?.GetMethod ?? prop.Property?.SetMethod;
+            if (srmReader != null)
+            {
+                if (prop.Property != null && srmReader.TryGetPropertyHandle(prop.Property, out var propHandle))
+                {
+                    attribute = SrmAttributeReader.GetMarkedToRenameForProperty(srmReader.MetadataReader, propHandle);
+                }
+                else if (propAdapter is SrmHandlePropertyAdapter srmProp)
+                {
+                    attribute = SrmAttributeReader.GetMarkedToRenameForProperty(srmReader.MetadataReader, srmProp.Handle);
+                }
+                else if (propMethod != null && srmReader.TryGetMethodHandle(propMethod, out var methodHandle))
+                {
+                    attribute = SrmAttributeReader.GetMarkedToRenameForMethod(srmReader.MetadataReader, methodHandle);
+                }
+            }
+            else
+            {
+                attribute = prop.Property?.MarkedToRename();
+            }
             if (attribute != null)
             {
                 message = "attribute";
                 return !attribute.Value;
             }
 
-            var parent = prop.DeclaringType.MarkedToRename();
+            bool? parent = null;
+            var declaringType = prop.DeclaringType;
+            if (srmReader != null && declaringType != null && srmReader.TryGetTypeHandle(declaringType, out var typeHandle))
+            {
+                parent = SrmAttributeReader.GetMarkedToRenameForType(srmReader.MetadataReader, typeHandle);
+            }
+            else
+            {
+                parent = declaringType?.MarkedToRename();
+            }
             if (parent != null)
             {
                 message = "type attribute";
@@ -1292,11 +1485,17 @@ namespace Obfuscar
                 return true;
             }
 
-            if (prop.Property.IsPublic() && (
-                prop.DeclaringType.IsTypePublic() ||
-                prop.Property.GetMethod != null && map.GetMethodGroup(new MethodKey(prop.Property.GetMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null ||
-                prop.Property.SetMethod != null && map.GetMethodGroup(new MethodKey(prop.Property.SetMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
-            ))
+            var propIsPublic = propAdapter != null ? propAdapter.IsPublic : prop.Property != null && prop.Property.IsPublic();
+            var declaringTypeIsPublic = prop.DeclaringType != null && prop.DeclaringType.IsTypePublic();
+            var accessorHasPublicDeclaringType = false;
+            if (prop.Property != null)
+            {
+                accessorHasPublicDeclaringType =
+                    prop.Property.GetMethod != null && map.GetMethodGroup(new MethodKey(prop.Property.GetMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null ||
+                    prop.Property.SetMethod != null && map.GetMethodGroup(new MethodKey(prop.Property.SetMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null;
+            }
+
+            if (propIsPublic && (declaringTypeIsPublic || accessorHasPublicDeclaringType))
             {
                 message = "KeepPublicApi option in configuration";
                 return keepPublicApi;
@@ -1310,13 +1509,34 @@ namespace Obfuscar
             out string message)
         {
             // skip runtime special events
-            if (evt.Event.IsRuntimeSpecialName)
+            var evtAdapter = evt.EventAdapter ?? CreateEventAdapter(evt.Event);
+            if (evtAdapter != null ? evtAdapter.IsRuntimeSpecialName : evt.Event?.IsRuntimeSpecialName == true)
             {
                 message = "runtime special name";
                 return true;
             }
 
-            var attribute = evt.Event.MarkedToRename();
+            bool? attribute = null;
+            var evtMethod = evt.Event?.AddMethod ?? evt.Event?.RemoveMethod;
+            if (srmReader != null)
+            {
+                if (evt.Event != null && srmReader.TryGetEventHandle(evt.Event, out var evtHandle))
+                {
+                    attribute = SrmAttributeReader.GetMarkedToRenameForEvent(srmReader.MetadataReader, evtHandle);
+                }
+                else if (evtAdapter is SrmHandleEventAdapter srmEvent)
+                {
+                    attribute = SrmAttributeReader.GetMarkedToRenameForEvent(srmReader.MetadataReader, srmEvent.Handle);
+                }
+                else if (evtMethod != null && srmReader.TryGetMethodHandle(evtMethod, out var methodHandle))
+                {
+                    attribute = SrmAttributeReader.GetMarkedToRenameForMethod(srmReader.MetadataReader, methodHandle);
+                }
+            }
+            else
+            {
+                attribute = evt.Event?.MarkedToRename();
+            }
             // skip runtime methods
             if (attribute != null)
             {
@@ -1324,7 +1544,16 @@ namespace Obfuscar
                 return !attribute.Value;
             }
 
-            var parent = evt.DeclaringType.MarkedToRename();
+            bool? parent = null;
+            var declaringType = evt.DeclaringType;
+            if (srmReader != null && declaringType != null && srmReader.TryGetTypeHandle(declaringType, out var typeHandle))
+            {
+                parent = SrmAttributeReader.GetMarkedToRenameForType(srmReader.MetadataReader, typeHandle);
+            }
+            else
+            {
+                parent = declaringType?.MarkedToRename();
+            }
             if (parent != null)
             {
                 message = "type attribute";
@@ -1361,11 +1590,17 @@ namespace Obfuscar
                 return true;
             }
 
-            if (evt.Event.IsPublic() && (
-                evt.DeclaringType.IsTypePublic() ||
-                evt.Event.AddMethod != null && map.GetMethodGroup(new MethodKey(evt.Event.AddMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null ||
-                evt.Event.RemoveMethod != null && map.GetMethodGroup(new MethodKey(evt.Event.RemoveMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
-            ))
+            var evtIsPublic = evtAdapter != null ? evtAdapter.IsPublic : evt.Event != null && evt.Event.IsPublic();
+            var declaringTypeIsPublic = evt.DeclaringType != null && evt.DeclaringType.IsTypePublic();
+            var accessorHasPublicDeclaringType = false;
+            if (evt.Event != null)
+            {
+                accessorHasPublicDeclaringType =
+                    evt.Event.AddMethod != null && map.GetMethodGroup(new MethodKey(evt.Event.AddMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null ||
+                    evt.Event.RemoveMethod != null && map.GetMethodGroup(new MethodKey(evt.Event.RemoveMethod))?.Methods?.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null;
+            }
+
+            if (evtIsPublic && (declaringTypeIsPublic || accessorHasPublicDeclaringType))
             {
                 message = "KeepPublicApi option in configuration";
                 return keepPublicApi;

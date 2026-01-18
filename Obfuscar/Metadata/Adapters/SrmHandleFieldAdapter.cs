@@ -20,6 +20,8 @@ namespace Obfuscar.Metadata.Adapters
             this.handle = handle;
         }
 
+        internal FieldDefinitionHandle Handle => handle;
+
         private FieldDefinition GetDefinition() => md.GetFieldDefinition(handle);
 
         public string Name => md.GetString(GetDefinition().Name);
@@ -50,10 +52,7 @@ namespace Obfuscar.Metadata.Adapters
         {
             get
             {
-                var td = md.GetTypeDefinition(GetDefinition().GetDeclaringType());
-                var name = md.GetString(td.Name);
-                var ns = md.GetString(td.Namespace);
-                return string.IsNullOrEmpty(ns) ? name : ns + "." + name;
+                return GetTypeFullName(GetDefinition().GetDeclaringType());
             }
         }
 
@@ -117,6 +116,11 @@ namespace Obfuscar.Metadata.Adapters
         {
             var td = md.GetTypeDefinition(handle);
             var name = md.GetString(td.Name);
+            var declaring = td.GetDeclaringType();
+            if (!declaring.IsNil)
+            {
+                return GetTypeFullName(declaring) + "/" + name;
+            }
             var ns = md.GetString(td.Namespace);
             return ComposeTypeName(ns, name);
         }

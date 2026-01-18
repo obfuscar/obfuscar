@@ -15,6 +15,16 @@ namespace Obfuscar.Metadata
     public class SrmAssemblyReader : IAssemblyReader
     {
         private readonly string path;
+        private readonly Dictionary<Mono.Cecil.TypeDefinition, TypeDefinitionHandle> typeDefinitionHandles =
+            new Dictionary<Mono.Cecil.TypeDefinition, TypeDefinitionHandle>();
+        private readonly Dictionary<Mono.Cecil.MethodDefinition, MethodDefinitionHandle> methodDefinitionHandles =
+            new Dictionary<Mono.Cecil.MethodDefinition, MethodDefinitionHandle>();
+        private readonly Dictionary<Mono.Cecil.FieldDefinition, FieldDefinitionHandle> fieldDefinitionHandles =
+            new Dictionary<Mono.Cecil.FieldDefinition, FieldDefinitionHandle>();
+        private readonly Dictionary<Mono.Cecil.PropertyDefinition, PropertyDefinitionHandle> propertyDefinitionHandles =
+            new Dictionary<Mono.Cecil.PropertyDefinition, PropertyDefinitionHandle>();
+        private readonly Dictionary<Mono.Cecil.EventDefinition, EventDefinitionHandle> eventDefinitionHandles =
+            new Dictionary<Mono.Cecil.EventDefinition, EventDefinitionHandle>();
 
         public SrmAssemblyReader(string path)
         {
@@ -160,6 +170,7 @@ namespace Obfuscar.Metadata
                 // Use actual type attributes from metadata
                 var typeDef = new Mono.Cecil.TypeDefinition(ns, name, (Mono.Cecil.TypeAttributes)td.Attributes);
                 typeMap[th] = typeDef;
+                typeDefinitionHandles[typeDef] = th;
             }
             
             // Second pass: Establish nesting relationships and add to module
@@ -278,6 +289,7 @@ namespace Obfuscar.Metadata
                         // best-effort: leave as object
                     }
                     typeDef.Methods.Add(mdef);
+                    methodDefinitionHandles[mdef] = mh;
 
                     // Populate method parameters from signature (simple extraction)
                     try
@@ -551,6 +563,7 @@ namespace Obfuscar.Metadata
                     
                     var fdef = new Mono.Cecil.FieldDefinition(fname, fatt, fieldType);
                     typeDef.Fields.Add(fdef);
+                    fieldDefinitionHandles[fdef] = fh;
                 }
 
                 // Populate properties (stub) for this type, linking getter/setter methods
@@ -616,6 +629,7 @@ namespace Obfuscar.Metadata
                     
                     typeDef.Properties.Add(pdef);
                     propertyMap[ph] = pdef;
+                    propertyDefinitionHandles[pdef] = ph;
                 }
 
                 // Populate events for this type, linking add/remove methods
@@ -672,6 +686,7 @@ namespace Obfuscar.Metadata
                     }
                     
                     typeDef.Events.Add(edef);
+                    eventDefinitionHandles[edef] = eh;
                 }
             }
 
@@ -679,6 +694,61 @@ namespace Obfuscar.Metadata
             PopulateCustomAttributes(module, md, propertyMap);
 
             return materializedAssembly;
+        }
+
+        public bool TryGetTypeHandle(Mono.Cecil.TypeDefinition type, out TypeDefinitionHandle handle)
+        {
+            if (type == null)
+            {
+                handle = default;
+                return false;
+            }
+
+            return typeDefinitionHandles.TryGetValue(type, out handle);
+        }
+
+        public bool TryGetMethodHandle(Mono.Cecil.MethodDefinition method, out MethodDefinitionHandle handle)
+        {
+            if (method == null)
+            {
+                handle = default;
+                return false;
+            }
+
+            return methodDefinitionHandles.TryGetValue(method, out handle);
+        }
+
+        public bool TryGetFieldHandle(Mono.Cecil.FieldDefinition field, out FieldDefinitionHandle handle)
+        {
+            if (field == null)
+            {
+                handle = default;
+                return false;
+            }
+
+            return fieldDefinitionHandles.TryGetValue(field, out handle);
+        }
+
+        public bool TryGetPropertyHandle(Mono.Cecil.PropertyDefinition property, out PropertyDefinitionHandle handle)
+        {
+            if (property == null)
+            {
+                handle = default;
+                return false;
+            }
+
+            return propertyDefinitionHandles.TryGetValue(property, out handle);
+        }
+
+        public bool TryGetEventHandle(Mono.Cecil.EventDefinition evt, out EventDefinitionHandle handle)
+        {
+            if (evt == null)
+            {
+                handle = default;
+                return false;
+            }
+
+            return eventDefinitionHandles.TryGetValue(evt, out handle);
         }
 
         // Helper to set SemanticsAttributes on a MethodDefinition and mark it as ready.

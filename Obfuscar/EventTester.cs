@@ -55,7 +55,7 @@ namespace Obfuscar
         public bool Test(EventKey evt, InheritMap map)
         {
             if (Helper.CompareOptionalRegex(evt.TypeKey.Fullname, type) &&
-                !MethodTester.CheckMemberVisibility(attrib, typeAttrib, evt.AddMethodAttributes, evt.DeclaringType))
+                !MethodTester.CheckMemberVisibility(attrib, typeAttrib, evt.AddMethodAttributes, evt.TypeKey.Descriptor))
             {
                 if (name != null)
                     return Helper.CompareOptionalRegex(evt.Name, name);

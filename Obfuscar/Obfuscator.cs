@@ -481,7 +481,8 @@ namespace Obfuscar
             AssemblyInfo info)
         {
             string sig = field.FieldType.FullName;
-            var fieldKey = new FieldKey(typeKey, sig, field.Name, field);
+            var adapter = info?.CreateFieldAdapter(field);
+            var fieldKey = new FieldKey(typeKey, sig, field.Name, field, null, adapter);
             NameGroup nameGroup = GetNameGroup(nameGroups, sig);
 
             // skip filtered fields
@@ -957,6 +958,7 @@ namespace Obfuscar
         {
             PropertyKey propKey = new PropertyKey(typeKey, prop);
             ObfuscatedThing m = Mapping.GetProperty(propKey);
+            var propAdapter = info.CreatePropertyAdapter(prop);
 
             string skip;
             // skip filtered props
@@ -992,15 +994,21 @@ namespace Obfuscar
             else
             {
                 bool keepForMarkedOnly = Project.Settings.MarkedOnly &&
-                    (prop.MarkedToRename() == true || prop.DeclaringType.MarkedToRename() == true);
+                    (info.GetMarkedToRename(prop) == true || info.GetMarkedToRename(prop.DeclaringType) == true);
 
-                if (prop.CustomAttributes.Count > 0 || Project.Settings.KeepProperties || keepForMarkedOnly)
+                var hasCustomAttributes = propAdapter != null
+                    ? propAdapter.HasCustomAttributes
+                    : prop.CustomAttributes.Count > 0;
+                if (hasCustomAttributes || Project.Settings.KeepProperties || keepForMarkedOnly)
                 {
                     // If a property has custom attributes we don't remove the property but rename it instead.
                     // Does the same if KeepProperties is set to true or marked-only should keep it.
                     var newName = NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
+                    var attributeCount = propAdapter != null
+                        ? propAdapter.CustomAttributeTypeFullNames.Count()
+                        : prop.CustomAttributes.Count;
                     LoggerService.Logger.LogDebug("Renaming property {0} in type {1} to {2} (has {3} custom attributes, KeepProperties={4})",
-                        prop.Name, typeKey, newName, prop.CustomAttributes.Count, Project.Settings.KeepProperties);
+                        prop.Name, typeKey, newName, attributeCount, Project.Settings.KeepProperties);
                     RenameProperty(info, propKey, prop, newName);
                 }
                 else

@@ -35,6 +35,7 @@ namespace Obfuscar
     {
         readonly TypeReference typeReference;
         readonly int hashCode;
+        readonly TypeDescriptor descriptor;
 
         public TypeKey(TypeReference type)
         {
@@ -51,10 +52,20 @@ namespace Obfuscar
                     this.Fullname, type.ToString()));
 
             this.hashCode = CalcHashCode();
+            this.descriptor = type is TypeDefinition td
+                ? TypeDescriptor.FromDefinition(td)
+                : TypeDescriptor.FromFullName(this.Fullname);
         }
 
-        public TypeKey(IType type) : this(type.FullName)
+        public TypeKey(IType type)
         {
+            this.typeReference = null;
+            this.Scope = type?.Scope ?? string.Empty;
+            InitializeFromFullName(type?.FullName ?? string.Empty);
+            this.hashCode = CalcHashCode();
+            this.descriptor = type != null
+                ? TypeDescriptor.FromType(type)
+                : TypeDescriptor.FromFullName(this.Fullname);
         }
 
         public TypeKey(string scope, string ns, string name)
@@ -70,6 +81,7 @@ namespace Obfuscar
             this.Fullname = fullname;
 
             this.hashCode = CalcHashCode();
+            this.descriptor = TypeDescriptor.FromFullName(fullname);
         }
 
         // Minimal constructor accepting a full type name. Scope will be empty.
@@ -78,6 +90,7 @@ namespace Obfuscar
             this.Scope = string.Empty;
             InitializeFromFullName(fullName ?? string.Empty);
             this.hashCode = CalcHashCode();
+            this.descriptor = TypeDescriptor.FromFullName(this.Fullname);
         }
 
         private void InitializeFromFullName(string fullName)
@@ -101,9 +114,11 @@ namespace Obfuscar
             return Scope.GetHashCode() ^ Namespace.GetHashCode() ^ Name.GetHashCode() ^ Fullname.GetHashCode();
         }
 
+        public TypeDescriptor Descriptor => descriptor;
+
         public TypeDefinition TypeDefinition
         {
-            get { return typeReference as TypeDefinition; }
+            get { return descriptor?.TypeDefinition ?? typeReference as TypeDefinition; }
         }
 
         public string Scope { get; }

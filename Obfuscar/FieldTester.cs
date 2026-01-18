@@ -25,6 +25,7 @@
 #endregion
 
 using System.Reflection;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Obfuscar
@@ -71,31 +72,13 @@ namespace Obfuscar
         {
             if (!string.IsNullOrEmpty(decorator))
             {
-                var match = false;
-
-                foreach (var typeField in field.TypeKey.TypeDefinition.Fields)
+                var adapter = field.FieldAdapter;
+                if (adapter == null || !adapter.HasCustomAttributes)
                 {
-                    if (typeField.Name != field.Name)
-                    {
-                        continue;
-                    }
-
-                    if (!typeField.HasCustomAttributes)
-                    {
-                        return false;
-                    }
-
-                    foreach (var customAttr in typeField.CustomAttributes)
-                    {
-                        if (customAttr.AttributeType.FullName == decorator)
-                        {
-                            match = true;
-                            break;
-                        }
-                    }
+                    return false;
                 }
 
-                if (!match)
+                if (!adapter.CustomAttributeTypeFullNames.Contains(decorator))
                 {
                     return false;
                 }
@@ -108,7 +91,7 @@ namespace Obfuscar
 
             // It's not very clean to use CheckMethodVisibility() from MethodTester. But we don't want duplicate code either.
             if (MethodTester.CheckMemberVisibility(attrib, typeAttrib, (MethodAttributes) field.FieldAttributes,
-                field.DeclaringType))
+                field.TypeKey.Descriptor))
             {
                 return false;
             }
@@ -142,7 +125,7 @@ namespace Obfuscar
                 }
 
                 bool fieldIsPublic = (field.FieldAttributes & FieldAttributes.Public) == FieldAttributes.Public;
-                bool parentIsSerializable = field.DeclaringType.IsSerializable;
+                bool parentIsSerializable = field.TypeKey.Descriptor.IsSerializable;
 
                 if (isSerializable != (fieldIsPublic && parentIsSerializable))
                 {
@@ -151,12 +134,9 @@ namespace Obfuscar
             }
 
             // finally does method's type inherit?
-            if (!string.IsNullOrEmpty(inherits))
+            if (!string.IsNullOrEmpty(inherits) && !map.Inherits(field.TypeKey, inherits))
             {
-                if (!map.Inherits(field.DeclaringType, inherits))
-                {
-                    return false;
-                }
+                return false;
             }
 
             return true;

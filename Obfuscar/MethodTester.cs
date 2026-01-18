@@ -26,7 +26,6 @@
 
 using System;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
 using Obfuscar.Helpers;
 using MethodAttributes = System.Reflection.MethodAttributes;
 
@@ -91,7 +90,7 @@ namespace Obfuscar
             }
 
             // method visibility matches
-            if (CheckMemberVisibility(this.attrib, typeAttrib, method.MethodAttributes, method.DeclaringType))
+            if (CheckMemberVisibility(this.attrib, typeAttrib, method.MethodAttributes, method.TypeKey.Descriptor))
             {
                 return false;
             }
@@ -120,25 +119,22 @@ namespace Obfuscar
             }
 
             // finally does method's type inherit?
-            if (!string.IsNullOrEmpty(inherits))
+            if (!string.IsNullOrEmpty(inherits) && !map.Inherits(method.TypeKey, inherits))
             {
-                if (!map.Inherits(method.DeclaringType, inherits))
-                {
-                    return false;
-                }
+                return false;
             }
 
             return true;
         }
 
         static public bool CheckMemberVisibility(string attribute, string typeAttribute,
-            MethodAttributes methodAttributes, TypeDefinition declaringType)
+            MethodAttributes methodAttributes, TypeDescriptor declaringType)
         {
             if (!string.IsNullOrEmpty(typeAttribute))
             {
                 if (string.Equals(typeAttribute, "public", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if (!declaringType.IsTypePublic())
+                    if (declaringType == null || !declaringType.IsPublic)
                         return false;
                 }
                 else

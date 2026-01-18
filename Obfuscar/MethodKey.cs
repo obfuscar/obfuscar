@@ -47,6 +47,11 @@ namespace Obfuscar
         {
         }
 
+        public MethodKey(MethodDefinition method, IMethod metadata)
+            : this(new TypeKey((TypeDefinition)method.DeclaringType), method, metadata ?? new CecilMethodAdapter(method))
+        {
+        }
+
         private MethodKey(TypeKey typeKey, MethodDefinition method, IMethod metadata)
             : base(metadata)
         {
@@ -75,6 +80,8 @@ namespace Obfuscar
         public TypeKey TypeKey { get; }
 
         public MethodDefinition Method { get; }
+
+        public IMethod MethodAdapter => methodAdapter;
 
         public bool Matches(MemberReference member)
         {

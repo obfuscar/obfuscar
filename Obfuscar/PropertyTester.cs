@@ -56,7 +56,7 @@ namespace Obfuscar
         {
             if (Helper.CompareOptionalRegex(prop.TypeKey.Fullname, type) &&
                 !MethodTester.CheckMemberVisibility(attrib, typeAttrib, prop.GetterMethodAttributes,
-                    prop.DeclaringType))
+                    prop.TypeKey.Descriptor))
             {
                 if (name != null)
                     return Helper.CompareOptionalRegex(prop.Name, name);

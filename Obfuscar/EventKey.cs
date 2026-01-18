@@ -26,27 +26,41 @@
 
 using MethodAttributes = System.Reflection.MethodAttributes;
 using Mono.Cecil;
+using Obfuscar.Metadata.Abstractions;
+using Obfuscar.Metadata.Adapters;
 
 namespace Obfuscar
 {
     class EventKey
     {
+        public EventKey(IEvent evt)
+            : this(new TypeKey(evt.DeclaringTypeFullName), evt.EventTypeFullName, evt.Name, null, evt)
+        {
+        }
+
         public EventKey(EventDefinition evt)
             : this(new TypeKey((TypeDefinition) evt.DeclaringType), evt)
         {
         }
 
         public EventKey(TypeKey typeKey, EventDefinition evt)
-            : this(typeKey, evt.EventType.FullName, evt.Name, evt)
+            : this(typeKey, evt.EventType.FullName, evt.Name, evt, new CecilEventAdapter(evt))
         {
         }
 
         public EventKey(TypeKey typeKey, string type, string name, EventDefinition eventDefinition)
+            : this(typeKey, type, name, eventDefinition,
+                eventDefinition != null ? new CecilEventAdapter(eventDefinition) : null)
+        {
+        }
+
+        public EventKey(TypeKey typeKey, string type, string name, EventDefinition eventDefinition, IEvent eventAdapter)
         {
             this.TypeKey = typeKey;
             this.Type = type;
             this.Name = name;
             this.Event = eventDefinition;
+            this.EventAdapter = eventAdapter;
         }
 
         public TypeKey TypeKey { get; }
@@ -57,15 +71,23 @@ namespace Obfuscar
 
         public MethodAttributes AddMethodAttributes
         {
-            get { return Event.AddMethod != null ? (MethodAttributes) Event.AddMethod.Attributes : 0; }
+            get
+            {
+                if (EventAdapter != null)
+                    return EventAdapter.AddMethodAttributes;
+
+                return Event.AddMethod != null ? (MethodAttributes) Event.AddMethod.Attributes : 0;
+            }
         }
 
         public TypeDefinition DeclaringType
         {
-            get { return (TypeDefinition) Event.DeclaringType; }
+            get { return Event != null ? (TypeDefinition) Event.DeclaringType : null; }
         }
 
         public EventDefinition Event { get; }
+
+        public IEvent EventAdapter { get; }
 
         public virtual bool Matches(MemberReference member)
         {

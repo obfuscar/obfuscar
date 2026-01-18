@@ -24,6 +24,12 @@ namespace Obfuscar.Metadata.Adapters
         public string ReturnTypeFullName => method.ReturnType?.FullName ?? string.Empty;
         public string DeclaringTypeFullName => method.DeclaringType?.FullName ?? string.Empty;
         public MethodAttributes Attributes => (MethodAttributes) method.Attributes;
+        public MethodSemantics SemanticsAttributes => (MethodSemantics) method.SemanticsAttributes;
+        public bool IsRuntime => method.IsRuntime;
+        public bool IsSpecialName => method.IsSpecialName;
+        public bool IsPublic => method.IsPublic;
+        public bool IsFamily => method.IsFamily;
+        public bool IsFamilyOrAssembly => method.IsFamilyOrAssembly;
         public IReadOnlyList<string> ParameterTypeFullNames => parameterTypeFullNames;
     }
 }

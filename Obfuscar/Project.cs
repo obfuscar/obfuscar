@@ -487,6 +487,15 @@ namespace Obfuscar
             return assemblyMap.ContainsKey(type.Scope);
         }
 
+        internal AssemblyInfo GetAssemblyInfoByName(string name)
+        {
+            if (name == null)
+                return null;
+
+            assemblyMap.TryGetValue(name, out var info);
+            return info;
+        }
+
         public TypeDefinition GetTypeDefinition(TypeReference type)
         {
             if (type == null)

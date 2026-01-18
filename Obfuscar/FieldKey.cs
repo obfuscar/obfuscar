@@ -26,29 +26,31 @@
 
 using FieldAttributes = System.Reflection.FieldAttributes;
 using Mono.Cecil;
+using Obfuscar.Metadata.Adapters;
 using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar
 {
     class FieldKey
     {
-        public FieldKey(Obfuscar.Metadata.Abstractions.IField field)
-            : this(new TypeKey(field.DeclaringTypeFullName), field.FieldTypeFullName, field.Name, null, field.Attributes)
+        public FieldKey(IField field)
+            : this(new TypeKey(field.DeclaringTypeFullName), field.FieldTypeFullName, field.Name, null, field.Attributes, field)
         {
         }
 
         public FieldKey(FieldDefinition field)
-            : this(new TypeKey((TypeDefinition) field.DeclaringType), field.FieldType.FullName, field.Name, field)
+            : this(new TypeKey((TypeDefinition) field.DeclaringType), field.FieldType.FullName, field.Name, field, (FieldAttributes) field.Attributes, new CecilFieldAdapter(field))
         {
         }
 
-        public FieldKey(TypeKey typeKey, string type, string name, FieldDefinition fieldDefinition, FieldAttributes? attributes = null)
+        public FieldKey(TypeKey typeKey, string type, string name, FieldDefinition fieldDefinition, FieldAttributes? attributes = null, IField fieldAdapter = null)
         {
             this.TypeKey = typeKey;
             this.Type = type;
             this.Name = name;
             this.Field = fieldDefinition;
             this.overriddenAttributes = attributes;
+            this.FieldAdapter = fieldAdapter;
         }
 
         private readonly FieldAttributes? overriddenAttributes;
@@ -60,7 +62,13 @@ namespace Obfuscar
                 if (overriddenAttributes.HasValue)
                     return overriddenAttributes.Value;
 
-                return Field != null ? (FieldAttributes) Field.Attributes : 0;
+                if (Field != null)
+                    return (FieldAttributes) Field.Attributes;
+
+                if (FieldAdapter != null)
+                    return FieldAdapter.Attributes;
+
+                return 0;
             }
         }
 
@@ -70,6 +78,8 @@ namespace Obfuscar
         }
 
         public FieldDefinition Field { get; }
+
+        public IField FieldAdapter { get; }
 
         public TypeKey TypeKey { get; }
 
