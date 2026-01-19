@@ -1062,19 +1062,6 @@ namespace Obfuscar.Metadata.Mutable
 
         private void AddCustomAttributeToParent(EntityHandle parent, MutableCustomAttribute attr)
         {
-            if (attr.AttributeTypeName == typeof(ObfuscateAssemblyAttribute).FullName &&
-                string.Equals(Environment.GetEnvironmentVariable("OBFUSCAR_DEBUG_ATTRS"), "1", StringComparison.Ordinal))
-            {
-                try
-                {
-                    Obfuscar.LoggerService.Logger.LogDebug("ObfuscateAssemblyAttribute parent={ParentKind}", parent.Kind);
-                }
-                catch
-                {
-                    // ignore logging failures
-                }
-            }
-
             switch (parent.Kind)
             {
                 case HandleKind.AssemblyDefinition:

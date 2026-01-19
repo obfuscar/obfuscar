@@ -212,39 +212,6 @@ namespace Obfuscar
                             parameters.WriteSymbols = true;
                         }
 
-                        if (string.Equals(Environment.GetEnvironmentVariable("OBFUSCAR_DEBUG_ATTRS"), "1", StringComparison.Ordinal))
-                        {
-                            try
-                            {
-                                var names = string.Join(", ", info.Definition.CustomAttributes.Select(attr => attr.AttributeTypeName));
-                                LoggerService.Logger.LogDebug("Saving {AssemblyName} assembly attrs: {Names}", info.Name, names);
-                                foreach (var typeDef in info.Definition.MainModule.Types)
-                                {
-                                    if (typeDef.Properties.Count == 0)
-                                        continue;
-                                    LoggerService.Logger.LogDebug("Type {TypeName} props: {Props}",
-                                        typeDef.FullName,
-                                        string.Join(", ", typeDef.Properties.Select(p => p.Name + "[A:" + p.CustomAttributes.Count + "]")));
-                                    foreach (var prop in typeDef.Properties)
-                                    {
-                                        foreach (var attr in prop.CustomAttributes)
-                                        {
-                                            var named = string.Join(", ", attr.Properties.Select(p =>
-                                                $"{p.Name}:{p.Argument?.Type?.FullName}={p.Argument?.Value}"));
-                                            LoggerService.Logger.LogDebug("Prop {PropName} attr {AttrName} named [{Named}]",
-                                                prop.Name,
-                                                attr.AttributeTypeName,
-                                                named);
-                                        }
-                                    }
-                                }
-                            }
-                            catch
-                            {
-                                // ignore logging failures
-                            }
-                        }
-
                         var hasPublicKey = info.Definition.Name.PublicKey != null && info.Definition.Name.PublicKey.Length > 0;
                         if (hasPublicKey)
                         {

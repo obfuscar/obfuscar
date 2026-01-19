@@ -260,19 +260,6 @@ namespace Obfuscar.Helpers
             if (attributes == null || attributes.Count == 0)
                 return;
 
-            if (string.Equals(Environment.GetEnvironmentVariable("OBFUSCAR_DEBUG_ATTRS"), "1", StringComparison.Ordinal))
-            {
-                try
-                {
-                    var names = string.Join(", ", attributes.Select(attr => attr.AttributeTypeName));
-                    Obfuscar.LoggerService.Logger.LogDebug("Assembly attrs before clean: {Names}", names);
-                }
-                catch
-                {
-                    // ignore logging failures
-                }
-            }
-
             for (int i = attributes.Count - 1; i >= 0; i--)
             {
                 var custom = attributes[i];
@@ -282,19 +269,6 @@ namespace Obfuscar.Helpers
                     {
                         attributes.RemoveAt(i);
                     }
-                }
-            }
-
-            if (string.Equals(Environment.GetEnvironmentVariable("OBFUSCAR_DEBUG_ATTRS"), "1", StringComparison.Ordinal))
-            {
-                try
-                {
-                    var names = string.Join(", ", attributes.Select(attr => attr.AttributeTypeName));
-                    Obfuscar.LoggerService.Logger.LogDebug("Assembly attrs after clean: {Names}", names);
-                }
-                catch
-                {
-                    // ignore logging failures
                 }
             }
         }
