@@ -11,6 +11,8 @@
     <TargetFrameworks Condition="'$(IsNet100Supported)' == 'true'">$(TargetFrameworks);net10.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Windows'">$(TargetFrameworks);net462</TargetFrameworks>
     <LangVersion>latest</LangVersion>
+    <!-- Suppress warnings for obsolete APIs that we must use to handle legacy assembly metadata -->
+    <NoWarn>$(NoWarn);SYSLIB0003;SYSLIB0025;SYSLIB0050</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
