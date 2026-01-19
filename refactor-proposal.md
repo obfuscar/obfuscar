@@ -2,12 +2,14 @@
 
 Goals
 -----
+
 - Reduce technical debt from the Cecil-to-SRM migration by tightening module boundaries.
 - Standardize logging/configuration to remove ad-hoc behavior.
 - Improve readability and test determinism without changing obfuscation semantics.
 
 Guiding principles
 ------------------
+
 - Small, safe slices with tests or targeted validation.
 - Prefer clear APIs and explicit ownership over helper sprawl.
 - Avoid broad mechanical changes without a concrete payoff.
@@ -40,9 +42,10 @@ Phase 6: API cleanup and docs
 
 Status tracker
 --------------
+
 - [done] Phase 1.1: Remove /tmp/obfuscar_debug.log writes; use LoggerService with env-gated debug output.
 - [done] Phase 1.2: Wire LoggerService defaults at app entrypoints (Console/, GlobalTools/, example/).
- - [done] Phase 2.1: Document absolute-path config requirement and add tests for placeholder/relative path rejection.
+- [done] Phase 2.1: Document absolute-path config requirement and add tests for placeholder/relative path rejection.
 - [done] Phase 3.1: Draft SRM-native resolver design and tests.
 - [done] Phase 3.2: Add resolution tests for framework packs, forwarding, and multi-target references.
 - [done] Phase 4.1: Inventory and prioritize MigrationBridge call sites; remove adapter shims where only mutable types remain.
@@ -58,5 +61,6 @@ Status tracker
 
 Notes
 -----
+
 - Status will be updated as each slice lands.
 - Larger refactors (resolver/bridge removal) should be preceded by tests that capture current behavior.
