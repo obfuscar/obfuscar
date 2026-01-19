@@ -31,6 +31,7 @@ using Xunit;
 
 namespace ObfuscarTests
 {
+    [Collection("NameMaker")]
     public class SettingsTests
     {
         [Fact]

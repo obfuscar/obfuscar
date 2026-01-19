@@ -31,6 +31,7 @@ using Obfuscar;
 
 namespace ObfuscarTests
 {
+    [Collection("NameMaker")]
     public class CustomAttributeTests
     {
         public string BuildAndObfuscate()
