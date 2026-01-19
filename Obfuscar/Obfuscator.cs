@@ -168,7 +168,7 @@ namespace Obfuscar
             LoggerService.Logger.LogInformation("Loading assemblies...");
             LoggerService.Logger.LogInformation("Extra framework folders: ");
             foreach (var lExtraPath in Project.ExtraPaths ?? new string[0])
-                LoggerService.Logger.LogInformation(lExtraPath + ", ");
+                LoggerService.Logger.LogInformation("{ExtraPath}, ", lExtraPath);
 
             Project.LoadAssemblies();
         }
@@ -394,8 +394,8 @@ namespace Obfuscar
                             throw;
                         }
 
-                        LoggerService.Logger.LogInformation(string.Format("\nFailed to save {0}", fileName));
-                        LoggerService.Logger.LogInformation(string.Format("\n{0}: {1}", e.GetType().Name, e.Message));
+                        LoggerService.Logger.LogInformation("\nFailed to save {FileName}", fileName);
+                        LoggerService.Logger.LogInformation("\n{ExceptionType}: {Message}", e.GetType().Name, e.Message);
                     }
                 }
             }
@@ -413,7 +413,7 @@ namespace Obfuscar
         {
             foreach (var tuple in Mapping.FindClasses(name))
             {
-                LoggerService.Logger.LogInformation(string.Format("\n{0} => {1}", tuple.Item1.Fullname, tuple.Item2));
+                LoggerService.Logger.LogInformation("\n{From} => {To}", tuple.Item1.Fullname, tuple.Item2);
             }
         }
 

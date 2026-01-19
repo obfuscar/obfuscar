@@ -49,6 +49,12 @@ Status tracker
 - [done] Phase 4.2: Sweep for any remaining adapter-only paths and verify no external callers depend on them.
 - [done] Phase 5.1: Normalize temp IO in tests with per-test workspaces and fixture seeding.
 - [done] Phase 5.2: Evaluate parallel test execution after IO isolation changes; serialize NameMaker-dependent tests.
+- [done] Phase 6.1: Refactor operand encoding in MutableAssemblyWriter for readability.
+- [done] Phase 6.2: Split WriteTypeDefinitionsSecondPass into focused helpers.
+- [done] Phase 6.3: Split WriteCustomAttributes into focused helpers.
+- [done] Phase 6.4: Split EncodeCustomAttributeValue into focused helpers.
+- [done] Phase 6.5: Split EncodeTypeToBuilder into focused type-encoding helpers.
+- [done] Phase 6.6: Split EncodeIL into offset assignment and instruction encoding helpers.
 
 Notes
 -----

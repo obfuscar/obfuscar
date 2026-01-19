@@ -282,60 +282,79 @@ namespace Obfuscar.Metadata.Mutable
                 {
                     continue;
                 }
-                
-                // Write fields
-                foreach (var field in type.Fields)
-                {
-                    WriteFieldDefinition(field);
-                }
-                
-                // Write methods (signatures only, bodies in third pass)
-                foreach (var method in type.Methods)
-                {
-                    WriteMethodDefinition(method);
-                }
 
-                // Write explicit method implementations
-                foreach (var impl in type.MethodImplementations)
-                {
-                    var bodyHandle = GetMethodHandleForImpl(impl.MethodBody);
-                    var declarationHandle = GetMethodHandleForImpl(impl.MethodDeclaration);
-                    if (bodyHandle.IsNil || declarationHandle.IsNil)
-                        continue;
+                WriteTypeFields(type);
+                WriteTypeMethods(type);
+                WriteTypeMethodImplementations(type, typeHandle);
+                WriteTypeInterfaces(type, typeHandle);
+                WriteTypeProperties(type, typeHandle);
+                WriteTypeEvents(type, typeHandle);
+            }
+        }
 
-                    _metadata.AddMethodImplementation(typeHandle, bodyHandle, declarationHandle);
-                }
-                
-                // Write interfaces
-                foreach (var iface in type.Interfaces)
-                {
-                    var ifaceHandle = GetTypeHandle(iface.InterfaceType);
-                    _metadata.AddInterfaceImplementation(typeHandle, ifaceHandle);
-                }
-                
-                // Write properties
-                if (type.Properties.Count > 0)
-                {
-                    _metadata.AddPropertyMap(typeHandle, 
-                        MetadataTokens.PropertyDefinitionHandle(_metadata.GetRowCount(TableIndex.Property) + 1));
-                    
-                    foreach (var prop in type.Properties)
-                    {
-                        WritePropertyDefinition(prop);
-                    }
-                }
-                
-                // Write events
-                if (type.Events.Count > 0)
-                {
-                    _metadata.AddEventMap(typeHandle,
-                        MetadataTokens.EventDefinitionHandle(_metadata.GetRowCount(TableIndex.Event) + 1));
-                    
-                    foreach (var evt in type.Events)
-                    {
-                        WriteEventDefinition(evt);
-                    }
-                }
+        private void WriteTypeFields(MutableTypeDefinition type)
+        {
+            foreach (var field in type.Fields)
+            {
+                WriteFieldDefinition(field);
+            }
+        }
+
+        private void WriteTypeMethods(MutableTypeDefinition type)
+        {
+            foreach (var method in type.Methods)
+            {
+                WriteMethodDefinition(method);
+            }
+        }
+
+        private void WriteTypeMethodImplementations(MutableTypeDefinition type, TypeDefinitionHandle typeHandle)
+        {
+            foreach (var impl in type.MethodImplementations)
+            {
+                var bodyHandle = GetMethodHandleForImpl(impl.MethodBody);
+                var declarationHandle = GetMethodHandleForImpl(impl.MethodDeclaration);
+                if (bodyHandle.IsNil || declarationHandle.IsNil)
+                    continue;
+
+                _metadata.AddMethodImplementation(typeHandle, bodyHandle, declarationHandle);
+            }
+        }
+
+        private void WriteTypeInterfaces(MutableTypeDefinition type, TypeDefinitionHandle typeHandle)
+        {
+            foreach (var iface in type.Interfaces)
+            {
+                var ifaceHandle = GetTypeHandle(iface.InterfaceType);
+                _metadata.AddInterfaceImplementation(typeHandle, ifaceHandle);
+            }
+        }
+
+        private void WriteTypeProperties(MutableTypeDefinition type, TypeDefinitionHandle typeHandle)
+        {
+            if (type.Properties.Count == 0)
+                return;
+
+            _metadata.AddPropertyMap(typeHandle,
+                MetadataTokens.PropertyDefinitionHandle(_metadata.GetRowCount(TableIndex.Property) + 1));
+
+            foreach (var prop in type.Properties)
+            {
+                WritePropertyDefinition(prop);
+            }
+        }
+
+        private void WriteTypeEvents(MutableTypeDefinition type, TypeDefinitionHandle typeHandle)
+        {
+            if (type.Events.Count == 0)
+                return;
+
+            _metadata.AddEventMap(typeHandle,
+                MetadataTokens.EventDefinitionHandle(_metadata.GetRowCount(TableIndex.Event) + 1));
+
+            foreach (var evt in type.Events)
+            {
+                WriteEventDefinition(evt);
             }
         }
 
@@ -412,12 +431,14 @@ namespace Obfuscar.Metadata.Mutable
 
                 if (declaringType != null && declaringType.Namespace == "SkipVirtualMethodTest" && declaringType.Name == "Interface1")
                 {
-                    LogBodyIssue($"SkipVirtualMethodTest.Interface1::{method.Name} attrs={method.Attributes} isInterface={isInterface} bodyNull={method.Body == null}");
+                    Obfuscar.LoggerService.Logger.LogDebug(
+                        $"SkipVirtualMethodTest.Interface1::{method.Name} attrs={method.Attributes} isInterface={isInterface} bodyNull={method.Body == null}");
                 }
 
                 if (method?.Body != null && (method.IsAbstract || isInterface))
                 {
-                    LogBodyIssue($"Method has body but abstract/interface: {declaringType?.FullName}::{method.Name} attrs={method.Attributes} isInterface={isInterface} bodyInstr={method.Body.Instructions.Count}");
+                    Obfuscar.LoggerService.Logger.LogDebug(
+                        $"Method has body but abstract/interface: {declaringType?.FullName}::{method.Name} attrs={method.Attributes} isInterface={isInterface} bodyInstr={method.Body.Instructions.Count}");
                 }
                 
                 if (!CanWriteBody(method))
@@ -425,7 +446,8 @@ namespace Obfuscar.Metadata.Mutable
 
                 if (method.IsAbstract || isInterface)
                 {
-                    LogBodyIssue($"Encoding body for abstract/interface: {declaringType?.FullName}::{method.Name} attrs={method.Attributes} isInterface={isInterface}");
+                    Obfuscar.LoggerService.Logger.LogDebug(
+                        $"Encoding body for abstract/interface: {declaringType?.FullName}::{method.Name} attrs={method.Attributes} isInterface={isInterface}");
                 }
                 
                 var offset = EncodeMethodBody(method.Body);
@@ -449,22 +471,6 @@ namespace Obfuscar.Metadata.Mutable
                 return false;
 
             return true;
-        }
-
-        private static void LogBodyIssue(string message)
-        {
-            if (!string.Equals(Environment.GetEnvironmentVariable("OBFUSCAR_DEBUG_BODIES"), "1", StringComparison.Ordinal))
-                return;
-
-            try
-            {
-                // Use the library logger instead of ad-hoc file logging.
-                Obfuscar.LoggerService.Logger.LogDebug(message);
-            }
-            catch
-            {
-                // Ignore logging failures.
-            }
         }
 
         private int EncodeMethodBody(MutableMethodBody body)
@@ -503,34 +509,46 @@ namespace Obfuscar.Metadata.Mutable
         private byte[] EncodeIL(MutableMethodBody body)
         {
             // First pass: calculate offsets
-            int offset = 0;
+            var totalSize = AssignInstructionOffsets(body.Instructions);
+            
+            // Second pass: encode
+            var bytes = new List<byte>(totalSize);
+            
             foreach (var instruction in body.Instructions)
+            {
+                EncodeInstruction(bytes, instruction);
+            }
+            
+            return bytes.ToArray();
+        }
+
+        private static int AssignInstructionOffsets(IReadOnlyList<MutableInstruction> instructions)
+        {
+            int offset = 0;
+            foreach (var instruction in instructions)
             {
                 instruction.Offset = offset;
                 offset += instruction.GetSize();
             }
-            
-            // Second pass: encode
-            var bytes = new List<byte>();
-            
-            foreach (var instruction in body.Instructions)
+
+            return offset;
+        }
+
+        private void EncodeInstruction(List<byte> bytes, MutableInstruction instruction)
+        {
+            // Encode opcode
+            if (instruction.OpCode.Size == 2)
             {
-                // Encode opcode
-                if (instruction.OpCode.Size == 2)
-                {
-                    bytes.Add((byte)(instruction.OpCode.Value >> 8));
-                    bytes.Add((byte)(instruction.OpCode.Value & 0xFF));
-                }
-                else
-                {
-                    bytes.Add((byte)instruction.OpCode.Value);
-                }
-                
-                // Encode operand
-                EncodeOperand(bytes, instruction);
+                bytes.Add((byte)(instruction.OpCode.Value >> 8));
+                bytes.Add((byte)(instruction.OpCode.Value & 0xFF));
             }
-            
-            return bytes.ToArray();
+            else
+            {
+                bytes.Add((byte)instruction.OpCode.Value);
+            }
+
+            // Encode operand
+            EncodeOperand(bytes, instruction);
         }
 
         private void EncodeOperand(List<byte> bytes, MutableInstruction instruction)
@@ -541,27 +559,11 @@ namespace Obfuscar.Metadata.Mutable
                     break;
                     
                 case MutableOperandType.ShortInlineBrTarget:
-                    if (instruction.Operand is MutableInstruction target)
-                    {
-                        var off = target.Offset - (instruction.Offset + instruction.GetSize());
-                        bytes.Add((byte)off);
-                    }
-                    else
-                    {
-                        bytes.Add(0);
-                    }
+                    WriteShortBranchTarget(bytes, instruction);
                     break;
                     
                 case MutableOperandType.InlineBrTarget:
-                    if (instruction.Operand is MutableInstruction target2)
-                    {
-                        var off = target2.Offset - (instruction.Offset + instruction.GetSize());
-                        WriteInt32(bytes, off);
-                    }
-                    else
-                    {
-                        WriteInt32(bytes, 0);
-                    }
+                    WriteBranchTarget(bytes, instruction);
                     break;
                     
                 case MutableOperandType.ShortInlineI:
@@ -592,79 +594,115 @@ namespace Obfuscar.Metadata.Mutable
                     break;
                     
                 case MutableOperandType.InlineString:
-                    var str = instruction.Operand as string ?? "";
-                    var stringHandle = GetOrAddUserString(str);
-                    WriteInt32(bytes, MetadataTokens.GetToken(stringHandle));
+                    WriteUserStringToken(bytes, instruction.Operand as string);
                     break;
                     
                 case MutableOperandType.InlineMethod:
-                    var methodHandle = GetMethodHandle(instruction.Operand as MutableMethodReference);
-                    WriteInt32(bytes, MetadataTokens.GetToken(methodHandle));
+                    WriteMetadataToken(bytes, GetMethodHandle(instruction.Operand as MutableMethodReference));
                     break;
                     
                 case MutableOperandType.InlineField:
-                    var fieldHandle = GetFieldHandle(instruction.Operand as MutableFieldReference);
-                    WriteInt32(bytes, MetadataTokens.GetToken(fieldHandle));
+                    WriteMetadataToken(bytes, GetFieldHandle(instruction.Operand as MutableFieldReference));
                     break;
                     
                 case MutableOperandType.InlineType:
-                    var typeHandle = GetTypeHandle(instruction.Operand as MutableTypeReference);
-                    WriteInt32(bytes, MetadataTokens.GetToken(typeHandle));
+                    WriteMetadataToken(bytes, GetTypeHandle(instruction.Operand as MutableTypeReference));
                     break;
                     
                 case MutableOperandType.InlineTok:
-                    var tokenHandle = GetTokenHandle(instruction.Operand);
-                    WriteInt32(bytes, MetadataTokens.GetToken(tokenHandle));
+                    WriteMetadataToken(bytes, GetTokenHandle(instruction.Operand));
                     break;
                     
                 case MutableOperandType.ShortInlineVar:
-                    if (instruction.Operand is MutableVariableDefinition var1)
-                        bytes.Add((byte)var1.Index);
-                    else
-                        bytes.Add(0);
+                    WriteShortInlineIndex(bytes, (instruction.Operand as MutableVariableDefinition)?.Index);
                     break;
                     
                 case MutableOperandType.InlineVar:
-                    if (instruction.Operand is MutableVariableDefinition var2)
-                        WriteInt16(bytes, (short)var2.Index);
-                    else
-                        WriteInt16(bytes, 0);
+                    WriteInlineIndex(bytes, (instruction.Operand as MutableVariableDefinition)?.Index);
                     break;
                     
                 case MutableOperandType.ShortInlineArg:
-                    if (instruction.Operand is int argIndex)
-                        bytes.Add((byte)argIndex);
-                    else
-                        bytes.Add(0);
+                    WriteShortInlineIndex(bytes, instruction.Operand as int?);
                     break;
                     
                 case MutableOperandType.InlineArg:
-                    if (instruction.Operand is int argIndex2)
-                        WriteInt16(bytes, (short)argIndex2);
-                    else
-                        WriteInt16(bytes, 0);
+                    WriteInlineIndex(bytes, instruction.Operand as int?);
                     break;
                     
                 case MutableOperandType.InlineSwitch:
-                    if (instruction.Operand is MutableInstruction[] targets)
-                    {
-                        WriteInt32(bytes, targets.Length);
-                        int baseOffset = instruction.Offset + instruction.GetSize();
-                        foreach (var t in targets)
-                        {
-                            WriteInt32(bytes, t != null ? t.Offset - baseOffset : 0);
-                        }
-                    }
-                    else
-                    {
-                        WriteInt32(bytes, 0);
-                    }
+                    WriteSwitchTargets(bytes, instruction);
                     break;
                     
                 case MutableOperandType.InlineSig:
                     // Standalone signature
                     WriteInt32(bytes, instruction.Operand is int sigToken ? sigToken : 0);
                     break;
+            }
+        }
+
+        private static void WriteShortBranchTarget(List<byte> bytes, MutableInstruction instruction)
+        {
+            if (instruction.Operand is MutableInstruction target)
+            {
+                var off = target.Offset - (instruction.Offset + instruction.GetSize());
+                bytes.Add((byte)off);
+            }
+            else
+            {
+                bytes.Add(0);
+            }
+        }
+
+        private void WriteBranchTarget(List<byte> bytes, MutableInstruction instruction)
+        {
+            if (instruction.Operand is MutableInstruction target)
+            {
+                // Branch offsets are relative to the next instruction.
+                var off = target.Offset - (instruction.Offset + instruction.GetSize());
+                WriteInt32(bytes, off);
+            }
+            else
+            {
+                WriteInt32(bytes, 0);
+            }
+        }
+
+        private void WriteUserStringToken(List<byte> bytes, string value)
+        {
+            var stringHandle = GetOrAddUserString(value ?? string.Empty);
+            WriteInt32(bytes, MetadataTokens.GetToken(stringHandle));
+        }
+
+        private void WriteMetadataToken(List<byte> bytes, EntityHandle handle)
+        {
+            WriteInt32(bytes, MetadataTokens.GetToken(handle));
+        }
+
+        private static void WriteShortInlineIndex(List<byte> bytes, int? index)
+        {
+            bytes.Add((byte)(index ?? 0));
+        }
+
+        private void WriteInlineIndex(List<byte> bytes, int? index)
+        {
+            WriteInt16(bytes, (short)(index ?? 0));
+        }
+
+        private void WriteSwitchTargets(List<byte> bytes, MutableInstruction instruction)
+        {
+            if (instruction.Operand is MutableInstruction[] targets)
+            {
+                WriteInt32(bytes, targets.Length);
+                // Switch targets are encoded relative to the end of the switch instruction.
+                int baseOffset = instruction.Offset + instruction.GetSize();
+                foreach (var t in targets)
+                {
+                    WriteInt32(bytes, t != null ? t.Offset - baseOffset : 0);
+                }
+            }
+            else
+            {
+                WriteInt32(bytes, 0);
             }
         }
 
@@ -799,108 +837,117 @@ namespace Obfuscar.Metadata.Mutable
 
         private void WriteCustomAttributes()
         {
-            if (!_assemblyDefHandle.IsNil)
-            {
-                foreach (var attr in _assembly.CustomAttributes)
-                {
-                    AddCustomAttribute(_assemblyDefHandle, attr);
-                }
-            }
-
-            if (!_moduleDefHandle.IsNil)
-            {
-                foreach (var attr in _assembly.MainModule.CustomAttributes)
-                {
-                    AddCustomAttribute(_moduleDefHandle, attr);
-                }
-            }
+            WriteAssemblyCustomAttributes();
+            WriteModuleCustomAttributes();
 
             foreach (var typeEntry in _typeDefHandles)
             {
-                var type = typeEntry.Key;
-                var typeHandle = typeEntry.Value;
+                WriteTypeCustomAttributes(typeEntry.Key, typeEntry.Value);
+            }
+        }
 
-                foreach (var attr in type.CustomAttributes)
+        private void WriteAssemblyCustomAttributes()
+        {
+            if (_assemblyDefHandle.IsNil)
+                return;
+
+            AddCustomAttributes(_assemblyDefHandle, _assembly.CustomAttributes);
+        }
+
+        private void WriteModuleCustomAttributes()
+        {
+            if (_moduleDefHandle.IsNil)
+                return;
+
+            AddCustomAttributes(_moduleDefHandle, _assembly.MainModule.CustomAttributes);
+        }
+
+        private void WriteTypeCustomAttributes(MutableTypeDefinition type, TypeDefinitionHandle typeHandle)
+        {
+            AddCustomAttributes(typeHandle, type.CustomAttributes);
+            WriteMethodCustomAttributes(type);
+            WriteFieldCustomAttributes(type);
+            WriteGenericParameterCustomAttributes(type);
+            WritePropertyCustomAttributes(type);
+            WriteEventCustomAttributes(type);
+        }
+
+        private void WriteMethodCustomAttributes(MutableTypeDefinition type)
+        {
+            foreach (var method in type.Methods)
+            {
+                if (_methodDefHandles.TryGetValue(method, out var methodHandle))
                 {
-                    AddCustomAttribute(typeHandle, attr);
+                    AddCustomAttributes(methodHandle, method.CustomAttributes);
                 }
 
-                foreach (var method in type.Methods)
+                foreach (var param in method.Parameters)
                 {
-                    if (_methodDefHandles.TryGetValue(method, out var methodHandle))
+                    if (_parameterHandles.TryGetValue(param, out var paramHandle))
                     {
-                        foreach (var attr in method.CustomAttributes)
-                        {
-                            AddCustomAttribute(methodHandle, attr);
-                        }
-                    }
-
-                    foreach (var param in method.Parameters)
-                    {
-                        if (_parameterHandles.TryGetValue(param, out var paramHandle))
-                        {
-                            foreach (var attr in param.CustomAttributes)
-                            {
-                                AddCustomAttribute(paramHandle, attr);
-                            }
-                        }
-                    }
-
-                    foreach (var gp in method.GenericParameters)
-                    {
-                        if (_genericParameterHandles.TryGetValue(gp, out var gpHandle))
-                        {
-                            foreach (var attr in gp.CustomAttributes)
-                            {
-                                AddCustomAttribute(gpHandle, attr);
-                            }
-                        }
-                    }
-                }
-
-                foreach (var field in type.Fields)
-                {
-                    if (_fieldDefHandles.TryGetValue(field, out var fieldHandle))
-                    {
-                        foreach (var attr in field.CustomAttributes)
-                        {
-                            AddCustomAttribute(fieldHandle, attr);
-                        }
+                        AddCustomAttributes(paramHandle, param.CustomAttributes);
                     }
                 }
 
-                foreach (var gp in type.GenericParameters)
+                foreach (var gp in method.GenericParameters)
                 {
                     if (_genericParameterHandles.TryGetValue(gp, out var gpHandle))
                     {
-                        foreach (var attr in gp.CustomAttributes)
-                        {
-                            AddCustomAttribute(gpHandle, attr);
-                        }
+                        AddCustomAttributes(gpHandle, gp.CustomAttributes);
                     }
                 }
+            }
+        }
 
-                foreach (var prop in type.Properties)
+        private void WriteFieldCustomAttributes(MutableTypeDefinition type)
+        {
+            foreach (var field in type.Fields)
+            {
+                if (_fieldDefHandles.TryGetValue(field, out var fieldHandle))
                 {
-                    if (_propertyDefHandles.TryGetValue(prop, out var propHandle))
-                    {
-                        foreach (var attr in prop.CustomAttributes)
-                        {
-                            AddCustomAttribute(propHandle, attr);
-                        }
-                    }
+                    AddCustomAttributes(fieldHandle, field.CustomAttributes);
                 }
+            }
+        }
 
-                foreach (var evt in type.Events)
+        private void WriteGenericParameterCustomAttributes(MutableTypeDefinition type)
+        {
+            foreach (var gp in type.GenericParameters)
+            {
+                if (_genericParameterHandles.TryGetValue(gp, out var gpHandle))
                 {
-                    if (_eventDefHandles.TryGetValue(evt, out var evtHandle))
-                    {
-                        foreach (var attr in evt.CustomAttributes)
-                        {
-                            AddCustomAttribute(evtHandle, attr);
-                        }
-                    }
+                    AddCustomAttributes(gpHandle, gp.CustomAttributes);
                 }
+            }
+        }
+
+        private void WritePropertyCustomAttributes(MutableTypeDefinition type)
+        {
+            foreach (var prop in type.Properties)
+            {
+                if (_propertyDefHandles.TryGetValue(prop, out var propHandle))
+                {
+                    AddCustomAttributes(propHandle, prop.CustomAttributes);
+                }
+            }
+        }
+
+        private void WriteEventCustomAttributes(MutableTypeDefinition type)
+        {
+            foreach (var evt in type.Events)
+            {
+                if (_eventDefHandles.TryGetValue(evt, out var evtHandle))
+                {
+                    AddCustomAttributes(evtHandle, evt.CustomAttributes);
+                }
+            }
+        }
+
+        private void AddCustomAttributes(EntityHandle parent, IEnumerable<MutableCustomAttribute> attributes)
+        {
+            foreach (var attr in attributes)
+            {
+                AddCustomAttribute(parent, attr);
             }
         }
 
@@ -918,18 +965,7 @@ namespace Obfuscar.Metadata.Mutable
             }
             catch
             {
-                if (string.Equals(Environment.GetEnvironmentVariable("OBFUSCAR_DEBUG_ATTRS"), "1", StringComparison.Ordinal))
-                {
-                    try
-                    {
-                        Obfuscar.LoggerService.Logger.LogDebug($"Custom attribute skipped: {attr?.AttributeTypeName}");
-                    }
-                    catch
-                    {
-                        // ignore logging failures
-                    }
-                }
-                // Skip attributes that can't be encoded
+                Obfuscar.LoggerService.Logger.LogDebug($"Custom attribute skipped: {attr?.AttributeTypeName}");
             }
         }
 
@@ -937,36 +973,53 @@ namespace Obfuscar.Metadata.Mutable
         {
             var builder = new BlobBuilder();
 
-            // Prolog
-            builder.WriteUInt16(0x0001);
+            WriteCustomAttributeProlog(builder);
+            WriteCustomAttributeFixedArguments(builder, attr.ConstructorArguments);
+            WriteCustomAttributeNamedArguments(builder, attr.Fields, attr.Properties);
 
-            // Fixed arguments
-            foreach (var arg in attr.ConstructorArguments)
+            return _metadata.GetOrAddBlob(builder);
+        }
+
+        private static void WriteCustomAttributeProlog(BlobBuilder builder)
+        {
+            builder.WriteUInt16(0x0001);
+        }
+
+        private void WriteCustomAttributeFixedArguments(BlobBuilder builder, IEnumerable<MutableCustomAttributeArgument> args)
+        {
+            foreach (var arg in args)
             {
                 EncodeCustomAttributeArgument(builder, arg);
             }
+        }
 
-            // Named arguments count
-            builder.WriteUInt16((ushort)(attr.Fields.Count + attr.Properties.Count));
+        private void WriteCustomAttributeNamedArguments(
+            BlobBuilder builder,
+            IReadOnlyList<MutableCustomAttributeNamedArgument> fields,
+            IReadOnlyList<MutableCustomAttributeNamedArgument> properties)
+        {
+            builder.WriteUInt16((ushort)(fields.Count + properties.Count));
 
-            // Named arguments
-            foreach (var field in attr.Fields)
+            foreach (var field in fields)
             {
-                builder.WriteByte(0x53); // FIELD
-                EncodeCustomAttributeFieldOrPropType(builder, field.Argument);
-                WriteSerializedString(builder, field.Name);
-                EncodeCustomAttributeArgument(builder, field.Argument);
+                WriteCustomAttributeNamedArgument(builder, 0x53, field);
             }
 
-            foreach (var prop in attr.Properties)
+            foreach (var prop in properties)
             {
-                builder.WriteByte(0x54); // PROPERTY
-                EncodeCustomAttributeFieldOrPropType(builder, prop.Argument);
-                WriteSerializedString(builder, prop.Name);
-                EncodeCustomAttributeArgument(builder, prop.Argument);
+                WriteCustomAttributeNamedArgument(builder, 0x54, prop);
             }
+        }
 
-            return _metadata.GetOrAddBlob(builder);
+        private void WriteCustomAttributeNamedArgument(
+            BlobBuilder builder,
+            byte kind,
+            MutableCustomAttributeNamedArgument argument)
+        {
+            builder.WriteByte(kind);
+            EncodeCustomAttributeFieldOrPropType(builder, argument.Argument);
+            WriteSerializedString(builder, argument.Name);
+            EncodeCustomAttributeArgument(builder, argument.Argument);
         }
 
         private void EncodeCustomAttributeArgument(BlobBuilder builder, MutableCustomAttributeArgument arg)
@@ -1220,85 +1273,122 @@ namespace Obfuscar.Metadata.Mutable
                 return;
             }
 
-            // Handle primitives
-            var fullName = type.FullName;
-            switch (fullName)
-            {
-                case "System.Void":
-                    // Void should not appear in type signatures except return type
-                    encoder.Builder.WriteByte((byte)SignatureTypeCode.Void);
-                    return;
-                case "System.Boolean": encoder.Boolean(); return;
-                case "System.Char": encoder.Char(); return;
-                case "System.SByte": encoder.SByte(); return;
-                case "System.Byte": encoder.Byte(); return;
-                case "System.Int16": encoder.Int16(); return;
-                case "System.UInt16": encoder.UInt16(); return;
-                case "System.Int32": encoder.Int32(); return;
-                case "System.UInt32": encoder.UInt32(); return;
-                case "System.Int64": encoder.Int64(); return;
-                case "System.UInt64": encoder.UInt64(); return;
-                case "System.Single": encoder.Single(); return;
-                case "System.Double": encoder.Double(); return;
-                case "System.IntPtr": encoder.IntPtr(); return;
-                case "System.UIntPtr": encoder.UIntPtr(); return;
-                case "System.String": encoder.String(); return;
-                case "System.Object": encoder.Object(); return;
-            }
-
-            // Handle constructed types
             if (type is MutableGenericInstanceType genericInstance)
             {
-                var elementHandle = GetTypeHandle(genericInstance.ElementType);
-                var argsEncoder = encoder.GenericInstantiation(elementHandle, genericInstance.GenericArguments.Count, type.IsValueType);
-                foreach (var arg in genericInstance.GenericArguments)
-                {
-                    EncodeTypeToBuilder(argsEncoder.AddArgument(), arg);
-                }
+                EncodeGenericInstance(encoder, genericInstance);
                 return;
             }
             
             if (type is MutableArrayType arrayType)
             {
-                if (arrayType.Rank == 1)
-                {
-                    EncodeTypeToBuilder(encoder.SZArray(), arrayType.ElementType);
-                }
-                else
-                {
-                    encoder.Array(
-                        e => EncodeTypeToBuilder(e, arrayType.ElementType), 
-                        s => s.Shape(arrayType.Rank, System.Collections.Immutable.ImmutableArray<int>.Empty, System.Collections.Immutable.ImmutableArray<int>.Empty));
-                }
+                EncodeArrayType(encoder, arrayType);
                 return;
             }
             
             if (type is MutableByReferenceType byRefType)
             {
-                EncodeTypeToBuilder(encoder, byRefType.ElementType);
+                EncodeByReferenceType(encoder, byRefType);
                 return;
             }
             
             if (type is MutablePointerType pointerType)
             {
-                EncodeTypeToBuilder(encoder.Pointer(), pointerType.ElementType);
+                EncodePointerType(encoder, pointerType);
                 return;
             }
             
             if (type is MutableGenericParameter gp)
             {
-                if (gp.IsMethodParameter || gp.Owner is MutableMethodDefinition || gp.Owner is MutableMethodReference)
-                {
-                    encoder.GenericMethodTypeParameter(gp.Position);
-                }
-                else
-                {
-                    encoder.GenericTypeParameter(gp.Position);
-                }
+                EncodeGenericParameter(encoder, gp);
                 return;
             }
 
-            // Regular type reference
+            if (TryEncodePrimitiveType(encoder, type.FullName))
+                return;
+
+            EncodeTypeReference(encoder, type);
+        }
+
+        private static bool TryEncodePrimitiveType(SignatureTypeEncoder encoder, string fullName)
+        {
+            switch (fullName)
+            {
+                case "System.Void":
+                    // Void should not appear in type signatures except return type
+                    encoder.Builder.WriteByte((byte)SignatureTypeCode.Void);
+                    return true;
+                case "System.Boolean": encoder.Boolean(); return true;
+                case "System.Char": encoder.Char(); return true;
+                case "System.SByte": encoder.SByte(); return true;
+                case "System.Byte": encoder.Byte(); return true;
+                case "System.Int16": encoder.Int16(); return true;
+                case "System.UInt16": encoder.UInt16(); return true;
+                case "System.Int32": encoder.Int32(); return true;
+                case "System.UInt32": encoder.UInt32(); return true;
+                case "System.Int64": encoder.Int64(); return true;
+                case "System.UInt64": encoder.UInt64(); return true;
+                case "System.Single": encoder.Single(); return true;
+                case "System.Double": encoder.Double(); return true;
+                case "System.IntPtr": encoder.IntPtr(); return true;
+                case "System.UIntPtr": encoder.UIntPtr(); return true;
+                case "System.String": encoder.String(); return true;
+                case "System.Object": encoder.Object(); return true;
+                default: return false;
+            }
+        }
+
+        private void EncodeGenericInstance(SignatureTypeEncoder encoder, MutableGenericInstanceType genericInstance)
+        {
+            var elementHandle = GetTypeHandle(genericInstance.ElementType);
+            var argsEncoder = encoder.GenericInstantiation(
+                elementHandle,
+                genericInstance.GenericArguments.Count,
+                genericInstance.IsValueType);
+            foreach (var arg in genericInstance.GenericArguments)
+            {
+                EncodeTypeToBuilder(argsEncoder.AddArgument(), arg);
+            }
+        }
+
+        private void EncodeArrayType(SignatureTypeEncoder encoder, MutableArrayType arrayType)
+        {
+            if (arrayType.Rank == 1)
+            {
+                EncodeTypeToBuilder(encoder.SZArray(), arrayType.ElementType);
+                return;
+            }
+
+            encoder.Array(
+                e => EncodeTypeToBuilder(e, arrayType.ElementType),
+                s => s.Shape(arrayType.Rank, System.Collections.Immutable.ImmutableArray<int>.Empty,
+                    System.Collections.Immutable.ImmutableArray<int>.Empty));
+        }
+
+        private void EncodeByReferenceType(SignatureTypeEncoder encoder, MutableByReferenceType byRefType)
+        {
+            encoder.Builder.WriteByte((byte)SignatureTypeCode.ByReference);
+            EncodeTypeToBuilder(encoder, byRefType.ElementType);
+        }
+
+        private void EncodePointerType(SignatureTypeEncoder encoder, MutablePointerType pointerType)
+        {
+            EncodeTypeToBuilder(encoder.Pointer(), pointerType.ElementType);
+        }
+
+        private static void EncodeGenericParameter(SignatureTypeEncoder encoder, MutableGenericParameter gp)
+        {
+            if (gp.IsMethodParameter || gp.Owner is MutableMethodDefinition || gp.Owner is MutableMethodReference)
+            {
+                encoder.GenericMethodTypeParameter(gp.Position);
+            }
+            else
+            {
+                encoder.GenericTypeParameter(gp.Position);
+            }
+        }
+
+        private void EncodeTypeReference(SignatureTypeEncoder encoder, MutableTypeReference type)
+        {
             var handle = GetTypeHandle(type);
             encoder.Type(handle, type.IsValueType);
         }
