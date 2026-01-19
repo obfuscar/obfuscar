@@ -119,10 +119,10 @@ foreach ($signtoolCandidate in $signtoolCandidates) {
     Write-host "Signtool path: $signtool"
     if (Test-Path $signtool) {
         Write-Output "sign the executable"
-        & $signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a .\console\bin\release\net462\obfuscar.console.exe | Write-Debug
+        & $signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a .\src\Console\bin\release\net462\obfuscar.console.exe | Write-Debug
 
         Write-Host "Verify digital signature."
-        & $signtool verify /pa /q .\console\bin\release\net462\obfuscar.console.exe 2>&1 | Write-Debug
+        & $signtool verify /pa /q .\src\Console\bin\release\net462\obfuscar.console.exe 2>&1 | Write-Debug
         if ($LASTEXITCODE -ne 0)
         {
             Write-Host "$_.FullName is not signed. Exit."

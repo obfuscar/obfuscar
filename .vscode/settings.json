@@ -1,3 +1,10 @@
 {
     "dotnet.defaultSolution": "Obfuscar.sln",
+    "chat.tools.terminal.autoApprove": {
+        "ilspycmd": true
+    },
+    "dotrush.roslyn.projectOrSolutionFiles": [
+        "/Users/lextm/obfuscar/example/BasicExample.sln",
+        "/Users/lextm/obfuscar/Obfuscar.sln"
+    ],
 }

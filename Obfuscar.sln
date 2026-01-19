@@ -8,11 +8,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{65D27E
 		.nuget\NuGet.exe = .nuget\NuGet.exe
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obfuscar", "Obfuscar\Obfuscar.csproj", "{F28CDDFF-5A7A-413E-809E-15FFB8766E86}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obfuscar", "src\Obfuscar\Obfuscar.csproj", "{F28CDDFF-5A7A-413E-809E-15FFB8766E86}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obfuscar.Console", "Console\Obfuscar.Console.csproj", "{275B3EED-7E70-4460-950F-96EDCA099BD4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obfuscar.Console", "src\Console\Obfuscar.Console.csproj", "{275B3EED-7E70-4460-950F-96EDCA099BD4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObfuscarTests", "Tests\ObfuscarTests.csproj", "{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObfuscarTests", "src\Tests\ObfuscarTests.csproj", "{FD20FE24-37FE-46D0-ADBF-2B54D2874C2A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{3F7BA0FB-E820-42EE-8D94-7FE576E5325F}"
 	ProjectSection(SolutionItems) = preProject
@@ -27,9 +27,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		test.bat = test.bat
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GlobalTools", "GlobalTools\GlobalTools.csproj", "{BD9CF93A-2CDF-44DF-A0E8-1C7142E0C645}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GlobalTools", "src\GlobalTools\GlobalTools.csproj", "{BD9CF93A-2CDF-44DF-A0E8-1C7142E0C645}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Baml", "Baml\Baml.csproj", "{3062CF3F-6F38-492E-87CB-7BE679F37F21}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Baml", "src\Baml\Baml.csproj", "{3062CF3F-6F38-492E-87CB-7BE679F37F21}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

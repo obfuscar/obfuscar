@@ -1,3 +1,3 @@
-cd Tests
+cd src\Tests
 dotnet test
-cd ..
+cd ..\..
