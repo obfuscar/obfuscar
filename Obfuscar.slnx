@@ -1,0 +1,58 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Release" />
+  </Configurations>
+  <Folder Name="/.nuget/">
+    <File Path=".nuget/NuGet.exe" />
+  </Folder>
+  <Folder Name="/docs/">
+    <File Path="appveyor.yml" />
+    <File Path="Obfuscar.nuspec" />
+    <File Path="readme.md" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="test.bat" />
+  </Folder>
+  <Project Path="src/Baml/Baml.csproj">
+    <BuildType Solution="Debug|*" Project="Debug" />
+    <BuildType Solution="Release|*" Project="Release" />
+  </Project>
+  <Project Path="src/Console/Obfuscar.Console.csproj">
+    <BuildType Solution="Debug|*" Project="Debug" />
+    <BuildType Solution="Release|*" Project="Release" />
+  </Project>
+  <Project Path="src/GlobalTools/GlobalTools.csproj">
+    <BuildType Solution="Debug|*" Project="Debug" />
+    <BuildType Solution="Release|*" Project="Release" />
+  </Project>
+  <Project Path="src/Obfuscar/Obfuscar.csproj">
+    <BuildType Solution="Debug|*" Project="Debug" />
+    <BuildType Solution="Release|*" Project="Release" />
+  </Project>
+  <Project Path="src/Tests/ObfuscarTests.csproj">
+    <BuildType Solution="Debug|*" Project="Debug" />
+    <BuildType Solution="Release|*" Project="Release" />
+  </Project>
+  <Properties Name="MonoDevelopProperties">
+    <Property Name="$0.CSharpFormattingPolicy" Value="$3" />
+    <Property Name="$0.DotNetNamingPolicy" Value="$1" />
+    <Property Name="$0.TextStylePolicy" Value="$4" />
+    <Property Name="$1.DirectoryNamespaceAssociation" Value="None" />
+    <Property Name="$1.ResourceNamePolicy" Value="FileFormatDefault" />
+    <Property Name="$2.inheritsSet" Value="null" />
+    <Property Name="$2.scope" Value="text/x-csharp" />
+    <Property Name="$3.inheritsScope" Value="text/x-csharp" />
+    <Property Name="$3.inheritsSet" Value="Mono" />
+    <Property Name="$3.scope" Value="text/x-csharp" />
+    <Property Name="$4.EolMarker" Value="Unix" />
+    <Property Name="$4.FileWidth" Value="120" />
+    <Property Name="$4.inheritsScope" Value="text/plain" />
+    <Property Name="$4.inheritsSet" Value="VisualStudio" />
+    <Property Name="$4.scope" Value="text/plain" />
+    <Property Name="$4.TabsToSpaces" Value="False" />
+    <Property Name="Policies" Value="$0" />
+    <Property Name="StartupItem" Value="Program\Obfuscar.exe.csproj" />
+  </Properties>
+</Solution>

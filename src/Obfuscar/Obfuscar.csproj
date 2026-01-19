@@ -9,7 +9,7 @@
     <TargetFrameworks Condition="'$(IsNet80Supported)' == 'true'">$(TargetFrameworks);net8.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(IsNet90Supported)' == 'true'">$(TargetFrameworks);net9.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(IsNet100Supported)' == 'true'">$(TargetFrameworks);net10.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows'">$(TargetFrameworks);net462</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworks);net462</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <!-- Suppress warnings for obsolete APIs that we must use to handle legacy assembly metadata -->
     <NoWarn>$(NoWarn);SYSLIB0003;SYSLIB0025;SYSLIB0050</NoWarn>
@@ -20,17 +20,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
-    <PackageReference Include="NuGet.Versioning" Version="6.8.0" />
-    <PackageReference Include="System.Reflection.Metadata" Version="7.0.0" Condition="'$(TargetFramework)' == 'net462'"> 
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="NuGet.Versioning" />
+    <PackageReference Include="System.Reflection.Metadata" Condition="'$(TargetFramework)' == 'net462'"> 
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3" />
-    <PackageReference Include="System.Runtime.Caching" Version="8.0.0" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" Condition="'$(TargetFramework)' == 'net462'">
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="System.Runtime.Caching" />
+    <PackageReference Include="System.ValueTuple" Condition="'$(TargetFramework)' == 'net462'">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="System.CommandLine" Version="2.0.0" />
+    <PackageReference Include="System.CommandLine" />
   </ItemGroup>
 
 </Project>
