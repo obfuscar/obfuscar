@@ -26,6 +26,7 @@
 
 using Obfuscar;
 using System.IO;
+using System.Xml.Linq;
 using Xunit;
 
 namespace ObfuscarTests
@@ -173,6 +174,41 @@ namespace ObfuscarTests
 
             Assert.False(obfuscator.Project.Settings.Optimize);
             Assert.Equal("abcdefghijklmn", NameMaker.UniqueChars);
+        }
+
+        [Fact]
+        public void RejectsRelativePathsInConfig()
+        {
+            var xml = @"<?xml version='1.0'?><Obfuscator>" +
+                      @"<Var name='InPath' value='Input' />" +
+                      @"<Var name='OutPath' value='Output' />" +
+                      @"</Obfuscator>";
+
+            var ex = Assert.Throws<ObfuscarException>(() =>
+            {
+                var project = Project.FromXml(XDocument.Parse(xml), Directory.GetCurrentDirectory());
+                _ = project.Settings;
+            });
+
+            Assert.Contains("InPath must be an absolute path", ex.Message);
+        }
+
+        [Fact]
+        public void RejectsVariablePlaceholdersInConfig()
+        {
+            string tempOut = Path.Combine(Path.GetTempPath(), "obfuscar-tests");
+            var xml = @"<?xml version='1.0'?><Obfuscator>" +
+                      @"<Var name='InPath' value='$(InPath)' />" +
+                      $@"<Var name='OutPath' value='{tempOut}' />" +
+                      @"</Obfuscator>";
+
+            var ex = Assert.Throws<ObfuscarException>(() =>
+            {
+                var project = Project.FromXml(XDocument.Parse(xml), Directory.GetCurrentDirectory());
+                _ = project.Settings;
+            });
+
+            Assert.Contains("Variable substitution via $(...)", ex.Message);
         }
     }
 }
