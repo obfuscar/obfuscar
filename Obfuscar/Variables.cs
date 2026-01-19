@@ -58,28 +58,15 @@ namespace Obfuscar
                 return str;
             }
 
-            System.Text.StringBuilder formatted = new System.Text.StringBuilder();
-
-            int lastMatch = 0;
-
-            string variable;
-            string replacement;
-            foreach (System.Text.RegularExpressions.Match m in re.Matches(str))
+            // Variable substitution via $(...) is no longer allowed. Configuration
+            // must use absolute paths and explicit values. If any variable
+            // placeholders are present, fail fast with an informative error.
+            if (re.IsMatch(str))
             {
-                formatted.Append(str.Substring(lastMatch, m.Index - lastMatch));
-
-                variable = m.Groups[1].Value;
-                if (vars.TryGetValue(variable, out replacement))
-                    formatted.Append(this.Replace(replacement));
-                else
-                    throw new ObfuscarException("Unable to replace variable:  " + variable);
-
-                lastMatch = m.Index + m.Length;
+                throw new ObfuscarException("Variable substitution via $(...) is not supported in configuration. Use absolute paths and explicit values.");
             }
 
-            formatted.Append(str.Substring(lastMatch));
-
-            return formatted.ToString();
+            return str;
         }
     }
 }

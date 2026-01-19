@@ -25,6 +25,7 @@
 #endregion
 
 using System;
+using System.IO;
 using System.Xml;
 
 namespace Obfuscar
@@ -33,9 +34,30 @@ namespace Obfuscar
     {
         public Settings(Variables vars)
         {
-            InPath = Environment.ExpandEnvironmentVariables(vars.GetValue("InPath", "."));
-            OutPath = Environment.ExpandEnvironmentVariables(vars.GetValue("OutPath", "."));
-            LogFilePath = Environment.ExpandEnvironmentVariables(vars.GetValue("LogFile", ""));
+            // Read raw config values (no environment variable expansion allowed).
+            var inPathRaw = vars.GetValue("InPath", Environment.CurrentDirectory);
+            var outPathRaw = vars.GetValue("OutPath", Environment.CurrentDirectory);
+            var logFileRaw = vars.GetValue("LogFile", "");
+
+            // Require absolute paths for internal use.
+            if (!Path.IsPathRooted(inPathRaw))
+                throw new ObfuscarException($"InPath must be an absolute path: '{inPathRaw}'");
+            if (!Path.IsPathRooted(outPathRaw))
+                throw new ObfuscarException($"OutPath must be an absolute path: '{outPathRaw}'");
+
+            InPath = Path.GetFullPath(inPathRaw);
+            OutPath = Path.GetFullPath(outPathRaw);
+
+            if (!string.IsNullOrEmpty(logFileRaw))
+            {
+                if (!Path.IsPathRooted(logFileRaw))
+                    throw new ObfuscarException($"LogFile must be an absolute path: '{logFileRaw}'");
+                LogFilePath = Path.GetFullPath(logFileRaw);
+            }
+            else
+            {
+                LogFilePath = string.Empty;
+            }
             MarkedOnly = XmlConvert.ToBoolean(vars.GetValue("MarkedOnly", "false"));
 
             RenameFields = XmlConvert.ToBoolean(vars.GetValue("RenameFields", "true"));

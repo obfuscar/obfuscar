@@ -152,8 +152,11 @@ namespace Obfuscar
         {
             Project project = new Project();
 
+            if (!string.IsNullOrEmpty(projectFileDirectory) && !Path.IsPathRooted(projectFileDirectory))
+                throw new ObfuscarException($"Project file directory must be an absolute path: '{projectFileDirectory}'");
+
             project.vars.Add(SPECIALVAR_PROJECTFILEDIRECTORY,
-                string.IsNullOrEmpty(projectFileDirectory) ? "." : projectFileDirectory);
+                string.IsNullOrEmpty(projectFileDirectory) ? Environment.CurrentDirectory : projectFileDirectory);
 
             if (reader.Root.Name != "Obfuscator")
             {
@@ -211,19 +214,20 @@ namespace Obfuscar
             if (readAction == null)
                 throw new ArgumentNullException("readAction");
 
-            string path =
-                Environment.ExpandEnvironmentVariables(Helper.GetAttribute(parentReader, "path", project.vars));
             var rawPathAttr = Helper.GetAttribute(parentReader, "path", project.vars);
-            if (!string.IsNullOrEmpty(rawPathAttr) && (rawPathAttr.Contains("%") || rawPathAttr.Contains("$((") || rawPathAttr.Contains("${") || rawPathAttr.Contains("$(")))
+            if (string.IsNullOrEmpty(rawPathAttr))
+                throw new ObfuscarException("Include path attribute is required and must be an absolute path.");
+
+            // Disallow environment-variable markers or legacy variable placeholders
+            if (rawPathAttr.Contains("%") || rawPathAttr.Contains("${") || rawPathAttr.Contains("$("))
             {
-                Helper.WarnEnvExpansionOnce();
+                throw new ObfuscarException("Environment-variable expansion and variable placeholders are not supported in Include path.");
             }
-            // warn on relative paths
-            if (!string.IsNullOrEmpty(path) && !System.IO.Path.IsPathRooted(path))
-            {
-                Helper.WarnRelativePathOnce("Include path attribute", rawPathAttr);
-            }
-            var includeReader = XDocument.Load(path);
+
+            if (!Path.IsPathRooted(rawPathAttr))
+                throw new ObfuscarException($"Include path must be an absolute path: '{rawPathAttr}'");
+
+            var includeReader = XDocument.Load(rawPathAttr);
             if (includeReader.Root.Name == "Include")
             {
                 readAction(includeReader.Root, project);
@@ -235,18 +239,17 @@ namespace Obfuscar
             var searchPaths = reader.Elements("AssemblySearchPath");
             foreach (var searchPath in searchPaths)
             {
-                string path =
-                    Environment.ExpandEnvironmentVariables(Helper.GetAttribute(searchPath, "path", project.vars));
                 var rawSearchAttr = Helper.GetAttribute(searchPath, "path", project.vars);
-                if (!string.IsNullOrEmpty(rawSearchAttr) && (rawSearchAttr.Contains("%") || rawSearchAttr.Contains("$((") || rawSearchAttr.Contains("${") || rawSearchAttr.Contains("$(")))
-                {
-                    Helper.WarnEnvExpansionOnce();
-                }
-                if (!string.IsNullOrEmpty(path) && !System.IO.Path.IsPathRooted(path))
-                {
-                    Helper.WarnRelativePathOnce("AssemblySearchPath path attribute", rawSearchAttr);
-                }
-                project.assemblySearchPaths.Add(path);
+                if (string.IsNullOrEmpty(rawSearchAttr))
+                    throw new ObfuscarException("AssemblySearchPath 'path' attribute is required and must be an absolute path.");
+
+                if (rawSearchAttr.Contains("%") || rawSearchAttr.Contains("${") || rawSearchAttr.Contains("$("))
+                    throw new ObfuscarException("Environment-variable expansion and variable placeholders are not supported in AssemblySearchPath path.");
+
+                if (!Path.IsPathRooted(rawSearchAttr))
+                    throw new ObfuscarException($"AssemblySearchPath path must be an absolute path: '{rawSearchAttr}'");
+
+                project.assemblySearchPaths.Add(rawSearchAttr);
             }
         }
 
@@ -258,11 +261,13 @@ namespace Obfuscar
                 var file = Helper.GetAttribute(module, "file", project.vars);
                 if (string.IsNullOrWhiteSpace(file))
                     throw new InvalidOperationException("Need valid file attribute.");
-                // warn if file is a relative path (future releases will require absolute paths)
-                if (!string.IsNullOrWhiteSpace(file) && !System.IO.Path.IsPathRooted(file))
-                {
-                    Helper.WarnRelativePathOnce("Module file attribute", file);
-                }
+
+                if (file.Contains("%") || file.Contains("${") || file.Contains("$("))
+                    throw new ObfuscarException("Environment-variable expansion and variable placeholders are not supported in Module file attribute.");
+
+                if (!Path.IsPathRooted(file))
+                    throw new ObfuscarException($"Module file attribute must be an absolute path: '{file}'");
+
                 ReadModule(file, module, project);
             }
         }
