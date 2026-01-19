@@ -30,6 +30,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Threading;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -40,14 +41,29 @@ namespace ObfuscarTests
 {
     static class TestHelper
     {
-        public static string InputPath = Path.GetFullPath(Path.Combine("..", "..", "..", "Input"));
-
-        private static int count;
-
-        public static string OutputPath
+        private sealed class TestPaths
         {
-            get { return Path.GetFullPath(Path.Combine("..", "..", "..", "Output", (count++).ToString())); }
+            public TestPaths(string root)
+            {
+                Root = root;
+                InputPath = Path.Combine(root, "Input");
+                OutputRoot = Path.Combine(root, "Output");
+            }
+
+            public string Root { get; }
+            public string InputPath { get; }
+            public string OutputRoot { get; }
         }
+
+        private static readonly AsyncLocal<TestPaths> CurrentPaths = new AsyncLocal<TestPaths>();
+        private static readonly object PathInitLock = new object();
+        private static int outputCount;
+
+        public static string InputPath => GetPaths().InputPath;
+
+        public static string OutputPath => Path.Combine(
+            GetPaths().OutputRoot,
+            Interlocked.Increment(ref outputCount).ToString());
 
         public static void CleanInput()
         {
@@ -59,6 +75,73 @@ namespace ObfuscarTests
             }
             catch
             {
+            }
+        }
+
+        private static TestPaths GetPaths()
+        {
+            if (CurrentPaths.Value != null)
+                return CurrentPaths.Value;
+
+            lock (PathInitLock)
+            {
+                if (CurrentPaths.Value != null)
+                    return CurrentPaths.Value;
+
+                var root = Path.Combine(Path.GetTempPath(), "obfuscar-tests", Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(root);
+                SeedTestWorkspace(root);
+                CurrentPaths.Value = new TestPaths(root);
+            }
+
+            return CurrentPaths.Value;
+        }
+
+        private static void SeedTestWorkspace(string root)
+        {
+            var testsRoot = GetTestsRoot();
+            var sourceInput = Path.Combine(testsRoot, "Input");
+            var destInput = Path.Combine(root, "Input");
+            CopyDirectory(sourceInput, destInput);
+
+            foreach (var file in Directory.GetFiles(testsRoot))
+            {
+                var destFile = Path.Combine(root, Path.GetFileName(file));
+                File.Copy(file, destFile, true);
+            }
+        }
+
+        private static string GetTestsRoot()
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null)
+            {
+                if (File.Exists(Path.Combine(dir.FullName, "ObfuscarTests.csproj")) &&
+                    Directory.Exists(Path.Combine(dir.FullName, "Input")))
+                {
+                    return dir.FullName;
+                }
+
+                dir = dir.Parent;
+            }
+
+            return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+        }
+
+        private static void CopyDirectory(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+
+            foreach (var file in Directory.GetFiles(sourceDir))
+            {
+                var destFile = Path.Combine(destDir, Path.GetFileName(file));
+                File.Copy(file, destFile, true);
+            }
+
+            foreach (var directory in Directory.GetDirectories(sourceDir))
+            {
+                var destSubdir = Path.Combine(destDir, Path.GetFileName(directory));
+                CopyDirectory(directory, destSubdir);
             }
         }
         
