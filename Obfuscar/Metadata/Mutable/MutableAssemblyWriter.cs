@@ -1231,16 +1231,52 @@ namespace Obfuscar.Metadata.Mutable
                     {
                         foreach (var param in method.Parameters)
                         {
-                            EncodeTypeToBuilder(parameters.AddParameter().Type(), param.ParameterType);
+                            var paramEncoder = parameters.AddParameter();
+                            EncodeParameterType(paramEncoder, param.ParameterType);
                         }
                     });
             
             return builder;
         }
 
+        private void EncodeParameterType(ParameterTypeEncoder paramEncoder, MutableTypeReference type)
+        {
+            // Handle modified types (modreq/modopt) at the parameter level
+            if (type is MutableModifiedType modifiedType)
+            {
+                var modifierHandle = GetTypeHandle(modifiedType.Modifier);
+                var modifiersEncoder = paramEncoder.CustomModifiers();
+                modifiersEncoder.AddModifier(modifierHandle, isOptional: !modifiedType.IsRequired);
+                
+                // After adding modifiers, encode the underlying type
+                EncodeTypeToBuilder(paramEncoder.Type(), modifiedType.ElementType);
+            }
+            else
+            {
+                EncodeTypeToBuilder(paramEncoder.Type(), type);
+            }
+        }
+
         private void EncodeReturnType(ReturnTypeEncoder encoder, MutableTypeReference type)
         {
-            if (type == null || type.FullName == "System.Void")
+            // Handle modified types (modreq/modopt) on return type (e.g., init-only setters)
+            if (type is MutableModifiedType modifiedType)
+            {
+                var modifierHandle = GetTypeHandle(modifiedType.Modifier);
+                var modifiersEncoder = encoder.CustomModifiers();
+                modifiersEncoder.AddModifier(modifierHandle, isOptional: !modifiedType.IsRequired);
+                
+                // Now encode the underlying type
+                if (modifiedType.ElementType == null || modifiedType.ElementType.FullName == "System.Void")
+                {
+                    encoder.Void();
+                }
+                else
+                {
+                    EncodeTypeToBuilder(encoder.Type(), modifiedType.ElementType);
+                }
+            }
+            else if (type == null || type.FullName == "System.Void")
             {
                 encoder.Void();
             }
@@ -1294,6 +1330,12 @@ namespace Obfuscar.Metadata.Mutable
             if (type is MutablePointerType pointerType)
             {
                 EncodePointerType(encoder, pointerType);
+                return;
+            }
+
+            if (type is MutableModifiedType modifiedType)
+            {
+                EncodeModifiedType(encoder, modifiedType);
                 return;
             }
             
@@ -1373,6 +1415,29 @@ namespace Obfuscar.Metadata.Mutable
         private void EncodePointerType(SignatureTypeEncoder encoder, MutablePointerType pointerType)
         {
             EncodeTypeToBuilder(encoder.Pointer(), pointerType.ElementType);
+        }
+
+        private void EncodeModifiedType(SignatureTypeEncoder encoder, MutableModifiedType modifiedType)
+        {
+            // Get the handle for the modifier type
+            var modifierHandle = GetTypeHandle(modifiedType.Modifier);
+            
+            // Write the custom modifier directly to the blob
+            // modreq = 0x1F (ELEMENT_TYPE_CMOD_REQD), modopt = 0x20 (ELEMENT_TYPE_CMOD_OPT)
+            if (modifiedType.IsRequired)
+            {
+                encoder.Builder.WriteByte(0x1F); // ELEMENT_TYPE_CMOD_REQD
+            }
+            else
+            {
+                encoder.Builder.WriteByte(0x20); // ELEMENT_TYPE_CMOD_OPT
+            }
+            
+            // Write the modifier type token as a compressed TypeDefOrRefOrSpec coded index
+            encoder.Builder.WriteCompressedInteger(CodedIndex.TypeDefOrRefOrSpec(modifierHandle));
+            
+            // Then encode the underlying element type
+            EncodeTypeToBuilder(encoder, modifiedType.ElementType);
         }
 
         private static void EncodeGenericParameter(SignatureTypeEncoder encoder, MutableGenericParameter gp)
@@ -1539,7 +1604,8 @@ namespace Obfuscar.Metadata.Mutable
                     {
                         foreach (var param in method.Parameters)
                         {
-                            EncodeTypeToBuilder(parameters.AddParameter().Type(), param.ParameterType);
+                            var paramEncoder = parameters.AddParameter();
+                            EncodeParameterType(paramEncoder, param.ParameterType);
                         }
                     });
             

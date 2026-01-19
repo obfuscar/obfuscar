@@ -1594,7 +1594,7 @@ namespace Obfuscar.Metadata.Mutable
 
         public MutableTypeReference GetModifiedType(MutableTypeReference modifier, MutableTypeReference unmodifiedType, bool isRequired)
         {
-            return unmodifiedType;
+            return new MutableModifiedType(modifier, unmodifiedType, isRequired);
         }
 
         public MutableTypeReference GetPinnedType(MutableTypeReference elementType)

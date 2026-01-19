@@ -276,4 +276,44 @@ namespace Obfuscar.Metadata.Mutable
         /// <inheritdoc/>
         public override bool IsPointer => true;
     }
+
+    /// <summary>
+    /// Represents a type with a required or optional custom modifier (modreq/modopt).
+    /// This is used for init-only setters (modreq(IsExternalInit)) and other modifier scenarios.
+    /// </summary>
+    public class MutableModifiedType : MutableTypeReference
+    {
+        /// <summary>
+        /// Creates a new modified type.
+        /// </summary>
+        /// <param name="modifier">The modifier type (e.g., IsExternalInit).</param>
+        /// <param name="elementType">The underlying unmodified type.</param>
+        /// <param name="isRequired">True for modreq, false for modopt.</param>
+        public MutableModifiedType(MutableTypeReference modifier, MutableTypeReference elementType, bool isRequired)
+            : base(elementType.Namespace, elementType.Name, elementType.Module)
+        {
+            Modifier = modifier;
+            ElementType = elementType;
+            IsRequired = isRequired;
+            IsValueType = elementType.IsValueType;
+        }
+
+        /// <summary>
+        /// The modifier type.
+        /// </summary>
+        public MutableTypeReference Modifier { get; }
+
+        /// <summary>
+        /// The underlying unmodified type.
+        /// </summary>
+        public MutableTypeReference ElementType { get; }
+
+        /// <summary>
+        /// Whether this is a required modifier (modreq) or optional modifier (modopt).
+        /// </summary>
+        public bool IsRequired { get; }
+
+        /// <inheritdoc/>
+        public override string FullName => ElementType.FullName;
+    }
 }

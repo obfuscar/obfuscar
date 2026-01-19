@@ -33,6 +33,7 @@
     <Compile Include="SkipCompilerGeneratedTypeTests.cs" />
     <Compile Include="FunctionOverridingTests.cs" />
     <Compile Include="HideStringsTests.cs" />
+    <Compile Include="InitPropertyTests.cs" />
     <Compile Include="IncludeTests.cs" />
     <Compile Include="InterfaceTests.cs" />
     <Compile Include="NetStandardTests.cs" />
