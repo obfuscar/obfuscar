@@ -79,14 +79,6 @@ namespace ObfuscarTests
                 {
                     // make sure we have enough methods...
                     var expectedCount = expectedMethods.Length + notExpectedMethods.Length + 1;
-                    if (typeDef.Methods.Count != expectedCount)
-                    {
-                        Console.WriteLine($"[TEST-DEBUG] Type {typeDef.FullName} has {typeDef.Methods.Count} methods, expected {expectedCount}");
-                        foreach (var m in typeDef.Methods)
-                        {
-                            Console.WriteLine($"[TEST-DEBUG] Method: {m.Name}");
-                        }
-                    }
                     Assert.Equal(expectedCount, typeDef.Methods.Count);
                     // "Some of the methods for the type are missing.");
 
