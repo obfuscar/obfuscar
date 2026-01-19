@@ -1053,30 +1053,29 @@ namespace Obfuscar
         public bool ShouldSkip(MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
             bool markedOnly, out string message)
         {
-            var methodAdapter = method.MethodAdapter;
-            if (methodAdapter != null ? methodAdapter.IsRuntime : method.Method.IsRuntime)
+            if (method.Method.IsRuntime)
             {
                 message = "runtime method";
                 return true;
             }
 
-            if (methodAdapter != null ? methodAdapter.IsSpecialName : method.Method.IsSpecialName)
+            if (method.Method.IsSpecialName)
             {
-                var semantics = methodAdapter?.SemanticsAttributes ?? MethodSemantics.None;
-                switch (semantics)
+                var semantics = method.Method.SemanticsAttributes;
+                if ((semantics & MutableMethodSemanticsAttributes.Getter) != 0 ||
+                    (semantics & MutableMethodSemanticsAttributes.Setter) != 0)
                 {
-                    case MethodSemantics.Getter:
-                    case MethodSemantics.Setter:
-                        message = "skipping properties";
-                        return !project.Settings.RenameProperties;
-                    case MethodSemantics.AddOn:
-                    case MethodSemantics.RemoveOn:
-                        message = "skipping events";
-                        return !project.Settings.RenameEvents;
-                    default:
-                        message = "special name";
-                        return true;
+                    message = "skipping properties";
+                    return !project.Settings.RenameProperties;
                 }
+                if ((semantics & MutableMethodSemanticsAttributes.AddOn) != 0 ||
+                    (semantics & MutableMethodSemanticsAttributes.RemoveOn) != 0)
+                {
+                    message = "skipping events";
+                    return !project.Settings.RenameEvents;
+                }
+                message = "special name";
+                return true;
             }
 
             return ShouldSkipParams(method, map, keepPublicApi, hidePrivateApi, markedOnly, out message);
@@ -1085,7 +1084,6 @@ namespace Obfuscar
         public bool ShouldSkipParams(MethodKey method, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
             bool markedOnly, out string message)
         {
-            var methodAdapter = method.MethodAdapter;
             bool? attribute = method.Method.MarkedToRename();
             // skip runtime methods
             if (attribute != null)
@@ -1131,9 +1129,7 @@ namespace Obfuscar
                 return true;
             }
 
-            var methodIsPublic = methodAdapter != null
-                ? (methodAdapter.IsPublic || methodAdapter.IsFamily || methodAdapter.IsFamilyOrAssembly)
-                : method.Method.IsPublic();
+            var methodIsPublic = method.Method.IsPublic();
             if (methodIsPublic && (
                     method.TypeKey.Descriptor?.IsPublic == true ||
                     map.GetMethodGroup(method)?.Methods.FirstOrDefault(m => m.DeclaringType.IsTypePublic()) != null
@@ -1171,8 +1167,7 @@ namespace Obfuscar
         public bool ShouldSkip(FieldKey field, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
             out string message)
         {
-            var fieldAdapter = field.FieldAdapter;
-            var fieldAttributes = fieldAdapter?.Attributes ?? field.Field?.Attributes ?? 0;
+            var fieldAttributes = field.Field?.Attributes ?? 0;
             if ((fieldAttributes & System.Reflection.FieldAttributes.RTSpecialName) != 0 && field.Name == "value__")
             {
                 message = "special name";
@@ -1180,8 +1175,6 @@ namespace Obfuscar
             }
 
             bool? attribute = field.Field?.MarkedToRename();
-            if (attribute == null && fieldAdapter is IFieldDefinition fieldDefinition)
-                attribute = fieldDefinition.MarkedToRename();
             if (attribute != null)
             {
                 message = "attribute";
@@ -1231,9 +1224,7 @@ namespace Obfuscar
                 return true;
             }
 
-            var fieldIsPublic = fieldAdapter != null
-                ? (fieldAdapter.Attributes & System.Reflection.FieldAttributes.Public) == System.Reflection.FieldAttributes.Public
-                : field.Field.IsPublic();
+            var fieldIsPublic = field.Field != null && field.Field.IsPublic;
             if (fieldIsPublic && field.DeclaringType.IsTypePublic())
             {
                 message = "KeepPublicApi option in configuration";
@@ -1247,17 +1238,13 @@ namespace Obfuscar
         public bool ShouldSkip(PropertyKey prop, InheritMap map, bool keepPublicApi, bool hidePrivateApi,
             bool markedOnly, out string message)
         {
-            var propAdapter = prop.PropertyAdapter;
-            if (propAdapter != null ? propAdapter.IsRuntimeSpecialName : prop.Property?.IsRuntimeSpecialName == true)
+            if (prop.Property?.IsRuntimeSpecialName == true)
             {
                 message = "runtime special name";
                 return true;
             }
 
             bool? attribute = prop.Property?.MarkedToRename();
-            if (attribute == null && propAdapter is IPropertyDefinition propDefinition)
-                attribute = propDefinition.MarkedToRename();
-
             if (attribute == null && prop.Property != null)
             {
                 attribute = prop.Property.GetMethod?.MarkedToRename() ?? prop.Property.SetMethod?.MarkedToRename();
@@ -1305,7 +1292,7 @@ namespace Obfuscar
                 return true;
             }
 
-            var propIsPublic = propAdapter != null ? propAdapter.IsPublic : prop.Property != null && prop.Property.IsPublic();
+            var propIsPublic = prop.Property != null && prop.Property.IsPublic();
             var declaringTypeIsPublic = prop.DeclaringType != null && prop.DeclaringType.IsTypePublic();
             var accessorHasPublicDeclaringType = false;
             if (prop.Property != null)
@@ -1329,17 +1316,13 @@ namespace Obfuscar
             out string message)
         {
             // skip runtime special events
-            var evtAdapter = evt.EventAdapter;
-            if (evtAdapter != null ? evtAdapter.IsRuntimeSpecialName : evt.Event?.IsRuntimeSpecialName == true)
+            if (evt.Event?.IsRuntimeSpecialName == true)
             {
                 message = "runtime special name";
                 return true;
             }
 
             bool? attribute = evt.Event?.MarkedToRename();
-            if (attribute == null && evtAdapter is IEventDefinition evtDefinition)
-                attribute = evtDefinition.MarkedToRename();
-
             if (attribute == null && evt.Event != null)
             {
                 attribute = evt.Event.AddMethod?.MarkedToRename() ?? evt.Event.RemoveMethod?.MarkedToRename();
@@ -1388,7 +1371,7 @@ namespace Obfuscar
                 return true;
             }
 
-            var evtIsPublic = evtAdapter != null ? evtAdapter.IsPublic : evt.Event != null && evt.Event.IsPublic();
+            var evtIsPublic = evt.Event != null && evt.Event.IsPublic();
             var declaringTypeIsPublic = evt.DeclaringType != null && evt.DeclaringType.IsTypePublic();
             var accessorHasPublicDeclaringType = false;
             if (evt.Event != null)

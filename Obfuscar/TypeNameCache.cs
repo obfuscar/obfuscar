@@ -121,7 +121,7 @@ namespace Obfuscar
                 if (!stringNameCache.TryGetValue(key, out string name))
                 {
                     // For abstraction layer, we use the full name with scope
-                    // Generic handling is done at the adapter level
+                    // Generic handling is done at the type implementation level
                     name = $"[{type.Scope}]{type.FullName}";
                     stringNameCache[key] = name;
                 }

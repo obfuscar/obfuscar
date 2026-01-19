@@ -34,7 +34,7 @@ using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar
 {
-    class AssemblyCache : IMutableAssemblyResolver
+    class SrmAssemblyResolver : IMutableAssemblyResolver
     {
         private readonly Dictionary<string, MutableAssemblyDefinition> assemblies =
             new Dictionary<string, MutableAssemblyDefinition>(StringComparer.OrdinalIgnoreCase);
@@ -45,7 +45,7 @@ namespace Obfuscar
         private readonly List<string> pathsPortable = new List<string>();
         private readonly List<string> pathsNetCore = new List<string>();
 
-        public AssemblyCache(Project project)
+        public SrmAssemblyResolver(Project project)
         {
             foreach (var path in project.AllAssemblySearchPaths)
                 AddSearchDirectory(path);
@@ -102,6 +102,19 @@ namespace Obfuscar
             if (assemblies.TryGetValue(name.Name, out var cached))
                 return cached;
 
+            var fromSearchPaths = ResolveFromSearchPaths(name, parameters);
+            if (fromSearchPaths != null)
+                return fromSearchPaths;
+
+            var runtimeAssembly = ResolveFromRuntime(name, parameters);
+            if (runtimeAssembly != null)
+                return runtimeAssembly;
+
+            throw new FileNotFoundException("Unable to resolve dependency: " + name.Name);
+        }
+
+        private MutableAssemblyDefinition ResolveFromSearchPaths(MutableAssemblyNameReference name, MutableReaderParameters parameters)
+        {
             var searchPaths = new List<string>(searchDirectories);
             if ((name.Attributes & AssemblyNameFlags.Retargetable) != 0)
             {
@@ -123,23 +136,35 @@ namespace Obfuscar
                     return LoadAssembly(exePath, parameters);
             }
 
-            if (string.Equals(name.Name, "System.Private.CoreLib", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(name.Name, "mscorlib", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(name.Name, "System.Runtime", StringComparison.OrdinalIgnoreCase) ||
-                (name.Name?.StartsWith("System.", StringComparison.OrdinalIgnoreCase) == true) ||
-                string.Equals(name.Name, "System", StringComparison.OrdinalIgnoreCase))
-            {
-                var runtimePath = typeof(object).Assembly.Location;
-                if (File.Exists(runtimePath))
-                {
-                    var runtimeAssembly = LoadAssembly(runtimePath, parameters);
-                    if (runtimeAssembly != null && !assemblies.ContainsKey(name.Name))
-                        assemblies[name.Name] = runtimeAssembly;
-                    return runtimeAssembly;
-                }
-            }
+            return null;
+        }
 
-            throw new FileNotFoundException("Unable to resolve dependency: " + name.Name);
+        private MutableAssemblyDefinition ResolveFromRuntime(MutableAssemblyNameReference name, MutableReaderParameters parameters)
+        {
+            if (!IsRuntimeAssemblyName(name.Name))
+                return null;
+
+            var runtimePath = typeof(object).Assembly.Location;
+            if (!File.Exists(runtimePath))
+                return null;
+
+            var runtimeAssembly = LoadAssembly(runtimePath, parameters);
+            if (runtimeAssembly != null && !assemblies.ContainsKey(name.Name))
+                assemblies[name.Name] = runtimeAssembly;
+
+            return runtimeAssembly;
+        }
+
+        private static bool IsRuntimeAssemblyName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return false;
+
+            return string.Equals(name, "System.Private.CoreLib", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(name, "mscorlib", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(name, "System.Runtime", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(name, "System", StringComparison.OrdinalIgnoreCase) ||
+                   name.StartsWith("System.", StringComparison.OrdinalIgnoreCase);
         }
 
         private MutableAssemblyDefinition LoadAssembly(string path, MutableReaderParameters parameters)

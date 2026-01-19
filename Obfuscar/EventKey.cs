@@ -26,40 +26,28 @@
 
 using MethodAttributes = System.Reflection.MethodAttributes;
 using Obfuscar.Helpers;
-using Obfuscar.Metadata.Abstractions;
 using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar
 {
     class EventKey
     {
-        public EventKey(IEvent evt)
-            : this(new TypeKey(evt.DeclaringTypeFullName), evt.EventTypeFullName, evt.Name, null, evt)
-        {
-        }
-
         public EventKey(MutableEventDefinition evt)
             : this(new TypeKey(evt?.DeclaringType), evt)
         {
         }
 
         public EventKey(TypeKey typeKey, MutableEventDefinition evt)
-            : this(typeKey, evt?.EventType?.GetFullName() ?? string.Empty, evt?.Name ?? string.Empty, evt, evt)
+            : this(typeKey, evt?.EventType?.GetFullName() ?? string.Empty, evt?.Name ?? string.Empty, evt)
         {
         }
 
         public EventKey(TypeKey typeKey, string type, string name, MutableEventDefinition eventDefinition)
-            : this(typeKey, type, name, eventDefinition, eventDefinition)
-        {
-        }
-
-        public EventKey(TypeKey typeKey, string type, string name, MutableEventDefinition eventDefinition, IEvent eventAdapter)
         {
             this.TypeKey = typeKey;
             this.Type = type;
             this.Name = name;
             this.Event = eventDefinition;
-            this.EventAdapter = eventAdapter;
         }
 
         public TypeKey TypeKey { get; }
@@ -72,9 +60,6 @@ namespace Obfuscar
         {
             get
             {
-                if (EventAdapter != null)
-                    return EventAdapter.AddMethodAttributes;
-
                 return Event.AddMethod != null ? Event.AddMethod.Attributes : 0;
             }
         }
@@ -85,8 +70,6 @@ namespace Obfuscar
         }
 
         public MutableEventDefinition Event { get; }
-
-        public IEvent EventAdapter { get; }
 
         public virtual bool Matches(MutableEventDefinition member)
         {

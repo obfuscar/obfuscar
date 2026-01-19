@@ -32,6 +32,7 @@ using System.Security.Cryptography;
 using Obfuscar.Helpers;
 using Obfuscar.Metadata.Mutable;
 using System.Xml.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
 namespace Obfuscar
@@ -132,15 +133,15 @@ namespace Obfuscar
             }
         }
 
-        AssemblyCache m_cache;
+        SrmAssemblyResolver m_cache;
 
-        internal AssemblyCache Cache
+        internal SrmAssemblyResolver Cache
         {
             get
             {
                 if (m_cache == null)
                 {
-                    m_cache = new AssemblyCache(this);
+                    m_cache = new SrmAssemblyResolver(this);
                 }
 
                 return m_cache;
@@ -224,8 +225,8 @@ namespace Obfuscar
                 throw new ObfuscarException("Environment-variable expansion and variable placeholders are not supported in Include path.");
             }
 
-            if (!Path.IsPathRooted(rawPathAttr))
-                throw new ObfuscarException($"Include path must be an absolute path: '{rawPathAttr}'");
+                if (!IsPathRootedPlatformAgnostic(rawPathAttr))
+                    throw new ObfuscarException($"Include path must be an absolute path: '{rawPathAttr}'");
 
             var includeReader = XDocument.Load(rawPathAttr);
             if (includeReader.Root.Name == "Include")
@@ -246,7 +247,7 @@ namespace Obfuscar
                 if (rawSearchAttr.Contains("%") || rawSearchAttr.Contains("${") || rawSearchAttr.Contains("$("))
                     throw new ObfuscarException("Environment-variable expansion and variable placeholders are not supported in AssemblySearchPath path.");
 
-                if (!Path.IsPathRooted(rawSearchAttr))
+                if (!IsPathRootedPlatformAgnostic(rawSearchAttr))
                     throw new ObfuscarException($"AssemblySearchPath path must be an absolute path: '{rawSearchAttr}'");
 
                 project.assemblySearchPaths.Add(rawSearchAttr);
@@ -265,7 +266,7 @@ namespace Obfuscar
                 if (file.Contains("%") || file.Contains("${") || file.Contains("$("))
                     throw new ObfuscarException("Environment-variable expansion and variable placeholders are not supported in Module file attribute.");
 
-                if (!Path.IsPathRooted(file))
+                if (!IsPathRootedPlatformAgnostic(file))
                     throw new ObfuscarException($"Module file attribute must be an absolute path: '{file}'");
 
                 ReadModule(file, module, project);
@@ -298,6 +299,24 @@ namespace Obfuscar
                     let value = project.vars.Replace(i.Value)
                     where !string.IsNullOrWhiteSpace(value)
                     select value).ToList();
+        }
+
+        private static bool IsPathRootedPlatformAgnostic(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            if (Path.IsPathRooted(path))
+                return true;
+
+            // Accept Windows drive-letter paths (e.g., C:\Program Files\) on non-Windows platforms
+            if (path.Length >= 2 && char.IsLetter(path[0]) && path[1] == ':')
+                return true;
+
+            if (Regex.IsMatch(path, "^[A-Za-z]:\\\\"))
+                return true;
+
+            return false;
         }
 
         private static void ReadModule(string file, XElement module, Project project)

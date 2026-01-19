@@ -72,13 +72,13 @@ namespace Obfuscar
         {
             if (!string.IsNullOrEmpty(decorator))
             {
-                var adapter = field.FieldAdapter;
-                if (adapter == null || !adapter.HasCustomAttributes)
+                var fieldDef = field.Field;
+                if (fieldDef == null || fieldDef.CustomAttributes.Count == 0)
                 {
                     return false;
                 }
 
-                if (!adapter.CustomAttributeTypeFullNames.Contains(decorator))
+                if (!fieldDef.CustomAttributes.Any(attr => attr.AttributeTypeName == decorator))
                 {
                     return false;
                 }

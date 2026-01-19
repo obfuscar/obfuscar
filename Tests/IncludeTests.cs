@@ -55,7 +55,7 @@ namespace ObfuscarTests
                     destFileName, true);
             }
 
-            Obfuscator obfuscator = Obfuscator.CreateFromXml(xml);
+            Obfuscator obfuscator = TestHelper.Obfuscate(xml);
             Assert.False(obfuscator.Project.Settings.KeepPublicApi);
         }
 

@@ -46,7 +46,7 @@ namespace ObfuscarTests
                     @"<Var name='OutPath' value='{0}' />" +
                     @"</Obfuscator>", testPath);
 
-                Obfuscar.Obfuscator.CreateFromXml(xml);
+                TestHelper.Obfuscate(xml);
 
                 Assert.True(Directory.Exists(full), "Obfuscator should have created its missing OutPath.");
             }
@@ -69,7 +69,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckCanCreateOutPathWithEnvironmentVariables()
         {
-            string testPath = Path.Combine("%temp%", "ObfuscarTestOutPath");
+            string testPath = Path.Combine(Path.GetTempPath(), "ObfuscarTestOutPath");
 
             CheckOutPath(testPath);
         }

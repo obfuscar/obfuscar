@@ -72,7 +72,7 @@ namespace ObfuscarTests
                 @"<Obfuscator>" +
                 @"<Module file='{0}\ObfuscarTests.dll' />" +
                 @"</Obfuscator>", BadPath);
-            var exception = Assert.Throws<ObfuscarException>(() => { Obfuscator.CreateFromXml(xml); });
+            var exception = Assert.Throws<ObfuscarException>(() => { TestHelper.Obfuscate(xml); });
             Assert.Equal("Unable to find assembly:  Q:\\Does\\Not\\Exist\\ObfuscarTests.dll", exception.Message);
         }
 
@@ -92,7 +92,7 @@ namespace ObfuscarTests
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
                 @"</Obfuscator>", BadPath);
-            var exception = Assert.Throws<ObfuscarException>(() => { Obfuscator.CreateFromXml(xml); });
+            var exception = Assert.Throws<ObfuscarException>(() => { TestHelper.Obfuscate(xml); });
             Assert.Equal("Path specified by InPath variable must exist:Q:\\Does\\Not\\Exist", exception.Message);
         }
     }

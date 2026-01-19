@@ -41,7 +41,7 @@ namespace ObfuscarTests
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
-                @"<Module file='$(InPath){2}AssemblyForSigning.dll' />" +
+                @"<Module file='{0}{2}AssemblyForSigning.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
             TestHelper.CleanInput();
@@ -64,7 +64,7 @@ namespace ObfuscarTests
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='KeyFile' value='auto' />" +
-                @"<Module file='$(InPath){2}AssemblyForSigning2.dll' />" +
+                @"<Module file='{0}{2}AssemblyForSigning2.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
             TestHelper.CleanInput();
@@ -86,10 +86,11 @@ namespace ObfuscarTests
         public void CheckSignAttributeWithAutoFindingSNKFirst()
         {
             string outputPath = TestHelper.OutputPath;
+            // Use absolute input path instead of '.' so configuration remains absolute
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +
-                @"<Var name='InPath' value='.' />" +
+                @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='KeyFile' value='auto' />" +
                 @"<Module file='{0}{2}AssemblyForSigning2.dll' />" +
@@ -159,10 +160,10 @@ namespace ObfuscarTests
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='KeyFile' value='$(InPath){2}SigningKey.snk' />" +
+                @"<Var name='KeyFile' value='{0}{2}SigningKey.snk' />" +
                 @"<Var name='HidePrivateApi' value='true' />" +
                 @"<Var name='KeepPublicApi' value='false' />" +
-                @"<Module file='$(InPath){2}DelaySigned.dll' />" +
+                @"<Module file='{0}{2}DelaySigned.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
             TestHelper.CleanInput();
@@ -193,10 +194,10 @@ namespace ObfuscarTests
                 @"<Obfuscator>" +
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
-                @"<Var name='KeyFile' value='$(InPath){2}public.snk' />" +
+                @"<Var name='KeyFile' value='{0}{2}public.snk' />" +
                 @"<Var name='HidePrivateApi' value='true' />" +
                 @"<Var name='KeepPublicApi' value='false' />" +
-                @"<Module file='$(InPath){2}DelaySigned.dll' />" +
+                @"<Module file='{0}{2}DelaySigned.dll' />" +
                 @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
 
             TestHelper.CleanInput();

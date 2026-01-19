@@ -225,25 +225,25 @@ namespace Obfuscar
             foreach (var method in type.Methods)
             {
                 if (method.IsVirtual)
-                    methods.Add(new MethodKey(method, method));
+                    methods.Add(new MethodKey(method));
             }
 
             foreach (var property in type.Properties)
             {
                 if (property.GetMethod != null && property.GetMethod.IsVirtual)
-                    methods.Add(new MethodKey(property.GetMethod, property.GetMethod));
+                    methods.Add(new MethodKey(property.GetMethod));
 
                 if (property.SetMethod != null && property.SetMethod.IsVirtual)
-                    methods.Add(new MethodKey(property.SetMethod, property.SetMethod));
+                    methods.Add(new MethodKey(property.SetMethod));
             }
 
             foreach (var evt in type.Events)
             {
                 if (evt.AddMethod != null && evt.AddMethod.IsVirtual)
-                    methods.Add(new MethodKey(evt.AddMethod, evt.AddMethod));
+                    methods.Add(new MethodKey(evt.AddMethod));
 
                 if (evt.RemoveMethod != null && evt.RemoveMethod.IsVirtual)
-                    methods.Add(new MethodKey(evt.RemoveMethod, evt.RemoveMethod));
+                    methods.Add(new MethodKey(evt.RemoveMethod));
             }
         }
 
@@ -333,14 +333,14 @@ namespace Obfuscar
                 return bases;
 
             // Key not found - try to compute base types
-            IType adapter = typeKey.TypeDefinition;
-            if (adapter == null && !string.IsNullOrEmpty(typeKey.Fullname))
-                typesByFullName.TryGetValue(typeKey.Fullname, out adapter);
+            IType type = typeKey.TypeDefinition;
+            if (type == null && !string.IsNullOrEmpty(typeKey.Fullname))
+                typesByFullName.TryGetValue(typeKey.Fullname, out type);
 
-            if (adapter == null)
+            if (type == null)
                 return Array.Empty<TypeKey>();
 
-            bases = GetBaseTypes(adapter);
+            bases = GetBaseTypes(type);
             baseTypes[typeKey] = bases;
             return bases;
         }

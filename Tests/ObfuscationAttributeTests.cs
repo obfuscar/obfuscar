@@ -1,6 +1,8 @@
 using Obfuscar;
+using System;
 using System.IO;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace ObfuscarTests
@@ -222,15 +224,19 @@ namespace ObfuscarTests
             Assert.True(outAssmDef.CustomAttributes.Count == inAssmDef.CustomAttributes.Count - 1, "obfuscation attribute on assembly should have been removed.");
             TypeDefinition classTypeRenamed = outAssmDef.MainModule.Types[2];
             
-            // DEBUG: Log type info
-            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                $"CheckMakedOnly: Type={classTypeRenamed.FullName}, PropertiesCount={classTypeRenamed.Properties.Count}\n");
-            System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                $"  All types in output: {string.Join(", ", outAssmDef.MainModule.Types.Select(t => t.FullName + "[P:" + t.Properties.Count + "]"))}\n");
-            foreach (var prop in classTypeRenamed.Properties)
+            if (string.Equals(Environment.GetEnvironmentVariable("OBFUSCAR_DEBUG_ATTRS"), "1", StringComparison.Ordinal))
             {
-                System.IO.File.AppendAllText("/tmp/obfuscar_debug.log", 
-                    $"  Property: {prop.Name}, Type={prop.PropertyType?.FullName}\n");
+                LoggerService.Logger.LogDebug("CheckMarkedOnly: Type={TypeName}, PropertiesCount={PropCount}",
+                    classTypeRenamed.FullName,
+                    classTypeRenamed.Properties.Count);
+                LoggerService.Logger.LogDebug("All types in output: {Types}",
+                    string.Join(", ", outAssmDef.MainModule.Types.Select(t => t.FullName + "[P:" + t.Properties.Count + "]")));
+                foreach (var prop in classTypeRenamed.Properties)
+                {
+                    LoggerService.Logger.LogDebug("Property: {PropName}, Type={PropType}",
+                        prop.Name,
+                        prop.PropertyType?.FullName);
+                }
             }
             
             Assert.False(classTypeRenamed.CustomAttributes.Count == 2, "obfuscation attribute on type should have been removed.");

@@ -127,7 +127,7 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
-            Obfuscator obfuscator = Obfuscator.CreateFromXml(xml);
+            TestHelper.Obfuscate(xml);
         }
     }
 }

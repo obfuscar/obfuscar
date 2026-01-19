@@ -27,7 +27,6 @@
 using System;
 using MethodAttributes = System.Reflection.MethodAttributes;
 using Obfuscar.Helpers;
-using Obfuscar.Metadata.Abstractions;
 using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar
@@ -35,29 +34,17 @@ namespace Obfuscar
     class MethodKey : NameParamSig, IComparable<MethodKey>
     {
         readonly int hashCode;
-        private readonly IMethod methodAdapter;
 
         public MethodKey(MutableMethodDefinition method)
-            : this(new TypeKey(method?.DeclaringType), method, method)
+            : this(new TypeKey(method?.DeclaringType), method)
         {
         }
 
         public MethodKey(TypeKey typeKey, MutableMethodDefinition method)
-            : this(typeKey, method, method)
-        {
-        }
-
-        public MethodKey(MutableMethodDefinition method, IMethod metadata)
-            : this(new TypeKey(method?.DeclaringType), method, metadata ?? method)
-        {
-        }
-
-        private MethodKey(TypeKey typeKey, MutableMethodDefinition method, IMethod metadata)
-            : base(metadata)
+            : base(method)
         {
             this.TypeKey = typeKey;
             this.Method = method;
-            this.methodAdapter = metadata;
 
             hashCode = CalcHashCode();
         }
@@ -69,7 +56,7 @@ namespace Obfuscar
 
         public MethodAttributes MethodAttributes
         {
-            get { return methodAdapter?.Attributes ?? Method.Attributes; }
+            get { return Method.Attributes; }
         }
 
         public MutableTypeDefinition DeclaringType
@@ -80,8 +67,6 @@ namespace Obfuscar
         public TypeKey TypeKey { get; }
 
         public MutableMethodDefinition Method { get; }
-
-        public IMethod MethodAdapter => methodAdapter;
 
         public bool Matches(MutableMethodReference member)
         {

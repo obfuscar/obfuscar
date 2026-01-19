@@ -37,8 +37,9 @@ namespace ObfuscarTests
             Variables variables = new Variables();
             variables.Add("Key1", "Value1");
 
-            string result = variables.Replace("This: $(Key1) got replaced.");
-            Assert.Equal("This: Value1 got replaced.", result);
+            // Variable substitution is no longer supported; Replace should throw
+            var ex = Assert.Throws<Obfuscar.ObfuscarException>(() => variables.Replace("This: $(Key1) got replaced."));
+            Assert.Contains("Variable substitution via $(...) is not supported", ex.Message);
         }
 
         [Fact]
@@ -46,8 +47,8 @@ namespace ObfuscarTests
         {
             Variables variables = new Variables();
             variables.Add("Key1", "Value1");
-            var exception = Assert.Throws<ObfuscarException>(() => { variables.Replace("$(Unreplaceable)"); });
-            Assert.Equal("Unable to replace variable:  Unreplaceable", exception.Message);
+            var exception = Assert.Throws<Obfuscar.ObfuscarException>(() => { variables.Replace("$(Unreplaceable)"); });
+            Assert.Contains("Variable substitution via $(...) is not supported", exception.Message);
         }
     }
 }

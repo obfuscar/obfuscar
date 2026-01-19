@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using NuGet.Versioning;  // Add reference to NuGet.Versioning
 using Obfuscar.Metadata.Abstractions;
 using Obfuscar.Metadata.Mutable;
@@ -264,7 +265,7 @@ namespace Obfuscar.Helpers
                 try
                 {
                     var names = string.Join(", ", attributes.Select(attr => attr.AttributeTypeName));
-                    File.AppendAllText("/tmp/obfuscar_debug.log", $"Assembly attrs before clean: {names}\n");
+                    Obfuscar.LoggerService.Logger.LogDebug("Assembly attrs before clean: {Names}", names);
                 }
                 catch
                 {
@@ -289,7 +290,7 @@ namespace Obfuscar.Helpers
                 try
                 {
                     var names = string.Join(", ", attributes.Select(attr => attr.AttributeTypeName));
-                    File.AppendAllText("/tmp/obfuscar_debug.log", $"Assembly attrs after clean: {names}\n");
+                    Obfuscar.LoggerService.Logger.LogDebug("Assembly attrs after clean: {Names}", names);
                 }
                 catch
                 {

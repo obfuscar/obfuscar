@@ -217,21 +217,24 @@ namespace Obfuscar
                             try
                             {
                                 var names = string.Join(", ", info.Definition.CustomAttributes.Select(attr => attr.AttributeTypeName));
-                                File.AppendAllText("/tmp/obfuscar_debug.log", $"Saving {info.Name} assembly attrs: {names}\n");
+                                LoggerService.Logger.LogDebug("Saving {AssemblyName} assembly attrs: {Names}", info.Name, names);
                                 foreach (var typeDef in info.Definition.MainModule.Types)
                                 {
                                     if (typeDef.Properties.Count == 0)
                                         continue;
-                                    File.AppendAllText("/tmp/obfuscar_debug.log",
-                                        $"  Type {typeDef.FullName} props: {string.Join(", ", typeDef.Properties.Select(p => p.Name + "[A:" + p.CustomAttributes.Count + "]"))}\n");
+                                    LoggerService.Logger.LogDebug("Type {TypeName} props: {Props}",
+                                        typeDef.FullName,
+                                        string.Join(", ", typeDef.Properties.Select(p => p.Name + "[A:" + p.CustomAttributes.Count + "]")));
                                     foreach (var prop in typeDef.Properties)
                                     {
                                         foreach (var attr in prop.CustomAttributes)
                                         {
                                             var named = string.Join(", ", attr.Properties.Select(p =>
                                                 $"{p.Name}:{p.Argument?.Type?.FullName}={p.Argument?.Value}"));
-                                            File.AppendAllText("/tmp/obfuscar_debug.log",
-                                                $"    Prop {prop.Name} attr {attr.AttributeTypeName} named [{named}]\n");
+                                            LoggerService.Logger.LogDebug("Prop {PropName} attr {AttrName} named [{Named}]",
+                                                prop.Name,
+                                                attr.AttributeTypeName,
+                                                named);
                                         }
                                     }
                                 }
@@ -480,7 +483,7 @@ namespace Obfuscar
                 return;
             }
 
-            foreach (var info in Project.AssemblyList)
+                foreach (var info in Project.AssemblyList)
             {
                 // loop through the types
                 foreach (var typeDef in info.GetAllTypes())
@@ -498,7 +501,7 @@ namespace Obfuscar
                     var nameGroups = new Dictionary<string, NameGroup>();
 
                     // rename field, grouping according to signature
-                    foreach (FieldDefinition field in type.Fields)
+                        foreach (FieldDefinition field in type.Fields)
                     {
                         ProcessField(field, typeKey, nameGroups, info);
                     }
@@ -510,7 +513,7 @@ namespace Obfuscar
             AssemblyInfo info)
         {
             string sig = field.FieldType.FullName;
-            var fieldKey = new FieldKey(typeKey, sig, field.Name, field, field.Attributes, field);
+            var fieldKey = new FieldKey(typeKey, sig, field.Name, field, field.Attributes);
             NameGroup nameGroup = GetNameGroup(nameGroups, sig);
 
             // skip filtered fields

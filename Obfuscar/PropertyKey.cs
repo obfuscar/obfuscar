@@ -26,34 +26,26 @@
 
 using MethodAttributes = System.Reflection.MethodAttributes;
 using Obfuscar.Helpers;
-using Obfuscar.Metadata.Abstractions;
 using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar
 {
     class PropertyKey
     {
-        public PropertyKey(IProperty prop)
-            : this(new TypeKey(prop.DeclaringTypeFullName), prop.PropertyTypeFullName, prop.Name, null, prop)
-        {
-        }
-
         public PropertyKey(TypeKey typeKey, MutablePropertyDefinition prop)
         {
             this.TypeKey = typeKey;
             this.Type = prop.PropertyType?.GetFullName() ?? string.Empty;
             this.Name = prop.Name;
             this.Property = prop;
-            this.PropertyAdapter = prop;
         }
 
-        public PropertyKey(TypeKey typeKey, string type, string name, MutablePropertyDefinition propertyDefinition, IProperty propertyAdapter)
+        public PropertyKey(TypeKey typeKey, string type, string name, MutablePropertyDefinition propertyDefinition)
         {
             this.TypeKey = typeKey;
             this.Type = type;
             this.Name = name;
             this.Property = propertyDefinition;
-            this.PropertyAdapter = propertyAdapter;
         }
 
         public TypeKey TypeKey { get; }
@@ -66,9 +58,6 @@ namespace Obfuscar
         {
             get
             {
-                if (PropertyAdapter != null)
-                    return PropertyAdapter.GetterMethodAttributes;
-
                 return Property.GetMethod != null ? Property.GetMethod.Attributes : 0;
             }
         }
@@ -79,8 +68,6 @@ namespace Obfuscar
         }
 
         public MutablePropertyDefinition Property { get; }
-
-        public IProperty PropertyAdapter { get; }
 
         public virtual bool Matches(MutablePropertyDefinition member)
         {

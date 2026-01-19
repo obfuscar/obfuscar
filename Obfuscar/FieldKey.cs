@@ -26,31 +26,24 @@
 
 using FieldAttributes = System.Reflection.FieldAttributes;
 using Obfuscar.Helpers;
-using Obfuscar.Metadata.Abstractions;
 using Obfuscar.Metadata.Mutable;
 
 namespace Obfuscar
 {
     class FieldKey
     {
-        public FieldKey(IField field)
-            : this(new TypeKey(field.DeclaringTypeFullName), field.FieldTypeFullName, field.Name, null, field.Attributes, field)
-        {
-        }
-
         public FieldKey(MutableFieldDefinition field)
-            : this(new TypeKey(field?.DeclaringType), field?.FieldType?.GetFullName() ?? string.Empty, field?.Name ?? string.Empty, field, field?.Attributes, field)
+            : this(new TypeKey(field?.DeclaringType), field?.FieldType?.GetFullName() ?? string.Empty, field?.Name ?? string.Empty, field, field?.Attributes)
         {
         }
 
-        public FieldKey(TypeKey typeKey, string type, string name, MutableFieldDefinition fieldDefinition, FieldAttributes? attributes = null, IField fieldAdapter = null)
+        public FieldKey(TypeKey typeKey, string type, string name, MutableFieldDefinition fieldDefinition, FieldAttributes? attributes = null)
         {
             this.TypeKey = typeKey;
             this.Type = type;
             this.Name = name;
             this.Field = fieldDefinition;
             this.overriddenAttributes = attributes;
-            this.FieldAdapter = fieldAdapter;
         }
 
         private readonly FieldAttributes? overriddenAttributes;
@@ -65,9 +58,6 @@ namespace Obfuscar
                 if (Field != null)
                     return Field.Attributes;
 
-                if (FieldAdapter != null)
-                    return FieldAdapter.Attributes;
-
                 return 0;
             }
         }
@@ -78,8 +68,6 @@ namespace Obfuscar
         }
 
         public MutableFieldDefinition Field { get; }
-
-        public IField FieldAdapter { get; }
 
         public TypeKey TypeKey { get; }
 

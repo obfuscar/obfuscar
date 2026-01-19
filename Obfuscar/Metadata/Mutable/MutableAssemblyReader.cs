@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
+using Microsoft.Extensions.Logging;
 
 namespace Obfuscar.Metadata.Mutable
 {
@@ -1066,7 +1067,7 @@ namespace Obfuscar.Metadata.Mutable
             {
                 try
                 {
-                    File.AppendAllText("/tmp/obfuscar_debug.log", $"ObfuscateAssemblyAttribute parent={parent.Kind}\n");
+                    Obfuscar.LoggerService.Logger.LogDebug("ObfuscateAssemblyAttribute parent={ParentKind}", parent.Kind);
                 }
                 catch
                 {

@@ -198,6 +198,45 @@ namespace ObfuscarTests
 
         public static Obfuscar.Obfuscator Obfuscate(string xml, bool hideStrings = false)
         {
+            // Tests historically used '$(InPath)' placeholders in XML. The product no
+            // longer supports variable substitution; update the test XML here to
+            // use absolute input paths so we don't have to change many files.
+            if (!string.IsNullOrEmpty(xml))
+            {
+                // Replace common historical placeholders used in tests with their
+                // absolute equivalents so tests don't rely on product-side
+                // variable substitution which is intentionally disabled.
+                xml = xml.Replace("$(InPath)", InputPath);
+
+                // Extract <Var name='X' value='Y' /> entries and replace $(X)
+                // occurrences in the XML with Y. This supports tests that
+                // declare variables and then use $(VarName) elsewhere.
+                var varRe = new System.Text.RegularExpressions.Regex("<Var\\s+name=['\"](?<name>[^'\"]+)['\"]\\s+value=['\"](?<value>[^'\"]*)['\"]\\s*/>",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                var varDict = new System.Collections.Generic.Dictionary<string, string>();
+                foreach (System.Text.RegularExpressions.Match m in varRe.Matches(xml))
+                {
+                    var name = m.Groups["name"].Value;
+                    var value = m.Groups["value"].Value;
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        xml = xml.Replace("$(" + name + ")", value);
+                        varDict[name] = value;
+                    }
+                }
+
+                // Replace any remaining $(...) placeholders using declared vars
+                // or fall back to InputPath for compatibility with historical tests.
+                xml = System.Text.RegularExpressions.Regex.Replace(xml, "\\$\\(([^)]+)\\)", (m) =>
+                {
+                    var n = m.Groups[1].Value;
+                    if (varDict.TryGetValue(n, out var v) && !string.IsNullOrEmpty(v))
+                        return v;
+                    return InputPath;
+                });
+            }
+
             Obfuscar.Obfuscator obfuscator = Obfuscar.Obfuscator.CreateFromXml(xml);
 
             if (hideStrings)
