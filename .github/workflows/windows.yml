@@ -6,16 +6,35 @@ jobs:
 
   windows:
 
-    runs-on: windows-2022
+    runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Submodule
-      shell: cmd
-      run: git submodule update --init --recursive
+    - name: Checkout repository (full history + submodules)
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: true
+
+    - name: Setup .NET 8 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Setup .NET 9 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Setup .NET 10 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
     - name: Build
       shell: cmd
       run: dist.pack.bat
+
     - name: Test
       shell: cmd
       run: test.bat
+

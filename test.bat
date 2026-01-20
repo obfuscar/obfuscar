@@ -1,3 +1,3 @@
 cd src\Tests
 dotnet test
-cd ..\..
+if %errorlevel% neq 0 exit /b %errorlevel%

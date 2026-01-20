@@ -1,0 +1,31 @@
+mode: ContinuousDelivery
+next-version: 3.0.0
+assembly-versioning-scheme: MajorMinorPatch
+commit-message-incrementing: Disabled
+
+branches:
+  main:
+    regex: ^(main|master)$
+    increment: Patch
+    track-merge-target: false
+
+  develop:
+    regex: ^(dev|develop|development)$
+    increment: Minor
+    track-merge-target: false
+
+  feature:
+    regex: ^(feature|features?)[/\\-]
+    increment: Patch
+    source-branches: ["develop", "main"]
+
+  release:
+    regex: ^(release|releases?)[/\\-]
+    increment: Patch
+
+  hotfix:
+    regex: ^(hotfix|hotfixes?)[/\\-]
+    increment: Patch
+
+ignore:
+  sha: []
