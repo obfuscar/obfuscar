@@ -102,6 +102,8 @@ namespace Obfuscar
             if (assemblies.TryGetValue(name.Name, out var cached))
                 return cached;
 
+            LoggerService.Logger.LogDebug("Resolving assembly '{Name}' using {SearchDirs} search directories.", name.Name, searchDirectories.Count);
+
             var fromSearchPaths = ResolveFromSearchPaths(name, parameters);
             if (fromSearchPaths != null)
                 return fromSearchPaths;
@@ -110,7 +112,48 @@ namespace Obfuscar
             if (runtimeAssembly != null)
                 return runtimeAssembly;
 
+            // Fallback: try recursive search in search directories (useful for publish folders)
+            var fallback = ResolveByRecursiveSearch(name, parameters);
+            if (fallback != null)
+                return fallback;
+
+            LoggerService.Logger.LogError("Unable to resolve dependency: {Name}. Searched {Count} directories.", name.Name, searchDirectories.Count);
             throw new FileNotFoundException("Unable to resolve dependency: " + name.Name);
+        }
+
+        private MutableAssemblyDefinition ResolveByRecursiveSearch(MutableAssemblyNameReference name, MutableReaderParameters parameters)
+        {
+            try
+            {
+                foreach (var dir in searchDirectories)
+                {
+                    if (!Directory.Exists(dir))
+                        continue;
+
+                    // Try to find the dll anywhere under the search directory (published apps may place deps in subfolders)
+                    foreach (var file in Directory.EnumerateFiles(dir, name.Name + ".dll", SearchOption.AllDirectories))
+                    {
+                        LoggerService.Logger.LogDebug("Resolved assembly '{Name}' from recursive search: {Path}", name.Name, file);
+                        var asm = LoadAssembly(file, parameters);
+                        if (asm != null)
+                            return asm;
+                    }
+
+                    foreach (var file in Directory.EnumerateFiles(dir, name.Name + ".exe", SearchOption.AllDirectories))
+                    {
+                        LoggerService.Logger.LogDebug("Resolved assembly '{Name}' from recursive search: {Path}", name.Name, file);
+                        var asm = LoadAssembly(file, parameters);
+                        if (asm != null)
+                            return asm;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Logger.LogWarning(ex, "Recursive search for assembly '{Name}' failed.", name.Name);
+            }
+
+            return null;
         }
 
         private MutableAssemblyDefinition ResolveFromSearchPaths(MutableAssemblyNameReference name, MutableReaderParameters parameters)
@@ -129,11 +172,17 @@ namespace Obfuscar
             {
                 var dllPath = Path.Combine(dir, name.Name + ".dll");
                 if (File.Exists(dllPath))
+                {
+                    LoggerService.Logger.LogDebug("Resolved assembly '{Name}' from search path: {Path}", name.Name, dllPath);
                     return LoadAssembly(dllPath, parameters);
+                }
 
                 var exePath = Path.Combine(dir, name.Name + ".exe");
                 if (File.Exists(exePath))
+                {
+                    LoggerService.Logger.LogDebug("Resolved assembly '{Name}' from search path: {Path}", name.Name, exePath);
                     return LoadAssembly(exePath, parameters);
+                }
             }
 
             return null;
@@ -148,6 +197,7 @@ namespace Obfuscar
             if (!File.Exists(runtimePath))
                 return null;
 
+            LoggerService.Logger.LogDebug("Resolved assembly '{Name}' from runtime: {Path}", name.Name, runtimePath);
             var runtimeAssembly = LoadAssembly(runtimePath, parameters);
             if (runtimeAssembly != null && !assemblies.ContainsKey(name.Name))
                 assemblies[name.Name] = runtimeAssembly;
