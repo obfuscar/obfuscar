@@ -128,6 +128,8 @@ namespace ObfuscarTests
                 @"</Module>" +
                 @"</Obfuscator>", TestHelper.InputPath, TestHelper.OutputPath, Path.DirectorySeparatorChar);
 
+            // Ensure the input assembly is compiled into the Input folder for the include
+            TestHelper.BuildAssembly("AssemblyWithCustomAttr");
             TestHelper.Obfuscate(xml);
         }
     }
