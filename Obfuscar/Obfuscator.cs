@@ -1203,7 +1203,7 @@ namespace Obfuscar
                 else
                 {
                     // for an internal group, get next unused name
-                    groupName = NameGroup.GetNext(nameGroups);
+                    groupName = Project.Settings.ReuseNames ? NameGroup.GetNext(nameGroups) : NameMaker.UniqueName(_uniqueMemberNameIndex++);
                     LoggerService.Logger.LogDebug("Generated new name for method group: {0}", groupName);
                 }
 
@@ -1312,7 +1312,7 @@ namespace Obfuscar
 
             NameGroup nameGroup = GetNameGroup(sigNames, sig);
 
-            string newName = nameGroup.GetNext();
+            string newName = Project.Settings.ReuseNames ? nameGroup.GetNext() : NameMaker.UniqueName(_uniqueMemberNameIndex++);
 
             // make sure the name groups is updated
             nameGroup.Add(newName);
