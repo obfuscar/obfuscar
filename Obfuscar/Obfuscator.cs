@@ -510,7 +510,8 @@ namespace Obfuscar
             MethodKey methodkey = new MethodKey(method);
             string skip;
             if (info.ShouldSkipParams(methodkey, Project.InheritMap, Project.Settings.KeepPublicApi,
-                Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip))
+                Project.Settings.HidePrivateApi, Project.Settings.MarkedOnly, out skip) && 
+                !info.ShouldForceParams(methodkey, Project.InheritMap))
                 return;
 
             foreach (ParameterDefinition param in method.Parameters)
