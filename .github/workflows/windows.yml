@@ -36,7 +36,7 @@ jobs:
 
     - name: Build
       shell: cmd
-      run: dist.pack.bat
+      run: build.all.bat
 
     - name: Test
       shell: cmd
@@ -54,7 +54,13 @@ jobs:
           exit 0
         }
 
-        Write-Host "Publishing packages to $env:NUGET_SOURCE"
+        ./pack.all.bat
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "Packaging failed. Exiting."
+          exit $LASTEXITCODE
+        }
+
+        Write-Host "Publishing packages"
         dotnet nuget add source --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
         $nupkgs = Get-ChildItem -Path . -Recurse -Filter *.nupkg
         if ($nupkgs.Count -eq 0) { Write-Host 'No packages found.'; exit 0 }

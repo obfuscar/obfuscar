@@ -1,7 +1,3 @@
-if ($env:CI -eq "true") {
-    exit 0
-}
-
 Remove-Item -Path .\*.nupkg
 
 Set-Location .\src\GlobalTools

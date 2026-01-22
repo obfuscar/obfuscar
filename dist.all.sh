@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Equivalent of dist.pack.bat for Unix-like shells
+# Equivalent of dist.all.bat for Unix-like shells
 set -o pipefail
 
 # Run PowerShell scripts with ExecutionPolicy Bypass and exit
