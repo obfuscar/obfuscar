@@ -10,6 +10,11 @@ if (-not [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Syst
     exit 0
 }
 
+if ($env:CI -eq "true") {
+    Write-Host "Running in CI environment; skipping signing steps when no cert."
+    exit 0
+}
+
 $nuget = ".\nuget.exe"
 
 if (!(Test-Path $nuget))

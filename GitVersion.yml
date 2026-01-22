@@ -22,10 +22,14 @@ branches:
   release:
     regex: ^(release|releases?)[/\\-]
     increment: Patch
+    prevent-increment:
+      when-current-commit-tagged: true
 
   hotfix:
     regex: ^(hotfix|hotfixes?)[/\\-]
     increment: Patch
+    prevent-increment:
+      when-current-commit-tagged: true
 
 ignore:
   sha: []
