@@ -3,6 +3,17 @@ if ($env:CI -eq "true") {
 }
 
 Remove-Item -Path .\*.nupkg
+
+Set-Location .\src\GlobalTools
+& dotnet pack -c Release
+Set-Location ..\..
+
+# If not running on Windows, skip Windows-only signing steps.
+if (-not [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
+    Write-Host "Not running on Windows; skipping Windows-only signing steps."
+    exit 0
+}
+
 $nuget = ".\nuget.exe"
 
 if (!(Test-Path $nuget))
@@ -11,10 +22,6 @@ if (!(Test-Path $nuget))
 }
 
 & $nuget update /self | Write-Debug
-
-Set-Location .\GlobalTools
-& dotnet pack -c Release
-Set-Location ..
 
 $cert = Get-ChildItem -Path Cert:\CurrentUser\My -CodeSigningCert | Select-Object -First 1
 if ($null -eq $cert) {

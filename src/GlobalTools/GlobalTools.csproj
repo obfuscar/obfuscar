@@ -13,7 +13,7 @@
     <TargetFrameworks Condition="'$(IsNet100Supported)' == 'true'">$(TargetFrameworks);net10.0</TargetFrameworks>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>obfuscar.console</ToolCommandName>
-    <PackageOutputPath>..</PackageOutputPath>
+    <PackageOutputPath>../..</PackageOutputPath>
 
     <PackageId>Obfuscar.GlobalTool</PackageId>
     <Authors>Ryan Williams, and other contributors.</Authors>
@@ -26,7 +26,7 @@
     <PackageIcon>Potion-icon.png</PackageIcon>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
-    <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2025 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
+    <Copyright>Copyright (c) 2007 Ryan Williams. Copyright (c) 2009-2026 Calvin Rien, Lex Li, RemObjects and other contributors.</Copyright>
     <RepositoryType>git</RepositoryType>
     <PackageTags>obfuscar,obfuscation</PackageTags>
     <GitVersionTargetFramework>net8.0</GitVersionTargetFramework>
@@ -34,7 +34,7 @@
 
   <ItemGroup>
     <None Include="..\Potion-icon.png" Pack="true" PackagePath="" />
-    <None Include="..\readme.md" Pack="true" PackagePath="" />
+    <None Include="..\..\readme.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
