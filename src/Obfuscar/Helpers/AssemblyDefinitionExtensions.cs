@@ -51,6 +51,38 @@ namespace Obfuscar.Helpers
         {
             var seenFrameworks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+            // Local helper to detect dotnet packs roots (DOTNET_ROOT, ProgramFiles, dotnet --info, user NuGet)
+            static IEnumerable<string> DetectDotnetPacksRoots()
+            {
+                var results = new List<string>();
+
+                if (Environment.OSVersion.Platform == PlatformID.Unix || 
+                    Environment.OSVersion.Platform == PlatformID.MacOSX)
+                {
+                    results.Add("/usr/local/share/dotnet/packs");
+                }
+                else if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                {
+                    var pf = Environment.GetEnvironmentVariable("ProgramFiles");
+                    if (!string.IsNullOrEmpty(pf))
+                        results.Add(Path.Combine(pf, "dotnet", "packs"));
+
+                    var pf86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
+                    if (!string.IsNullOrEmpty(pf86))
+                        results.Add(Path.Combine(pf86, "dotnet", "packs"));
+                }
+
+                var dotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT") ?? Environment.GetEnvironmentVariable("DOTNET_HOME");
+                if (!string.IsNullOrEmpty(dotnetRoot))
+                {
+                    results.Add(Path.Combine(dotnetRoot, "packs"));
+                }
+
+                return results.Distinct(StringComparer.OrdinalIgnoreCase);
+            }
+
+            var packsRoots = DetectDotnetPacksRoots().ToList();
+
             foreach (var custom in assembly.CustomAttributes)
             {
                 if (custom.AttributeTypeName == "System.Runtime.Versioning.TargetFrameworkAttribute")
@@ -81,17 +113,18 @@ namespace Obfuscar.Helpers
 
                         foreach (var profile in profiles)
                         {
-                            var baseDir = Environment.OSVersion.Platform == PlatformID.Unix || 
-                                          Environment.OSVersion.Platform == PlatformID.MacOSX
-                                ? $"/usr/local/share/dotnet/packs/{profile}"
-                                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "packs", profile);
-
-                            if (Directory.Exists(baseDir))
+                            // Try detected packs roots first, then fall back to traditional ProgramFiles location.
+                            var tried = new List<string>();
+                            foreach (var root in packsRoots)
                             {
-                                yield return Path.Combine(
-                                    FindBestVersionMatch(baseDir, versionStr),
-                                    "ref",
-                                    $"net{versionStr}");
+                                var baseDir = Path.Combine(root, profile);
+                                tried.Add(baseDir);
+                                if (Directory.Exists(baseDir))
+                                {
+                                    yield return Path.Combine(FindBestVersionMatch(baseDir, versionStr), "ref", $"net{versionStr}");
+                                    // yield once per matching root and stop for this profile
+                                    break;
+                                }
                             }
                         }
                     }
@@ -118,13 +151,15 @@ namespace Obfuscar.Helpers
                         else
                         {
                             // For .NET Standard 2.1 and above, check the .NET SDK packs directory
-                            var baseDir = Environment.OSVersion.Platform == PlatformID.Unix || 
-                                                Environment.OSVersion.Platform == PlatformID.MacOSX
-                                    ?  "/usr/local/share/dotnet/packs/NETStandard.Library.Ref"
-                                    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "packs", "NETStandard.Library.Ref");                       
-                            if (Directory.Exists(baseDir))
+                            // Try detected packs roots for NETStandard.Library.Ref
+                            foreach (var root in packsRoots)
                             {
-                                yield return Path.Combine(FindBestVersionMatch(baseDir, versionStr), "ref", $"netstandard{versionStr}");
+                                var baseDir = Path.Combine(root, "NETStandard.Library.Ref");
+                                if (Directory.Exists(baseDir))
+                                {
+                                    yield return Path.Combine(FindBestVersionMatch(baseDir, versionStr), "ref", $"netstandard{versionStr}");
+                                    break;
+                                }
                             }
                         }
                     }
