@@ -127,7 +127,25 @@ namespace Obfuscar.Helpers
                                 }
                             }
                         }
+
+                        // If not found in packs roots, try the user's NuGet package cache (e.g., ~/.nuget/packages/<profile>/../ref/netX.Y)
+                        string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) ?? Environment.GetEnvironmentVariable("HOME");
+                        if (!string.IsNullOrEmpty(homeDir))
+                        {
+                            var nugetPackagePath = Path.Combine(homeDir, ".nuget", "packages", "Microsoft.WindowsDesktop.App.Ref".ToLowerInvariant());
+                            if (Directory.Exists(nugetPackagePath))
+                            {
+                                var bestVersion = FindBestNuGetVersionMatch(nugetPackagePath, versionStr);
+                                if (!string.IsNullOrEmpty(bestVersion))
+                                {
+                                    var candidate = Path.Combine(nugetPackagePath, bestVersion, "ref", $"net{versionStr}");
+                                    if (Directory.Exists(candidate))
+                                        yield return candidate;
+                                }
+                            }
+                        }
                     }
+
                     // Handle .NET Standard
                     else if (framework.StartsWith(".NETStandard,Version="))
                     {

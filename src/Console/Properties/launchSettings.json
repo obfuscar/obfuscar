@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "Obfuscar.Console": {
-      "commandName": "Project",
-      "commandLineArgs": "-v:diag obfuscar.xml",
-      "workingDirectory": "C:\\Users\\Administrator\\source\\repos\\test-console\\bin\\Debug\\net8.0"
-    }
-  }
-}
