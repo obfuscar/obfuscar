@@ -12,6 +12,8 @@ namespace Obfuscar.Metadata.Mutable
     /// </summary>
     public class MutableMethodReference
     {
+        private string _cachedFullName;
+
         /// <summary>
         /// Creates a new method reference.
         /// </summary>
@@ -73,15 +75,27 @@ namespace Obfuscar.Metadata.Mutable
         }
 
         /// <summary>
-        /// Gets the full name of the method.
+        /// Gets the full name of the method. Cached for performance.
         /// </summary>
         public string FullName
         {
             get
             {
+                if (_cachedFullName != null)
+                    return _cachedFullName;
+
                 var paramTypes = string.Join(",", Parameters.ConvertAll(p => p.ParameterType?.FullName ?? "?"));
-                return $"{ReturnType?.FullName ?? "void"} {DeclaringType?.FullName ?? "?"}::{Name}({paramTypes})";
+                _cachedFullName = $"{ReturnType?.FullName ?? "void"} {DeclaringType?.FullName ?? "?"}::{Name}({paramTypes})";
+                return _cachedFullName;
             }
+        }
+
+        /// <summary>
+        /// Invalidates the cached FullName. Call after changing Name, ReturnType, DeclaringType, or Parameters.
+        /// </summary>
+        public void InvalidateFullNameCache()
+        {
+            _cachedFullName = null;
         }
 
         /// <inheritdoc/>

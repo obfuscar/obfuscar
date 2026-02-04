@@ -10,6 +10,8 @@ namespace Obfuscar.Metadata.Mutable
     /// </summary>
     public class MutableTypeReference : IType
     {
+        protected string _cachedFullName;
+
         /// <summary>
         /// Creates a new type reference.
         /// </summary>
@@ -20,25 +22,64 @@ namespace Obfuscar.Metadata.Mutable
             Module = module;
         }
 
+        private string _namespace;
+        private string _name;
+
         /// <summary>
         /// The namespace of the type.
         /// </summary>
-        public string Namespace { get; set; }
+        public string Namespace
+        {
+            get => _namespace;
+            set
+            {
+                if (_namespace != value)
+                {
+                    _namespace = value;
+                    _cachedFullName = null;
+                    OnRenamed();
+                }
+            }
+        }
 
         /// <summary>
         /// The name of the type.
         /// </summary>
-        public string Name { get; set; }
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                if (_name != value)
+                {
+                    _name = value;
+                    _cachedFullName = null;
+                    OnRenamed();
+                }
+            }
+        }
 
         /// <summary>
-        /// The full name of the type (namespace + name).
+        /// Called when the type is renamed (Name or Namespace changed).
+        /// Subclasses can override to update lookup maps, etc.
+        /// </summary>
+        protected virtual void OnRenamed() { }
+
+        /// <summary>
+        /// The full name of the type (namespace + name). Cached for performance.
         /// </summary>
         public virtual string FullName
         {
             get
             {
+                if (_cachedFullName != null)
+                    return _cachedFullName;
+
                 if (DeclaringType == null)
-                    return string.IsNullOrEmpty(Namespace) ? Name : $"{Namespace}.{Name}";
+                {
+                    _cachedFullName = string.IsNullOrEmpty(Namespace) ? Name : $"{Namespace}.{Name}";
+                    return _cachedFullName;
+                }
 
                 var nested = Name;
                 var current = DeclaringType;
@@ -49,13 +90,25 @@ namespace Obfuscar.Metadata.Mutable
                 }
 
                 if (current == null)
-                    return nested;
+                {
+                    _cachedFullName = nested;
+                    return _cachedFullName;
+                }
 
                 var root = string.IsNullOrEmpty(current.Namespace)
                     ? current.Name
                     : $"{current.Namespace}.{current.Name}";
-                return $"{root}/{nested}";
+                _cachedFullName = $"{root}/{nested}";
+                return _cachedFullName;
             }
+        }
+
+        /// <summary>
+        /// Invalidates the cached FullName. Call after changing Name, Namespace, or DeclaringType.
+        /// </summary>
+        public void InvalidateFullNameCache()
+        {
+            _cachedFullName = null;
         }
 
         /// <summary>
@@ -186,8 +239,12 @@ namespace Obfuscar.Metadata.Mutable
         {
             get
             {
-                var args = string.Join(",", GenericArguments);
-                return $"{ElementType.FullName}<{args}>";
+                if (_cachedFullName != null)
+                    return _cachedFullName;
+
+                var args = string.Join(",", GenericArguments.ConvertAll(a => a?.FullName ?? "?"));
+                _cachedFullName = $"{ElementType?.FullName ?? "?"}<{args}>";
+                return _cachedFullName;
             }
         }
     }
@@ -314,6 +371,16 @@ namespace Obfuscar.Metadata.Mutable
         public bool IsRequired { get; }
 
         /// <inheritdoc/>
-        public override string FullName => ElementType.FullName;
+        public override string FullName
+        {
+            get
+            {
+                if (_cachedFullName != null)
+                    return _cachedFullName;
+
+                _cachedFullName = ElementType?.FullName ?? Name;
+                return _cachedFullName;
+            }
+        }
     }
 }

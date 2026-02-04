@@ -45,3 +45,4 @@ T4MVC.cs
 .vs
 /local
 nuget.exe
+Tests/

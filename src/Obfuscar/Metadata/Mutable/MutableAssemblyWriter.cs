@@ -1065,7 +1065,7 @@ namespace Obfuscar.Metadata.Mutable
 
             if (arg.Type.Resolve() is MutableTypeDefinition enumDef && enumDef.IsEnum)
             {
-                var underlyingType = enumDef.Fields.FirstOrDefault(field => field.Name == "value__")?.FieldType;
+                var underlyingType = enumDef.GetFieldByName("value__")?.FieldType;
                 if (underlyingType != null)
                 {
                     WritePrimitiveValue(builder, arg.Value, underlyingType);
@@ -1111,21 +1111,25 @@ namespace Obfuscar.Metadata.Mutable
                 return;
             }
 
-            if (type.FullName == "System.Boolean") builder.WriteByte(0x02);
-            else if (type.FullName == "System.Char") builder.WriteByte(0x03);
-            else if (type.FullName == "System.SByte") builder.WriteByte(0x04);
-            else if (type.FullName == "System.Byte") builder.WriteByte(0x05);
-            else if (type.FullName == "System.Int16") builder.WriteByte(0x06);
-            else if (type.FullName == "System.UInt16") builder.WriteByte(0x07);
-            else if (type.FullName == "System.Int32") builder.WriteByte(0x08);
-            else if (type.FullName == "System.UInt32") builder.WriteByte(0x09);
-            else if (type.FullName == "System.Int64") builder.WriteByte(0x0a);
-            else if (type.FullName == "System.UInt64") builder.WriteByte(0x0b);
-            else if (type.FullName == "System.Single") builder.WriteByte(0x0c);
-            else if (type.FullName == "System.Double") builder.WriteByte(0x0d);
-            else if (type.FullName == "System.String") builder.WriteByte(0x0e);
-            else if (type.FullName == "System.Type") builder.WriteByte(0x50);
-            else builder.WriteByte(0x51); // ELEMENT_TYPE_OBJECT
+            // Use switch for compiler-optimized string comparison
+            switch (type.FullName)
+            {
+                case "System.Boolean": builder.WriteByte(0x02); break;
+                case "System.Char": builder.WriteByte(0x03); break;
+                case "System.SByte": builder.WriteByte(0x04); break;
+                case "System.Byte": builder.WriteByte(0x05); break;
+                case "System.Int16": builder.WriteByte(0x06); break;
+                case "System.UInt16": builder.WriteByte(0x07); break;
+                case "System.Int32": builder.WriteByte(0x08); break;
+                case "System.UInt32": builder.WriteByte(0x09); break;
+                case "System.Int64": builder.WriteByte(0x0a); break;
+                case "System.UInt64": builder.WriteByte(0x0b); break;
+                case "System.Single": builder.WriteByte(0x0c); break;
+                case "System.Double": builder.WriteByte(0x0d); break;
+                case "System.String": builder.WriteByte(0x0e); break;
+                case "System.Type": builder.WriteByte(0x50); break;
+                default: builder.WriteByte(0x51); break; // ELEMENT_TYPE_OBJECT
+            }
         }
 
         private static void WriteSerializedString(BlobBuilder builder, string value)

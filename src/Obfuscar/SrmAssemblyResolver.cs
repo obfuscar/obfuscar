@@ -39,6 +39,10 @@ namespace Obfuscar
         private readonly Dictionary<string, MutableAssemblyDefinition> assemblies =
             new Dictionary<string, MutableAssemblyDefinition>(StringComparer.OrdinalIgnoreCase);
 
+        // Cache of resolved type references to type definitions to avoid repeated lookups
+        private readonly Dictionary<Obfuscar.Metadata.Mutable.MutableTypeReference, Obfuscar.Metadata.Mutable.MutableTypeDefinition> _typeResolveCache
+            = new Dictionary<Obfuscar.Metadata.Mutable.MutableTypeReference, Obfuscar.Metadata.Mutable.MutableTypeDefinition>();
+
         private readonly HashSet<string> searchDirectories =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -248,6 +252,10 @@ namespace Obfuscar
             if (type is MutablePointerType pointerType)
                 return GetTypeDefinition(pointerType.ElementType);
 
+            // Try a quick cache based on the reference instance
+            if (_typeResolveCache.TryGetValue(type, out var cachedDef))
+                return cachedDef;
+
             string scopeName = type.GetScopeName();
             if (string.IsNullOrEmpty(scopeName))
                 return null;
@@ -257,7 +265,10 @@ namespace Obfuscar
                 assembly = Resolve(new MutableAssemblyNameReference(scopeName, new Version(0, 0, 0, 0)));
             }
 
-            return assembly?.MainModule?.GetType(type.FullName);
+            var def = assembly?.MainModule?.GetType(type.FullName);
+            // Cache result (may be null)
+            _typeResolveCache[type] = def;
+            return def;
         }
     }
 }

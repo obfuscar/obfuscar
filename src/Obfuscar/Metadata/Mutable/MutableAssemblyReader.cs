@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
 namespace Obfuscar.Metadata.Mutable
@@ -190,17 +191,17 @@ namespace Obfuscar.Metadata.Mutable
                 type.Module = _module;
                 type.IsValueType = IsValueType(typeDef);
                 type.IsEnum = IsEnum(typeDef);
-                
+
                 _typeDefCache[handle] = type;
-                
+
                 // Add to module or declaring type
                 if (typeDef.IsNested)
                 {
-                    // Will be added to parent in second pass
+                    // Will be added to parent in second pass; defer registering until declaring type is known
                 }
                 else
                 {
-                    _module.Types.Add(type);
+                    _module.RegisterType(type);
                 }
             }
 
@@ -215,6 +216,9 @@ namespace Obfuscar.Metadata.Mutable
                     {
                         nestedType.DeclaringType = declaringType;
                         declaringType.NestedTypes.Add(nestedType);
+
+                        // Ensure nested types are also registered for fast lookup
+                        _module.RegisterType(nestedType);
                     }
                 }
             }
@@ -231,7 +235,8 @@ namespace Obfuscar.Metadata.Mutable
                 foreach (var fieldHandle in typeDef.GetFields())
                 {
                     var field = ReadFieldDefinition(fieldHandle, type);
-                    type.Fields.Add(field);
+                    // Register field into type (adds to list and fast map)
+                    type.RegisterField(field);
                 }
                 
                 // Read methods
@@ -536,17 +541,18 @@ namespace Obfuscar.Metadata.Mutable
             body.Instructions.AddRange(instructions);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private MutableOpCode ReadOpCode(byte[] ilBytes, ref int position)
         {
             byte b = ilBytes[position++];
             if (b == 0xFE)
             {
-                byte b2 = ilBytes[position++];
-                return GetOpCode((short)((b << 8) | b2));
+                return MutableOpCodeLookup.GetTwoByteOpCode(ilBytes[position++]);
             }
-            return GetOpCode(b);
+            return MutableOpCodeLookup.GetSingleByteOpCode(b);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private MutableOpCode GetOpCode(short value)
         {
             // Map opcode value to MutableOpCode
@@ -1401,11 +1407,15 @@ namespace Obfuscar.Metadata.Mutable
     }
 
     /// <summary>
-    /// Opcode lookup table.
+    /// Opcode lookup table optimized for fast single-byte opcode lookup.
     /// </summary>
     internal static class MutableOpCodeLookup
     {
-        private static readonly Dictionary<short, MutableOpCode> _opCodes = new Dictionary<short, MutableOpCode>();
+        // Single-byte opcodes (0x00-0xFF) - direct array indexing for O(1) lookup
+        private static readonly MutableOpCode[] _singleByteOpCodes = new MutableOpCode[256];
+        
+        // Two-byte opcodes (0xFExx) - dictionary for less frequent lookups
+        private static readonly Dictionary<byte, MutableOpCode> _twoByteOpCodes = new Dictionary<byte, MutableOpCode>();
 
         static MutableOpCodeLookup()
         {
@@ -1416,15 +1426,51 @@ namespace Obfuscar.Metadata.Mutable
                 if (field.FieldType == typeof(MutableOpCode))
                 {
                     var opCode = (MutableOpCode)field.GetValue(null);
-                    _opCodes[opCode.Value] = opCode;
+                    short value = opCode.Value;
+                    
+                    if ((value & 0xFF00) == 0xFE00)
+                    {
+                        // Two-byte opcode (0xFE prefix)
+                        _twoByteOpCodes[(byte)(value & 0xFF)] = opCode;
+                    }
+                    else if (value >= 0 && value <= 255)
+                    {
+                        // Single-byte opcode
+                        _singleByteOpCodes[value] = opCode;
+                    }
                 }
             }
         }
 
+        /// <summary>
+        /// Fast lookup for single-byte opcodes (0x00-0xFF).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static MutableOpCode GetSingleByteOpCode(byte value)
+        {
+            var opCode = _singleByteOpCodes[value];
+            return opCode.Name != null ? opCode : MutableOpCodes.Nop;
+        }
+
+        /// <summary>
+        /// Lookup for two-byte opcodes (0xFExx).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static MutableOpCode GetTwoByteOpCode(byte secondByte)
+        {
+            return _twoByteOpCodes.TryGetValue(secondByte, out var opCode) ? opCode : MutableOpCodes.Nop;
+        }
+
+        /// <summary>
+        /// General lookup (for compatibility).
+        /// </summary>
         public static MutableOpCode GetOpCode(short value)
         {
-            if (_opCodes.TryGetValue(value, out var opCode))
-                return opCode;
+            if ((value & 0xFF00) == 0xFE00)
+                return GetTwoByteOpCode((byte)(value & 0xFF));
+            
+            if (value >= 0 && value <= 255)
+                return GetSingleByteOpCode((byte)value);
             
             return MutableOpCodes.Nop; // Fallback
         }

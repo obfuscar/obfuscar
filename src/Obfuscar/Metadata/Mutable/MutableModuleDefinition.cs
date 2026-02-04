@@ -12,6 +12,8 @@ namespace Obfuscar.Metadata.Mutable
         /// <summary>
         /// Creates a new module definition.
         /// </summary>
+        private readonly Dictionary<string, MutableTypeDefinition> _typeMap = new Dictionary<string, MutableTypeDefinition>(StringComparer.Ordinal);
+
         public MutableModuleDefinition(string name, MutableModuleKind kind)
         {
             Name = name;
@@ -115,6 +117,13 @@ namespace Obfuscar.Metadata.Mutable
         /// </summary>
         public MutableTypeDefinition GetType(string fullName)
         {
+            if (string.IsNullOrEmpty(fullName))
+                return null;
+
+            if (_typeMap.TryGetValue(fullName, out var cached))
+                return cached;
+
+            // Fallback to slow search for compatibility
             foreach (var type in Types)
             {
                 if (type.FullName == fullName)
@@ -124,6 +133,26 @@ namespace Obfuscar.Metadata.Mutable
                     return nested;
             }
             return null;
+        }
+
+        /// <summary>
+        /// Registers a type into the module's fast lookup map. Top-level types
+        /// should be added via this method instead of manipulating `Types` directly.
+        /// </summary>
+        public void RegisterType(MutableTypeDefinition type)
+        {
+            if (type == null)
+                return;
+
+            // Ensure top-level types are present in Types collection
+            if (type.DeclaringType == null)
+            {
+                if (!Types.Contains(type))
+                    Types.Add(type);
+            }
+
+            // Update lookup map (overwrite any previous entry)
+            _typeMap[type.FullName] = type;
         }
 
         private MutableTypeDefinition FindNestedType(MutableTypeDefinition parent, string fullName)

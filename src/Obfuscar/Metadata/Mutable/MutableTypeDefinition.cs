@@ -31,6 +31,14 @@ namespace Obfuscar.Metadata.Mutable
         }
 
         /// <summary>
+        /// Called when the type is renamed. Re-registers the type in the module's lookup map.
+        /// </summary>
+        protected override void OnRenamed()
+        {
+            Module?.RegisterType(this);
+        }
+
+        /// <summary>
         /// The type attributes (visibility, sealed, abstract, etc.).
         /// </summary>
         public TypeAttributes Attributes { get; set; }
@@ -56,6 +64,49 @@ namespace Obfuscar.Metadata.Mutable
         /// The fields defined in this type.
         /// </summary>
         public List<MutableFieldDefinition> Fields { get; }
+
+        private Dictionary<string, MutableFieldDefinition> _fieldsByName;
+
+        /// <summary>
+        /// Gets a field by name using a fast lookup.
+        /// </summary>
+        public MutableFieldDefinition GetFieldByName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return null;
+
+            if (_fieldsByName != null && _fieldsByName.TryGetValue(name, out var f))
+                return f;
+
+            // Lazy-build map
+            if (_fieldsByName == null)
+            {
+                _fieldsByName = new Dictionary<string, MutableFieldDefinition>();
+                foreach (var field in Fields)
+                {
+                    if (field != null && field.Name != null && !_fieldsByName.ContainsKey(field.Name))
+                        _fieldsByName[field.Name] = field;
+                }
+            }
+
+            _fieldsByName.TryGetValue(name, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Register a field for fast lookup (called by reader when adding fields).
+        /// </summary>
+        public void RegisterField(MutableFieldDefinition field)
+        {
+            if (field == null)
+                return;
+
+            Fields.Add(field);
+            if (_fieldsByName != null && field.Name != null)
+            {
+                _fieldsByName[field.Name] = field;
+            }
+        }
 
         /// <summary>
         /// The methods defined in this type.

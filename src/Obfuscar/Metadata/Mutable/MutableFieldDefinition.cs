@@ -10,6 +10,8 @@ namespace Obfuscar.Metadata.Mutable
     /// </summary>
     public class MutableFieldReference : IField
     {
+        private string _cachedFullName;
+
         /// <summary>
         /// Creates a new field reference.
         /// </summary>
@@ -44,9 +46,27 @@ namespace Obfuscar.Metadata.Mutable
         }
 
         /// <summary>
-        /// Gets the full name of the field.
+        /// Gets the full name of the field. Cached for performance.
         /// </summary>
-        public string FullName => $"{FieldType?.FullName ?? "?"} {DeclaringType?.FullName ?? "?"}::{Name}";
+        public string FullName
+        {
+            get
+            {
+                if (_cachedFullName != null)
+                    return _cachedFullName;
+
+                _cachedFullName = $"{FieldType?.FullName ?? "?"} {DeclaringType?.FullName ?? "?"}::{Name}";
+                return _cachedFullName;
+            }
+        }
+
+        /// <summary>
+        /// Invalidates the cached FullName. Call after changing Name, FieldType, or DeclaringType.
+        /// </summary>
+        public void InvalidateFullNameCache()
+        {
+            _cachedFullName = null;
+        }
 
         public string FieldTypeFullName => FieldType?.FullName ?? string.Empty;
 
