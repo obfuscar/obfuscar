@@ -34,6 +34,7 @@ namespace Obfuscar.Metadata.Mutable
         private Dictionary<GenericParameterHandle, MutableGenericParameter> _genericParameterCache;
         private Dictionary<TypeReferenceHandle, MutableTypeReference> _typeRefCache;
         private Dictionary<MemberReferenceHandle, object> _memberRefCache;
+        private Dictionary<MethodDefinitionHandle, MutableMethodReference> _methodDefRefCache;
         private Dictionary<MethodSpecificationHandle, MutableMethodReference> _methodSpecCache;
         private Dictionary<AssemblyReferenceHandle, MutableAssemblyNameReference> _asmRefCache;
         private TypeProvider _typeProvider;
@@ -100,6 +101,7 @@ namespace Obfuscar.Metadata.Mutable
             _genericParameterCache = new Dictionary<GenericParameterHandle, MutableGenericParameter>();
             _typeRefCache = new Dictionary<TypeReferenceHandle, MutableTypeReference>();
             _memberRefCache = new Dictionary<MemberReferenceHandle, object>();
+            _methodDefRefCache = new Dictionary<MethodDefinitionHandle, MutableMethodReference>();
             _methodSpecCache = new Dictionary<MethodSpecificationHandle, MutableMethodReference>();
             _asmRefCache = new Dictionary<AssemblyReferenceHandle, MutableAssemblyNameReference>();
             _typeProvider = null;
@@ -772,9 +774,7 @@ namespace Obfuscar.Metadata.Mutable
             var handle = MetadataTokens.EntityHandle(token);
             if (handle.Kind == HandleKind.MethodDefinition)
             {
-                var methodHandle = (MethodDefinitionHandle)handle;
-                if (_methodDefCache.TryGetValue(methodHandle, out var method))
-                    return method;
+                return ResolveMethodDefinitionReference((MethodDefinitionHandle)handle);
             }
             else if (handle.Kind == HandleKind.MemberReference)
             {
@@ -857,8 +857,7 @@ namespace Obfuscar.Metadata.Mutable
         {
             if (handle.Kind == HandleKind.MethodDefinition)
             {
-                if (_methodDefCache.TryGetValue((MethodDefinitionHandle)handle, out var method))
-                    return method;
+                return ResolveMethodDefinitionReference((MethodDefinitionHandle)handle);
             }
             else if (handle.Kind == HandleKind.MemberReference)
             {
@@ -866,6 +865,27 @@ namespace Obfuscar.Metadata.Mutable
             }
 
             return null;
+        }
+
+        private MutableMethodReference ResolveMethodDefinitionReference(MethodDefinitionHandle handle)
+        {
+            if (_methodDefCache.TryGetValue(handle, out var method))
+                return method;
+
+            if (_methodDefRefCache.TryGetValue(handle, out var cached))
+                return cached;
+
+            var methodDef = _metadataReader.GetMethodDefinition(handle);
+            var declaringType = ReadTypeReference(methodDef.GetDeclaringType());
+            var methodName = _metadataReader.GetString(methodDef.Name);
+            var tempOwner = new MutableMethodReference(methodName, null, declaringType);
+            var signature = methodDef.DecodeSignature(GetTypeProvider(), new GenericContext(declaringType, tempOwner));
+            var methodRef = CreateMethodReference(methodName, signature, declaringType);
+            if (methodRef != null)
+            {
+                _methodDefRefCache[handle] = methodRef;
+            }
+            return methodRef;
         }
 
         private object ResolveMemberReference(MemberReferenceHandle handle)

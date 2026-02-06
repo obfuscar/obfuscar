@@ -1517,19 +1517,144 @@ namespace Obfuscar.Metadata.Mutable
             }
 
             // Create TypeRef
-            EntityHandle resolutionScope = default;
-            if (type.Scope is MutableAssemblyNameReference asmRef && _asmRefHandles.TryGetValue(asmRef, out var asmHandle))
+            EntityHandle resolutionScope = GetResolutionScopeHandle(type);
+            var typeNamespace = type.Namespace ?? string.Empty;
+            if (type.DeclaringType != null)
             {
-                resolutionScope = asmHandle;
+                // Nested type references are scoped by declaring type, not namespace.
+                resolutionScope = GetTypeHandle(type.DeclaringType);
+                typeNamespace = string.Empty;
             }
 
             var refHandle = _metadata.AddTypeReference(
                 resolutionScope,
-                _metadata.GetOrAddString(type.Namespace ?? ""),
+                _metadata.GetOrAddString(typeNamespace),
                 _metadata.GetOrAddString(type.Name));
             
             _typeRefHandles[type] = refHandle;
             return refHandle;
+        }
+
+        private EntityHandle GetResolutionScopeHandle(MutableTypeReference type)
+        {
+            if (type?.Scope is MutableAssemblyNameReference asmRef &&
+                TryGetOrAddAssemblyReference(asmRef.Name, asmRef.Version, asmRef.Culture, asmRef.PublicKeyToken, asmRef.Attributes, out var asmHandle))
+            {
+                return asmHandle;
+            }
+
+            if (type?.Scope is MutableAssemblyNameDefinition asmDef &&
+                TryGetOrAddAssemblyReference(asmDef.Name, asmDef.Version, asmDef.Culture, asmDef.PublicKeyToken, asmDef.Attributes, out var asmDefHandle))
+            {
+                return asmDefHandle;
+            }
+
+            if (type?.Scope is MutableModuleDefinition scopeModule)
+            {
+                if (ReferenceEquals(scopeModule, _assembly.MainModule))
+                    return _moduleDefHandle;
+
+                if (scopeModule.Assembly?.Name != null &&
+                    TryGetOrAddAssemblyReference(
+                        scopeModule.Assembly.Name.Name,
+                        scopeModule.Assembly.Name.Version,
+                        scopeModule.Assembly.Name.Culture,
+                        scopeModule.Assembly.Name.PublicKeyToken,
+                        scopeModule.Assembly.Name.Attributes,
+                        out var scopeAsmHandle))
+                {
+                    return scopeAsmHandle;
+                }
+            }
+
+            if (type?.Module != null)
+            {
+                if (ReferenceEquals(type.Module, _assembly.MainModule))
+                    return _moduleDefHandle;
+
+                if (type.Module.Assembly?.Name != null &&
+                    TryGetOrAddAssemblyReference(
+                        type.Module.Assembly.Name.Name,
+                        type.Module.Assembly.Name.Version,
+                        type.Module.Assembly.Name.Culture,
+                        type.Module.Assembly.Name.PublicKeyToken,
+                        type.Module.Assembly.Name.Attributes,
+                        out var moduleAsmHandle))
+                {
+                    return moduleAsmHandle;
+                }
+            }
+
+            return default;
+        }
+
+        private bool TryGetOrAddAssemblyReference(
+            string name,
+            Version version,
+            string culture,
+            byte[] publicKeyToken,
+            AssemblyNameFlags attributes,
+            out AssemblyReferenceHandle handle)
+        {
+            foreach (var pair in _asmRefHandles)
+            {
+                var existing = pair.Key;
+                if (!string.Equals(existing.Name, name, StringComparison.Ordinal))
+                    continue;
+                if (!Equals(existing.Version, version))
+                    continue;
+                if (!string.Equals(existing.Culture ?? string.Empty, culture ?? string.Empty, StringComparison.Ordinal))
+                    continue;
+                if (existing.Attributes != attributes)
+                    continue;
+                if (!ByteArraysEqual(existing.PublicKeyToken, publicKeyToken))
+                    continue;
+
+                handle = pair.Value;
+                return true;
+            }
+
+            if (string.IsNullOrEmpty(name))
+            {
+                handle = default;
+                return false;
+            }
+
+            var added = _metadata.AddAssemblyReference(
+                _metadata.GetOrAddString(name),
+                version,
+                _metadata.GetOrAddString(culture ?? string.Empty),
+                publicKeyToken != null && publicKeyToken.Length > 0
+                    ? _metadata.GetOrAddBlob(publicKeyToken)
+                    : default,
+                (AssemblyFlags)attributes,
+                default);
+
+            var synthetic = new MutableAssemblyNameReference(name, version)
+            {
+                Culture = culture,
+                PublicKeyToken = publicKeyToken,
+                Attributes = attributes
+            };
+            _asmRefHandles[synthetic] = added;
+            handle = added;
+            return true;
+        }
+
+        private static bool ByteArraysEqual(byte[] left, byte[] right)
+        {
+            if (ReferenceEquals(left, right))
+                return true;
+            if (left == null || right == null || left.Length != right.Length)
+                return false;
+
+            for (int i = 0; i < left.Length; i++)
+            {
+                if (left[i] != right[i])
+                    return false;
+            }
+
+            return true;
         }
 
         private EntityHandle GetMethodHandle(MutableMethodReference method)
