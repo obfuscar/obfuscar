@@ -25,7 +25,6 @@
 #endregion
 
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Obfuscar
 {
@@ -37,7 +36,6 @@ namespace Obfuscar
             const string AppDescription = "Obfuscar is a basic obfuscator for .NET assemblies";
             const string AppCopyright = "(C) 2007-2026, Ryan Williams and other contributors.";
 
-            ObfuscarCommandLine.ConfigureLogging(LogLevel.Information);
             return ObfuscarCommandLine.RunAsync(args, AppName, AppDescription, AppCopyright);
         }
     }

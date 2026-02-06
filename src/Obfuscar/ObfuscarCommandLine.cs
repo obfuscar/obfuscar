@@ -49,9 +49,16 @@ namespace Obfuscar
     /// </summary>
     public class ObfuscarLoggerProvider : ILoggerProvider
     {
+        private readonly LogLevel _minimumLevel;
+
+        public ObfuscarLoggerProvider(LogLevel minimumLevel = LogLevel.Information)
+        {
+            _minimumLevel = minimumLevel;
+        }
+
         public ILogger CreateLogger(string categoryName)
         {
-            return new ObfuscarConsoleLogger(categoryName);
+            return new ObfuscarConsoleLogger(categoryName, _minimumLevel);
         }
 
         public void Dispose()
@@ -66,10 +73,12 @@ namespace Obfuscar
     public class ObfuscarConsoleLogger : ILogger
     {
         private readonly string _categoryName;
+        private readonly LogLevel _minimumLevel;
 
-        public ObfuscarConsoleLogger(string categoryName)
+        public ObfuscarConsoleLogger(string categoryName, LogLevel minimumLevel = LogLevel.Information)
         {
             _categoryName = categoryName;
+            _minimumLevel = minimumLevel;
         }
 
         public IDisposable BeginScope<TState>(TState state)
@@ -79,7 +88,7 @@ namespace Obfuscar
 
         public bool IsEnabled(LogLevel logLevel)
         {
-            return logLevel != LogLevel.None;
+            return logLevel != LogLevel.None && logLevel >= _minimumLevel;
         }
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
@@ -286,16 +295,8 @@ namespace Obfuscar
         /// </summary>
         public static ILogger ConfigureLogging(LogLevel logLevel)
         {
-            // Configure logging based on verbosity level
-            ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
-            {
-                builder
-                    .SetMinimumLevel(logLevel)
-                    .AddProvider(new ObfuscarLoggerProvider());
-            });
-
-            // Create logger for the Program class
-            ILogger logger = loggerFactory.CreateLogger("Obfuscar");
+            // Use a lightweight direct logger to avoid LoggerFactory startup overhead.
+            ILogger logger = new ObfuscarConsoleLogger("Obfuscar", logLevel);
 
             // Set the global logger for the Obfuscar library
             LoggerService.SetLogger(logger);
