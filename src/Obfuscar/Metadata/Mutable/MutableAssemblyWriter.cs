@@ -584,7 +584,7 @@ namespace Obfuscar.Metadata.Mutable
                     break;
                     
                 case MutableOperandType.ShortInlineR:
-                    WriteInt32(bytes, BitConverter.SingleToInt32Bits(instruction.Operand is float f ? f : 0f));
+                    WriteInt32(bytes, SingleToInt32Bits(instruction.Operand is float f ? f : 0f));
                     break;
                     
                 case MutableOperandType.InlineR:
@@ -737,6 +737,15 @@ namespace Obfuscar.Metadata.Mutable
                 bytes.Add((byte)(value >> 48));
                 bytes.Add((byte)(value >> 56));
             }
+        }
+
+        private static int SingleToInt32Bits(float value)
+        {
+#if NETFRAMEWORK
+            return BitConverter.ToInt32(BitConverter.GetBytes(value), 0);
+#else
+            return BitConverter.SingleToInt32Bits(value);
+#endif
         }
 
         private void WritePropertyDefinition(MutablePropertyDefinition prop)
