@@ -29,6 +29,7 @@
     <Compile Include="CustomAttributeTests.cs" />
     <Compile Include="CustomAttributeNamedArgumentTests.cs" />
     <Compile Include="CustomAttributeWithArgTests.cs" />
+    <Compile Include="ConstructorParameterObjectAttributeTests.cs" />
     <Compile Include="DependencyTests.cs" />
     <Compile Include="DockPanelSuiteTests.cs" />
     <Compile Include="ExplicitGenericInterfaceOutOverloadTests.cs" />

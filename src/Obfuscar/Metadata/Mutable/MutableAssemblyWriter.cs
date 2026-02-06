@@ -1001,7 +1001,7 @@ namespace Obfuscar.Metadata.Mutable
             var builder = new BlobBuilder();
 
             WriteCustomAttributeProlog(builder);
-            WriteCustomAttributeFixedArguments(builder, attr.ConstructorArguments);
+            WriteCustomAttributeFixedArguments(builder, attr.Constructor, attr.ConstructorArguments);
             WriteCustomAttributeNamedArguments(builder, attr.Fields, attr.Properties);
 
             return _metadata.GetOrAddBlob(builder);
@@ -1012,11 +1012,25 @@ namespace Obfuscar.Metadata.Mutable
             builder.WriteUInt16(0x0001);
         }
 
-        private void WriteCustomAttributeFixedArguments(BlobBuilder builder, IEnumerable<MutableCustomAttributeArgument> args)
+        private void WriteCustomAttributeFixedArguments(
+            BlobBuilder builder,
+            MutableMethodReference constructor,
+            IReadOnlyList<MutableCustomAttributeArgument> args)
         {
-            foreach (var arg in args)
+            for (int i = 0; i < args.Count; i++)
             {
-                EncodeCustomAttributeArgument(builder, arg);
+                MutableCustomAttributeArgument argument = args[i];
+                MutableTypeReference expectedType = i < constructor.Parameters.Count
+                    ? constructor.Parameters[i].ParameterType
+                    : argument?.Type;
+
+                if (expectedType?.FullName == "System.Object")
+                {
+                    WriteBoxedCustomAttributeArgument(builder, argument?.Value);
+                    continue;
+                }
+
+                EncodeCustomAttributeArgument(builder, argument);
             }
         }
 
@@ -1072,6 +1086,12 @@ namespace Obfuscar.Metadata.Mutable
                 return;
             }
 
+            if (arg.Type.FullName == "System.Object")
+            {
+                WriteBoxedCustomAttributeArgument(builder, arg.Value);
+                return;
+            }
+
             if (arg.Type.FullName == "System.Type")
             {
                 var typeRef = arg.Value as MutableTypeReference;
@@ -1111,6 +1131,53 @@ namespace Obfuscar.Metadata.Mutable
             }
 
             builder.WriteInt32(0);
+        }
+
+        private void WriteBoxedCustomAttributeArgument(BlobBuilder builder, object value)
+        {
+            if (value == null)
+            {
+                // Null boxed object (for ELEMENT_TYPE_OBJECT) is encoded as 0xFF.
+                builder.WriteByte(0xFF);
+                return;
+            }
+
+            if (value is MutableCustomAttributeArgument nestedArgument)
+            {
+                EncodeCustomAttributeFieldOrPropType(builder, nestedArgument);
+                EncodeCustomAttributeArgument(builder, nestedArgument);
+                return;
+            }
+
+            if (value is string stringValue)
+            {
+                builder.WriteByte(0x0e); // ELEMENT_TYPE_STRING
+                WriteSerializedString(builder, stringValue);
+                return;
+            }
+
+            if (value is MutableTypeReference typeReference)
+            {
+                builder.WriteByte(0x50); // ELEMENT_TYPE_TYPE
+                WriteSerializedString(builder, GetCustomAttributeTypeName(typeReference));
+                return;
+            }
+
+            if (value is Type runtimeType)
+            {
+                builder.WriteByte(0x50); // ELEMENT_TYPE_TYPE
+                WriteSerializedString(builder, runtimeType.AssemblyQualifiedName ?? runtimeType.FullName);
+                return;
+            }
+
+            if (TryWritePrimitiveTypeFromObject(builder, value))
+            {
+                TryWritePrimitiveValueFromObject(builder, value);
+                return;
+            }
+
+            // Preserve metadata validity when encountering unsupported boxed object payloads.
+            builder.WriteByte(0xFF);
         }
 
         private void EncodeCustomAttributeFieldOrPropType(BlobBuilder builder, MutableCustomAttributeArgument argument)
