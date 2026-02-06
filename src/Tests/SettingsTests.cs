@@ -211,5 +211,34 @@ namespace ObfuscarTests
 
             Assert.Contains("Variable substitution via $(...)", ex.Message);
         }
+
+        [Fact]
+        public void SkipSpecialNameDefaultsToFalse()
+        {
+            string tempRoot = Path.GetTempPath();
+            string tempOut = Path.Combine(tempRoot, "obfuscar-tests");
+            var xml = @"<?xml version='1.0'?><Obfuscator>" +
+                      $@"<Var name='InPath' value='{tempRoot}' />" +
+                      $@"<Var name='OutPath' value='{tempOut}' />" +
+                      @"</Obfuscator>";
+
+            var project = Project.FromXml(XDocument.Parse(xml), Directory.GetCurrentDirectory());
+            Assert.False(project.Settings.SkipSpecialName);
+        }
+
+        [Fact]
+        public void SkipSpecialNameCanBeEnabled()
+        {
+            string tempRoot = Path.GetTempPath();
+            string tempOut = Path.Combine(tempRoot, "obfuscar-tests");
+            var xml = @"<?xml version='1.0'?><Obfuscator>" +
+                      $@"<Var name='InPath' value='{tempRoot}' />" +
+                      $@"<Var name='OutPath' value='{tempOut}' />" +
+                      @"<Var name='SkipSpecialName' value='true' />" +
+                      @"</Obfuscator>";
+
+            var project = Project.FromXml(XDocument.Parse(xml), Directory.GetCurrentDirectory());
+            Assert.True(project.Settings.SkipSpecialName);
+        }
     }
 }

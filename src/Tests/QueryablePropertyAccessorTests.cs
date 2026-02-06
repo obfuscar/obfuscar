@@ -21,9 +21,10 @@ namespace ObfuscarTests
             return (int)execute.Invoke(null, Array.Empty<object>());
         }
 
-        private static Obfuscator BuildAndObfuscate(bool skipGenerated = true)
+        private static Obfuscator BuildAndObfuscate(bool skipGenerated = true, bool skipSpecialName = false)
         {
             string skipGeneratedValue = skipGenerated ? "true" : "false";
+            string skipSpecialNameValue = skipSpecialName ? "true" : "false";
 
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
@@ -31,13 +32,15 @@ namespace ObfuscarTests
                 @"<Var name='InPath' value='{0}' />" +
                 @"<Var name='OutPath' value='{1}' />" +
                 @"<Var name='SkipGenerated' value='{3}' />" +
+                @"<Var name='SkipSpecialName' value='{4}' />" +
                 @"<Var name='HideStrings' value='false' />" +
                 @"<Module file='$(InPath){2}" + AssemblyName + @".dll' />" +
                 @"</Obfuscator>",
                 TestHelper.InputPath,
                 TestHelper.OutputPath,
                 Path.DirectorySeparatorChar,
-                skipGeneratedValue);
+                skipGeneratedValue,
+                skipSpecialNameValue);
 
             return TestHelper.BuildAndObfuscate(AssemblyName, string.Empty, xml);
         }
@@ -101,13 +104,14 @@ namespace ObfuscarTests
         }
 
         [Fact]
-        public void CheckQueryablePropertyAccessorRunsAfterObfuscationWithoutSkipGenerated()
+        public void CheckQueryablePropertyAccessorAfterObfuscationReproducesIssue579WithoutSkipGenerated()
         {
             Obfuscator item = BuildAndObfuscate(skipGenerated: false);
             string outputPath = Path.Combine(item.Project.Settings.OutPath, AssemblyName + ".dll");
 
-            int output = InvokeExecute(outputPath);
-            Assert.Equal(0, output);
+            var ex = Assert.Throws<TargetInvocationException>(() => InvokeExecute(outputPath));
+            var argumentException = Assert.IsType<ArgumentException>(ex.InnerException);
+            Assert.Contains("not a property accessor", argumentException.Message, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
@@ -151,7 +155,7 @@ namespace ObfuscarTests
         [Fact]
         public void CheckQueryablePropertyAccessorSpecialNameMethodsAreSkippedWithoutSkipGenerated()
         {
-            Obfuscator item = BuildAndObfuscate(skipGenerated: false);
+            Obfuscator item = BuildAndObfuscate(skipGenerated: false, skipSpecialName: true);
             ObfuscationMap map = item.Mapping;
 
             string inputPath = Path.Combine(TestHelper.InputPath, AssemblyName + ".dll");
@@ -170,6 +174,16 @@ namespace ObfuscarTests
 
             Assert.Equal(ObfuscationStatus.Skipped, getterEntry.Status);
             Assert.Equal(ObfuscationStatus.Skipped, setterEntry.Status);
+        }
+
+        [Fact]
+        public void CheckQueryablePropertyAccessorRunsAfterObfuscationWithSkipSpecialName()
+        {
+            Obfuscator item = BuildAndObfuscate(skipGenerated: false, skipSpecialName: true);
+            string outputPath = Path.Combine(item.Project.Settings.OutPath, AssemblyName + ".dll");
+
+            int output = InvokeExecute(outputPath);
+            Assert.Equal(0, output);
         }
     }
 }

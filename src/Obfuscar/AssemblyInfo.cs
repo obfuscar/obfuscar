@@ -1024,11 +1024,6 @@ namespace Obfuscar
                    HasCompilerGeneratedAttribute(method?.Method?.CustomAttributes);
         }
 
-        private static bool IsCompilerGeneratedMethodOnly(MethodKey method)
-        {
-            return HasCompilerGeneratedAttribute(method?.Method?.CustomAttributes);
-        }
-
         private static bool IsCompilerGenerated(FieldKey field)
         {
             return IsCompilerGenerated(field?.TypeKey) ||
@@ -1133,12 +1128,9 @@ namespace Obfuscar
 
             if (method.Method.IsSpecialName)
             {
-                // Even when SkipGenerated=false, keep compiler-generated special-name methods
-                // (e.g., auto-property accessors) unchanged to avoid breaking metadata-based
-                // reflection/expression consumers that expect accessor semantics.
-                if (IsCompilerGeneratedMethodOnly(method))
+                if (project.Settings.SkipSpecialName)
                 {
-                    message = "compiler generated special name";
+                    message = "special name rule in configuration";
                     return true;
                 }
 
@@ -1284,6 +1276,13 @@ namespace Obfuscar
                 return true;
             }
 
+            if (project.Settings.SkipSpecialName &&
+                (fieldAttributes & System.Reflection.FieldAttributes.SpecialName) != 0)
+            {
+                message = "special name rule in configuration";
+                return true;
+            }
+
             if (markedOnly)
             {
                 message = "MarkedOnly option in configuration";
@@ -1338,6 +1337,18 @@ namespace Obfuscar
             {
                 message = "runtime special name";
                 return true;
+            }
+
+            if (project.Settings.SkipSpecialName && prop.Property != null)
+            {
+                bool hasSpecialNameAccessor =
+                    (prop.Property.GetMethod?.IsSpecialName ?? false) ||
+                    (prop.Property.SetMethod?.IsSpecialName ?? false);
+                if (hasSpecialNameAccessor)
+                {
+                    message = "special name rule in configuration";
+                    return true;
+                }
             }
 
             bool? attribute = prop.Property?.MarkedToRename();
@@ -1422,6 +1433,19 @@ namespace Obfuscar
             {
                 message = "runtime special name";
                 return true;
+            }
+
+            if (project.Settings.SkipSpecialName && evt.Event != null)
+            {
+                bool hasSpecialNameAccessor =
+                    (evt.Event.AddMethod?.IsSpecialName ?? false) ||
+                    (evt.Event.RemoveMethod?.IsSpecialName ?? false) ||
+                    (evt.Event.InvokeMethod?.IsSpecialName ?? false);
+                if (hasSpecialNameAccessor)
+                {
+                    message = "special name rule in configuration";
+                    return true;
+                }
             }
 
             bool? attribute = evt.Event?.MarkedToRename();

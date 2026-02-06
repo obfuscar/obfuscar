@@ -77,6 +77,7 @@ namespace Obfuscar
             RegenerateDebugInfo = XmlConvert.ToBoolean(vars.GetValue("RegenerateDebugInfo", "false"));
             AnalyzeXaml = XmlConvert.ToBoolean(vars.GetValue("AnalyzeXaml", "false"));
             SkipGenerated = XmlConvert.ToBoolean(vars.GetValue("SkipGenerated", "false"));
+            SkipSpecialName = XmlConvert.ToBoolean(vars.GetValue("SkipSpecialName", "false"));
             CustomChars = vars.GetValue("CustomChars", "");
         }
 
@@ -119,6 +120,8 @@ namespace Obfuscar
         public bool AnalyzeXaml { get; }
 
         public bool SkipGenerated { get; }
+
+        public bool SkipSpecialName { get; }
 
         public string CustomChars { get; }
     }
