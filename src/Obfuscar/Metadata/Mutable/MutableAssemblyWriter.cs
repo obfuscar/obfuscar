@@ -584,13 +584,11 @@ namespace Obfuscar.Metadata.Mutable
                     break;
                     
                 case MutableOperandType.ShortInlineR:
-                    var floatBytes = BitConverter.GetBytes(instruction.Operand is float f ? f : 0f);
-                    bytes.AddRange(floatBytes);
+                    WriteInt32(bytes, BitConverter.SingleToInt32Bits(instruction.Operand is float f ? f : 0f));
                     break;
                     
                 case MutableOperandType.InlineR:
-                    var doubleBytes = BitConverter.GetBytes(instruction.Operand is double d ? d : 0d);
-                    bytes.AddRange(doubleBytes);
+                    WriteInt64(bytes, BitConverter.DoubleToInt64Bits(instruction.Operand is double d ? d : 0d));
                     break;
                     
                 case MutableOperandType.InlineString:
@@ -706,19 +704,39 @@ namespace Obfuscar.Metadata.Mutable
             }
         }
 
-        private void WriteInt16(List<byte> bytes, short value)
+        private static void WriteInt16(List<byte> bytes, short value)
         {
-            bytes.AddRange(BitConverter.GetBytes(value));
+            unchecked
+            {
+                bytes.Add((byte)value);
+                bytes.Add((byte)(value >> 8));
+            }
         }
 
-        private void WriteInt32(List<byte> bytes, int value)
+        private static void WriteInt32(List<byte> bytes, int value)
         {
-            bytes.AddRange(BitConverter.GetBytes(value));
+            unchecked
+            {
+                bytes.Add((byte)value);
+                bytes.Add((byte)(value >> 8));
+                bytes.Add((byte)(value >> 16));
+                bytes.Add((byte)(value >> 24));
+            }
         }
 
-        private void WriteInt64(List<byte> bytes, long value)
+        private static void WriteInt64(List<byte> bytes, long value)
         {
-            bytes.AddRange(BitConverter.GetBytes(value));
+            unchecked
+            {
+                bytes.Add((byte)value);
+                bytes.Add((byte)(value >> 8));
+                bytes.Add((byte)(value >> 16));
+                bytes.Add((byte)(value >> 24));
+                bytes.Add((byte)(value >> 32));
+                bytes.Add((byte)(value >> 40));
+                bytes.Add((byte)(value >> 48));
+                bytes.Add((byte)(value >> 56));
+            }
         }
 
         private void WritePropertyDefinition(MutablePropertyDefinition prop)

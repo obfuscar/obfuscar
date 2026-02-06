@@ -222,6 +222,16 @@ namespace Obfuscar.Metadata.Mutable
         }
 
         /// <summary>
+        /// Creates a new generic instance type with preallocated argument capacity.
+        /// </summary>
+        public MutableGenericInstanceType(MutableTypeReference elementType, int argumentCapacity)
+            : base(elementType.Namespace, elementType.Name, elementType.Module)
+        {
+            ElementType = elementType;
+            GenericArguments = new System.Collections.Generic.List<MutableTypeReference>(argumentCapacity > 0 ? argumentCapacity : 0);
+        }
+
+        /// <summary>
         /// The element type (the generic type definition).
         /// </summary>
         public MutableTypeReference ElementType { get; }

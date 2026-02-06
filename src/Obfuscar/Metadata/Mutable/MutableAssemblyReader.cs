@@ -35,6 +35,7 @@ namespace Obfuscar.Metadata.Mutable
         private Dictionary<MemberReferenceHandle, object> _memberRefCache;
         private Dictionary<MethodSpecificationHandle, MutableMethodReference> _methodSpecCache;
         private Dictionary<AssemblyReferenceHandle, MutableAssemblyNameReference> _asmRefCache;
+        private TypeProvider _typeProvider;
 
         /// <summary>
         /// Reads an assembly from the specified file path.
@@ -99,6 +100,13 @@ namespace Obfuscar.Metadata.Mutable
             _memberRefCache = new Dictionary<MemberReferenceHandle, object>();
             _methodSpecCache = new Dictionary<MethodSpecificationHandle, MutableMethodReference>();
             _asmRefCache = new Dictionary<AssemblyReferenceHandle, MutableAssemblyNameReference>();
+            _typeProvider = null;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private TypeProvider GetTypeProvider()
+        {
+            return _typeProvider ??= new TypeProvider(_module, _metadataReader, _asmRefCache);
         }
 
         private MutableAssemblyDefinition ReadAssemblyDefinition()
@@ -307,7 +315,7 @@ namespace Obfuscar.Metadata.Mutable
             var name = _metadataReader.GetString(fieldDef.Name);
             
             // Decode field type from signature
-            var signature = fieldDef.DecodeSignature(new TypeProvider(_module, _metadataReader, _asmRefCache), null);
+            var signature = fieldDef.DecodeSignature(GetTypeProvider(), null);
             
             var field = new MutableFieldDefinition(name, fieldDef.Attributes, signature)
             {
@@ -354,7 +362,7 @@ namespace Obfuscar.Metadata.Mutable
 
             // Decode method signature with generic context (type + method).
             var signature = methodDef.DecodeSignature(
-                new TypeProvider(_module, _metadataReader, _asmRefCache),
+                GetTypeProvider(),
                 new GenericContext(declaringType, method));
 
             method.ReturnType = signature.ReturnType;
@@ -441,7 +449,7 @@ namespace Obfuscar.Metadata.Mutable
             {
                 var localSig = _metadataReader.GetStandaloneSignature(body.LocalSignature);
                 var locals = localSig.DecodeLocalSignature(
-                    new TypeProvider(_module, _metadataReader, _asmRefCache),
+                    GetTypeProvider(),
                     new GenericContext(method.DeclaringType, method));
                 
                 for (int i = 0; i < locals.Length; i++)
@@ -487,8 +495,15 @@ namespace Obfuscar.Metadata.Mutable
             if (ilBytes == null || ilBytes.Length == 0)
                 return;
 
-            var instructions = new List<MutableInstruction>();
-            var offsetToInstruction = new Dictionary<int, MutableInstruction>();
+            // Heuristic: average IL instruction width is typically >= 2 bytes.
+            int estimatedInstructionCount = Math.Max(4, ilBytes.Length / 2);
+            var instructions = body.Instructions;
+            if (instructions.Capacity < estimatedInstructionCount)
+            {
+                instructions.Capacity = estimatedInstructionCount;
+            }
+
+            var offsetToInstruction = new Dictionary<int, MutableInstruction>(estimatedInstructionCount);
             
             int position = 0;
             while (position < ilBytes.Length)
@@ -553,7 +568,6 @@ namespace Obfuscar.Metadata.Mutable
                 }
             }
 
-            body.Instructions.AddRange(instructions);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -764,7 +778,7 @@ namespace Obfuscar.Metadata.Mutable
                 return null;
 
             var genericArgs = spec.DecodeSignature(
-                new TypeProvider(_module, _metadataReader, _asmRefCache),
+                GetTypeProvider(),
                 new GenericContext(elementMethod.DeclaringType, elementMethod));
             var instance = new MutableGenericInstanceMethod(elementMethod);
             foreach (var arg in genericArgs)
@@ -805,7 +819,7 @@ namespace Obfuscar.Metadata.Mutable
             {
                 var method = new MutableMethodReference(name, null, declaringType);
                 var sig = memberRef.DecodeMethodSignature(
-                    new TypeProvider(_module, _metadataReader, _asmRefCache),
+                    GetTypeProvider(),
                     new GenericContext(declaringType, method));
 
                 method.ReturnType = sig.ReturnType;
@@ -831,7 +845,7 @@ namespace Obfuscar.Metadata.Mutable
             }
             else
             {
-                var fieldType = memberRef.DecodeFieldSignature(new TypeProvider(_module, _metadataReader, _asmRefCache), null);
+                var fieldType = memberRef.DecodeFieldSignature(GetTypeProvider(), null);
                 result = new MutableFieldReference(name, fieldType, declaringType);
             }
 
@@ -853,7 +867,7 @@ namespace Obfuscar.Metadata.Mutable
         {
             var propDef = _metadataReader.GetPropertyDefinition(handle);
             var name = _metadataReader.GetString(propDef.Name);
-            var sig = propDef.DecodeSignature(new TypeProvider(_module, _metadataReader, _asmRefCache), null);
+            var sig = propDef.DecodeSignature(GetTypeProvider(), null);
 
             var prop = new MutablePropertyDefinition(name, (PropertyAttributes)0, sig.ReturnType)
             {
@@ -973,7 +987,7 @@ namespace Obfuscar.Metadata.Mutable
                 case HandleKind.TypeSpecification:
                     var typeSpecHandle = (TypeSpecificationHandle)handle;
                     var typeSpec = _metadataReader.GetTypeSpecification(typeSpecHandle);
-                    return typeSpec.DecodeSignature(new TypeProvider(_module, _metadataReader, _asmRefCache), null);
+                    return typeSpec.DecodeSignature(GetTypeProvider(), null);
 
                 default:
                     return null;
@@ -1152,14 +1166,14 @@ namespace Obfuscar.Metadata.Mutable
 
                     var def = _metadataReader.GetMethodDefinition(handle);
                     attributeType = ReadTypeReference(def.GetDeclaringType());
-                    var sig = def.DecodeSignature(new TypeProvider(_module, _metadataReader, _asmRefCache), null);
+                    var sig = def.DecodeSignature(GetTypeProvider(), null);
                     return CreateMethodReference(_metadataReader.GetString(def.Name), sig, attributeType);
                 }
                 case HandleKind.MemberReference:
                 {
                     var memberRef = _metadataReader.GetMemberReference((MemberReferenceHandle)constructor);
                     attributeType = ReadTypeReference(memberRef.Parent);
-                    var sig = memberRef.DecodeMethodSignature(new TypeProvider(_module, _metadataReader, _asmRefCache), null);
+                    var sig = memberRef.DecodeMethodSignature(GetTypeProvider(), null);
                     return CreateMethodReference(_metadataReader.GetString(memberRef.Name), sig, attributeType);
                 }
                 case HandleKind.MethodSpecification:
@@ -1627,8 +1641,11 @@ namespace Obfuscar.Metadata.Mutable
         
         public MutableTypeReference GetGenericInstantiation(MutableTypeReference genericType, System.Collections.Immutable.ImmutableArray<MutableTypeReference> typeArguments)
         {
-            var instance = new MutableGenericInstanceType(genericType);
-            instance.GenericArguments.AddRange(typeArguments);
+            var instance = new MutableGenericInstanceType(genericType, typeArguments.Length);
+            for (int i = 0; i < typeArguments.Length; i++)
+            {
+                instance.GenericArguments.Add(typeArguments[i]);
+            }
             return instance;
         }
 

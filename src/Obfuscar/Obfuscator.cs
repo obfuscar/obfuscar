@@ -1892,8 +1892,28 @@ namespace Obfuscar
 
             public void ProcessStrings(MethodDefinition method, AssemblyInfo info, Project project)
             {
-                if (info.ShouldSkipStringHiding(new MethodKey(method), project.InheritMap,
-                        project.Settings.HideStrings) || method.Body == null)
+                if (method.Body == null)
+                {
+                    return;
+                }
+
+                List<(int Index, Instruction Instruction)> ldstrInstructions = null;
+                for (int index = 0; index < method.Body.Instructions.Count; index++)
+                {
+                    Instruction instruction = method.Body.Instructions[index];
+                    if (instruction.OpCode == OpCodes.Ldstr)
+                    {
+                        ldstrInstructions ??= new List<(int Index, Instruction Instruction)>();
+                        ldstrInstructions.Add((index, instruction));
+                    }
+                }
+
+                if (ldstrInstructions == null)
+                {
+                    return;
+                }
+
+                if (info.ShouldSkipStringHiding(new MethodKey(method), project.InheritMap, project.Settings.HideStrings))
                 {
                     return;
                 }
@@ -1903,7 +1923,11 @@ namespace Obfuscar
                 if (_disabled)
                     return;
 
-                LoggerService.Logger.LogDebug("Processing strings in method {0}", method.FullName);
+                bool isDebugEnabled = LoggerService.Logger.IsEnabled(LogLevel.Debug);
+                if (isDebugEnabled)
+                {
+                    LoggerService.Logger.LogDebug("Processing strings in method {0}", method.FullName);
+                }
 
                 // Unroll short form instructions so they can be auto-fixed by Cecil
                 // automatically when instructions are inserted/replaced
@@ -1913,73 +1937,75 @@ namespace Obfuscar
                 //
                 // Make a dictionary of all instructions to replace and their replacement.
                 //
-                Dictionary <Instruction, LdStrInstructionReplacement> oldToNewStringInstructions = new Dictionary<Instruction, LdStrInstructionReplacement>();
+                Dictionary <Instruction, LdStrInstructionReplacement> oldToNewStringInstructions =
+                    new Dictionary<Instruction, LdStrInstructionReplacement>(ldstrInstructions.Count);
 
-                for (int index = 0; index < method.Body.Instructions.Count; index++)
+                foreach ((int index, Instruction instruction) in ldstrInstructions)
                 {
-                    Instruction instruction = method.Body.Instructions[index];
-
-                    if (instruction.OpCode == OpCodes.Ldstr)
+                    string str = (string)instruction.Operand;
+                    MethodDefinition individualStringMethodDefinition;
+                    if (!_methodByString.TryGetValue(str, out individualStringMethodDefinition))
                     {
-                        string str = (string)instruction.Operand;
-                        MethodDefinition individualStringMethodDefinition;
-                        if (!_methodByString.TryGetValue(str, out individualStringMethodDefinition))
+                        StringSqueezeData data = GetNewType();
+
+                        string methodName = NameMaker.UniqueName(data.NameIndex++);
+
+                        // Add the string to the data array
+                        byte[] stringBytes = Encoding.UTF8.GetBytes(str);
+                        int start = data.DataBytes.Count;
+                        data.DataBytes.AddRange(stringBytes);
+                        int count = data.DataBytes.Count - start;
+
+                        if (isDebugEnabled)
                         {
-                            StringSqueezeData data = GetNewType();
-
-                            string methodName = NameMaker.UniqueName(data.NameIndex++);
-
-                            // Add the string to the data array
-                            byte[] stringBytes = Encoding.UTF8.GetBytes(str);
-                            int start = data.DataBytes.Count;
-                            data.DataBytes.AddRange(stringBytes);
-                            int count = data.DataBytes.Count - start;
-
-                            LoggerService.Logger.LogDebug("Creating new hidden string method for '{0}' with name {1}", 
+                            LoggerService.Logger.LogDebug("Creating new hidden string method for '{0}' with name {1}",
                                 str.Length > 30 ? str.Substring(0, 30) + "..." : str, methodName);
-
-                            // Add a method for this string to our new class
-                            individualStringMethodDefinition = new MethodDefinition(
-                                methodName,
-                                MethodAttributes.Static | MethodAttributes.Public | MethodAttributes.HideBySig,
-                                SystemStringTypeReference);
-                            individualStringMethodDefinition.DeclaringType = data.NewType;
-                            individualStringMethodDefinition.Body = new MethodBody(individualStringMethodDefinition);
-                            ILProcessor worker4 = individualStringMethodDefinition.GetILProcessor();
-
-                            worker4.Emit(OpCodes.Ldsfld, data.StringArrayField);
-                            worker4.Emit(OpCodes.Ldc_I4, data.StringIndex);
-                            worker4.Emit(OpCodes.Ldelem_Ref);
-                            worker4.Emit(OpCodes.Dup);
-                            Instruction label20 = worker4.Create(
-                                OpCodes.Brtrue_S,
-                                data.StringGetterMethodDefinition.Body.Instructions[0]);
-                            worker4.Append(label20);
-                            worker4.Emit(OpCodes.Pop);
-                            worker4.Emit(OpCodes.Ldc_I4, data.StringIndex);
-                            worker4.Emit(OpCodes.Ldc_I4, start);
-                            worker4.Emit(OpCodes.Ldc_I4, count);
-                            worker4.Emit(OpCodes.Call, data.StringGetterMethodDefinition);
-
-                            label20.Operand = worker4.Create(OpCodes.Ret);
-                            worker4.Append((Instruction) label20.Operand);
-
-                            data.NewType.Methods.Add(individualStringMethodDefinition);
-                            _methodByString.Add(str, individualStringMethodDefinition);
-
-                            mostRecentData.StringIndex++;
                         }
 
-                        // Replace Ldstr with Call
-                        Instruction newinstruction = worker.Create(OpCodes.Call, individualStringMethodDefinition);
-                        oldToNewStringInstructions.Add(instruction, new LdStrInstructionReplacement(index, newinstruction));
+                        // Add a method for this string to our new class
+                        individualStringMethodDefinition = new MethodDefinition(
+                            methodName,
+                            MethodAttributes.Static | MethodAttributes.Public | MethodAttributes.HideBySig,
+                            SystemStringTypeReference);
+                        individualStringMethodDefinition.DeclaringType = data.NewType;
+                        individualStringMethodDefinition.Body = new MethodBody(individualStringMethodDefinition);
+                        ILProcessor worker4 = individualStringMethodDefinition.GetILProcessor();
+
+                        worker4.Emit(OpCodes.Ldsfld, data.StringArrayField);
+                        worker4.Emit(OpCodes.Ldc_I4, data.StringIndex);
+                        worker4.Emit(OpCodes.Ldelem_Ref);
+                        worker4.Emit(OpCodes.Dup);
+                        Instruction label20 = worker4.Create(
+                            OpCodes.Brtrue_S,
+                            data.StringGetterMethodDefinition.Body.Instructions[0]);
+                        worker4.Append(label20);
+                        worker4.Emit(OpCodes.Pop);
+                        worker4.Emit(OpCodes.Ldc_I4, data.StringIndex);
+                        worker4.Emit(OpCodes.Ldc_I4, start);
+                        worker4.Emit(OpCodes.Ldc_I4, count);
+                        worker4.Emit(OpCodes.Call, data.StringGetterMethodDefinition);
+
+                        label20.Operand = worker4.Create(OpCodes.Ret);
+                        worker4.Append((Instruction) label20.Operand);
+
+                        data.NewType.Methods.Add(individualStringMethodDefinition);
+                        _methodByString.Add(str, individualStringMethodDefinition);
+
+                        mostRecentData.StringIndex++;
                     }
+
+                    // Replace Ldstr with Call
+                    Instruction newinstruction = worker.Create(OpCodes.Call, individualStringMethodDefinition);
+                    oldToNewStringInstructions.Add(instruction, new LdStrInstructionReplacement(index, newinstruction));
                 }
 
                 int replacementCount = oldToNewStringInstructions.Count;
                 if (replacementCount > 0)
                 {
-                    LoggerService.Logger.LogDebug("Replacing {0} string constants in method {1}", replacementCount, method.FullName);
+                    if (isDebugEnabled)
+                    {
+                        LoggerService.Logger.LogDebug("Replacing {0} string constants in method {1}", replacementCount, method.FullName);
+                    }
                     worker.ReplaceAndFixReferences(method.Body, oldToNewStringInstructions);
                 }
 
