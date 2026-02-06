@@ -26,6 +26,7 @@
     <Compile Include="BamlTests.cs" />
     <Compile Include="CleanPoolTests.cs" />
     <Compile Include="CustomAttributeTests.cs" />
+    <Compile Include="CustomAttributeNamedArgumentTests.cs" />
     <Compile Include="CustomAttributeWithArgTests.cs" />
     <Compile Include="DependencyTests.cs" />
     <Compile Include="DockPanelSuiteTests.cs" />
@@ -35,6 +36,7 @@
     <Compile Include="FunctionOverridingTests.cs" />
     <Compile Include="HideStringsTests.cs" />
     <Compile Include="InterfaceEventTests.cs" />
+    <Compile Include="InterfacePropertyInheritanceTests.cs" />
     <Compile Include="GenericDictionaryWeakReferenceTests.cs" />
     <Compile Include="InitPropertyTests.cs" />
     <Compile Include="IncludeTests.cs" />

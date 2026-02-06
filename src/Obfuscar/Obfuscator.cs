@@ -535,6 +535,11 @@ namespace Obfuscar
                 }
             }
 
+            if (IsCustomAttributeType(field.DeclaringType as TypeDefinition))
+            {
+                UpdateCustomAttributeNamedArgumentMemberName(fieldKey.TypeKey, fieldKey.Name, newName, isField: true);
+            }
+
             field.Name = newName;
             Mapping.UpdateField(fieldKey, ObfuscationStatus.Renamed, newName);
         }
@@ -1073,8 +1078,105 @@ namespace Obfuscar
         private void RenameProperty(AssemblyInfo info, PropertyKey propertyKey, PropertyDefinition property,
             string newName)
         {
+            if (IsCustomAttributeType(property.DeclaringType))
+            {
+                UpdateCustomAttributeNamedArgumentMemberName(propertyKey.TypeKey, propertyKey.Name, newName, isField: false);
+            }
+
             property.Name = newName;
             Mapping.UpdateProperty(propertyKey, ObfuscationStatus.Renamed, newName);
+        }
+
+        private static bool IsCustomAttributeType(TypeDefinition type)
+        {
+            return type?.BaseType != null && type.BaseType.Name.EndsWith("Attribute", StringComparison.Ordinal);
+        }
+
+        private void UpdateCustomAttributeNamedArgumentMemberName(TypeKey attributeType, string oldName, string newName, bool isField)
+        {
+            if (attributeType == null || string.IsNullOrEmpty(oldName) || string.IsNullOrEmpty(newName) ||
+                string.Equals(oldName, newName, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            foreach (AssemblyInfo assemblyInfo in Project.AssemblyList)
+            {
+                foreach (var attribute in EnumerateCustomAttributes(assemblyInfo))
+                {
+                    if (attribute?.AttributeType == null || !attributeType.Matches(attribute.AttributeType))
+                    {
+                        continue;
+                    }
+
+                    var namedArguments = isField ? attribute.Fields : attribute.Properties;
+                    foreach (var namedArgument in namedArguments)
+                    {
+                        if (string.Equals(namedArgument.Name, oldName, StringComparison.Ordinal))
+                        {
+                            namedArgument.Name = newName;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static IEnumerable<MutableCustomAttribute> EnumerateCustomAttributes(AssemblyInfo assemblyInfo)
+        {
+            var assembly = assemblyInfo.Definition;
+            foreach (var attribute in assembly.CustomAttributes)
+                yield return attribute;
+
+            if (assembly.MainModule != null)
+            {
+                foreach (var attribute in assembly.MainModule.CustomAttributes)
+                    yield return attribute;
+            }
+
+            foreach (var typeDef in assemblyInfo.GetAllTypes())
+            {
+                if (typeDef is not MutableTypeDefinition type)
+                    continue;
+
+                foreach (var attribute in type.CustomAttributes)
+                    yield return attribute;
+
+                foreach (var field in type.Fields)
+                    foreach (var attribute in field.CustomAttributes)
+                        yield return attribute;
+
+                foreach (var property in type.Properties)
+                {
+                    foreach (var attribute in property.CustomAttributes)
+                        yield return attribute;
+
+                    foreach (var parameter in property.Parameters)
+                        foreach (var attribute in parameter.CustomAttributes)
+                            yield return attribute;
+                }
+
+                foreach (var evt in type.Events)
+                    foreach (var attribute in evt.CustomAttributes)
+                        yield return attribute;
+
+                foreach (var genericParameter in type.GenericParameters)
+                    foreach (var attribute in genericParameter.CustomAttributes)
+                        yield return attribute;
+
+                foreach (var method in type.Methods)
+                {
+                    foreach (var attribute in method.CustomAttributes)
+                        yield return attribute;
+
+                    foreach (var parameter in method.Parameters)
+                        foreach (var attribute in parameter.CustomAttributes)
+                            yield return attribute;
+
+                    foreach (var genericParameter in method.GenericParameters)
+                        foreach (var attribute in genericParameter.CustomAttributes)
+                            yield return attribute;
+                }
+            }
         }
 
         public void RenameEvents()
