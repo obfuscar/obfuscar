@@ -978,6 +978,8 @@ namespace Obfuscar
                 return;
             }
 
+            var overridePropertyNames = new Dictionary<MethodGroup, string>();
+
             foreach (AssemblyInfo info in Project.AssemblyList)
             {
                 foreach (var typeDef in info.GetAllTypes())
@@ -997,7 +999,7 @@ namespace Obfuscar
                     // ReSharper disable once LoopCanBeConvertedToQuery
                     foreach (PropertyDefinition prop in type.Properties)
                     {
-                        index = ProcessProperty(typeKey, prop, info, type, index, propsToDrop);
+                        index = ProcessProperty(typeKey, prop, info, type, index, propsToDrop, overridePropertyNames);
                     }
 
                     foreach (PropertyDefinition prop in propsToDrop)
@@ -1013,7 +1015,8 @@ namespace Obfuscar
 
         private int ProcessProperty(TypeKey typeKey, PropertyDefinition prop, AssemblyInfo info, TypeDefinition type,
             int index,
-            List<PropertyDefinition> propsToDrop)
+            List<PropertyDefinition> propsToDrop,
+            Dictionary<MethodGroup, string> overridePropertyNames)
         {
             PropertyKey propKey = new PropertyKey(typeKey, prop);
             ObfuscatedThing m = Mapping.GetProperty(propKey);
@@ -1059,7 +1062,7 @@ namespace Obfuscar
                 {
                     // If a property has custom attributes we don't remove the property but rename it instead.
                     // Does the same if KeepProperties is set to true or marked-only should keep it.
-                    var newName = NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
+                    var newName = GetPropertyRename(typeKey, prop, ref index, overridePropertyNames);
                     var attributeCount = prop.CustomAttributes.Count;
                     LoggerService.Logger.LogDebug("Renaming property {0} in type {1} to {2} (has {3} custom attributes, KeepProperties={4})",
                         prop.Name, typeKey, newName, attributeCount, Project.Settings.KeepProperties);
@@ -1073,6 +1076,40 @@ namespace Obfuscar
                 }
             }
             return index;
+        }
+
+        private string GetPropertyRename(TypeKey typeKey, PropertyDefinition prop, ref int index,
+            Dictionary<MethodGroup, string> overridePropertyNames)
+        {
+            MethodGroup group = GetPropertyOverrideGroup(typeKey, prop);
+            if (group == null)
+                return NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
+
+            if (overridePropertyNames.TryGetValue(group, out var sharedName))
+                return sharedName;
+
+            sharedName = NameMaker.UniqueName(Project.Settings.ReuseNames ? index++ : _uniqueMemberNameIndex++);
+            overridePropertyNames[group] = sharedName;
+            return sharedName;
+        }
+
+        private MethodGroup GetPropertyOverrideGroup(TypeKey typeKey, PropertyDefinition prop)
+        {
+            if (prop.GetMethod != null && prop.GetMethod.IsVirtual)
+            {
+                MethodGroup group = Project.InheritMap.GetMethodGroup(new MethodKey(typeKey, prop.GetMethod));
+                if (group != null)
+                    return group;
+            }
+
+            if (prop.SetMethod != null && prop.SetMethod.IsVirtual)
+            {
+                MethodGroup group = Project.InheritMap.GetMethodGroup(new MethodKey(typeKey, prop.SetMethod));
+                if (group != null)
+                    return group;
+            }
+
+            return null;
         }
 
         private void RenameProperty(AssemblyInfo info, PropertyKey propertyKey, PropertyDefinition property,

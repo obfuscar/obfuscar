@@ -406,6 +406,12 @@ namespace Obfuscar
                     CollectTypeReferencesFromType(methodRef.ReturnType, typerefs);
                     foreach (var param in methodRef.Parameters)
                         CollectTypeReferencesFromType(param.ParameterType, typerefs);
+
+                    if (methodRef is MutableGenericInstanceMethod genericInstanceMethod)
+                    {
+                        foreach (var genericArgument in genericInstanceMethod.GenericArguments)
+                            CollectTypeReferencesFromType(genericArgument, typerefs);
+                    }
                 }
                 else if (member is MutableFieldReference fieldRef)
                 {
@@ -488,6 +494,12 @@ namespace Obfuscar
                 CollectTypeReferencesFromType(methodRef.ReturnType, typerefs);
                 foreach (var param in methodRef.Parameters)
                     CollectTypeReferencesFromType(param.ParameterType, typerefs);
+
+                if (methodRef is MutableGenericInstanceMethod genericInstanceMethod)
+                {
+                    foreach (var genericArgument in genericInstanceMethod.GenericArguments)
+                        CollectTypeReferencesFromType(genericArgument, typerefs);
+                }
             }
             else if (instruction?.Operand is MutableFieldReference fieldRef)
             {

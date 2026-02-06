@@ -1317,6 +1317,14 @@ namespace Obfuscar.Metadata.Mutable
                 });
             }
 
+            for (int i = 0; i < sig.GenericParameterCount; i++)
+            {
+                method.GenericParameters.Add(new MutableGenericParameter($"M{i}", method)
+                {
+                    Position = i
+                });
+            }
+
             return method;
         }
 

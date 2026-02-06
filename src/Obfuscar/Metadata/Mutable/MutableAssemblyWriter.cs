@@ -1693,6 +1693,9 @@ namespace Obfuscar.Metadata.Mutable
             if (method is MutableMethodDefinition methodDef && _methodDefHandles.TryGetValue(methodDef, out var defHandle))
                 return defHandle;
 
+            if (TryResolveMethodReferenceToDefinitionHandle(method, out var resolvedDefHandle))
+                return resolvedDefHandle;
+
             if (_methodRefHandles.TryGetValue(method, out var existing))
                 return existing;
 
@@ -1707,6 +1710,122 @@ namespace Obfuscar.Metadata.Mutable
             
             _methodRefHandles[method] = refHandle;
             return refHandle;
+        }
+
+        private bool TryResolveMethodReferenceToDefinitionHandle(
+            MutableMethodReference methodReference,
+            out EntityHandle methodDefinitionHandle)
+        {
+            methodDefinitionHandle = default;
+            if (methodReference == null)
+                return false;
+
+            MutableTypeDefinition declaringTypeDefinition = ResolveDeclaringTypeDefinition(methodReference.DeclaringType);
+            if (declaringTypeDefinition == null)
+                return false;
+
+            foreach (var candidate in declaringTypeDefinition.Methods)
+            {
+                if (!string.Equals(candidate.Name, methodReference.Name, StringComparison.Ordinal))
+                    continue;
+
+                if (candidate.GenericParameters.Count != methodReference.GenericParameters.Count)
+                    continue;
+
+                if (candidate.Parameters.Count != methodReference.Parameters.Count)
+                    continue;
+
+                if (!AreEquivalentTypes(candidate.ReturnType, methodReference.ReturnType))
+                    continue;
+
+                bool parametersMatch = true;
+                for (int i = 0; i < candidate.Parameters.Count; i++)
+                {
+                    if (!AreEquivalentTypes(candidate.Parameters[i].ParameterType, methodReference.Parameters[i].ParameterType))
+                    {
+                        parametersMatch = false;
+                        break;
+                    }
+                }
+
+                if (!parametersMatch)
+                    continue;
+
+                if (_methodDefHandles.TryGetValue(candidate, out var handle))
+                {
+                    methodDefinitionHandle = handle;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private MutableTypeDefinition ResolveDeclaringTypeDefinition(MutableTypeReference declaringType)
+        {
+            if (declaringType == null)
+                return null;
+
+            if (declaringType is MutableTypeDefinition typeDefinition)
+                return typeDefinition;
+
+            if (declaringType is MutableGenericInstanceType genericInstance)
+                return ResolveDeclaringTypeDefinition(genericInstance.ElementType);
+
+            return declaringType.Resolve();
+        }
+
+        private static bool AreEquivalentTypes(MutableTypeReference left, MutableTypeReference right)
+        {
+            if (ReferenceEquals(left, right))
+                return true;
+
+            if (left == null || right == null)
+                return false;
+
+            if (left is MutableGenericParameter leftGenericParameter &&
+                right is MutableGenericParameter rightGenericParameter)
+            {
+                bool leftMethodOwned = leftGenericParameter.Owner is MutableMethodReference || leftGenericParameter.Owner is MutableMethodDefinition;
+                bool rightMethodOwned = rightGenericParameter.Owner is MutableMethodReference || rightGenericParameter.Owner is MutableMethodDefinition;
+                return leftMethodOwned == rightMethodOwned && leftGenericParameter.Position == rightGenericParameter.Position;
+            }
+
+            if (left is MutableGenericInstanceType leftGenericInstance &&
+                right is MutableGenericInstanceType rightGenericInstance)
+            {
+                if (!AreEquivalentTypes(leftGenericInstance.ElementType, rightGenericInstance.ElementType))
+                    return false;
+
+                if (leftGenericInstance.GenericArguments.Count != rightGenericInstance.GenericArguments.Count)
+                    return false;
+
+                for (int i = 0; i < leftGenericInstance.GenericArguments.Count; i++)
+                {
+                    if (!AreEquivalentTypes(leftGenericInstance.GenericArguments[i], rightGenericInstance.GenericArguments[i]))
+                        return false;
+                }
+
+                return true;
+            }
+
+            if (left is MutableArrayType leftArray && right is MutableArrayType rightArray)
+                return leftArray.Rank == rightArray.Rank && AreEquivalentTypes(leftArray.ElementType, rightArray.ElementType);
+
+            if (left is MutableByReferenceType leftByRef && right is MutableByReferenceType rightByRef)
+                return AreEquivalentTypes(leftByRef.ElementType, rightByRef.ElementType);
+
+            if (left is MutablePointerType leftPointer && right is MutablePointerType rightPointer)
+                return AreEquivalentTypes(leftPointer.ElementType, rightPointer.ElementType);
+
+            if (left is MutableModifiedType leftModified && right is MutableModifiedType rightModified)
+            {
+                return leftModified.IsRequired == rightModified.IsRequired &&
+                       AreEquivalentTypes(leftModified.Modifier, rightModified.Modifier) &&
+                       AreEquivalentTypes(leftModified.ElementType, rightModified.ElementType);
+            }
+
+            return string.Equals(left.FullName, right.FullName, StringComparison.Ordinal);
         }
 
         private EntityHandle GetFieldHandle(MutableFieldReference field)
