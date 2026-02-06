@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Caching;
 using Obfuscar.Metadata.Abstractions;
 
 namespace Obfuscar.Helpers
@@ -54,12 +54,20 @@ namespace Obfuscar.Helpers
             return false;
         }
 
-        private static CacheItemPolicy policy = new CacheItemPolicy {SlidingExpiration = TimeSpan.FromMinutes(5)};
+        private static readonly object _resourcesTypeCacheLock = new object();
+        private static readonly Dictionary<string, bool> _resourcesTypeCache =
+            new Dictionary<string, bool>(StringComparer.Ordinal);
 
         public static bool IsResourcesType(this ITypeDefinition type)
         {
-            if (MemoryCache.Default.Contains(type.FullName))
-                return (bool) MemoryCache.Default[type.FullName];
+            if (type == null || string.IsNullOrEmpty(type.FullName))
+                return false;
+
+            lock (_resourcesTypeCacheLock)
+            {
+                if (_resourcesTypeCache.TryGetValue(type.FullName, out bool cached))
+                    return cached;
+            }
 
             var generated = type.CustomAttributes.FirstOrDefault(attribute =>
                 attribute.AttributeTypeName == "System.CodeDom.Compiler.GeneratedCodeAttribute");
@@ -74,7 +82,11 @@ namespace Obfuscar.Helpers
                 result = name == "System.Resources.Tools.StronglyTypedResourceBuilder";
             }
 
-            MemoryCache.Default.Add(type.FullName, result, policy);
+            lock (_resourcesTypeCacheLock)
+            {
+                _resourcesTypeCache[type.FullName] = result;
+            }
+
             return result;
         }
 

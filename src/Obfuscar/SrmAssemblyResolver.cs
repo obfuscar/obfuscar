@@ -48,6 +48,8 @@ namespace Obfuscar
 
         private readonly List<string> pathsPortable = new List<string>();
         private readonly List<string> pathsNetCore = new List<string>();
+        private readonly HashSet<string> pathsPortableSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> pathsNetCoreSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private MutableAssemblyDefinition _runtimeAssembly;
 
         public SrmAssemblyResolver(Project project)
@@ -80,7 +82,12 @@ namespace Obfuscar
             if (!string.IsNullOrEmpty(portablePath))
             {
                 if (Directory.Exists(portablePath))
-                    pathsPortable.Add(portablePath);
+                {
+                    if (pathsPortableSet.Add(portablePath))
+                    {
+                        pathsPortable.Add(portablePath);
+                    }
+                }
                 else
                     LoggerService.Logger.LogWarning("Portable profile directory does not exist: {Path}", portablePath);
             }
@@ -88,7 +95,12 @@ namespace Obfuscar
             foreach (var netCorePath in assembly.GetNetCoreDirectories())
             {
                 if (Directory.Exists(netCorePath))
-                    pathsNetCore.Add(netCorePath);
+                {
+                    if (pathsNetCoreSet.Add(netCorePath))
+                    {
+                        pathsNetCore.Add(netCorePath);
+                    }
+                }
                 else
                     LoggerService.Logger.LogWarning(".NET Core/.NET Standard/.NET referenced assembly directory does not exist: {Path}", netCorePath);
             }
