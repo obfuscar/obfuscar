@@ -997,9 +997,59 @@ namespace Obfuscar
             return false;
         }
 
+        private const string CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute";
+
+        private static bool HasCompilerGeneratedAttribute(IEnumerable<MutableCustomAttribute> attributes)
+        {
+            if (attributes == null)
+                return false;
+
+            foreach (MutableCustomAttribute attribute in attributes)
+            {
+                if (attribute?.AttributeTypeName == CompilerGeneratedAttribute)
+                    return true;
+            }
+
+            return false;
+        }
+
         private static bool IsCompilerGenerated(TypeKey type)
         {
-            return type?.Descriptor?.CustomAttributeTypeFullNames?.Contains("System.Runtime.CompilerServices.CompilerGeneratedAttribute") == true;
+            return type?.Descriptor?.CustomAttributeTypeFullNames?.Contains(CompilerGeneratedAttribute) == true;
+        }
+
+        private static bool IsCompilerGenerated(MethodKey method)
+        {
+            return IsCompilerGenerated(method?.TypeKey) ||
+                   HasCompilerGeneratedAttribute(method?.Method?.CustomAttributes);
+        }
+
+        private static bool IsCompilerGeneratedMethodOnly(MethodKey method)
+        {
+            return HasCompilerGeneratedAttribute(method?.Method?.CustomAttributes);
+        }
+
+        private static bool IsCompilerGenerated(FieldKey field)
+        {
+            return IsCompilerGenerated(field?.TypeKey) ||
+                   HasCompilerGeneratedAttribute(field?.Field?.CustomAttributes);
+        }
+
+        private static bool IsCompilerGenerated(PropertyKey property)
+        {
+            return IsCompilerGenerated(property?.TypeKey) ||
+                   HasCompilerGeneratedAttribute(property?.Property?.CustomAttributes) ||
+                   HasCompilerGeneratedAttribute(property?.Property?.GetMethod?.CustomAttributes) ||
+                   HasCompilerGeneratedAttribute(property?.Property?.SetMethod?.CustomAttributes);
+        }
+
+        private static bool IsCompilerGenerated(EventKey evt)
+        {
+            return IsCompilerGenerated(evt?.TypeKey) ||
+                   HasCompilerGeneratedAttribute(evt?.Event?.CustomAttributes) ||
+                   HasCompilerGeneratedAttribute(evt?.Event?.AddMethod?.CustomAttributes) ||
+                   HasCompilerGeneratedAttribute(evt?.Event?.RemoveMethod?.CustomAttributes) ||
+                   HasCompilerGeneratedAttribute(evt?.Event?.InvokeMethod?.CustomAttributes);
         }
 
         public bool ShouldSkip(TypeKey type, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
@@ -1044,8 +1094,7 @@ namespace Obfuscar
                 return true;
             }
 
-            if (skipCompilerGeneratedTypes &&
-                descriptor?.CustomAttributeTypeFullNames?.Contains("System.Runtime.CompilerServices.CompilerGeneratedAttribute") == true)
+            if (skipCompilerGeneratedTypes && IsCompilerGenerated(type))
             {
                 message = "compiler generated attribute rule in configuration";
                 return true;
@@ -1076,7 +1125,7 @@ namespace Obfuscar
                 return true;
             }
 
-            if (project.Settings.SkipGenerated && IsCompilerGenerated(method.TypeKey))
+            if (project.Settings.SkipGenerated && IsCompilerGenerated(method))
             {
                 message = "compiler generated attribute rule in configuration";
                 return true;
@@ -1084,6 +1133,15 @@ namespace Obfuscar
 
             if (method.Method.IsSpecialName)
             {
+                // Even when SkipGenerated=false, keep compiler-generated special-name methods
+                // (e.g., auto-property accessors) unchanged to avoid breaking metadata-based
+                // reflection/expression consumers that expect accessor semantics.
+                if (IsCompilerGeneratedMethodOnly(method))
+                {
+                    message = "compiler generated special name";
+                    return true;
+                }
+
                 var semantics = method.Method.SemanticsAttributes;
                 if ((semantics & MutableMethodSemanticsAttributes.Getter) != 0 ||
                     (semantics & MutableMethodSemanticsAttributes.Setter) != 0)
@@ -1122,7 +1180,7 @@ namespace Obfuscar
                 return !parent.Value;
             }
 
-            if (project.Settings.SkipGenerated && IsCompilerGenerated(method.TypeKey))
+            if (project.Settings.SkipGenerated && IsCompilerGenerated(method))
             {
                 message = "compiler generated attribute rule in configuration";
                 return true;
@@ -1178,7 +1236,7 @@ namespace Obfuscar
                 method.Method.ReturnType.FullName == "System.Resources.ResourceManager")
                 return true; // IMPORTANT: avoid hiding resource type name, as it might be renamed later.
 
-            if (project.Settings.SkipGenerated && IsCompilerGenerated(method.TypeKey))
+            if (project.Settings.SkipGenerated && IsCompilerGenerated(method))
                 return true;
 
             if (ShouldForce(method.TypeKey, TypeAffectFlags.AffectString, map))
@@ -1220,7 +1278,7 @@ namespace Obfuscar
                 return !parent.Value;
             }
 
-            if (project.Settings.SkipGenerated && IsCompilerGenerated(field.TypeKey))
+            if (project.Settings.SkipGenerated && IsCompilerGenerated(field))
             {
                 message = "compiler generated attribute rule in configuration";
                 return true;
@@ -1300,7 +1358,7 @@ namespace Obfuscar
                 return !parent.Value;
             }
 
-            if (project.Settings.SkipGenerated && IsCompilerGenerated(prop.TypeKey))
+            if (project.Settings.SkipGenerated && IsCompilerGenerated(prop))
             {
                 message = "compiler generated attribute rule in configuration";
                 return true;
@@ -1385,7 +1443,7 @@ namespace Obfuscar
                 return !parent.Value;
             }
 
-            if (project.Settings.SkipGenerated && IsCompilerGenerated(evt.TypeKey))
+            if (project.Settings.SkipGenerated && IsCompilerGenerated(evt))
             {
                 message = "compiler generated attribute rule in configuration";
                 return true;
