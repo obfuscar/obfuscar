@@ -24,8 +24,10 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.IO;
+using Obfuscar.Metadata.Mutable;
 using Xunit;
 
 namespace ObfuscarTests
@@ -366,6 +368,34 @@ namespace TestClasses
                 Path.Combine(outputPath, "AssemblyWithSwitchAndStrings.dll"));
 
             Assert.NotNull(outputAssembly);
+        }
+
+        [Fact]
+        public void ReadIlFailsFastOnInvalidSwitchTarget()
+        {
+            var reader = new MutableAssemblyReader();
+            var method = new MethodDefinition(
+                "BrokenSwitch",
+                MethodAttributes.Public | MethodAttributes.Static,
+                new TypeReference("System", "Void", null));
+            var body = new MutableMethodBody(method);
+            byte[] invalidIl =
+            {
+                0x45, // switch
+                0x01, 0x00, 0x00, 0x00, // number of targets
+                0xE7, 0x03, 0x00, 0x00, // relative target (+999) => missing
+                0x2A // ret
+            };
+
+            MethodInfo readIl = typeof(MutableAssemblyReader).GetMethod(
+                "ReadIL",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(readIl);
+
+            var ex = Assert.Throws<TargetInvocationException>(() => readIl.Invoke(reader, new object[] { body, invalidIl }));
+            Assert.NotNull(ex.InnerException);
+            Assert.IsType<InvalidOperationException>(ex.InnerException);
+            Assert.Contains("Unable to resolve switch target", ex.InnerException.Message);
         }
 
     }

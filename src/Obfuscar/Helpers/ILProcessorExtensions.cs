@@ -61,8 +61,13 @@ namespace Obfuscar.Helpers
                 for (int i = 0; i < instructionArrayOperand.Length; i++)
                 {
                     MutableInstruction targetInstruction = instructionArrayOperand[i];
-                    if (targetInstruction != null
-                        && oldToNewStringInstructions.TryGetValue(targetInstruction, out LdStrInstructionReplacement oldToNew))
+                    if (targetInstruction == null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Encountered a switch instruction with unresolved target at index {i}.");
+                    }
+
+                    if (oldToNewStringInstructions.TryGetValue(targetInstruction, out LdStrInstructionReplacement oldToNew))
                     {
                         instructionArrayOperand[i] = oldToNew.NewInstruction;
                     }

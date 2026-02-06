@@ -520,6 +520,12 @@ namespace Obfuscar.Metadata.Mutable
                         {
                             instruction.Operand = target;
                         }
+                        else
+                        {
+                            throw new InvalidOperationException(
+                                $"Unable to resolve branch target while reading '{body.Method?.FullName}'. " +
+                                $"Instruction IL_{instruction.Offset:X4} points to missing target IL_{absoluteTarget:X4}.");
+                        }
                     }
                 }
                 else if (instruction.Operand is int[] switchTargets)
@@ -535,6 +541,12 @@ namespace Obfuscar.Metadata.Mutable
                         if (offsetToInstruction.TryGetValue(absoluteTarget, out var target))
                         {
                             targets[i] = target;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException(
+                                $"Unable to resolve switch target while reading '{body.Method?.FullName}'. " +
+                                $"Instruction IL_{instruction.Offset:X4}, case {i}, points to missing target IL_{absoluteTarget:X4}.");
                         }
                     }
                     instruction.Operand = targets;
