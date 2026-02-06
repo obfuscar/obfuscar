@@ -69,4 +69,22 @@ namespace TestClasses
         {
         }
 	}
+
+	internal class ClassC<GenType>
+	{
+		protected virtual void BridgeMethod( Dictionary<string, GenType> param )
+		{
+		}
+	}
+
+	internal class ClassD : ClassC<int>
+	{
+		protected override void BridgeMethod( Dictionary<string, int> param )
+		{
+		}
+
+		protected void SiblingMethod( Dictionary<string, int> param )
+		{
+		}
+	}
 }

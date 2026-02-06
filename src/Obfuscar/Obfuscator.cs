@@ -1305,11 +1305,9 @@ namespace Obfuscar
             {
                 // group is not yet named
 
-                // counts are grouping according to signature
-                ParamSig sig = new ParamSig(method);
-
-                // get name groups for classes in the group
-                NameGroup[] nameGroups = GetNameGroups(baseSigNames, @group.Methods, sig);
+                // get name groups for classes/signatures in the full override chain.
+                // This prevents collisions when a group mixes generic placeholders and specialized signatures.
+                NameGroup[] nameGroups = GetNameGroups(baseSigNames, @group.Methods);
 
                 if (@group.External)
                 {
@@ -1384,39 +1382,28 @@ namespace Obfuscar
         }
 
         NameGroup[] GetNameGroups(Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
-            IEnumerable<MethodKey> methodKeys, ParamSig sig)
+            IEnumerable<MethodKey> methodKeys)
         {
-            // build unique set of classes in group
-            HashSet<TypeKey> typeKeys = new HashSet<TypeKey>();
-            foreach (MethodKey methodKey in methodKeys)
-                typeKeys.Add(methodKey.TypeKey);
+            var nameGroups = new HashSet<NameGroup>();
 
-            HashSet<TypeKey> parentTypes = new HashSet<TypeKey>();
-            foreach (TypeKey type in typeKeys)
+            foreach (MethodKey methodKey in methodKeys)
             {
-                // Use instance method GetBaseTypes which handles both Cecil and abstraction types
-                var bases = Project.InheritMap.GetBaseTypes(type);
+                ParamSig sig = new ParamSig(methodKey.Method);
+
+                // Include the declaring type and its base chain for this concrete signature.
+                var relatedTypes = new HashSet<TypeKey> { methodKey.TypeKey };
+                var bases = Project.InheritMap.GetBaseTypes(methodKey.TypeKey);
                 if (bases != null)
                 {
-                    foreach (var baseType in bases)
-                        parentTypes.Add(baseType);
+                    foreach (TypeKey baseType in bases)
+                        relatedTypes.Add(baseType);
                 }
+
+                foreach (TypeKey typeKey in relatedTypes)
+                    nameGroups.Add(GetNameGroup(baseSigNames, typeKey, sig));
             }
 
-            typeKeys.UnionWith(parentTypes);
-
-            // build list of namegroups
-            NameGroup[] nameGroups = new NameGroup[typeKeys.Count];
-
-            int i = 0;
-            foreach (TypeKey typeKey in typeKeys)
-            {
-                NameGroup nameGroup = GetNameGroup(baseSigNames, typeKey, sig);
-
-                nameGroups[i++] = nameGroup;
-            }
-
-            return nameGroups;
+            return nameGroups.ToArray();
         }
 
         string GetNewMethodName(Dictionary<ParamSig, NameGroup> sigNames, MethodKey methodKey, MethodDefinition method)

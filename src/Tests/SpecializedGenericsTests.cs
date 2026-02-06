@@ -74,11 +74,13 @@ namespace ObfuscarTests
             {
                 TypeDefinition classAType = inAssmDef.MainModule.GetType("TestClasses.ClassA`1");
                 MethodDefinition classAmethod2 = FindByName(classAType, "Method2");
+                MethodDefinition classAmethod1 = FindByName(classAType, "Method1");
 
                 TypeDefinition classBType = inAssmDef.MainModule.GetType("TestClasses.ClassB");
                 MethodDefinition classBmethod2 = FindByName(classBType, "Method2");
 
                 ObfuscatedThing classAEntry = map.GetMethod(new MethodKey(classAmethod2));
+                ObfuscatedThing classAEntryMethod1 = map.GetMethod(new MethodKey(classAmethod1));
                 ObfuscatedThing classBEntry = map.GetMethod(new MethodKey(classBmethod2));
 
                 Assert.True(
@@ -89,6 +91,14 @@ namespace ObfuscarTests
                 Assert.True(
                     classAEntry.StatusText == classBEntry.StatusText,
                     "Both methods should have been renamed to the same thing.");
+
+                Assert.True(
+                    classAEntryMethod1.Status == ObfuscationStatus.Renamed,
+                    "The non-overridden specialized method should still be renamed.");
+
+                Assert.True(
+                    classAEntryMethod1.StatusText != classAEntry.StatusText,
+                    "Specialized generic methods with different source names should not be merged into one rename group.");
             }
 
             {
@@ -109,6 +119,33 @@ namespace ObfuscarTests
                 Assert.True(
                     classAEntry.StatusText == classBEntry.StatusText,
                     "Both methods should have been renamed to the same thing.");
+            }
+
+            {
+                TypeDefinition classCType = inAssmDef.MainModule.GetType("TestClasses.ClassC`1");
+                MethodDefinition classCBridgeMethod = FindByName(classCType, "BridgeMethod");
+
+                TypeDefinition classDType = inAssmDef.MainModule.GetType("TestClasses.ClassD");
+                MethodDefinition classDBridgeMethod = FindByName(classDType, "BridgeMethod");
+                MethodDefinition classDSiblingMethod = FindByName(classDType, "SiblingMethod");
+
+                ObfuscatedThing classCEntry = map.GetMethod(new MethodKey(classCBridgeMethod));
+                ObfuscatedThing classDOverrideEntry = map.GetMethod(new MethodKey(classDBridgeMethod));
+                ObfuscatedThing classDSiblingEntry = map.GetMethod(new MethodKey(classDSiblingMethod));
+
+                Assert.True(
+                    classCEntry.Status == ObfuscationStatus.Renamed &&
+                    classDOverrideEntry.Status == ObfuscationStatus.Renamed &&
+                    classDSiblingEntry.Status == ObfuscationStatus.Renamed,
+                    "All methods should have been renamed.");
+
+                Assert.True(
+                    classCEntry.StatusText == classDOverrideEntry.StatusText,
+                    "Override and base virtual method should stay in one rename group.");
+
+                Assert.True(
+                    classDSiblingEntry.StatusText != classDOverrideEntry.StatusText,
+                    "A non-overridden sibling method with the same specialized shape should not be merged into the override rename group.");
             }
         }
     }
