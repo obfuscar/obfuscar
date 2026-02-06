@@ -39,6 +39,7 @@
     <Compile Include="HideStringsTests.cs" />
     <Compile Include="InterfaceEventTests.cs" />
     <Compile Include="InterfacePropertyInheritanceTests.cs" />
+    <Compile Include="LambdaCapturedReferenceTests.cs" />
     <Compile Include="GenericDictionaryWeakReferenceTests.cs" />
     <Compile Include="InitPropertyTests.cs" />
     <Compile Include="IncludeTests.cs" />

@@ -35,6 +35,8 @@ namespace Obfuscar.Metadata.Mutable
         private Dictionary<TypeReferenceHandle, MutableTypeReference> _typeRefCache;
         private Dictionary<MemberReferenceHandle, object> _memberRefCache;
         private Dictionary<MethodDefinitionHandle, MutableMethodReference> _methodDefRefCache;
+        private Dictionary<FieldDefinitionHandle, MutableFieldReference> _fieldDefRefCache;
+        private Dictionary<FieldDefinitionHandle, TypeDefinitionHandle> _fieldDeclaringTypeCache;
         private Dictionary<MethodSpecificationHandle, MutableMethodReference> _methodSpecCache;
         private Dictionary<AssemblyReferenceHandle, MutableAssemblyNameReference> _asmRefCache;
         private TypeProvider _typeProvider;
@@ -102,6 +104,8 @@ namespace Obfuscar.Metadata.Mutable
             _typeRefCache = new Dictionary<TypeReferenceHandle, MutableTypeReference>();
             _memberRefCache = new Dictionary<MemberReferenceHandle, object>();
             _methodDefRefCache = new Dictionary<MethodDefinitionHandle, MutableMethodReference>();
+            _fieldDefRefCache = new Dictionary<FieldDefinitionHandle, MutableFieldReference>();
+            _fieldDeclaringTypeCache = new Dictionary<FieldDefinitionHandle, TypeDefinitionHandle>();
             _methodSpecCache = new Dictionary<MethodSpecificationHandle, MutableMethodReference>();
             _asmRefCache = new Dictionary<AssemblyReferenceHandle, MutableAssemblyNameReference>();
             _typeProvider = null;
@@ -205,6 +209,11 @@ namespace Obfuscar.Metadata.Mutable
                 type.IsEnum = IsEnum(typeDef);
 
                 _typeDefCache[handle] = type;
+
+                foreach (var fieldHandle in typeDef.GetFields())
+                {
+                    _fieldDeclaringTypeCache[fieldHandle] = handle;
+                }
 
                 // Add to module or declaring type
                 if (typeDef.IsNested)
@@ -795,6 +804,22 @@ namespace Obfuscar.Metadata.Mutable
                 var fieldHandle = (FieldDefinitionHandle)handle;
                 if (_fieldDefCache.TryGetValue(fieldHandle, out var field))
                     return field;
+
+                if (_fieldDefRefCache.TryGetValue(fieldHandle, out var cachedRef))
+                    return cachedRef;
+
+                var fieldDef = _metadataReader.GetFieldDefinition(fieldHandle);
+                var name = _metadataReader.GetString(fieldDef.Name);
+                MutableTypeReference declaringType = null;
+                if (_fieldDeclaringTypeCache.TryGetValue(fieldHandle, out var declaringTypeHandle))
+                {
+                    declaringType = ReadTypeReference(declaringTypeHandle);
+                }
+                var fieldType = fieldDef.DecodeSignature(GetTypeProvider(), null);
+                var fieldDefinition = ResolveFieldDefinitionReference(name, declaringType);
+                var fieldRef = (MutableFieldReference)(fieldDefinition ?? new MutableFieldReference(name, fieldType, declaringType));
+                _fieldDefRefCache[fieldHandle] = fieldRef;
+                return fieldRef;
             }
             else if (handle.Kind == HandleKind.MemberReference)
             {
