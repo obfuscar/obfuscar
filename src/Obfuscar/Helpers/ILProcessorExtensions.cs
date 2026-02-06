@@ -60,7 +60,9 @@ namespace Obfuscar.Helpers
             {
                 for (int i = 0; i < instructionArrayOperand.Length; i++)
                 {
-                    if (oldToNewStringInstructions.TryGetValue(instructionArrayOperand[i], out LdStrInstructionReplacement oldToNew))
+                    MutableInstruction targetInstruction = instructionArrayOperand[i];
+                    if (targetInstruction != null
+                        && oldToNewStringInstructions.TryGetValue(targetInstruction, out LdStrInstructionReplacement oldToNew))
                     {
                         instructionArrayOperand[i] = oldToNew.NewInstruction;
                     }

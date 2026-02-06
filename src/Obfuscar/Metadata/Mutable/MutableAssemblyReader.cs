@@ -525,7 +525,10 @@ namespace Obfuscar.Metadata.Mutable
                 else if (instruction.Operand is int[] switchTargets)
                 {
                     var targets = new MutableInstruction[switchTargets.Length];
-                    var baseOffset = instruction.Offset + instruction.GetSize();
+                    // Switch target offsets are relative to the instruction immediately
+                    // after the jump table. At this stage Operand is still int[], so
+                    // MutableInstruction.GetSize() cannot infer jump table length.
+                    var baseOffset = instruction.Offset + instruction.OpCode.Size + 4 + (switchTargets.Length * 4);
                     for (int i = 0; i < switchTargets.Length; i++)
                     {
                         var absoluteTarget = baseOffset + switchTargets[i];

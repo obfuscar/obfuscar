@@ -285,5 +285,88 @@ namespace ObfuscarTests
             Assert.Equal(TotalStringCount, expected.Methods.Count - 2);
         }
 
+        [Fact]
+        public void CheckHideStringsWithSwitchInstruction()
+        {
+            string source = @"
+namespace TestClasses
+{
+    public static class SwitchAndStrings
+    {
+        public static string Pick(int value)
+        {
+            switch (value)
+            {
+                case 0: return ""zero"";
+                case 1: return ""one"";
+                case 2: return ""two"";
+                case 3: return ""three"";
+                case 4: return ""four"";
+                case 5: return ""five"";
+                case 6: return ""six"";
+                case 7: return ""seven"";
+                default: return ""other"";
+            }
+        }
+    }
+}";
+
+            TestHelper.CleanInput();
+            File.WriteAllText(Path.Combine(TestHelper.InputPath, "AssemblyWithSwitchAndStrings.cs"), source);
+            TestHelper.BuildAssembly(
+                "AssemblyWithSwitchAndStrings",
+                string.Empty,
+                languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
+
+            string inputAssemblyPath = Path.Combine(TestHelper.InputPath, "AssemblyWithSwitchAndStrings.dll");
+            AssemblyDefinition inputAssembly = AssemblyDefinition.ReadAssembly(inputAssemblyPath);
+
+            TypeDefinition switchType = inputAssembly.MainModule.GetType("TestClasses.SwitchAndStrings");
+            Assert.NotNull(switchType);
+            MethodDefinition method = null;
+            foreach (MethodDefinition candidate in switchType.Methods)
+            {
+                if (candidate.Name == "Pick")
+                {
+                    method = candidate;
+                    break;
+                }
+            }
+
+            Assert.NotNull(method);
+            Instruction switchInstruction = null;
+            foreach (Instruction instruction in method.Body.Instructions)
+            {
+                if (instruction.OpCode == OpCodes.Switch)
+                {
+                    switchInstruction = instruction;
+                    break;
+                }
+            }
+
+            Assert.NotNull(switchInstruction);
+            Assert.IsType<Instruction[]>(switchInstruction.Operand);
+            foreach (Instruction target in (Instruction[])switchInstruction.Operand)
+            {
+                Assert.NotNull(target);
+            }
+
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HideStrings' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithSwitchAndStrings.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.Obfuscate(xml, true);
+            AssemblyDefinition outputAssembly = AssemblyDefinition.ReadAssembly(
+                Path.Combine(outputPath, "AssemblyWithSwitchAndStrings.dll"));
+
+            Assert.NotNull(outputAssembly);
+        }
+
     }
 }
