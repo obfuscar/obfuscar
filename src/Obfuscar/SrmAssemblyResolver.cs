@@ -48,6 +48,7 @@ namespace Obfuscar
 
         private readonly List<string> pathsPortable = new List<string>();
         private readonly List<string> pathsNetCore = new List<string>();
+        private MutableAssemblyDefinition _runtimeAssembly;
 
         public SrmAssemblyResolver(Project project)
         {
@@ -162,31 +163,49 @@ namespace Obfuscar
 
         private MutableAssemblyDefinition ResolveFromSearchPaths(MutableAssemblyNameReference name, MutableReaderParameters parameters)
         {
-            var searchPaths = new List<string>(searchDirectories);
-            if ((name.Attributes & AssemblyNameFlags.Retargetable) != 0)
+            foreach (var dir in searchDirectories)
             {
-                searchPaths.AddRange(pathsPortable);
-            }
-            else
-            {
-                searchPaths.AddRange(pathsNetCore);
+                var resolved = TryResolveFromDirectory(dir, name, parameters);
+                if (resolved != null)
+                {
+                    return resolved;
+                }
             }
 
-            foreach (var dir in searchPaths)
+            var extraPaths = (name.Attributes & AssemblyNameFlags.Retargetable) != 0
+                ? pathsPortable
+                : pathsNetCore;
+            foreach (var dir in extraPaths)
             {
-                var dllPath = Path.Combine(dir, name.Name + ".dll");
-                if (File.Exists(dllPath))
+                var resolved = TryResolveFromDirectory(dir, name, parameters);
+                if (resolved != null)
                 {
-                    LoggerService.Logger.LogDebug("Resolved assembly '{Name}' from search path: {Path}", name.Name, dllPath);
-                    return LoadAssembly(dllPath, parameters);
+                    return resolved;
                 }
+            }
 
-                var exePath = Path.Combine(dir, name.Name + ".exe");
-                if (File.Exists(exePath))
-                {
-                    LoggerService.Logger.LogDebug("Resolved assembly '{Name}' from search path: {Path}", name.Name, exePath);
-                    return LoadAssembly(exePath, parameters);
-                }
+            return null;
+        }
+
+        private MutableAssemblyDefinition TryResolveFromDirectory(string dir, MutableAssemblyNameReference name, MutableReaderParameters parameters)
+        {
+            if (string.IsNullOrEmpty(dir))
+            {
+                return null;
+            }
+
+            var dllPath = Path.Combine(dir, name.Name + ".dll");
+            if (File.Exists(dllPath))
+            {
+                LoggerService.Logger.LogDebug("Resolved assembly '{Name}' from search path: {Path}", name.Name, dllPath);
+                return LoadAssembly(dllPath, parameters);
+            }
+
+            var exePath = Path.Combine(dir, name.Name + ".exe");
+            if (File.Exists(exePath))
+            {
+                LoggerService.Logger.LogDebug("Resolved assembly '{Name}' from search path: {Path}", name.Name, exePath);
+                return LoadAssembly(exePath, parameters);
             }
 
             return null;
@@ -197,16 +216,22 @@ namespace Obfuscar
             if (!IsRuntimeAssemblyName(name.Name))
                 return null;
 
+            if (_runtimeAssembly != null)
+            {
+                assemblies[name.Name] = _runtimeAssembly;
+                return _runtimeAssembly;
+            }
+
             var runtimePath = typeof(object).Assembly.Location;
             if (!File.Exists(runtimePath))
                 return null;
 
             LoggerService.Logger.LogDebug("Resolved assembly '{Name}' from runtime: {Path}", name.Name, runtimePath);
-            var runtimeAssembly = LoadAssembly(runtimePath, parameters);
-            if (runtimeAssembly != null && !assemblies.ContainsKey(name.Name))
-                assemblies[name.Name] = runtimeAssembly;
+            _runtimeAssembly = LoadAssembly(runtimePath, parameters);
+            if (_runtimeAssembly != null)
+                assemblies[name.Name] = _runtimeAssembly;
 
-            return runtimeAssembly;
+            return _runtimeAssembly;
         }
 
         private static bool IsRuntimeAssemblyName(string name)
@@ -223,9 +248,14 @@ namespace Obfuscar
 
         private MutableAssemblyDefinition LoadAssembly(string path, MutableReaderParameters parameters)
         {
-            var readerParams = parameters ?? new MutableReaderParameters();
-            if (readerParams.AssemblyResolver == null)
-                readerParams.AssemblyResolver = this;
+            var readerParams = new MutableReaderParameters
+            {
+                ReadSymbols = parameters?.ReadSymbols ?? false,
+                InMemory = parameters?.InMemory ?? false,
+                AssemblyResolver = this,
+                // Dependencies are only used for metadata/type resolution.
+                ReadMethodBodies = false
+            };
 
             var assembly = MutableAssemblyDefinition.ReadAssembly(path, readerParams);
             RegisterAssembly(assembly);

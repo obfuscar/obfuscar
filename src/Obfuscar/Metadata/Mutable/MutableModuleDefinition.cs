@@ -13,6 +13,7 @@ namespace Obfuscar.Metadata.Mutable
         /// Creates a new module definition.
         /// </summary>
         private readonly Dictionary<string, MutableTypeDefinition> _typeMap = new Dictionary<string, MutableTypeDefinition>(StringComparer.Ordinal);
+        private readonly HashSet<string> _missingTypeNames = new HashSet<string>(StringComparer.Ordinal);
 
         public MutableModuleDefinition(string name, MutableModuleKind kind)
         {
@@ -123,15 +124,26 @@ namespace Obfuscar.Metadata.Mutable
             if (_typeMap.TryGetValue(fullName, out var cached))
                 return cached;
 
+            if (_missingTypeNames.Contains(fullName))
+                return null;
+
             // Fallback to slow search for compatibility
             foreach (var type in Types)
             {
                 if (type.FullName == fullName)
+                {
+                    _typeMap[fullName] = type;
                     return type;
+                }
                 var nested = FindNestedType(type, fullName);
                 if (nested != null)
+                {
+                    _typeMap[fullName] = nested;
                     return nested;
+                }
             }
+
+            _missingTypeNames.Add(fullName);
             return null;
         }
 
@@ -153,6 +165,7 @@ namespace Obfuscar.Metadata.Mutable
 
             // Update lookup map (overwrite any previous entry)
             _typeMap[type.FullName] = type;
+            _missingTypeNames.Remove(type.FullName);
         }
 
         private MutableTypeDefinition FindNestedType(MutableTypeDefinition parent, string fullName)

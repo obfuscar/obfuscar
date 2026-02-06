@@ -34,6 +34,38 @@ namespace Obfuscar
 {
     static class TypeNameCache
     {
+        private readonly struct ScopeTypeKey : System.IEquatable<ScopeTypeKey>
+        {
+            public ScopeTypeKey(string scope, string typeName)
+            {
+                Scope = scope ?? string.Empty;
+                TypeName = typeName ?? string.Empty;
+            }
+
+            public string Scope { get; }
+            public string TypeName { get; }
+
+            public bool Equals(ScopeTypeKey other)
+            {
+                return string.Equals(Scope, other.Scope, System.StringComparison.Ordinal)
+                    && string.Equals(TypeName, other.TypeName, System.StringComparison.Ordinal);
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is ScopeTypeKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (System.StringComparer.Ordinal.GetHashCode(Scope) * 397)
+                        ^ System.StringComparer.Ordinal.GetHashCode(TypeName);
+                }
+            }
+        }
+
         public static Dictionary<MutableTypeReference, string> nameCache = new Dictionary<MutableTypeReference, string>();
 
         /// <summary>
@@ -104,7 +136,7 @@ namespace Obfuscar
         }
 
         // String-based cache for abstraction layer types
-        private static Dictionary<string, string> stringNameCache = new Dictionary<string, string>();
+        private static Dictionary<ScopeTypeKey, string> stringNameCache = new Dictionary<ScopeTypeKey, string>();
 
         /// <summary>
         /// Gets a comparable type name from an IType abstraction.
@@ -115,7 +147,7 @@ namespace Obfuscar
             if (type == null)
                 return string.Empty;
 
-            string key = $"{type.Scope}|{type.FullName}";
+            var key = new ScopeTypeKey(type.Scope, type.FullName);
             lock (stringNameCache)
             {
                 if (!stringNameCache.TryGetValue(key, out string name))
@@ -137,7 +169,7 @@ namespace Obfuscar
             if (string.IsNullOrEmpty(parameterTypeFullName))
                 return string.Empty;
 
-            string key = $"{scope}|{parameterTypeFullName}";
+            var key = new ScopeTypeKey(scope, parameterTypeFullName);
             lock (stringNameCache)
             {
                 if (!stringNameCache.TryGetValue(key, out string name))

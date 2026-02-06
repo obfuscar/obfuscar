@@ -22,6 +22,7 @@ namespace Obfuscar.Metadata.Mutable
         private MutableModuleDefinition _module;
         private MutableAssemblyDefinition _assembly;
         private string _fileName;
+        private bool _readMethodBodies = true;
         
         // Handle caches
         private Dictionary<TypeDefinitionHandle, MutableTypeDefinition> _typeDefCache;
@@ -60,6 +61,7 @@ namespace Obfuscar.Metadata.Mutable
         /// </summary>
         public MutableAssemblyDefinition Read(Stream stream, MutableReaderParameters parameters)
         {
+            _readMethodBodies = parameters?.ReadMethodBodies ?? true;
             _peReader = new PEReader(stream);
             _metadataReader = _peReader.GetMetadataReader();
             
@@ -240,7 +242,13 @@ namespace Obfuscar.Metadata.Mutable
                 var typeDef = _metadataReader.GetTypeDefinition(handle);
                 
                 // Read fields
-                foreach (var fieldHandle in typeDef.GetFields())
+                var fieldHandles = typeDef.GetFields();
+                if (fieldHandles.Count > 0 &&
+                    type.Fields.Capacity < type.Fields.Count + fieldHandles.Count)
+                {
+                    type.Fields.Capacity = type.Fields.Count + fieldHandles.Count;
+                }
+                foreach (var fieldHandle in fieldHandles)
                 {
                     var field = ReadFieldDefinition(fieldHandle, type);
                     // Register field into type (adds to list and fast map)
@@ -248,14 +256,26 @@ namespace Obfuscar.Metadata.Mutable
                 }
                 
                 // Read methods
-                foreach (var methodHandle in typeDef.GetMethods())
+                var methodHandles = typeDef.GetMethods();
+                if (methodHandles.Count > 0 &&
+                    type.Methods.Capacity < type.Methods.Count + methodHandles.Count)
+                {
+                    type.Methods.Capacity = type.Methods.Count + methodHandles.Count;
+                }
+                foreach (var methodHandle in methodHandles)
                 {
                     var method = ReadMethodDefinition(methodHandle, type);
                     type.Methods.Add(method);
                 }
 
                 // Read explicit method implementations
-                foreach (var implHandle in typeDef.GetMethodImplementations())
+                var methodImplementations = typeDef.GetMethodImplementations();
+                if (methodImplementations.Count > 0 &&
+                    type.MethodImplementations.Capacity < type.MethodImplementations.Count + methodImplementations.Count)
+                {
+                    type.MethodImplementations.Capacity = type.MethodImplementations.Count + methodImplementations.Count;
+                }
+                foreach (var implHandle in methodImplementations)
                 {
                     var impl = _metadataReader.GetMethodImplementation(implHandle);
                     var body = ResolveMethodHandle(impl.MethodBody);
@@ -267,7 +287,13 @@ namespace Obfuscar.Metadata.Mutable
                 }
 
                 // Read interfaces
-                foreach (var ifaceImpl in typeDef.GetInterfaceImplementations())
+                var interfaceImplementations = typeDef.GetInterfaceImplementations();
+                if (interfaceImplementations.Count > 0 &&
+                    type.Interfaces.Capacity < type.Interfaces.Count + interfaceImplementations.Count)
+                {
+                    type.Interfaces.Capacity = type.Interfaces.Count + interfaceImplementations.Count;
+                }
+                foreach (var ifaceImpl in interfaceImplementations)
                 {
                     var impl = _metadataReader.GetInterfaceImplementation(ifaceImpl);
                     var ifaceType = ReadTypeReference(impl.Interface);
@@ -278,7 +304,13 @@ namespace Obfuscar.Metadata.Mutable
                 }
 
                 // Read generic parameters
-                foreach (var gpHandle in typeDef.GetGenericParameters())
+                var typeGenericParameters = typeDef.GetGenericParameters();
+                if (typeGenericParameters.Count > 0 &&
+                    type.GenericParameters.Capacity < type.GenericParameters.Count + typeGenericParameters.Count)
+                {
+                    type.GenericParameters.Capacity = type.GenericParameters.Count + typeGenericParameters.Count;
+                }
+                foreach (var gpHandle in typeGenericParameters)
                 {
                     var gp = ReadGenericParameter(gpHandle, type);
                     type.GenericParameters.Add(gp);
@@ -294,14 +326,26 @@ namespace Obfuscar.Metadata.Mutable
                 var typeDef = _metadataReader.GetTypeDefinition(handle);
                 
                 // Read properties
-                foreach (var propHandle in typeDef.GetProperties())
+                var propertyHandles = typeDef.GetProperties();
+                if (propertyHandles.Count > 0 &&
+                    type.Properties.Capacity < type.Properties.Count + propertyHandles.Count)
+                {
+                    type.Properties.Capacity = type.Properties.Count + propertyHandles.Count;
+                }
+                foreach (var propHandle in propertyHandles)
                 {
                     var prop = ReadPropertyDefinition(propHandle, type);
                     type.Properties.Add(prop);
                 }
                 
                 // Read events
-                foreach (var evtHandle in typeDef.GetEvents())
+                var eventHandles = typeDef.GetEvents();
+                if (eventHandles.Count > 0 &&
+                    type.Events.Capacity < type.Events.Count + eventHandles.Count)
+                {
+                    type.Events.Capacity = type.Events.Count + eventHandles.Count;
+                }
+                foreach (var evtHandle in eventHandles)
                 {
                     var evt = ReadEventDefinition(evtHandle, type);
                     type.Events.Add(evt);
@@ -369,6 +413,10 @@ namespace Obfuscar.Metadata.Mutable
             method.HasThis = signature.Header.IsInstance;
 
             // Populate parameters from signature first (parameter rows may be absent).
+            if (signature.ParameterTypes.Length > 0)
+            {
+                method.Parameters.Capacity = signature.ParameterTypes.Length;
+            }
             for (int i = 0; i < signature.ParameterTypes.Length; i++)
             {
                 method.Parameters.Add(new MutableParameterDefinition($"param{i}", ParameterAttributes.None, signature.ParameterTypes[i])
@@ -411,7 +459,13 @@ namespace Obfuscar.Metadata.Mutable
             }
 
             // Read generic parameters
-            foreach (var gpHandle in methodDef.GetGenericParameters())
+            var methodGenericParameters = methodDef.GetGenericParameters();
+            if (methodGenericParameters.Count > 0 &&
+                method.GenericParameters.Capacity < methodGenericParameters.Count)
+            {
+                method.GenericParameters.Capacity = methodGenericParameters.Count;
+            }
+            foreach (var gpHandle in methodGenericParameters)
             {
                 var gp = ReadGenericParameter(gpHandle, method);
                 method.GenericParameters.Add(gp);
@@ -419,7 +473,7 @@ namespace Obfuscar.Metadata.Mutable
 
             // Read method body if present
             var rva = methodDef.RelativeVirtualAddress;
-            if (rva != 0 && !method.IsAbstract && !method.IsPInvokeImpl)
+            if (_readMethodBodies && rva != 0 && !method.IsAbstract && !method.IsPInvokeImpl)
             {
                 try
                 {
@@ -451,6 +505,11 @@ namespace Obfuscar.Metadata.Mutable
                 var locals = localSig.DecodeLocalSignature(
                     GetTypeProvider(),
                     new GenericContext(method.DeclaringType, method));
+
+                if (locals.Length > 0 && method.Body.Variables.Capacity < locals.Length)
+                {
+                    method.Body.Variables.Capacity = locals.Length;
+                }
                 
                 for (int i = 0; i < locals.Length; i++)
                 {
@@ -466,6 +525,10 @@ namespace Obfuscar.Metadata.Mutable
             ReadIL(method.Body, body.GetILBytes());
 
             // Read exception handlers
+            if (body.ExceptionRegions.Length > 0 && method.Body.ExceptionHandlers.Capacity < body.ExceptionRegions.Length)
+            {
+                method.Body.ExceptionHandlers.Capacity = body.ExceptionRegions.Length;
+            }
             foreach (var region in body.ExceptionRegions)
             {
                 var handler = new MutableExceptionHandler

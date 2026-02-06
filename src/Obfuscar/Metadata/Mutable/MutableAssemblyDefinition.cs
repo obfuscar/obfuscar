@@ -309,10 +309,21 @@ namespace Obfuscar.Metadata.Mutable
     /// </summary>
     public class MutableReaderParameters
     {
+        public MutableReaderParameters()
+        {
+            ReadMethodBodies = true;
+        }
+
         /// <summary>
         /// Whether to read symbols.
         /// </summary>
         public bool ReadSymbols { get; set; }
+
+        /// <summary>
+        /// Whether to read method bodies (IL/locals/handlers). Keep true for project assemblies;
+        /// dependency resolution can disable this to reduce parse overhead.
+        /// </summary>
+        public bool ReadMethodBodies { get; set; }
 
         /// <summary>
         /// Assembly resolver.

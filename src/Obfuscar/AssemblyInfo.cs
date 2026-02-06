@@ -854,17 +854,17 @@ namespace Obfuscar
                 // Validate referenced assemblies exist early to match legacy behavior.
                 foreach (var asmRef in definition.MainModule.AssemblyReferences)
                 {
+                    if (IsFrameworkAssembly(asmRef.Name))
+                    {
+                        continue;
+                    }
+
                     try
                     {
                         project.Cache.Resolve(asmRef, new MutableReaderParameters { AssemblyResolver = project.Cache });
                     }
                     catch (System.IO.FileNotFoundException e)
                     {
-                        if (IsFrameworkAssembly(asmRef.Name))
-                        {
-                            continue;
-                        }
-
                         throw new ObfuscarException("Unable to resolve dependency:  " + asmRef.Name, e);
                     }
                 }
