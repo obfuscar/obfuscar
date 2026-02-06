@@ -929,11 +929,41 @@ namespace Obfuscar.Metadata.Mutable
             else
             {
                 var fieldType = memberRef.DecodeFieldSignature(GetTypeProvider(), null);
-                result = new MutableFieldReference(name, fieldType, declaringType);
+                var fieldDefinition = ResolveFieldDefinitionReference(name, declaringType);
+                result = fieldDefinition ?? new MutableFieldReference(name, fieldType, declaringType);
             }
 
             _memberRefCache[handle] = result;
             return result;
+        }
+
+        private MutableFieldDefinition ResolveFieldDefinitionReference(string name, MutableTypeReference declaringType)
+        {
+            var typeDefinition = ResolveDeclaringTypeDefinition(declaringType);
+            if (typeDefinition == null)
+                return null;
+
+            foreach (var field in typeDefinition.Fields)
+            {
+                if (field.Name == name)
+                    return field;
+            }
+
+            return null;
+        }
+
+        private MutableTypeDefinition ResolveDeclaringTypeDefinition(MutableTypeReference declaringType)
+        {
+            if (declaringType == null)
+                return null;
+
+            if (declaringType is MutableTypeDefinition typeDefinition)
+                return typeDefinition;
+
+            if (declaringType is MutableGenericInstanceType genericInstance)
+                return ResolveDeclaringTypeDefinition(genericInstance.ElementType);
+
+            return _module?.GetType(declaringType.FullName);
         }
 
         private MutableInstruction GetInstructionAtOffset(MutableMethodBody body, int offset)

@@ -507,7 +507,14 @@ namespace Obfuscar
         private void RenameField(AssemblyInfo info, FieldKey fieldKey, FieldDefinition field, string newName)
         {
             // find references, rename them, then rename the field itself
-            foreach (AssemblyInfo reference in info.ReferencedBy)
+            var references = new List<AssemblyInfo>();
+            references.AddRange(info.ReferencedBy);
+            if (!references.Contains(info))
+            {
+                references.Add(info);
+            }
+
+            foreach (AssemblyInfo reference in references)
             {
                 for (int i = 0; i < reference.UnrenamedReferences.Count;)
                 {

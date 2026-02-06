@@ -219,6 +219,7 @@ namespace Obfuscar.Metadata.Mutable
         {
             ElementType = elementType;
             GenericArguments = new System.Collections.Generic.List<MutableTypeReference>();
+            IsValueType = elementType.IsValueType;
         }
 
         /// <summary>
@@ -229,6 +230,7 @@ namespace Obfuscar.Metadata.Mutable
         {
             ElementType = elementType;
             GenericArguments = new System.Collections.Generic.List<MutableTypeReference>(argumentCapacity > 0 ? argumentCapacity : 0);
+            IsValueType = elementType.IsValueType;
         }
 
         /// <summary>

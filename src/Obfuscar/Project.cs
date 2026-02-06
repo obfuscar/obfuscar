@@ -498,8 +498,7 @@ namespace Obfuscar
         /// </summary>
         public bool Contains(MutableTypeReference type)
         {
-            string name = type.GetScopeName();
-
+            string name = NormalizeAssemblyScopeName(type.GetScopeName());
             return assemblyMap.ContainsKey(name);
         }
 
@@ -508,7 +507,27 @@ namespace Obfuscar
         /// </summary>
         internal bool Contains(TypeKey type)
         {
-            return assemblyMap.ContainsKey(type.Scope);
+            return assemblyMap.ContainsKey(NormalizeAssemblyScopeName(type.Scope));
+        }
+
+        private static string NormalizeAssemblyScopeName(string scope)
+        {
+            if (string.IsNullOrEmpty(scope))
+                return string.Empty;
+
+            var name = scope.Trim();
+            var commaIndex = name.IndexOf(',');
+            if (commaIndex >= 0)
+                name = name.Substring(0, commaIndex).Trim();
+
+            var fileName = System.IO.Path.GetFileName(name);
+            if (fileName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ||
+                fileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            {
+                fileName = System.IO.Path.GetFileNameWithoutExtension(fileName);
+            }
+
+            return fileName;
         }
 
         internal AssemblyInfo GetAssemblyInfoByName(string name)
