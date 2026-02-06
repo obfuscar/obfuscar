@@ -1743,6 +1743,7 @@ namespace Obfuscar
                     TypeDefinition structType = new TypeDefinition("1{" + guid + "}", "2",
                         TypeAttributes.ExplicitLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed |
                         TypeAttributes.NestedPrivate, SystemValueTypeTypeReference);
+                    structType.IsValueType = true;
                     structType.DeclaringType = newType;
                     structType.PackingSize = 1;
                     newType.NestedTypes.Add(structType);
