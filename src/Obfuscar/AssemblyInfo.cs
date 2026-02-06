@@ -997,6 +997,11 @@ namespace Obfuscar
             return false;
         }
 
+        private static bool IsCompilerGenerated(TypeKey type)
+        {
+            return type?.Descriptor?.CustomAttributeTypeFullNames?.Contains("System.Runtime.CompilerServices.CompilerGeneratedAttribute") == true;
+        }
+
         public bool ShouldSkip(TypeKey type, InheritMap map, bool keepPublicApi, bool hidePrivateApi, bool markedOnly,
             bool skipCompilerGeneratedTypes, out string message)
         {
@@ -1071,6 +1076,12 @@ namespace Obfuscar
                 return true;
             }
 
+            if (project.Settings.SkipGenerated && IsCompilerGenerated(method.TypeKey))
+            {
+                message = "compiler generated attribute rule in configuration";
+                return true;
+            }
+
             if (method.Method.IsSpecialName)
             {
                 var semantics = method.Method.SemanticsAttributes;
@@ -1109,6 +1120,12 @@ namespace Obfuscar
             {
                 message = "type attribute";
                 return !parent.Value;
+            }
+
+            if (project.Settings.SkipGenerated && IsCompilerGenerated(method.TypeKey))
+            {
+                message = "compiler generated attribute rule in configuration";
+                return true;
             }
 
             if (markedOnly)
@@ -1161,6 +1178,9 @@ namespace Obfuscar
                 method.Method.ReturnType.FullName == "System.Resources.ResourceManager")
                 return true; // IMPORTANT: avoid hiding resource type name, as it might be renamed later.
 
+            if (project.Settings.SkipGenerated && IsCompilerGenerated(method.TypeKey))
+                return true;
+
             if (ShouldForce(method.TypeKey, TypeAffectFlags.AffectString, map))
                 return false;
 
@@ -1198,6 +1218,12 @@ namespace Obfuscar
             {
                 message = "type attribute";
                 return !parent.Value;
+            }
+
+            if (project.Settings.SkipGenerated && IsCompilerGenerated(field.TypeKey))
+            {
+                message = "compiler generated attribute rule in configuration";
+                return true;
             }
 
             if (markedOnly)
@@ -1272,6 +1298,12 @@ namespace Obfuscar
             {
                 message = "type attribute";
                 return !parent.Value;
+            }
+
+            if (project.Settings.SkipGenerated && IsCompilerGenerated(prop.TypeKey))
+            {
+                message = "compiler generated attribute rule in configuration";
+                return true;
             }
 
             if (markedOnly)
@@ -1351,6 +1383,12 @@ namespace Obfuscar
             {
                 message = "type attribute";
                 return !parent.Value;
+            }
+
+            if (project.Settings.SkipGenerated && IsCompilerGenerated(evt.TypeKey))
+            {
+                message = "compiler generated attribute rule in configuration";
+                return true;
             }
 
             if (markedOnly)

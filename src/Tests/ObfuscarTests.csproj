@@ -21,6 +21,7 @@
   <ItemGroup>
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="AssemblyHelper.cs" />
+    <Compile Include="AnonymousTypePropertyTests.cs" />
     <Compile Include="AttributeTests.cs" />
     <Compile Include="AutoSkipTypeTests.cs" />
     <Compile Include="BamlTests.cs" />
