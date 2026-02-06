@@ -110,7 +110,7 @@ namespace Obfuscar.Metadata.Mutable
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private TypeProvider GetTypeProvider()
         {
-            return _typeProvider ??= new TypeProvider(_module, _metadataReader, _asmRefCache);
+            return _typeProvider ??= new TypeProvider(_module, _metadataReader, _asmRefCache, ReadTypeReference);
         }
 
         private MutableAssemblyDefinition ReadAssemblyDefinition()
@@ -1083,6 +1083,7 @@ namespace Obfuscar.Metadata.Mutable
                     var ns = _metadataReader.GetString(typeRef.Namespace);
                     var name = _metadataReader.GetString(typeRef.Name);
                     var reference = new MutableTypeReference(ns, name, _module);
+                    _typeRefCache[typeRefHandle] = reference;
 
                     // Resolve scope
                     if (typeRef.ResolutionScope.Kind == HandleKind.AssemblyReference)
@@ -1093,8 +1094,17 @@ namespace Obfuscar.Metadata.Mutable
                             reference.Scope = asmRef;
                         }
                     }
+                    else if (typeRef.ResolutionScope.Kind == HandleKind.TypeReference)
+                    {
+                        reference.DeclaringType = ReadTypeReference((TypeReferenceHandle)typeRef.ResolutionScope);
+                        reference.Namespace = string.Empty;
+                    }
+                    else if (typeRef.ResolutionScope.Kind == HandleKind.TypeDefinition)
+                    {
+                        reference.DeclaringType = ReadTypeReference((TypeDefinitionHandle)typeRef.ResolutionScope);
+                        reference.Namespace = string.Empty;
+                    }
 
-                    _typeRefCache[typeRefHandle] = reference;
                     return reference;
 
                 case HandleKind.TypeSpecification:
@@ -1646,13 +1656,16 @@ namespace Obfuscar.Metadata.Mutable
         private readonly MutableModuleDefinition _module;
         private readonly MetadataReader _reader;
         private readonly Dictionary<AssemblyReferenceHandle, MutableAssemblyNameReference> _asmRefCache;
+        private readonly Func<EntityHandle, MutableTypeReference> _typeResolver;
 
         public TypeProvider(MutableModuleDefinition module, MetadataReader reader, 
-            Dictionary<AssemblyReferenceHandle, MutableAssemblyNameReference> asmRefCache)
+            Dictionary<AssemblyReferenceHandle, MutableAssemblyNameReference> asmRefCache,
+            Func<EntityHandle, MutableTypeReference> typeResolver)
         {
             _module = module;
             _reader = reader;
             _asmRefCache = asmRefCache;
+            _typeResolver = typeResolver;
         }
 
         public MutableTypeReference GetPrimitiveType(PrimitiveTypeCode typeCode)
@@ -1719,34 +1732,31 @@ namespace Obfuscar.Metadata.Mutable
         public MutableTypeReference GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
         {
             var typeDef = reader.GetTypeDefinition(handle);
-            var ns = reader.GetString(typeDef.Namespace);
-            var name = reader.GetString(typeDef.Name);
-            return new MutableTypeReference(ns, name, _module)
+            if (typeDef.IsNested && _typeResolver != null)
             {
-                IsValueType = rawTypeKind == 0x11
-            };
+                var resolved = _typeResolver(handle);
+                if (resolved != null)
+                    return resolved;
+            }
+
+            return CreateFromTypeDefinition(handle, rawTypeKind == 0x11);
         }
 
         public MutableTypeReference GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
         {
             var typeRef = reader.GetTypeReference(handle);
-            var ns = reader.GetString(typeRef.Namespace);
-            var name = reader.GetString(typeRef.Name);
-            var result = new MutableTypeReference(ns, name, _module)
-            {
-                IsValueType = rawTypeKind == 0x11
-            };
+            bool isNestedReference =
+                typeRef.ResolutionScope.Kind == HandleKind.TypeReference ||
+                typeRef.ResolutionScope.Kind == HandleKind.TypeDefinition;
 
-            if (typeRef.ResolutionScope.Kind == HandleKind.AssemblyReference)
+            if (isNestedReference && _typeResolver != null)
             {
-                var asmRefHandle = (AssemblyReferenceHandle)typeRef.ResolutionScope;
-                if (_asmRefCache.TryGetValue(asmRefHandle, out var asmRef))
-                {
-                    result.Scope = asmRef;
-                }
+                var resolved = _typeResolver(handle);
+                if (resolved != null)
+                    return resolved;
             }
 
-            return result;
+            return CreateFromTypeReference(handle, rawTypeKind == 0x11);
         }
 
         public MutableTypeReference GetTypeFromSpecification(MetadataReader reader, object genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
@@ -1799,6 +1809,59 @@ namespace Obfuscar.Metadata.Mutable
         public MutableTypeReference GetPinnedType(MutableTypeReference elementType)
         {
             return elementType;
+        }
+
+        private MutableTypeReference CreateFromTypeDefinition(TypeDefinitionHandle handle, bool isValueType)
+        {
+            var typeDef = _reader.GetTypeDefinition(handle);
+            var ns = _reader.GetString(typeDef.Namespace);
+            var name = _reader.GetString(typeDef.Name);
+
+            var result = new MutableTypeReference(ns, name, _module)
+            {
+                IsValueType = isValueType
+            };
+
+            if (typeDef.IsNested)
+            {
+                result.DeclaringType = CreateFromTypeDefinition(typeDef.GetDeclaringType(), false);
+                result.Namespace = string.Empty;
+            }
+
+            return result;
+        }
+
+        private MutableTypeReference CreateFromTypeReference(TypeReferenceHandle handle, bool isValueType)
+        {
+            var typeRef = _reader.GetTypeReference(handle);
+            var ns = _reader.GetString(typeRef.Namespace);
+            var name = _reader.GetString(typeRef.Name);
+
+            var result = new MutableTypeReference(ns, name, _module)
+            {
+                IsValueType = isValueType
+            };
+
+            if (typeRef.ResolutionScope.Kind == HandleKind.AssemblyReference)
+            {
+                var asmRefHandle = (AssemblyReferenceHandle)typeRef.ResolutionScope;
+                if (_asmRefCache.TryGetValue(asmRefHandle, out var asmRef))
+                {
+                    result.Scope = asmRef;
+                }
+            }
+            else if (typeRef.ResolutionScope.Kind == HandleKind.TypeReference)
+            {
+                result.DeclaringType = CreateFromTypeReference((TypeReferenceHandle)typeRef.ResolutionScope, false);
+                result.Namespace = string.Empty;
+            }
+            else if (typeRef.ResolutionScope.Kind == HandleKind.TypeDefinition)
+            {
+                result.DeclaringType = CreateFromTypeDefinition((TypeDefinitionHandle)typeRef.ResolutionScope, false);
+                result.Namespace = string.Empty;
+            }
+
+            return result;
         }
     }
 }
