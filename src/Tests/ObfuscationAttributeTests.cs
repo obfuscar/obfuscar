@@ -309,6 +309,27 @@ namespace ObfuscarTests
             Assert.True(nestedClassB2.Status == ObfuscationStatus.Skipped,
                 "Nested class shouldn't have been obfuscated");
 
+            // [Obfuscation(ApplyToMembers=false)] on the type should not mark members.
+            // Under MarkedOnly=true, unmarked members/nested types must remain skipped.
+            TypeDefinition classEType = inAssmDef.MainModule.GetType("TestClasses.InternalClass3");
+            ObfuscatedThing classE = map.GetClass(new TypeKey(classEType));
+            var classEmethod1 = FindByName(classEType, "PublicMethod");
+            var methodE = map.GetMethod(new MethodKey(classEmethod1));
+
+            TypeDefinition nestedClassEType = classEType.NestedTypes[0];
+            ObfuscatedThing nestedClassE = map.GetClass(new TypeKey(nestedClassEType));
+            TypeDefinition nestedClassEType2 = nestedClassEType.NestedTypes[0];
+            ObfuscatedThing nestedClassE2 = map.GetClass(new TypeKey(nestedClassEType2));
+
+            Assert.True(classE.Status == ObfuscationStatus.Skipped,
+                "InternalClass3 shouldn't have been obfuscated in MarkedOnly mode.");
+            Assert.True(methodE.Status == ObfuscationStatus.Skipped,
+                "PublicMethod shouldn't have been obfuscated in MarkedOnly mode when only parent has ApplyToMembers=false.");
+            Assert.True(nestedClassE.Status == ObfuscationStatus.Skipped,
+                "Nested class shouldn't have been obfuscated in MarkedOnly mode.");
+            Assert.True(nestedClassE2.Status == ObfuscationStatus.Skipped,
+                "Nested class shouldn't have been obfuscated in MarkedOnly mode.");
+
             TypeDefinition classDType = inAssmDef.MainModule.GetType("TestClasses.PublicClass2");
             ObfuscatedThing classD = map.GetClass(new TypeKey(classDType));
             var classDmethod1 = FindByName(classDType, "PublicMethod");

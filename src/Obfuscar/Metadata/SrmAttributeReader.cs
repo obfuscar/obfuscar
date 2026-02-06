@@ -138,7 +138,7 @@ namespace Obfuscar.Metadata
                     var rename = !exclude;
 
                     if (fromMember && !applyToMembers)
-                        return !rename;
+                        continue;
 
                     return rename;
                 }
