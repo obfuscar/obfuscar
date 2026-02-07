@@ -59,12 +59,3 @@ jobs:
           Write-Host "Packaging failed. Exiting."
           exit $LASTEXITCODE
         }
-
-        Write-Host "Publishing packages"
-        dotnet nuget add source --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
-        $nupkgs = Get-ChildItem -Path . -Recurse -Filter *.nupkg
-        if ($nupkgs.Count -eq 0) { Write-Host 'No packages found.'; exit 0 }
-        foreach ($pkg in $nupkgs) {
-          Write-Host "Pushing $($pkg.FullName)"
-          dotnet nuget push $pkg.FullName --source github --skip-duplicate
-        }
