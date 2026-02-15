@@ -39,6 +39,7 @@ namespace Obfuscar.Metadata.Mutable
         private Dictionary<FieldDefinitionHandle, TypeDefinitionHandle> _fieldDeclaringTypeCache;
         private Dictionary<MethodSpecificationHandle, MutableMethodReference> _methodSpecCache;
         private Dictionary<AssemblyReferenceHandle, MutableAssemblyNameReference> _asmRefCache;
+        private Dictionary<ModuleReferenceHandle, MutableModuleReference> _modRefCache;
         private TypeProvider _typeProvider;
 
         /// <summary>
@@ -82,6 +83,7 @@ namespace Obfuscar.Metadata.Mutable
             
             // Read assembly references first
             ReadAssemblyReferences();
+            ReadModuleReferences();
             
             // Read types
             ReadTypes();
@@ -108,6 +110,7 @@ namespace Obfuscar.Metadata.Mutable
             _fieldDeclaringTypeCache = new Dictionary<FieldDefinitionHandle, TypeDefinitionHandle>();
             _methodSpecCache = new Dictionary<MethodSpecificationHandle, MutableMethodReference>();
             _asmRefCache = new Dictionary<AssemblyReferenceHandle, MutableAssemblyNameReference>();
+            _modRefCache = new Dictionary<ModuleReferenceHandle, MutableModuleReference>();
             _typeProvider = null;
         }
 
@@ -187,6 +190,19 @@ namespace Obfuscar.Metadata.Mutable
                 
                 _asmRefCache[handle] = reference;
                 _module.AssemblyReferences.Add(reference);
+            }
+        }
+
+        private void ReadModuleReferences()
+        {
+            var moduleReferenceCount = _metadataReader.GetTableRowCount(TableIndex.ModuleRef);
+            for (int i = 1; i <= moduleReferenceCount; i++)
+            {
+                var handle = MetadataTokens.ModuleReferenceHandle(i);
+                var moduleRefDef = _metadataReader.GetModuleReference(handle);
+                var moduleRef = new MutableModuleReference(_metadataReader.GetString(moduleRefDef.Name));
+                _modRefCache[handle] = moduleRef;
+                _module.ModuleReferences.Add(moduleRef);
             }
         }
 
@@ -480,6 +496,39 @@ namespace Obfuscar.Metadata.Mutable
             {
                 var gp = ReadGenericParameter(gpHandle, method);
                 method.GenericParameters.Add(gp);
+            }
+
+            // Read P/Invoke metadata (ImplMap/ModuleRef).
+            if (method.IsPInvokeImpl)
+            {
+                try
+                {
+                    var import = methodDef.GetImport();
+                    MutableModuleReference moduleRef = null;
+
+                    if (!import.Module.IsNil)
+                    {
+                        if (!_modRefCache.TryGetValue(import.Module, out moduleRef))
+                        {
+                            var modDef = _metadataReader.GetModuleReference(import.Module);
+                            moduleRef = new MutableModuleReference(_metadataReader.GetString(modDef.Name));
+                            _modRefCache[import.Module] = moduleRef;
+                            _module.ModuleReferences.Add(moduleRef);
+                        }
+                    }
+
+                    var entryPoint = !import.Name.IsNil ? _metadataReader.GetString(import.Name) : name;
+                    method.PInvokeInfo = new MutablePInvokeInfo
+                    {
+                        EntryPoint = entryPoint,
+                        Module = moduleRef,
+                        Attributes = (int)import.Attributes
+                    };
+                }
+                catch
+                {
+                    // Ignore malformed import metadata.
+                }
             }
 
             // Read method body if present

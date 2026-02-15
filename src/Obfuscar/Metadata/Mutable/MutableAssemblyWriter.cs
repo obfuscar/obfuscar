@@ -54,6 +54,8 @@ namespace Obfuscar.Metadata.Mutable
         private Dictionary<MutableMethodReference, EntityHandle> _methodRefHandles;
         private Dictionary<MutableFieldReference, EntityHandle> _fieldRefHandles;
         private Dictionary<MutableAssemblyNameReference, AssemblyReferenceHandle> _asmRefHandles;
+        private Dictionary<MutableModuleReference, ModuleReferenceHandle> _modRefHandles;
+        private Dictionary<string, ModuleReferenceHandle> _modRefNameHandles;
         private Dictionary<string, UserStringHandle> _userStringHandles;
         private List<MutableTypeDefinition> _orderedTypes;
         private Dictionary<MutableMethodDefinition, int> _methodBodyOffsets;
@@ -96,6 +98,7 @@ namespace Obfuscar.Metadata.Mutable
             
             // Write assembly references
             WriteAssemblyReferences();
+            WriteModuleReferences();
             
             // First pass: create type definitions (forward declarations)
             WriteTypeDefinitionsFirstPass();
@@ -138,6 +141,8 @@ namespace Obfuscar.Metadata.Mutable
             _methodRefHandles = new Dictionary<MutableMethodReference, EntityHandle>();
             _fieldRefHandles = new Dictionary<MutableFieldReference, EntityHandle>();
             _asmRefHandles = new Dictionary<MutableAssemblyNameReference, AssemblyReferenceHandle>();
+            _modRefHandles = new Dictionary<MutableModuleReference, ModuleReferenceHandle>();
+            _modRefNameHandles = new Dictionary<string, ModuleReferenceHandle>(StringComparer.Ordinal);
             _userStringHandles = new Dictionary<string, UserStringHandle>();
             _orderedTypes = new List<MutableTypeDefinition>();
             _methodBodyOffsets = new Dictionary<MutableMethodDefinition, int>();
@@ -184,6 +189,15 @@ namespace Obfuscar.Metadata.Mutable
                     default); // HashValue
                 
                 _asmRefHandles[asmRef] = handle;
+            }
+        }
+
+        private void WriteModuleReferences()
+        {
+            var module = _assembly.MainModule;
+            foreach (var modRef in module.ModuleReferences)
+            {
+                GetOrAddModuleReferenceHandle(modRef);
             }
         }
 
@@ -401,6 +415,7 @@ namespace Obfuscar.Metadata.Mutable
                 MetadataTokens.ParameterHandle(_metadata.GetRowCount(TableIndex.Param) + 1));
             
             _methodDefHandles[method] = handle;
+            WriteMethodImport(method, handle);
             
             // Write parameters
             foreach (var param in method.Parameters)
@@ -417,6 +432,55 @@ namespace Obfuscar.Metadata.Mutable
                     _metadata.AddConstant(paramHandle, param.DefaultValue);
                 }
             }
+        }
+
+        private void WriteMethodImport(MutableMethodDefinition method, MethodDefinitionHandle methodHandle)
+        {
+            if (!method.IsPInvokeImpl)
+                return;
+
+            var info = method.PInvokeInfo;
+            if (info?.Module == null || string.IsNullOrEmpty(info.Module.Name))
+            {
+                return;
+            }
+
+            var moduleRefHandle = GetOrAddModuleReferenceHandle(info.Module);
+            if (moduleRefHandle.IsNil)
+            {
+                return;
+            }
+
+            var importName = string.IsNullOrEmpty(info.EntryPoint) ? method.Name : info.EntryPoint;
+            _metadata.AddMethodImport(
+                methodHandle,
+                (MethodImportAttributes)info.Attributes,
+                _metadata.GetOrAddString(importName),
+                moduleRefHandle);
+        }
+
+        private ModuleReferenceHandle GetOrAddModuleReferenceHandle(MutableModuleReference moduleReference)
+        {
+            if (moduleReference == null || string.IsNullOrEmpty(moduleReference.Name))
+            {
+                return default;
+            }
+
+            if (_modRefHandles.TryGetValue(moduleReference, out var existing))
+            {
+                return existing;
+            }
+
+            if (_modRefNameHandles.TryGetValue(moduleReference.Name, out var existingByName))
+            {
+                _modRefHandles[moduleReference] = existingByName;
+                return existingByName;
+            }
+
+            var handle = _metadata.AddModuleReference(_metadata.GetOrAddString(moduleReference.Name));
+            _modRefHandles[moduleReference] = handle;
+            _modRefNameHandles[moduleReference.Name] = handle;
+            return handle;
         }
 
         private void WriteMethodBodies()

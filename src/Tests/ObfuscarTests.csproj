@@ -51,6 +51,7 @@
     <Compile Include="NestedEnumTypeReferenceTests.cs" />
     <Compile Include="OutPathTests.cs" />
     <Compile Include="PathFailureTests.cs" />
+    <Compile Include="PInvokeTests.cs" />
     <Compile Include="PortableTests.cs" />
     <Compile Include="QueryablePropertyAccessorTests.cs" />
     <Compile Include="ResourcesTests.cs" />
