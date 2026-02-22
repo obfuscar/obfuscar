@@ -33,6 +33,13 @@ namespace ObfuscarTests
 {
     public class PInvokeTests
     {
+        private readonly ITestOutputHelper _output;
+
+        public PInvokeTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
         [Fact]
         public void CheckReaderLoadsPInvokeMetadata()
         {
@@ -78,6 +85,8 @@ namespace ObfuscarTests
             var mapping = obfuscator.Mapping.GetMethod(new MethodKey(inputMethod));
 
             Assert.Equal(ObfuscationStatus.Renamed, mapping.Status);
+
+            _output.WriteLine("Output path: {0}", outputPath);
 
             var outputAssembly = AssemblyDefinition.ReadAssembly(Path.Combine(outputPath, "AssemblyWithPInvoke.dll"));
             var outputMethod = outputAssembly.MainModule.Types.SelectMany(t => t.Methods).Single(m => m.IsPInvokeImpl);

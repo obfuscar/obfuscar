@@ -2,6 +2,12 @@
 
 These notes summarize the main user-facing changes and notable fixes included in the 3.0 beta releases.
 
+## 3.0 Beta 3 (2026-02-22)
+
+Highlights
+
+- P/Invoke support: enhanced module reference handling in assembly reader and writer, with comprehensive test coverage for P/Invoke scenarios.
+
 ## 3.0 Beta 2 (2026-02-06)
 
 Highlights
