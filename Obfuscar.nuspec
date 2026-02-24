@@ -21,6 +21,6 @@
 	<files>
 		<!-- Include everything in \build -->
     <file src="build\**" target="build" />
-    <file src="bin\release\net8.0-windows\win-x64\*.*" target="tools" />
+    <file src="bin\release\net10.0-windows\win-x64\*.*" target="tools" />
 	</files>
 </package>

@@ -90,6 +90,7 @@ namespace Obfuscar
             string val = Helper.GetAttribute(reader, "file", vars);
             if (val.Length > 0)
             {
+                Console.WriteLine("Loading " + val);
                 info.LoadAssembly(val);
             }
             else
