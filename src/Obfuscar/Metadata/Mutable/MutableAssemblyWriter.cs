@@ -38,6 +38,7 @@ namespace Obfuscar.Metadata.Mutable
         
         private MetadataBuilder _metadata;
         private BlobBuilder _ilStream;
+        private BlobBuilder _managedResources;
         private MethodBodyStreamEncoder _methodBodyEncoder;
         private AssemblyDefinitionHandle _assemblyDefHandle;
         private ModuleDefinitionHandle _moduleDefHandle;
@@ -117,6 +118,9 @@ namespace Obfuscar.Metadata.Mutable
 
             // Custom attributes
             WriteCustomAttributes();
+
+            // Encode managed resources (embedded/linked)
+            WriteResources();
             
             // Create the PE file
             WritePEFile(stream);
@@ -126,6 +130,7 @@ namespace Obfuscar.Metadata.Mutable
         {
             _metadata = new MetadataBuilder();
             _ilStream = new BlobBuilder();
+            _managedResources = new BlobBuilder();
             _methodBodyEncoder = new MethodBodyStreamEncoder(_ilStream);
             _assemblyDefHandle = default;
             _moduleDefHandle = default;
@@ -565,7 +570,7 @@ namespace Obfuscar.Metadata.Mutable
                 codeSize,
                 body.MaxStackSize,
                 body.ExceptionHandlers?.Count ?? 0,
-                true, // allow small exception regions when possible
+                HasSmallExceptionRegions(body, codeSize),
                 localSig,
                 attributes);
 
@@ -582,12 +587,18 @@ namespace Obfuscar.Metadata.Mutable
                 var regionEncoder = methodBody.ExceptionRegions;
                 foreach (var eh in body.ExceptionHandlers)
                 {
-                    int tryStart = eh.TryStart?.Offset ?? 0;
-                    int tryEnd = eh.TryEnd?.Offset ?? 0;
-                    int handlerStart = eh.HandlerStart?.Offset ?? 0;
-                    int handlerEnd = eh.HandlerEnd?.Offset ?? 0;
+                    int tryStart = GetExceptionBoundaryOffset(body, eh.TryStart, 0);
+                    int tryEnd = GetExceptionBoundaryOffset(body, eh.TryEnd, codeSize);
+                    int handlerStart = GetExceptionBoundaryOffset(body, eh.HandlerStart, 0);
+                    int handlerEnd = GetExceptionBoundaryOffset(body, eh.HandlerEnd, codeSize);
                     int tryLength = tryEnd - tryStart;
                     int handlerLength = handlerEnd - handlerStart;
+
+                    if (tryStart < 0 || tryLength < 0 || (tryStart + tryLength) > codeSize)
+                        throw new InvalidOperationException($"Invalid try region: start={tryStart}, end={tryEnd}, codeSize={codeSize}");
+
+                    if (handlerStart < 0 || handlerLength < 0 || (handlerStart + handlerLength) > codeSize)
+                        throw new InvalidOperationException($"Invalid handler region: start={handlerStart}, end={handlerEnd}, codeSize={codeSize}");
 
                     switch (eh.HandlerType)
                     {
@@ -596,7 +607,7 @@ namespace Obfuscar.Metadata.Mutable
                             regionEncoder.AddCatch(tryStart, tryLength, handlerStart, handlerLength, catchHandle);
                             break;
                         case MutableExceptionHandlerType.Filter:
-                            int filterOffset = eh.FilterStart?.Offset ?? 0;
+                            int filterOffset = GetExceptionBoundaryOffset(body, eh.FilterStart, handlerStart);
                             regionEncoder.AddFilter(tryStart, tryLength, handlerStart, handlerLength, filterOffset);
                             break;
                         case MutableExceptionHandlerType.Finally:
@@ -2114,6 +2125,12 @@ namespace Obfuscar.Metadata.Mutable
                 peHeaderBuilder,
                 new MetadataRootBuilder(_metadata),
                 _ilStream,
+                mappedFieldData: null,
+                managedResources: _managedResources,
+                nativeResources: null,
+                debugDirectoryBuilder: null,
+                strongNameSignatureSize: 0,
+                entryPoint: default,
                 flags: corFlags);
 
             // Write to blob
@@ -2122,6 +2139,72 @@ namespace Obfuscar.Metadata.Mutable
             
             // Write to stream
             peBlob.WriteContentTo(stream);
+        }
+
+        private void WriteResources()
+        {
+            var module = _assembly.MainModule;
+            if (module.Resources == null || module.Resources.Count == 0)
+                return;
+
+            foreach (var res in module.Resources)
+            {
+                if (res.ResourceType != MutableResourceType.Embedded)
+                    continue;
+
+                var embed = (MutableEmbeddedResource)res;
+                var data = embed.GetResourceData() ?? Array.Empty<byte>();
+                uint offset = checked((uint)_managedResources.Count);
+
+                _managedResources.WriteInt32(data.Length);
+                _managedResources.WriteBytes(data);
+
+                var nameHandle = _metadata.GetOrAddString(embed.Name ?? string.Empty);
+                _metadata.AddManifestResource((ManifestResourceAttributes)embed.Attributes, nameHandle, default(EntityHandle), offset);
+            }
+        }
+
+        private static int GetExceptionBoundaryOffset(MutableMethodBody body, MutableInstruction instruction, int defaultOffset)
+        {
+            if (instruction == null)
+                return defaultOffset;
+
+            foreach (var candidate in body.Instructions)
+            {
+                if (ReferenceEquals(candidate, instruction))
+                    return candidate.Offset;
+            }
+
+            return defaultOffset;
+        }
+
+        private static bool HasSmallExceptionRegions(MutableMethodBody body, int codeSize)
+        {
+            if (body.ExceptionHandlers == null || body.ExceptionHandlers.Count == 0)
+                return true;
+
+            foreach (var eh in body.ExceptionHandlers)
+            {
+                int tryStart = GetExceptionBoundaryOffset(body, eh.TryStart, 0);
+                int tryEnd = GetExceptionBoundaryOffset(body, eh.TryEnd, codeSize);
+                int handlerStart = GetExceptionBoundaryOffset(body, eh.HandlerStart, 0);
+                int handlerEnd = GetExceptionBoundaryOffset(body, eh.HandlerEnd, codeSize);
+                int filterStart = GetExceptionBoundaryOffset(body, eh.FilterStart, handlerStart);
+
+                int tryLength = tryEnd - tryStart;
+                int handlerLength = handlerEnd - handlerStart;
+
+                if (tryStart < 0 || handlerStart < 0 || filterStart < 0)
+                    return false;
+
+                if (tryStart > ushort.MaxValue || handlerStart > ushort.MaxValue || filterStart > ushort.MaxValue)
+                    return false;
+
+                if (tryLength < 0 || handlerLength < 0 || tryLength > byte.MaxValue || handlerLength > byte.MaxValue)
+                    return false;
+            }
+
+            return true;
         }
     }
 }

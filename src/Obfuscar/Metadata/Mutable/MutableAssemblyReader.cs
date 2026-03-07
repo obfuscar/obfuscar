@@ -84,6 +84,7 @@ namespace Obfuscar.Metadata.Mutable
             // Read assembly references first
             ReadAssemblyReferences();
             ReadModuleReferences();
+            ReadResources();
             
             // Read types
             ReadTypes();
@@ -204,6 +205,47 @@ namespace Obfuscar.Metadata.Mutable
                 _modRefCache[handle] = moduleRef;
                 _module.ModuleReferences.Add(moduleRef);
             }
+        }
+
+        private void ReadResources()
+        {
+            foreach (var handle in _metadataReader.ManifestResources)
+            {
+                var resource = _metadataReader.GetManifestResource(handle);
+                var name = _metadataReader.GetString(resource.Name);
+                var attributes = (MutableManifestResourceAttributes)resource.Attributes;
+
+                if (resource.Implementation.IsNil)
+                {
+                    var data = ReadEmbeddedResourceData(resource.Offset);
+                    _module.Resources.Add(new MutableEmbeddedResource(name, attributes, data));
+                    continue;
+                }
+
+                if (resource.Implementation.Kind == HandleKind.AssemblyReference)
+                {
+                    var assemblyRef = _asmRefCache[(AssemblyReferenceHandle)resource.Implementation];
+                    _module.Resources.Add(new MutableAssemblyLinkedResource(name, attributes, assemblyRef));
+                }
+            }
+        }
+
+        private byte[] ReadEmbeddedResourceData(long offset)
+        {
+            var resources = _peReader.PEHeaders.CorHeader?.ResourcesDirectory;
+            if (resources == null || resources.Value.RelativeVirtualAddress <= 0)
+                return Array.Empty<byte>();
+
+            var sectionData = _peReader.GetSectionData(checked((int)(resources.Value.RelativeVirtualAddress + offset)));
+            var reader = sectionData.GetReader();
+            if (reader.Length < sizeof(int))
+                return Array.Empty<byte>();
+
+            int length = reader.ReadInt32();
+            if (length < 0 || length > reader.RemainingBytes)
+                return Array.Empty<byte>();
+
+            return reader.ReadBytes(length);
         }
 
         private void ReadTypes()
