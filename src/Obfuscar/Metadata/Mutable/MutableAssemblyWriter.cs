@@ -557,17 +557,62 @@ namespace Obfuscar.Metadata.Mutable
             
             // Encode IL
             var ilBytes = EncodeIL(body);
-            var codeBuilder = new BlobBuilder();
-            codeBuilder.WriteBytes(ilBytes);
-            
-            // Use MethodBodyStreamEncoder
-            var bodyOffset = _methodBodyEncoder.AddMethodBody(
-                new InstructionEncoder(codeBuilder, new ControlFlowBuilder()),
+            var codeSize = ilBytes.Length;
+
+            // Reserve method body and exception region storage in the stream.
+            var attributes = body.InitLocals ? MethodBodyAttributes.InitLocals : MethodBodyAttributes.None;
+            var methodBody = _methodBodyEncoder.AddMethodBody(
+                codeSize,
                 body.MaxStackSize,
+                body.ExceptionHandlers?.Count ?? 0,
+                true, // allow small exception regions when possible
                 localSig,
-                body.InitLocals ? MethodBodyAttributes.InitLocals : MethodBodyAttributes.None);
-            
-            return bodyOffset;
+                attributes);
+
+            // Copy encoded IL into the reserved instruction blob.
+            if (codeSize > 0)
+            {
+                var seg = methodBody.Instructions.GetBytes();
+                Array.Copy(ilBytes, 0, seg.Array, seg.Offset, codeSize);
+            }
+
+            // Encode exception regions if present
+            if (body.ExceptionHandlers != null && body.ExceptionHandlers.Count > 0)
+            {
+                var regionEncoder = methodBody.ExceptionRegions;
+                foreach (var eh in body.ExceptionHandlers)
+                {
+                    int tryStart = eh.TryStart?.Offset ?? 0;
+                    int tryEnd = eh.TryEnd?.Offset ?? 0;
+                    int handlerStart = eh.HandlerStart?.Offset ?? 0;
+                    int handlerEnd = eh.HandlerEnd?.Offset ?? 0;
+                    int tryLength = tryEnd - tryStart;
+                    int handlerLength = handlerEnd - handlerStart;
+
+                    switch (eh.HandlerType)
+                    {
+                        case MutableExceptionHandlerType.Catch:
+                            var catchHandle = GetTypeHandle(eh.CatchType);
+                            regionEncoder.AddCatch(tryStart, tryLength, handlerStart, handlerLength, catchHandle);
+                            break;
+                        case MutableExceptionHandlerType.Filter:
+                            int filterOffset = eh.FilterStart?.Offset ?? 0;
+                            regionEncoder.AddFilter(tryStart, tryLength, handlerStart, handlerLength, filterOffset);
+                            break;
+                        case MutableExceptionHandlerType.Finally:
+                            regionEncoder.AddFinally(tryStart, tryLength, handlerStart, handlerLength);
+                            break;
+                        case MutableExceptionHandlerType.Fault:
+                            regionEncoder.AddFault(tryStart, tryLength, handlerStart, handlerLength);
+                            break;
+                        default:
+                            regionEncoder.AddCatch(tryStart, tryLength, handlerStart, handlerLength, default);
+                            break;
+                    }
+                }
+            }
+
+            return methodBody.Offset;
         }
 
         private byte[] EncodeIL(MutableMethodBody body)

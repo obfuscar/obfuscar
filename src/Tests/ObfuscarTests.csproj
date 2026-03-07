@@ -75,6 +75,7 @@
     <Compile Include="WildcardTests.cs" />
     <Compile Include="WpfToolkitTests.cs" />
     <Compile Include="ObfuscationAttributeTests.cs" />
+    <Compile Include="ExceptionHandlerTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
