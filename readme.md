@@ -23,6 +23,8 @@ Obfuscar is an open source .NET obfuscator released under MIT license. It provid
 
 **Note on paths:** Relative paths in configuration files are deprecated; future releases will require absolute paths. Please update configuration files to use absolute paths.
 
+**Security notice:** Obfuscar depends on low-level metadata and PE-reading APIs (for example, `System.Reflection.Metadata` and `System.Reflection.PortableExecutable.PEReader`) which are not designed to handle untrusted input. Malformed or malicious assemblies or metadata can cause unexpected behavior, including crashes or hangs. Only run Obfuscar on assemblies and inputs you trust. See https://github.com/dotnet/dotnet-api-docs/pull/12412 for more details.
+
 ## Issues
 
 If you have a patch to contribute, a feature to request, or a bug to report, please post to the [Issue Tracker](https://github.com/obfuscar/obfuscar/issues).
