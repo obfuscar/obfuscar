@@ -52,6 +52,7 @@
     <Compile Include="NetCoreTests.cs" />
     <Compile Include="NestedEnumTypeReferenceTests.cs" />
     <Compile Include="OutPathTests.cs" />
+    <Compile Include="InPlaceReplacementTests.cs" />
     <Compile Include="PathFailureTests.cs" />
     <Compile Include="PInvokeTests.cs" />
     <Compile Include="PortableTests.cs" />

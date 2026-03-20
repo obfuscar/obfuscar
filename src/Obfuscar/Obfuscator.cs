@@ -212,6 +212,42 @@ namespace Obfuscar
                             parameters.WriteSymbols = true;
                         }
 
+                        // Determine whether this assembly should be written in-place
+                        string originalPath = info.FileName;
+                        string originalDir = Path.GetDirectoryName(originalPath) ?? string.Empty;
+                        string actualWritePath = outName;
+
+                        bool perAssemblyInPlace = false;
+                        var configuredOut = Project.Settings.OutPath;
+                        if (configuredOut == ".")
+                        {
+                            perAssemblyInPlace = true;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                var outFull = Path.GetFullPath(configuredOut);
+                                var origFull = Path.GetFullPath(originalDir);
+                                if (IsOnWindows)
+                                    perAssemblyInPlace = string.Equals(outFull.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), origFull.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), StringComparison.OrdinalIgnoreCase);
+                                else
+                                    perAssemblyInPlace = string.Equals(outFull.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), origFull.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), StringComparison.Ordinal);
+                            }
+                            catch
+                            {
+                                perAssemblyInPlace = false;
+                            }
+                        }
+
+                        if (perAssemblyInPlace)
+                        {
+                            var dir = originalDir.Length > 0 ? originalDir : outPath;
+                            actualWritePath = Path.Combine(dir, Path.GetRandomFileName() + Path.GetExtension(fileName));
+                        }
+
+                        string writtenPath = null;
+
                         var hasPublicKey = info.Definition.Name.PublicKey != null && info.Definition.Name.PublicKey.Length > 0;
                         if (hasPublicKey)
                         {
@@ -298,8 +334,9 @@ namespace Obfuscar
                                     {
                                         LoggerService.Logger.LogDebug("Attempting to sign assembly {0} with key file: {1}", info.Name, keyFile);
                                         parameters.StrongNameKeyBlob = keyPair;
-                                        writer.Write(info.Definition, outName, parameters);
-                                        info.OutputFileName = outName;
+                                        writer.Write(info.Definition, actualWritePath, parameters);
+                                        writtenPath = actualWritePath;
+                                        info.OutputFileName = writtenPath;
                                     }
                                     catch (Exception ex)
                                     {
@@ -313,8 +350,9 @@ namespace Obfuscar
 
                                         // delay sign.
                                         info.Definition.Name.PublicKey = keyPair;
-                                        writer.Write(info.Definition, outName, parameters);
-                                        info.OutputFileName = outName;
+                                        writer.Write(info.Definition, actualWritePath, parameters);
+                                        writtenPath = actualWritePath;
+                                        info.OutputFileName = writtenPath;
                                     }
                                 }
                                 else
@@ -322,8 +360,9 @@ namespace Obfuscar
                                     // Public-key-only SNK: perform delay signing (do not set StrongNameKeyBlob)
                                     LoggerService.Logger.LogDebug("Provided key file appears to be public-only; performing delay-sign for {0}", info.Name);
                                     info.Definition.Name.PublicKey = keyPair;
-                                    writer.Write(info.Definition, outName, parameters);
-                                    info.OutputFileName = outName;
+                                    writer.Write(info.Definition, actualWritePath, parameters);
+                                    writtenPath = actualWritePath;
+                                    info.OutputFileName = writtenPath;
                                 }
                             }
                             else if (Project.KeyValue != null)
@@ -331,16 +370,18 @@ namespace Obfuscar
                                 // config file contains key container name.
                                 LoggerService.Logger.LogDebug("Signing assembly {0} using key container: {1}", 
                                     info.Name, Project.KeyContainerName);
-                                writer.Write(info.Definition, outName, parameters);
-                                MsNetSigner.SignAssemblyFromKeyContainer(outName, Project.KeyContainerName);
+                                writer.Write(info.Definition, actualWritePath, parameters);
+                                writtenPath = actualWritePath;
+                                MsNetSigner.SignAssemblyFromKeyContainer(writtenPath, Project.KeyContainerName);
                             }
                             else if (!info.Definition.MainModule.Attributes.HasFlag(ModuleAttributes.StrongNameSigned))
                             {
                                 // When an assembly is "delay signed" and no KeyFile or KeyContainer properties were provided,
                                 // keep the obfuscated assembly "delay signed" too.
                                 LoggerService.Logger.LogDebug("Assembly {0} is delay-signed and will remain delay-signed", info.Name);
-                                writer.Write(info.Definition, outName, parameters);
-                                info.OutputFileName = outName;
+                                writer.Write(info.Definition, actualWritePath, parameters);
+                                writtenPath = actualWritePath;
+                                info.OutputFileName = writtenPath;
                             }
                             else
                             {
@@ -350,8 +391,70 @@ namespace Obfuscar
                         else
                         {
                             LoggerService.Logger.LogDebug("Saving unsigned assembly: {0} to {1}", info.Name, outName);
-                            writer.Write(info.Definition, outName, parameters);
-                            info.OutputFileName = outName;
+                            writer.Write(info.Definition, actualWritePath, parameters);
+                            writtenPath = actualWritePath;
+                            info.OutputFileName = writtenPath;
+                        }
+
+                        // If in-place was requested for this assembly, perform an atomic replace of the original assembly and symbol file(s)
+                        if (perAssemblyInPlace && !string.IsNullOrEmpty(writtenPath))
+                        {
+                            try
+                            {
+                                // Replace main assembly
+                                if (File.Exists(originalPath))
+                                {
+                                    try
+                                    {
+                                        File.Replace(writtenPath, originalPath, null);
+                                    }
+                                    catch
+                                    {
+                                        // Fallback: delete then move
+                                        File.Delete(originalPath);
+                                        File.Move(writtenPath, originalPath);
+                                    }
+                                }
+                                else
+                                {
+                                    File.Move(writtenPath, originalPath);
+                                }
+
+                                // Replace symbol file if present
+                                if (parameters.WriteSymbols)
+                                {
+                                    var writtenPdb = Path.ChangeExtension(writtenPath, "pdb");
+                                    var originalPdb = Path.ChangeExtension(originalPath, "pdb");
+                                    if (File.Exists(writtenPdb))
+                                    {
+                                        if (File.Exists(originalPdb))
+                                        {
+                                            try
+                                            {
+                                                File.Replace(writtenPdb, originalPdb, null);
+                                            }
+                                            catch
+                                            {
+                                                File.Delete(originalPdb);
+                                                File.Move(writtenPdb, originalPdb);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            File.Move(writtenPdb, originalPdb);
+                                        }
+                                    }
+                                }
+
+                                // Final output is the original path
+                                info.OutputFileName = originalPath;
+                            }
+                            catch (Exception ex)
+                            {
+                                LoggerService.Logger.LogInformation("Failed to replace original assembly in-place: {FileName}", originalPath);
+                                LoggerService.Logger.LogInformation("{ExceptionType}: {Message}", ex.GetType().Name, ex.Message);
+                                throw;
+                            }
                         }
                     }
                     catch (Exception e)
