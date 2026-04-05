@@ -23,6 +23,7 @@ namespace Obfuscar.Metadata.Mutable
         private MutableAssemblyDefinition _assembly;
         private string _fileName;
         private bool _readMethodBodies = true;
+        private int _entryPointToken;
         
         // Handle caches
         private Dictionary<TypeDefinitionHandle, MutableTypeDefinition> _typeDefCache;
@@ -88,6 +89,9 @@ namespace Obfuscar.Metadata.Mutable
             
             // Read types
             ReadTypes();
+
+            // Preserve the managed entry point for executable assemblies.
+            ReadEntryPoint();
 
             // Populate custom attributes once all definitions exist
             ReadCustomAttributes();
@@ -171,6 +175,7 @@ namespace Obfuscar.Metadata.Mutable
             if ((corFlags & CorFlags.StrongNameSigned) != 0)
                 attributes |= MutableModuleAttributes.StrongNameSigned;
             module.Attributes = attributes;
+            _entryPointToken = (int)(_peReader.PEHeaders.CorHeader?.EntryPointTokenOrRelativeVirtualAddress ?? 0);
 
             return module;
         }
@@ -419,6 +424,22 @@ namespace Obfuscar.Metadata.Mutable
                     var evt = ReadEventDefinition(evtHandle, type);
                     type.Events.Add(evt);
                 }
+            }
+        }
+
+        private void ReadEntryPoint()
+        {
+            if (_entryPointToken == 0)
+                return;
+
+            var handle = MetadataTokens.EntityHandle(_entryPointToken);
+            if (handle.Kind != HandleKind.MethodDefinition)
+                return;
+
+            if (ResolveMethodDefinitionReference((MethodDefinitionHandle)handle) is MutableMethodDefinition method)
+            {
+                _module.EntryPoint = method;
+                _assembly.EntryPoint = method;
             }
         }
 

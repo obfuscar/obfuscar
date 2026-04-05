@@ -2121,6 +2121,26 @@ namespace Obfuscar.Metadata.Mutable
             if (module.Attributes.HasFlag(MutableModuleAttributes.StrongNameSigned) || _parameters.StrongNameKeyBlob != null)
                 corFlags |= CorFlags.StrongNameSigned;
 
+            MethodDefinitionHandle entryPoint = default;
+            if (module.Kind != MutableModuleKind.Dll)
+            {
+                var entryPointMethod = module.EntryPoint ?? _assembly.EntryPoint;
+                if (entryPointMethod == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Executable module '{module.Name}' does not have an entry point.");
+                }
+
+                var entryPointHandle = GetMethodHandle(entryPointMethod);
+                if (entryPointHandle.Kind != HandleKind.MethodDefinition)
+                {
+                    throw new InvalidOperationException(
+                        $"Executable module '{module.Name}' entry point '{entryPointMethod.FullName}' did not resolve to a method definition.");
+                }
+
+                entryPoint = (MethodDefinitionHandle)entryPointHandle;
+            }
+
             var peBuilder = new ManagedPEBuilder(
                 peHeaderBuilder,
                 new MetadataRootBuilder(_metadata),
@@ -2130,7 +2150,7 @@ namespace Obfuscar.Metadata.Mutable
                 nativeResources: null,
                 debugDirectoryBuilder: null,
                 strongNameSignatureSize: 0,
-                entryPoint: default,
+                entryPoint: entryPoint,
                 flags: corFlags);
 
             // Write to blob

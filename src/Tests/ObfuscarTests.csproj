@@ -56,6 +56,7 @@
     <Compile Include="PathFailureTests.cs" />
     <Compile Include="PInvokeTests.cs" />
     <Compile Include="PortableTests.cs" />
+    <Compile Include="EntryPointTests.cs" />
     <Compile Include="QueryablePropertyAccessorTests.cs" />
     <Compile Include="ResourcesTests.cs" />
     <Compile Include="SettingsTests.cs" />
