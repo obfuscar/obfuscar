@@ -261,7 +261,8 @@ namespace Obfuscar.Metadata.Mutable
                 var typeDef = _metadataReader.GetTypeDefinition(handle);
                 var ns = _metadataReader.GetString(typeDef.Namespace);
                 var name = _metadataReader.GetString(typeDef.Name);
-                
+
+                // baseType may be NULL if handle of base type has not been added into cache yet
                 var baseType = ReadTypeReference(typeDef.BaseType);
                 var type = new MutableTypeDefinition(ns, name, typeDef.Attributes, baseType)
                 {
@@ -286,6 +287,22 @@ namespace Obfuscar.Metadata.Mutable
                 else
                 {
                     _module.RegisterType(type);
+                }
+            }
+
+            // set BaseType if it was not set in first step
+            foreach (var handle in _metadataReader.TypeDefinitions)
+            {
+                var type = _typeDefCache[handle];
+                if (type.BaseType == null)
+                {
+                    var typeDef = _metadataReader.GetTypeDefinition(handle);
+                    var baseType = ReadTypeReference(typeDef.BaseType);
+                    if (baseType != null)
+                    {
+                        // found BaseType in cache
+                        type.BaseType = baseType;
+                    }
                 }
             }
 
