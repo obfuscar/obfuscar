@@ -2,6 +2,26 @@
 
 These notes summarize the main user-facing changes and notable fixes included in the 3.0 beta releases.
 
+## 3.0 Beta 6 (2026-04-06)
+
+Highlights
+
+- Fixed base type missing issue. #590
+
+## 3.0 Beta 5 (2026-04-05)
+
+Highlights
+
+- Added in-place replacement support.
+- Resolved missing entry point. #588
+
+## 3.0 Beta 4 (2026-03-07)
+
+Highlights
+
+- Fixed embedded BAML. #584
+- Improved exception handling. #583
+
 ## 3.0 Beta 3 (2026-02-22)
 
 Highlights
