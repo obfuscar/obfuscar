@@ -19,7 +19,8 @@
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     <!-- Disable the legacy MTP custom test target and opt into the new dotnet-test experience -->
     <TestingPlatformDisableCustomTestTarget>true</TestingPlatformDisableCustomTestTarget>
-    <IsTestingPlatformApplication>false</IsTestingPlatformApplication>
+    <IsTestingPlatformApplication>true</IsTestingPlatformApplication>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <UseNewTestsExperience>true</UseNewTestsExperience>
     <!-- Opt-in to new dotnet-test MTP experience for .NET 10+ -->
     <TestingPlatformOptions Condition="'$(TargetFramework)' == 'net10.0'">--no-vstest</TestingPlatformOptions>
