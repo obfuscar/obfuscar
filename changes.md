@@ -2,6 +2,12 @@
 
 These notes summarize the main user-facing changes and notable fixes included in the 3.0 beta releases.
 
+## 3.0 Beta 7 (2026-04-28)
+
+Highlights
+
+- Fixed a few assembly writer issues.
+
 ## 3.0 Beta 6 (2026-04-06)
 
 Highlights
