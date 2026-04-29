@@ -1,4 +1,4 @@
-﻿using Obfuscar.Metadata.Abstractions;
+﻿using LeXtudio.Metadata.Abstractions;
 
 namespace Obfuscar.Helpers
 {

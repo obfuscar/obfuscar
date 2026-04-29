@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Obfuscar.Metadata.Abstractions;
+using LeXtudio.Metadata.Abstractions;
 
 namespace Obfuscar.Helpers
 {

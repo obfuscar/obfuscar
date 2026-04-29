@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Obfuscar.Metadata.Mutable;
+using LeXtudio.Metadata.Mutable;
 using Xunit;
 
 public class ExceptionHandlerTests

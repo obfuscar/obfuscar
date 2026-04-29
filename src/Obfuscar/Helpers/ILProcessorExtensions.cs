@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Obfuscar.Metadata.Mutable;
+using LeXtudio.Metadata.Mutable;
 
 namespace Obfuscar.Helpers
 {

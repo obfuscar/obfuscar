@@ -16,6 +16,8 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" />
     <PackageVersion Include="xunit.v3.mtp-v2" Version="3.2.1" />
+    <PackageVersion Include="xunit.v3.assert" Version="3.2.1" />
     <PackageVersion Include="NuGet.Packaging" Version="7.0.0" />
+    <PackageVersion Include="LeXtudio.Metadata.Mutable" Version="0.9.0" />
   </ItemGroup>
 </Project>

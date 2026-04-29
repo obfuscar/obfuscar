@@ -14,14 +14,20 @@
     <RootNamespace>ObfuscarTests</RootNamespace>
     <EnableDefaultItems>false</EnableDefaultItems> <!-- Disable automatic inclusion of files -->
     <LangVersion>latest</LangVersion>
-    <OutputType Condition="'$(TargetFramework)'!='net472'">Exe</OutputType>
-    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <OutputType>Library</OutputType>
+    <IsTestProject>true</IsTestProject>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- Disable the legacy MTP custom test target and opt into the new dotnet-test experience -->
+    <TestingPlatformDisableCustomTestTarget>true</TestingPlatformDisableCustomTestTarget>
+    <IsTestingPlatformApplication>false</IsTestingPlatformApplication>
+    <UseNewTestsExperience>true</UseNewTestsExperience>
     <!-- Opt-in to new dotnet-test MTP experience for .NET 10+ -->
     <TestingPlatformOptions Condition="'$(TargetFramework)' == 'net10.0'">--no-vstest</TestingPlatformOptions>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="GlobalUsings.cs" />
+    <Compile Include="GlobalUsings.Legacy.cs" Condition="'$(TargetFramework)' == 'net472'" />
+    <Compile Include="GlobalUsings.Shared.cs" Condition="'$(TargetFramework)' != 'net472'" />
     <Compile Include="AssemblyHelper.cs" />
     <Compile Include="AnonymousTypePropertyTests.cs" />
     <Compile Include="AttributeTests.cs" />
@@ -98,6 +104,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="xunit.v3.mtp-v2" />
+    <PackageReference Include="xunit.v3.assert" />
   </ItemGroup>
 
   <ItemGroup>

@@ -26,10 +26,12 @@
 
 using System;
 using System.Collections.Generic;
+using System;
 using System.IO;
-using Obfuscar.Metadata.Mutable;
+using System.Linq;
+using System.Xml.Linq;
+using LeXtudio.Metadata.Mutable;
 using Xunit;
-
 namespace ObfuscarTests
 {
     public class HideStringsTests

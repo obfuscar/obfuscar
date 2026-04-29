@@ -26,7 +26,7 @@
 
 using System;
 using System.Linq;
-using Obfuscar.Metadata.Abstractions;
+using LeXtudio.Metadata.Abstractions;
 
 namespace Obfuscar
 {

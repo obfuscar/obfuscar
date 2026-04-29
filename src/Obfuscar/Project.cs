@@ -30,7 +30,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using Obfuscar.Helpers;
-using Obfuscar.Metadata.Mutable;
+using LeXtudio.Metadata.Mutable;
 using System.Xml.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;

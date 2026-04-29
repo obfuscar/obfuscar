@@ -5,8 +5,8 @@ using System.Reflection;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using NuGet.Versioning;  // Add reference to NuGet.Versioning
-using Obfuscar.Metadata.Abstractions;
-using Obfuscar.Metadata.Mutable;
+using LeXtudio.Metadata.Abstractions;
+using LeXtudio.Metadata.Mutable;
 
 namespace Obfuscar.Helpers
 {

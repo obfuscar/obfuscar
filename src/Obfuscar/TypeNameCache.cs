@@ -26,9 +26,9 @@
 
 using System.Collections.Generic;
 using System.Text;
-using Obfuscar.Metadata.Mutable;
+using LeXtudio.Metadata.Mutable;
 using Obfuscar.Helpers;
-using Obfuscar.Metadata.Abstractions;
+using LeXtudio.Metadata.Abstractions;
 
 namespace Obfuscar
 {

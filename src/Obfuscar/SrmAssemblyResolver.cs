@@ -30,7 +30,7 @@ using System.IO;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Obfuscar.Helpers;
-using Obfuscar.Metadata.Mutable;
+using LeXtudio.Metadata.Mutable;
 
 namespace Obfuscar
 {
@@ -40,8 +40,8 @@ namespace Obfuscar
             new Dictionary<string, MutableAssemblyDefinition>(StringComparer.OrdinalIgnoreCase);
 
         // Cache of resolved type references to type definitions to avoid repeated lookups
-        private readonly Dictionary<Obfuscar.Metadata.Mutable.MutableTypeReference, Obfuscar.Metadata.Mutable.MutableTypeDefinition> _typeResolveCache
-            = new Dictionary<Obfuscar.Metadata.Mutable.MutableTypeReference, Obfuscar.Metadata.Mutable.MutableTypeDefinition>();
+        private readonly Dictionary<MutableTypeReference, MutableTypeDefinition> _typeResolveCache
+            = new Dictionary<MutableTypeReference, MutableTypeDefinition>();
 
         private readonly HashSet<string> searchDirectories =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase);

@@ -29,8 +29,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Obfuscar.Helpers;
-using Obfuscar.Metadata.Abstractions;
-using Obfuscar.Metadata.Mutable;
+using LeXtudio.Metadata.Abstractions;
+using LeXtudio.Metadata.Mutable;
 using System.Xml.Linq;
 
 namespace Obfuscar
@@ -743,13 +743,13 @@ namespace Obfuscar
             }
         }
 
-        private IEnumerable<Metadata.Abstractions.ITypeDefinition> _cachedTypes;
+        private IEnumerable<LeXtudio.Metadata.Abstractions.ITypeDefinition> _cachedTypes;
 
         /// <summary>
         /// Gets all type definitions using the abstraction layer (Cecil-free interface).
         /// This is the preferred method for new code during Cecil migration.
         /// </summary>
-        public IEnumerable<Metadata.Abstractions.ITypeDefinition> GetAllTypes()
+        public IEnumerable<LeXtudio.Metadata.Abstractions.ITypeDefinition> GetAllTypes()
         {
             if (_cachedTypes != null)
             {
@@ -759,7 +759,7 @@ namespace Obfuscar
             var assemblyMarkedToRename = definition.MarkedToRename();
             if (!assemblyMarkedToRename)
             {
-                return Array.Empty<Metadata.Abstractions.ITypeDefinition>();
+                return Array.Empty<LeXtudio.Metadata.Abstractions.ITypeDefinition>();
             }
 
             try
@@ -771,7 +771,7 @@ namespace Obfuscar
                 }
 
                 var graph = new Graph(types);
-                var ordered = new List<Metadata.Abstractions.ITypeDefinition>();
+                var ordered = new List<LeXtudio.Metadata.Abstractions.ITypeDefinition>();
                 foreach (var orderedType in graph.GetOrderedList())
                 {
                     ordered.Add(orderedType);

@@ -1,9 +1,9 @@
 using System;
+using System;
 using System.IO;
-using Obfuscar;
-using Obfuscar.Metadata.Mutable;
+using System.Linq;
+using LeXtudio.Metadata.Mutable;
 using Xunit;
-
 namespace ObfuscarTests
 {
     public class AssemblyResolverTests

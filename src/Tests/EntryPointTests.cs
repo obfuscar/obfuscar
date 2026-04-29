@@ -1,8 +1,8 @@
+using System;
 using System.IO;
-using System.Reflection.PortableExecutable;
-using Obfuscar.Metadata.Mutable;
+using System.Linq;
+using LeXtudio.Metadata.Mutable;
 using Xunit;
-
 namespace ObfuscarTests
 {
     public class EntryPointTests

@@ -30,7 +30,7 @@ using System.Linq;
 using System.Reflection;
 using Obfuscar.Helpers;
 using Obfuscar.Metadata;
-using Obfuscar.Metadata.Abstractions;
+using LeXtudio.Metadata.Abstractions;
 
 namespace Obfuscar
 {

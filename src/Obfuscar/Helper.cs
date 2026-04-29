@@ -28,8 +28,8 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
-using Obfuscar.Metadata.Abstractions;
-using Obfuscar.Metadata.Mutable;
+using LeXtudio.Metadata.Abstractions;
+using LeXtudio.Metadata.Mutable;
 
 namespace Obfuscar
 {
@@ -150,7 +150,7 @@ namespace Obfuscar
         /// <summary>
         /// Gets a named argument value from an abstraction-based custom attribute.
         /// </summary>
-        public static object GetAttributePropertyByName(Metadata.Abstractions.ICustomAttribute attr, string name)
+        public static object GetAttributePropertyByName(LeXtudio.Metadata.Abstractions.ICustomAttribute attr, string name)
         {
             if (attr?.NamedArguments == null)
                 return null;

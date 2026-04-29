@@ -28,8 +28,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-using Obfuscar.Metadata.Abstractions;
-using Obfuscar.Metadata.Mutable;
+using LeXtudio.Metadata.Abstractions;
+using LeXtudio.Metadata.Mutable;
 
 namespace Obfuscar
 {

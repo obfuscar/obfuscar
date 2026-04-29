@@ -30,7 +30,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Obfuscar.Helpers;
-using Obfuscar.Metadata.Abstractions;
+using LeXtudio.Metadata.Abstractions;
 
 namespace Obfuscar
 {

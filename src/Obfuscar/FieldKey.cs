@@ -26,7 +26,7 @@
 
 using FieldAttributes = System.Reflection.FieldAttributes;
 using Obfuscar.Helpers;
-using Obfuscar.Metadata.Mutable;
+using LeXtudio.Metadata.Mutable;
 
 namespace Obfuscar
 {

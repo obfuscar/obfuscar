@@ -26,8 +26,8 @@
 
 using System;
 using Obfuscar.Helpers;
-using Obfuscar.Metadata.Abstractions;
-using Obfuscar.Metadata.Mutable;
+using LeXtudio.Metadata.Mutable;
+using LeXtudio.Metadata.Abstractions;
 
 namespace Obfuscar
 {

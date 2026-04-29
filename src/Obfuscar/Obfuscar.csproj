@@ -15,8 +15,15 @@
     <NoWarn>$(NoWarn);SYSLIB0003;SYSLIB0025;SYSLIB0050</NoWarn>
   </PropertyGroup>
 
+  <!-- legacy TFM support is handled by the shared project; no NET462 symbol required -->
+
   <ItemGroup>
     <ProjectReference Include="..\Baml\Baml.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Use the NuGet package rather than a project reference -->
+    <PackageReference Include="LeXtudio.Metadata.Mutable" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,5 +39,7 @@
     </PackageReference>
     <PackageReference Include="System.CommandLine" />
   </ItemGroup>
+
+  <!-- Local metadata sources are removed; shared project provides LeXtudio types -->
 
 </Project>
