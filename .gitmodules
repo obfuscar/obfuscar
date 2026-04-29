@@ -7,3 +7,6 @@
 [submodule "example"]
 	path = example
 	url = https://github.com/obfuscar/example
+[submodule "ThirdParty/Metadata"]
+path = ThirdParty/Metadata
+url = https://github.com/lextudio/assemblytools
