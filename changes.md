@@ -2,6 +2,12 @@
 
 These notes summarize the main user-facing changes and notable fixes included in the 3.0 beta releases.
 
+## 3.0 Beta 9 (2026-04-29)
+
+Highlights
+
+- Fixed more assembly processing issues.
+
 ## 3.0 Beta 8 (2026-04-29)
 
 Highlights
