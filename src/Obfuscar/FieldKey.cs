@@ -81,6 +81,10 @@ namespace Obfuscar
             {
                 if (TypeKey.Matches(member.DeclaringType))
                 {
+                    if (Name == member.Name &&
+                        (member.DeclaringType is MutableGenericInstanceType || Name.StartsWith("<>") || member.DeclaringType?.Name?.Contains("<>") == true))
+                        return true;
+
                     if (Field != null)
                         return Type == member.FieldType?.GetFullName() && Name == member.Name;
                     return Type == member.FieldType?.GetFullName() && Name == member.Name;
