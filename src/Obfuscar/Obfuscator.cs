@@ -2192,6 +2192,11 @@ namespace Obfuscar
                         int start = data.DataBytes.Count;
                         data.DataBytes.AddRange(stringBytes);
                         int count = data.DataBytes.Count - start;
+                        if (count == 0 && data.DataBytes.Count == 0)
+                        {
+                            // Ensure the RVA field has at least one byte when only empty strings exist.
+                            data.DataBytes.Add(0);
+                        }
 
                         if (isDebugEnabled)
                         {

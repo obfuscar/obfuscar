@@ -373,6 +373,54 @@ namespace TestClasses
         }
 
         [Fact]
+        public void CheckHideStringsDoesNotCorruptAssemblyWhenOnlyEmptyStringIsPresent()
+        {
+            string assemblyName = "AssemblyWithOnlyEmptyString";
+            string source = @"
+namespace TestClasses
+{
+    public static class EmptyStringOnly
+    {
+        public static string Get()
+        {
+            return """";
+        }
+    }
+}";
+
+            TestHelper.CleanInput();
+            File.WriteAllText(Path.Combine(TestHelper.InputPath, assemblyName + ".cs"), source);
+            TestHelper.BuildAssembly(
+                assemblyName,
+                string.Empty,
+                languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
+
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='HideStrings' value='true' />" +
+                @"<Var name='KeepPublicApi' value='true' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}" + assemblyName + @".dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.Obfuscate(xml, true);
+
+            string outputAssemblyPath = Path.Combine(outputPath, assemblyName + ".dll");
+            System.Reflection.Assembly outputAssembly = System.Reflection.Assembly.LoadFile(outputAssemblyPath);
+            Type outputType = outputAssembly.GetType("TestClasses.EmptyStringOnly", throwOnError: true);
+            System.Reflection.MethodInfo method = outputType.GetMethod(
+                "Get",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+            Assert.NotNull(method);
+            Assert.Equal(string.Empty, method.Invoke(null, null));
+        }
+
+        [Fact]
         public void ReadIlFailsFastOnInvalidSwitchTarget()
         {
             var reader = new MutableAssemblyReader();
