@@ -86,7 +86,7 @@ namespace ObfuscarTests
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
-            Assert.Equal(6, assmDef.MainModule.Types.Count);
+            Assert.Equal(7, assmDef.MainModule.Types.Count);
 
             TypeDefinition expected = null;
             foreach (var type in assmDef.MainModule.Types)
@@ -123,7 +123,7 @@ namespace ObfuscarTests
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
-            Assert.Equal(6, assmDef.MainModule.Types.Count);
+            Assert.Equal(7, assmDef.MainModule.Types.Count);
 
             TypeDefinition expected = null;
             foreach (var type in assmDef.MainModule.Types)
@@ -160,7 +160,7 @@ namespace ObfuscarTests
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
-            Assert.Equal(6, assmDef.MainModule.Types.Count);
+            Assert.Equal(7, assmDef.MainModule.Types.Count);
 
             TypeDefinition expected = null;
             foreach (var type in assmDef.MainModule.Types)
@@ -197,7 +197,7 @@ namespace ObfuscarTests
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
-            Assert.Equal(6, assmDef.MainModule.Types.Count);
+            Assert.Equal(7, assmDef.MainModule.Types.Count);
 
             TypeDefinition expected = null;
             foreach (var type in assmDef.MainModule.Types)
@@ -232,7 +232,7 @@ namespace ObfuscarTests
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "ManyStrings.dll"));
 
-            Assert.Equal(4, assmDef.MainModule.Types.Count);
+            Assert.Equal(6, assmDef.MainModule.Types.Count);
 
             var expected = new List<TypeDefinition>();
             foreach (var type in assmDef.MainModule.Types)
@@ -270,7 +270,7 @@ namespace ObfuscarTests
             AssemblyDefinition assmDef = AssemblyDefinition.ReadAssembly(
                 Path.Combine(outputPath, "AssemblyWithStrings.dll"));
 
-            Assert.Equal(6, assmDef.MainModule.Types.Count);
+            Assert.Equal(7, assmDef.MainModule.Types.Count);
 
             TypeDefinition expected = null;
             foreach (var type in assmDef.MainModule.Types)

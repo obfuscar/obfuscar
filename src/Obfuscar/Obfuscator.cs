@@ -1981,14 +1981,13 @@ namespace Obfuscar
                         TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass |
                         TypeAttributes.BeforeFieldInit, SystemObjectTypeReference);
 
-                    // Add struct for constant byte array data
+                    // Add struct for constant byte array data as a top-level helper type.
+                    // Some metadata writers do not preserve nested explicit-layout helper types reliably.
                     TypeDefinition structType = new TypeDefinition("1{" + guid + "}", "2",
                         TypeAttributes.ExplicitLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed |
-                        TypeAttributes.NestedPrivate, SystemValueTypeTypeReference);
+                        TypeAttributes.NotPublic, SystemValueTypeTypeReference);
                     structType.IsValueType = true;
-                    structType.DeclaringType = newType;
                     structType.PackingSize = 1;
-                    newType.NestedTypes.Add(structType);
 
                     // Add field with constant string data
                     FieldDefinition dataConstantField = new FieldDefinition("3",
@@ -2123,6 +2122,7 @@ namespace Obfuscar
                     worker2.Emit(OpCodes.Brtrue, label2);
                     worker2.Emit(OpCodes.Ret);
 
+                    _library.MainModule.Types.Add(data.StructType);
                     _library.MainModule.Types.Add(data.NewType);
                 }
             }
