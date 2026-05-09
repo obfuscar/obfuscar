@@ -190,6 +190,97 @@ namespace ObfuscarTests
         }
 
         [Fact]
+        public void CheckInternalsVisibleToBothInProject()
+        {
+            // When both the assembly with InternalsVisibleTo and the friend assembly are in the
+            // same obfuscation project, internal members get renamed on both sides consistently —
+            // the obfuscated output works correctly because all references are updated together.
+            string inputPath = TestHelper.InputPath;
+            string outputPath = TestHelper.OutputPath;
+
+            TestHelper.CleanInput();
+            TestHelper.BuildAssemblies(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest, false,
+                "AssemblyWithInternalsVisibleTo", "AssemblyFriendConsumer");
+
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeepPublicApi' value='true' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithInternalsVisibleTo.dll' />" +
+                @"<Module file='$(InPath){2}AssemblyFriendConsumer.dll' />" +
+                @"</Obfuscator>", inputPath, outputPath, Path.DirectorySeparatorChar);
+
+            // Both assemblies obfuscated together: internal members are renamed on both sides,
+            // so the output is consistent and no ResolutionException should occur.
+            var obfuscator = TestHelper.Obfuscate(xml);
+            var map = obfuscator.Mapping;
+
+            var inAssmDef = AssemblyDefinition.ReadAssembly(Path.Combine(inputPath, "AssemblyWithInternalsVisibleTo.dll"));
+            var internalType = inAssmDef.MainModule.GetType("TestClasses.InternalSharedClass");
+
+            // Members of the internal class are renamed — both assemblies are updated consistently
+            foreach (var prop in internalType.Properties)
+            {
+                var entry = map.GetProperty(new PropertyKey(new TypeKey(internalType), prop));
+                Assert.True(entry.Status == ObfuscationStatus.Renamed,
+                    $"Property '{prop.Name}' should be renamed when both assemblies are in the project");
+            }
+
+            // Both output files must exist (no crash)
+            Assert.True(File.Exists(Path.Combine(outputPath, "AssemblyWithInternalsVisibleTo.dll")));
+            Assert.True(File.Exists(Path.Combine(outputPath, "AssemblyFriendConsumer.dll")));
+        }
+
+        [Fact]
+        public void CheckInternalsVisibleToFriendNotInProject()
+        {
+            // When only the library is obfuscated and the friend assembly is NOT in the project,
+            // internal members get renamed but the friend assembly still references the old names.
+            // This documents the current behavior: Obfuscar does NOT detect InternalsVisibleTo
+            // and does NOT preserve internal members for out-of-project friend assemblies.
+            // The correct fix would be to treat such members as public API when the friend
+            // assembly is not being obfuscated in the same run.
+            string inputPath = TestHelper.InputPath;
+            string outputPath = TestHelper.OutputPath;
+
+            TestHelper.CleanInput();
+            TestHelper.BuildAssemblies(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest, false,
+                "AssemblyWithInternalsVisibleTo", "AssemblyFriendConsumer");
+
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeepPublicApi' value='true' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithInternalsVisibleTo.dll' />" +
+                @"</Obfuscator>", inputPath, outputPath, Path.DirectorySeparatorChar);
+
+            // Only the library is obfuscated — friend assembly is not in the project.
+            var obfuscator = TestHelper.Obfuscate(xml);
+            var map = obfuscator.Mapping;
+
+            var inAssmDef = AssemblyDefinition.ReadAssembly(Path.Combine(inputPath, "AssemblyWithInternalsVisibleTo.dll"));
+            var internalType = inAssmDef.MainModule.GetType("TestClasses.InternalSharedClass");
+
+            // Current behavior: internal members are renamed even though the friend assembly
+            // (not in the project) still references them by their original names.
+            // This is a known gap: Obfuscar does not check InternalsVisibleTo attributes.
+            foreach (var prop in internalType.Properties)
+            {
+                var entry = map.GetProperty(new PropertyKey(new TypeKey(internalType), prop));
+                // Document current behavior — renamed despite friend assembly depending on it
+                Assert.True(entry.Status == ObfuscationStatus.Renamed,
+                    $"Current behavior: '{prop.Name}' is renamed even when friend assembly is not in project. " +
+                    $"Ideally, with InternalsVisibleTo pointing to an out-of-project assembly, it should be skipped.");
+            }
+        }
+
+        [Fact]
         public void CheckPublicPropOnInternalClassIsRenamed()
         {
             // Regression test for issue #559: a public property declared on an internal class

@@ -113,6 +113,8 @@ namespace Obfuscar
             // The SemanticAttributes of MethodDefinitions have to be loaded before any fields,properties or events are removed
             LoadMethodSemantics();
 
+            WarnInternalsVisibleToOutsideProject();
+
             LoggerService.Logger.LogInformation("Hiding strings...\n");
             HideStrings();
 
@@ -526,6 +528,40 @@ namespace Obfuscar
         /// <summary>
         /// Calls the SemanticsAttributes-getter for all methods
         /// </summary>
+        private void WarnInternalsVisibleToOutsideProject()
+        {
+            const string internalsVisibleToName = "System.Runtime.CompilerServices.InternalsVisibleToAttribute";
+            var projectAssemblyNames = new HashSet<string>(
+                Project.AssemblyList.Select(a => a.Definition.Name?.Name ?? string.Empty),
+                StringComparer.OrdinalIgnoreCase);
+
+            foreach (AssemblyInfo info in Project.AssemblyList)
+            {
+                foreach (var attr in info.Definition.CustomAttributes)
+                {
+                    if (attr.AttributeTypeName != internalsVisibleToName)
+                        continue;
+
+                    var arg = attr.ConstructorArguments.FirstOrDefault();
+                    if (arg?.Value is not string friendName)
+                        continue;
+
+                    // Strip public key token suffix if present (e.g. "AssemblyB, PublicKey=...")
+                    var simpleName = friendName.Split(',')[0].Trim();
+
+                    if (!projectAssemblyNames.Contains(simpleName))
+                    {
+                        LoggerService.Logger.LogWarning(
+                            "Assembly '{0}' exposes internals to '{1}' via InternalsVisibleTo, but '{1}' is not " +
+                            "in the obfuscation project. Internal members of '{0}' will be renamed, which may " +
+                            "break '{1}' at runtime. Add '{1}' to the project or use SkipType/[Obfuscation] to " +
+                            "protect the affected internal types.",
+                            info.Name, simpleName);
+                    }
+                }
+            }
+        }
+
         private void LoadMethodSemantics()
         {
             foreach (AssemblyInfo info in Project.AssemblyList)
