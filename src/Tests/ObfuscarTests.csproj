@@ -75,6 +75,7 @@
     <Compile Include="SkipPropertyTests.cs" />
     <Compile Include="SkipTypeByDecoratorTests.cs" />
     <Compile Include="SkipTypeByDecoratorAllTests.cs" />
+    <Compile Include="SameMethodNamingTest.cs" />
     <Compile Include="SkipVirtualMethodTest.cs" />
     <Compile Include="SpecializedGenericsTests.cs" />
     <Compile Include="TesterTests.cs" />
