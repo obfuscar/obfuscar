@@ -27,6 +27,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="ImportNestedTypeUsingStaticOuterClassTest.cs" />
     <Compile Include="GlobalUsings.Legacy.cs" Condition="'$(TargetFramework)' == 'net472'" />
     <Compile Include="GlobalUsings.Shared.cs" Condition="'$(TargetFramework)' != 'net472'" />
     <Compile Include="AssemblyHelper.cs" />
