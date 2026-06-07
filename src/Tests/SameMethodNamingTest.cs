@@ -39,7 +39,7 @@ namespace ObfuscarTests
         [MemberData(nameof(ClassNamesToTests))]
         public void CheckSameNameMethodsDoesNotThrow(string className, string[] expected, string[] notExpected)
         {
-            CheckAssemblyExtended(Path.Combine(outputPath, "SameMethodNamingTest1.dll"), 2, expected,
+            AssemblyHelper.CheckAssemblyExtended(Path.Combine(outputPath, "SameMethodNamingTest1.dll"), 2, expected,
                 notExpected,
                 delegate (TypeDefinition typeDef) { return typeDef.Name == className; },
                 CheckType);
@@ -66,47 +66,6 @@ namespace ObfuscarTests
                 // Assert
                 Assert.Null(exception);
             }
-        }
-
-        /// <summary>
-        /// Modified version of
-        /// <seealso cref=" AssemblyHelper.CheckAssembly(string, int, string[], string[], Predicate{LeXtudio.Metadata.Mutable.MutableTypeDefinition}, Action{LeXtudio.Metadata.Mutable.MutableTypeDefinition})"/>
-        /// </summary>  
-        /// <remarks>
-        /// May be merged with original 
-        /// </remarks>
-        private static void CheckAssemblyExtended(string name, int expectedTypes, string[] expectedMethods,
-            string[] notExpectedMethods,
-            Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType)
-        {
-            HashSet<string> methodsToFind = new HashSet<string>(expectedMethods ?? new string[] { });
-            HashSet<string> methodsNotToFind = new HashSet<string>(notExpectedMethods ?? new string[] { });
-
-            AssemblyHelper.CheckAssembly(name, expectedTypes, isType,
-                delegate (TypeDefinition typeDef)
-                {
-                    if (expectedMethods != null && notExpectedMethods != null)
-                    {
-                        // make sure we have enough methods...
-                        var expectedCount = expectedMethods.Length
-                            + typeDef.Methods.Count(x => x.IsConstructor | x.IsStaticConstructor);
-
-                        Assert.Equal(expectedCount, typeDef.Methods.Count);
-                        // "Some of the methods for the type are missing.");
-                    }
-
-                    foreach (MethodDefinition method in typeDef.Methods)
-                    {
-                        Assert.False(methodsNotToFind.Contains(method.Name), string.Format(
-                            "Did not expect to find method '{0}'.", method.Name));
-
-                        methodsToFind.Remove(method.Name);
-                    }
-
-                    checkType?.Invoke(typeDef);
-                });
-
-            Assert.False(methodsToFind.Count > 0, "Failed to find all expected methods.");
         }
     }
 }

@@ -25,6 +25,7 @@
 #endregion
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using Xunit;
 
@@ -81,6 +82,47 @@ namespace ObfuscarTests
                     var expectedCount = expectedMethods.Length + notExpectedMethods.Length + 1;
                     Assert.Equal(expectedCount, typeDef.Methods.Count);
                     // "Some of the methods for the type are missing.");
+
+                    foreach (MethodDefinition method in typeDef.Methods)
+                    {
+                        Assert.False(methodsNotToFind.Contains(method.Name), string.Format(
+                            "Did not expect to find method '{0}'.", method.Name));
+
+                        methodsToFind.Remove(method.Name);
+                    }
+
+                    checkType?.Invoke(typeDef);
+                });
+
+            Assert.False(methodsToFind.Count > 0, "Failed to find all expected methods.");
+        }
+
+        /// <summary>
+        /// Modified version of
+        /// <seealso cref=" AssemblyHelper.CheckAssembly(string, int, string[], string[], Predicate{LeXtudio.Metadata.Mutable.MutableTypeDefinition}, Action{LeXtudio.Metadata.Mutable.MutableTypeDefinition})"/>
+        /// </summary>  
+        /// <remarks>
+        /// May be merged with original 
+        /// </remarks>
+        public static void CheckAssemblyExtended(string name, int expectedTypes, string[] expectedMethods,
+            string[] notExpectedMethods,
+            Predicate<TypeDefinition> isType, Action<TypeDefinition> checkType)
+        {
+            HashSet<string> methodsToFind = new HashSet<string>(expectedMethods ?? new string[] { });
+            HashSet<string> methodsNotToFind = new HashSet<string>(notExpectedMethods ?? new string[] { });
+
+            AssemblyHelper.CheckAssembly(name, expectedTypes, isType,
+                delegate (TypeDefinition typeDef)
+                {
+                    if (expectedMethods != null && notExpectedMethods != null)
+                    {
+                        // make sure we have enough methods...
+                        var expectedCount = expectedMethods.Length
+                            + typeDef.Methods.Count(x => x.IsConstructor | x.IsStaticConstructor);
+
+                        Assert.Equal(expectedCount, typeDef.Methods.Count);
+                        // "Some of the methods for the type are missing.");
+                    }
 
                     foreach (MethodDefinition method in typeDef.Methods)
                     {
