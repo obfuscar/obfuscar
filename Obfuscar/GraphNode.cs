@@ -24,19 +24,19 @@
 
 #endregion
 
+using Mono.Cecil;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Mono.Cecil;
 
 namespace Obfuscar
 {
     [DebuggerDisplay("{type}")]
-    class GraphNode
+    internal class GraphNode
     {
-        private TypeKey type;
-        private bool scaned;
-        private List<GraphNode> baseNodes = new List<GraphNode>();
+        private readonly TypeKey type;
+        private bool scanned;
+        private readonly List<GraphNode> baseNodes = new List<GraphNode>();
 
         public GraphNode(TypeKey type)
         {
@@ -45,7 +45,7 @@ namespace Obfuscar
 
         internal void Scan(Dictionary<TypeKey, GraphNode> nodes, HashSet<TypeKey> toRemove, Project project)
         {
-            if (scaned)
+            if (scanned)
             {
                 return;
             }
@@ -66,7 +66,7 @@ namespace Obfuscar
                 }
             }
 
-            scaned = true;
+            scanned = true;
         }
 
         public static List<TypeKey> GetBaseTypes(Project project, TypeDefinition type)
@@ -102,7 +102,7 @@ namespace Obfuscar
             return result;
         }
 
-        public void FillMethodGroup(IList<MethodGroup> groups, Project project)
+        public void FillMethodGroup(IDictionary<MethodKey, MethodGroup> groups, Project project)
         {
             if (baseNodes.Count == 0)
             {
@@ -132,32 +132,38 @@ namespace Obfuscar
                     continue;
                 }
 
-                var newGroup = new MethodGroup();
-                newGroup.Methods.Add(new MethodKey(method));
+                var key = new MethodKey(method);
+                if (!groups.TryGetValue(key, out var newGroup))
+                {
+                    newGroup = new MethodGroup();
+                    newGroup.Methods.Add(key);
+                    groups[key] = newGroup;
+                }
+
                 MethodDefinition rootMethod = null;
                 if (method.Parameters.Any(p => p.ParameterType is GenericParameter))
                 {
                     // If the method has generic arguments we need to group it with overloads in the same class so they are renamed the same
                     // way, otherwise the call site updating may fail to choose the right overload
-                    MatchMethodGroup(method, newGroup, project, ref rootMethod);
+                    MatchMethodGroup(method, ref newGroup, groups, project, ref rootMethod);
                 }
                 else
                 {
                     foreach (var baseType in baseNodes)
                     {
-                        baseType.MatchMethodGroup(method, newGroup, project, ref rootMethod);
+                        baseType.MatchMethodGroup(method, ref newGroup, groups, project, ref rootMethod);
                     }
                 }
 
                 // Mark external methods declared in a base class outside the scanned class hierarchy
-                if (rootMethod == null && !newGroup.External && method.IsVirtual && method.IsReuseSlot && !method.IsSpecialName)
+                if (!newGroup.External && rootMethod == null && method.IsVirtual && method.IsReuseSlot && !method.IsSpecialName)
                 {
                     newGroup.External = true;
                 }
 
-                if (newGroup.Methods.Count > 1 || newGroup.External)
+                if (newGroup.Methods.Count < 2 && !newGroup.External)
                 {
-                    groups.Add(newGroup);
+                    groups.Remove(key);
                 }
             }
         }
@@ -179,22 +185,47 @@ namespace Obfuscar
             }
         }
 
-        private void MatchMethodGroup(MethodDefinition method, MethodGroup newGroup, Project project, ref MethodDefinition rootMethod)
+        private void MatchMethodGroup(
+            MethodDefinition method, ref MethodGroup newGroup, IDictionary<MethodKey, MethodGroup> groups,
+            Project project, ref MethodDefinition rootMethod)
         {
             foreach (var baseMethod in type.TypeDefinition.Methods)
             {
                 if (MethodKey.MethodMatch(baseMethod, method)
                     || MethodKey.MethodMatch(method, baseMethod))
                 {
-                    newGroup.Methods.Add(new MethodKey(baseMethod));
                     newGroup.External |= !project.Contains(type);
                     if (baseMethod.IsNewSlot)
                         rootMethod = baseMethod;
+
+                    var baseKey = new MethodKey(baseMethod);
+                    if (!groups.TryGetValue(baseKey, out var baseGroup))
+                    {
+                        // add into the current group
+                        newGroup.Methods.Add(baseKey);
+                        groups[baseKey] = newGroup;
+                        continue;
+                    }
+                    
+                    if (baseGroup == newGroup)
+                    {
+                        // already in the current group
+                        continue;
+                    }
+
+                    // save a little time by updating the smaller group
+                    if (baseGroup.Methods.Count > newGroup.Methods.Count)
+                        (newGroup, baseGroup) = (baseGroup, newGroup);
+
+                    // merge into an existing group
+                    foreach (var key in baseGroup.Methods)
+                        groups[key] = newGroup;
+                    newGroup.Merge(baseGroup);
                 }
             }
             // Add base type methods recursively as the method might override something further up the hierarchy
             foreach (var baseType in baseNodes)
-                baseType.MatchMethodGroup(method, newGroup, project, ref rootMethod);
+                baseType.MatchMethodGroup(method, ref newGroup, groups, project, ref rootMethod);
         }
 
         internal TypeKey[] GetBaseTypes()

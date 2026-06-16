@@ -64,32 +64,11 @@ namespace Obfuscar
             //    nodes.Remove(item);
             //}
 
-            var methods = new List<MethodGroup>();
             var properties = new List<PropertyGroup>();
             foreach (var node in nodes)
             {
-                node.Value.FillMethodGroup(methods, Project);
+                node.Value.FillMethodGroup(methodGroups, Project);
                 node.Value.FillPropertyGroup(properties, Project);
-            }
-
-            // Merge overlapping method groups
-            foreach (var group in methods)
-            {
-                MethodGroup mergeGroup = null;
-                foreach (var item in group.Methods)
-                {
-                    if (methodGroups.TryGetValue(item, out mergeGroup))
-                    {
-                        mergeGroup.Merge(group);
-                        break;
-                    }
-                }
-                if (mergeGroup == null)
-                    mergeGroup = group;
-                foreach (var item in group.Methods)
-                {
-                    methodGroups[item] = mergeGroup;
-                }
             }
 
             // Merge overlapping property groups

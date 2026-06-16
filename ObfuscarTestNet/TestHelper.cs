@@ -1,9 +1,6 @@
-using System;
-using System.IO;
-using System.CodeDom.Compiler;
-using System.Text;
-using System.Linq;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace ObfuscarTestNet
 {
@@ -13,10 +10,7 @@ namespace ObfuscarTestNet
 
         private static int count;
 
-        public static string OutputPath
-        {
-            get { return Path.Combine("..", "..", "Output", count++.ToString()); }
-        }
+        public static string GenerateOutputPath() => Path.Combine("..", "..", "Output", count++.ToString());
 
         public static string BuildAssembly(string name, params string[] references)
         {

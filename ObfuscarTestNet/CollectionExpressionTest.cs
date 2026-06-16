@@ -12,7 +12,7 @@ namespace ObfuscarTest
         [TestMethod]
         public void CheckCollectionExpression()
         {
-            string outputPath = TestHelper.OutputPath;
+            string outputPath = TestHelper.GenerateOutputPath();
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
                 @"<Obfuscator>" +

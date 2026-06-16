@@ -40,9 +40,10 @@ namespace ObfuscarTestNet
             return outPath;
         }
 
-        public bool AddAssembly(string assemblyDll)
+        public void AddAssembly(string assemblyDll)
         {
-            if (string.IsNullOrEmpty(assemblyDll)) return false;
+            if (string.IsNullOrEmpty(assemblyDll))
+                throw new ArgumentException("Assembly DLL path cannot be null or empty.", nameof(assemblyDll));
 
             var file = Path.GetFullPath(assemblyDll);
 
@@ -52,22 +53,20 @@ namespace ObfuscarTestNet
                 var path = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
                 file = Path.Combine(path, assemblyDll);
                 if (!File.Exists(file))
-                    return false;
+                    Assert.Fail($"Could not find assembly file: {assemblyDll}");
             }
 
-            if (_references.Any(r => r.FilePath == file)) return true;
+            if (_references.Any(r => r.FilePath == file)) return;
 
             try
             {
                 var reference = MetadataReference.CreateFromFile(file);
                 _references.Add(reference);
             }
-            catch
+            catch (Exception e)
             {
-                return false;
+                Assert.Fail($"Could not add assembly reference \"{file}\": {e.Message}");
             }
-
-            return true;
         }
 
         private void AddAssemblies(params string[] assemblies)
@@ -76,22 +75,20 @@ namespace ObfuscarTestNet
                 AddAssembly(assembly);
         }
 
-        public bool AddAssembly(Type type)
+        public void AddAssembly(Type type)
         {
             try
             {
                 if (_references.Any(r => r.FilePath == type.Assembly.Location))
-                    return true;
+                    return;
 
                 var systemReference = MetadataReference.CreateFromFile(type.Assembly.Location);
                 _references.Add(systemReference);
             }
-            catch
+            catch (Exception e)
             {
-                return false;
+                Assert.Fail($"Could not add assembly reference for type {type.FullName}: {e.Message}");
             }
-
-            return true;
         }
 
         public void AddNetCoreDefaultReferences()
@@ -99,7 +96,7 @@ namespace ObfuscarTestNet
             var runtimePath = Path.GetDirectoryName(typeof(object).Assembly.Location) + Path.DirectorySeparatorChar;
 
             AddAssemblies(
-                runtimePath + "System.Private.CoreLib.dll",
+                runtimePath + "mscorlib.dll",
                 runtimePath + "System.Runtime.dll",
                 runtimePath + "System.Console.dll",
                 runtimePath + "System.Text.RegularExpressions.dll",
@@ -108,14 +105,19 @@ namespace ObfuscarTestNet
                 runtimePath + "System.IO.dll",
                 runtimePath + "System.Net.Primitives.dll",
                 runtimePath + "System.Net.Http.dll",
-                runtimePath + "System.Private.Uri.dll",
                 runtimePath + "System.Reflection.dll",
                 runtimePath + "System.ComponentModel.Primitives.dll",
                 runtimePath + "System.Globalization.dll",
                 runtimePath + "System.Collections.Concurrent.dll",
                 runtimePath + "System.Collections.NonGeneric.dll",
                 runtimePath + "Microsoft.CSharp.dll",
-                runtimePath + "netstandard.dll"
+                runtimePath + "netstandard.dll",
+#if NETFRAMEWORK
+                runtimePath + "System.Core.dll"
+#else
+                runtimePath + "System.Private.CoreLib.dll",
+                runtimePath + "System.Private.Uri.dll"
+#endif
             );
         }
     }

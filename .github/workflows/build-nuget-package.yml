@@ -48,7 +48,7 @@ jobs:
         - name: Run unit tests
           shell: pwsh
           run: |
-            $testFiles = Get-ChildItem -Path . -Filter "*test.dll" -Recurse | ForEach-Object { $_.FullName }
+            $testFiles = Get-ChildItem -Path . -Filter "ObfuscarTest*.dll" -Recurse | ForEach-Object { $_.FullName }
             foreach ($testFile in $testFiles) {
               dotnet test $testFile --logger trx
             }
