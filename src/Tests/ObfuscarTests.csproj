@@ -92,6 +92,7 @@
     <Compile Include="ObfuscationAttributeTests.cs" />
     <Compile Include="ExceptionHandlerTests.cs" />
     <Compile Include="BamlResourceTests.cs" />
+    <Compile Include="EntryPointTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
