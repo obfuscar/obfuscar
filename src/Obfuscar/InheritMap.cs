@@ -30,6 +30,7 @@ using System.Diagnostics;
 using System.Text;
 using LeXtudio.Metadata.Abstractions;
 using LeXtudio.Metadata.Mutable;
+using Obfuscar.Helpers;
 
 namespace Obfuscar
 {
@@ -40,6 +41,8 @@ namespace Obfuscar
         public string Name { get; set; } = null;
 
         public bool External { get; set; } = false;
+
+        public bool HasMethodImplementations { get; set; } = false;
 
         public override string ToString()
         {
@@ -132,12 +135,12 @@ namespace Obfuscar
 
                         // if the group isn't already external, see if it should be
                         Debug.Assert(group != null, "should have a group by now");
-                        if (!group.External && !project.Contains(right.TypeKey))
+                        if (!group.External && !IsProjectMethod(right))
                             group.External = true;
                     }
 
                     // if the group isn't already external, see if it should be
-                    if (group != null && !group.External && !project.Contains(left.TypeKey))
+                    if (group != null && !group.External && !IsProjectMethod(left))
                         group.External = true;
 
                     // move on to the next thing that doesn't match
@@ -185,9 +188,11 @@ namespace Obfuscar
                             implGroup = AddToGroup(implGroup, declKey);
                         }
 
-                        if (!implGroup.External && !project.Contains(bodyKey.TypeKey))
+                        implGroup.HasMethodImplementations = true;
+
+                        if (!implGroup.External && !IsProjectMethod(bodyKey))
                             implGroup.External = true;
-                        if (!implGroup.External && !project.Contains(declKey.TypeKey))
+                        if (!implGroup.External && !IsProjectMethod(declKey))
                             implGroup.External = true;
                     }
                 }
@@ -212,6 +217,18 @@ namespace Obfuscar
         {
             return MethodKey.MethodMatch(left.Method, right.Method)
                    || MethodKey.MethodMatch(right.Method, left.Method);
+        }
+
+        private bool IsProjectMethod(MethodKey method)
+        {
+            if (method == null)
+                return false;
+
+            if (project.Contains(method.TypeKey))
+                return true;
+
+            var declaringType = method.Method?.DeclaringType;
+            return declaringType != null && typesByFullName.ContainsKey(declaringType.GetFullName());
         }
 
         TypeKey[] GetBaseTypes(IType type)

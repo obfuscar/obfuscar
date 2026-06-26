@@ -1605,8 +1605,12 @@ namespace Obfuscar
                     LoggerService.Logger.LogDebug("Group for method {0} is external, will be skipped", methodKey);
                 }
 
-                // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
-                if (skipRename != null)
+                if (CanSkipPublicApiMethodOnly(@group, skipRename))
+                {
+                    groupName = NameGroup.GetNext(nameGroups);
+                    LoggerService.Logger.LogDebug("Generated new name for method implementation group: {0}", groupName);
+                }
+                else if (skipRename != null)
                 {
                     // for an external group, we can't rename.  just use the method
                     // name as group name
@@ -1624,7 +1628,7 @@ namespace Obfuscar
 
                 // set up methods to be renamed
                 foreach (MethodKey m in @group.Methods)
-                    if (skipRename == null)
+                    if (skipRename == null || CanRenameMethodImplementationMember(@group, skipRename, m))
                         Mapping.UpdateMethod(m, ObfuscationStatus.WillRename, groupName);
                     else
                         Mapping.UpdateMethod(m, ObfuscationStatus.Skipped, skipRename);
@@ -1669,6 +1673,18 @@ namespace Obfuscar
                               m.StatusText == groupName),
                     "If the method isn't skipped, and the group already has a name...method should have one too.");
             }
+        }
+
+        private static bool CanSkipPublicApiMethodOnly(MethodGroup group, string skipRename)
+        {
+            return group.HasMethodImplementations &&
+                   !group.External &&
+                   skipRename == "KeepPublicApi option in configuration";
+        }
+
+        private static bool CanRenameMethodImplementationMember(MethodGroup group, string skipRename, MethodKey method)
+        {
+            return CanSkipPublicApiMethodOnly(group, skipRename) && !method.Method.IsPublic();
         }
 
         NameGroup[] GetNameGroups(Dictionary<TypeKey, Dictionary<ParamSig, NameGroup>> baseSigNames,
