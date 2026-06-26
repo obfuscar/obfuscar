@@ -139,6 +139,9 @@ namespace Obfuscar
             if (candidate.Name != method.Name)
                 return false;
 
+            if (candidate.GenericParameters.Count != GetGenericParameterCount(method))
+                return false;
+
             if (!TypeMatch(candidate.ReturnType, method.ReturnType))
                 return false;
 
@@ -150,6 +153,13 @@ namespace Obfuscar
                     return false;
 
             return true;
+        }
+
+        private static int GetGenericParameterCount(MutableMethodReference method)
+        {
+            return method is MutableGenericInstanceMethod generic
+                ? generic.ElementMethod.GenericParameters.Count
+                : method.GenericParameters.Count;
         }
 
         private static bool TypeMatch(MutableGenericInstanceType a, MutableGenericInstanceType b)

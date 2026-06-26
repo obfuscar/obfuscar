@@ -143,6 +143,54 @@ namespace Obfuscar
                     // move on to the next thing that doesn't match
                     i++;
                 }
+
+                // Use the MethodImpl table to group explicit interface implementations with their
+                // interface methods. Name-matching alone fails for explicit impls because they use
+                // qualified names (e.g. "Namespace.Interface.Method" instead of "Method").
+                if (mutableType != null && mutableType.MethodImplementations.Count > 0)
+                {
+                    foreach (var impl in mutableType.MethodImplementations)
+                    {
+                        if (impl.MethodBody == null || impl.MethodDeclaration == null)
+                            continue;
+
+                        // Find the body and declaration MethodKeys in the collected virtual methods
+                        // for this type (which includes interface methods from the hierarchy).
+                        MethodKey bodyKey = null, declKey = null;
+                        foreach (var mk in methods)
+                        {
+                            if (bodyKey == null && MethodKey.MethodMatch(mk.Method, impl.MethodBody))
+                                bodyKey = mk;
+                            if (declKey == null && MethodKey.MethodMatch(mk.Method, impl.MethodDeclaration))
+                                declKey = mk;
+                            if (bodyKey != null && declKey != null)
+                                break;
+                        }
+
+                        if (bodyKey == null || declKey == null || bodyKey == declKey)
+                            continue;
+
+                        MethodGroup bodyGroup = methodGroups.TryGetValue(bodyKey, out var bg) ? bg : null;
+                        MethodGroup declGroup = methodGroups.TryGetValue(declKey, out var dg) ? dg : null;
+
+                        MethodGroup implGroup;
+                        if (bodyGroup != null)
+                            implGroup = AddToGroup(bodyGroup, declKey);
+                        else if (declGroup != null)
+                            implGroup = AddToGroup(declGroup, bodyKey);
+                        else
+                        {
+                            implGroup = new MethodGroup();
+                            implGroup = AddToGroup(implGroup, bodyKey);
+                            implGroup = AddToGroup(implGroup, declKey);
+                        }
+
+                        if (!implGroup.External && !project.Contains(bodyKey.TypeKey))
+                            implGroup.External = true;
+                        if (!implGroup.External && !project.Contains(declKey.TypeKey))
+                            implGroup.External = true;
+                    }
+                }
             }
         }
 
@@ -297,8 +345,12 @@ namespace Obfuscar
             MethodGroup group;
             if (methodGroups.TryGetValue(methodKey, out group))
                 return group;
-            else
-                return null;
+
+            foreach (var pair in methodGroups)
+                if (ReferenceEquals(pair.Key.Method, methodKey.Method))
+                    return pair.Value;
+
+            return null;
         }
 
         /// <summary>

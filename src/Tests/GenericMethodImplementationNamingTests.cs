@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using Xunit;
@@ -53,36 +51,11 @@ namespace ObfuscarTests
             Assembly assm = Assembly.LoadFile(Path.GetFullPath(typeDef.Module.FileName));
             Type type = assm.GetType(typeDef.FullName);
 
-            var interfaceMethods = type.GetInterfaces().SelectMany(i => i.GetMethods()).ToList();
-
-            var allInstanceMethods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
-                .Where(x => !x.IsConstructor)
-                .ToList();
-
-            foreach (var interfaceMethod in interfaceMethods)
+            foreach (var interfaceType in type.GetInterfaces())
             {
-                var implementationMethod = allInstanceMethods.FirstOrDefault(x =>
-                    x.Name == interfaceMethod.Name // match name
-                    && x.GetParameters().SequenceEqual(interfaceMethod.GetParameters(), new MethodParameterComparer()) // match parameters
-                    && x.ReturnType == interfaceMethod.ReturnType // match return type
-                    && x.GetGenericArguments().SequenceEqual(interfaceMethod.GetGenericArguments()) // match generic arguments (if any)
-                );
-
-                // Assert
-                Assert.NotNull(implementationMethod);
-            }
-        }
-
-        class MethodParameterComparer : IEqualityComparer<ParameterInfo>
-        {
-            public bool Equals(ParameterInfo x, ParameterInfo y)
-            {
-                return x.ParameterType == y.ParameterType;
-            }
-
-            public int GetHashCode([DisallowNull] ParameterInfo obj)
-            {
-                return obj.ParameterType.GetHashCode();
+                var interfaceMap = type.GetInterfaceMap(interfaceType);
+                for (int index = 0; index < interfaceMap.InterfaceMethods.Length; index++)
+                    Assert.Equal(interfaceMap.InterfaceMethods[index].Name, interfaceMap.TargetMethods[index].Name);
             }
         }
     }
