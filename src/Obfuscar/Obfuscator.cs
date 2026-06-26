@@ -552,11 +552,10 @@ namespace Obfuscar
                     if (!projectAssemblyNames.Contains(simpleName))
                     {
                         LoggerService.Logger.LogWarning(
-                            "Assembly '{0}' exposes internals to '{1}' via InternalsVisibleTo, but '{1}' is not " +
-                            "in the obfuscation project. Internal members of '{0}' will be renamed, which may " +
-                            "break '{1}' at runtime. Add '{1}' to the project or use SkipType/[Obfuscation] to " +
-                            "protect the affected internal types.",
-                            info.Name, simpleName);
+                            $"Assembly '{info.Name}' exposes internals to '{simpleName}' via InternalsVisibleTo, but '{simpleName}' is not " +
+                            $"in the obfuscation project. Internal members of '{info.Name}' will be renamed, which may " +
+                            $"break '{simpleName}' at runtime. Add '{simpleName}' to the project or use SkipType/[Obfuscation] to " +
+                            "protect the affected internal types.");
                     }
                 }
             }

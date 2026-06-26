@@ -26,6 +26,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Extensions.Logging;
 using Obfuscar;
 using Xunit;
 
@@ -277,6 +278,37 @@ namespace ObfuscarTests
                 Assert.True(entry.Status == ObfuscationStatus.Renamed,
                     $"Current behavior: '{prop.Name}' is renamed even when friend assembly is not in project. " +
                     $"Ideally, with InternalsVisibleTo pointing to an out-of-project assembly, it should be skipped.");
+            }
+        }
+
+        [Fact]
+        public void CheckInternalsVisibleToFriendNotInProjectWarningDoesNotCrashConsoleLogger()
+        {
+            string inputPath = TestHelper.InputPath;
+            string outputPath = TestHelper.OutputPath;
+
+            TestHelper.CleanInput();
+            TestHelper.BuildAssemblies(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest, false,
+                "AssemblyWithInternalsVisibleTo", "AssemblyFriendConsumer");
+
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeepPublicApi' value='true' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithInternalsVisibleTo.dll' />" +
+                @"</Obfuscator>", inputPath, outputPath, Path.DirectorySeparatorChar);
+
+            LoggerService.SetLogger(new ObfuscarConsoleLogger("ObfuscarTests", LogLevel.Warning));
+            try
+            {
+                TestHelper.Obfuscate(xml);
+            }
+            finally
+            {
+                LoggerService.SetLogger(null);
             }
         }
 
