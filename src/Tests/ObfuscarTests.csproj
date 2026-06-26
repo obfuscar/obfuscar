@@ -67,6 +67,7 @@
     <Compile Include="PathFailureTests.cs" />
     <Compile Include="PInvokeTests.cs" />
     <Compile Include="PortableTests.cs" />
+    <Compile Include="ProtectedFieldInheritanceTests.cs" />
     <Compile Include="BaseTypeTests.cs" />
     <Compile Include="QueryablePropertyAccessorTests.cs" />
     <Compile Include="ResourcesTests.cs" />

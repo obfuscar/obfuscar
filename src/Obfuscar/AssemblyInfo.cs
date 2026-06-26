@@ -1323,8 +1323,11 @@ namespace Obfuscar
                 return true;
             }
 
-            var fieldIsPublic = field.Field != null && field.Field.IsPublic;
-            if (fieldIsPublic && field.DeclaringType.IsTypePublic())
+            var fieldIsPublicApi =
+                (field.FieldAttributes & System.Reflection.FieldAttributes.Public) != 0 ||
+                (field.FieldAttributes & System.Reflection.FieldAttributes.Family) != 0 ||
+                (field.FieldAttributes & System.Reflection.FieldAttributes.FamORAssem) != 0;
+            if (fieldIsPublicApi && field.DeclaringType.IsTypePublic())
             {
                 message = "KeepPublicApi option in configuration";
                 return keepPublicApi;
