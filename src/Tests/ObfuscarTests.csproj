@@ -37,6 +37,7 @@
     <Compile Include="AutoSkipTypeTests.cs" />
     <Compile Include="BamlTests.cs" />
     <Compile Include="CleanPoolTests.cs" />
+    <Compile Include="CompilerGeneratedNestedTypeTests.cs" />
     <Compile Include="CustomAttributeTests.cs" />
     <Compile Include="CustomAttributeNamedArgumentTests.cs" />
     <Compile Include="CustomAttributeWithArgTests.cs" />

@@ -837,7 +837,9 @@ namespace Obfuscar
                         ns = "";
                         var declaringType = type.DeclaringType as MutableTypeDefinition;
                         var nestedIndex = declaringType != null ? declaringType.NestedTypes.IndexOf(type) : 0;
-                        name = NameMaker.UniqueNestedTypeName(nestedIndex);
+                        name = Project.Settings.ReuseNames
+                            ? NameMaker.UniqueNestedTypeName(nestedIndex)
+                            : NameMaker.UniqueNestedTypeName(_uniqueTypeNameIndex++);
                     }
                     else
                     {
