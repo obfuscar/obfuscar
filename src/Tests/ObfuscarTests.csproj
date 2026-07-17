@@ -95,6 +95,9 @@
     <Compile Include="ObfuscationAttributeTests.cs" />
     <Compile Include="ExceptionHandlerTests.cs" />
     <Compile Include="BamlResourceTests.cs" />
+    <Compile Include="MapWriterTests.cs" />
+    <Compile Include="EnumerableParameterIsSetToNullTests.cs" />
+    <Compile Include="DiagnosticTests.cs" />
     <Compile Include="EntryPointTests.cs" />
   </ItemGroup>
 

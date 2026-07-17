@@ -617,7 +617,7 @@ namespace Obfuscar
         private void ProcessField(FieldDefinition field, TypeKey typeKey, Dictionary<string, NameGroup> nameGroups,
             AssemblyInfo info)
         {
-            string sig = field.FieldType.FullName;
+            string sig = field.FieldType.GetFullName();
             var fieldKey = new FieldKey(typeKey, sig, field.Name, field, field.Attributes);
             NameGroup nameGroup = GetNameGroup(nameGroups, sig);
 
