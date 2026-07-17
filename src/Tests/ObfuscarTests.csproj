@@ -77,6 +77,7 @@
     <Compile Include="BaseTypeTests.cs" />
     <Compile Include="QueryablePropertyAccessorTests.cs" />
     <Compile Include="ResourcesTests.cs" />
+    <Compile Include="RulesAndAttributesTests.cs" />
     <Compile Include="SettingsTests.cs" />
     <Compile Include="SigningTests.cs" />
     <Compile Include="FieldOffsetTests.cs" />
