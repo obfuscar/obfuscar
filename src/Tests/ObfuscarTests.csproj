@@ -60,6 +60,10 @@
     <Compile Include="GenericDictionaryWeakReferenceTests.cs" />
     <Compile Include="InitPropertyTests.cs" />
     <Compile Include="IncludeTests.cs" />
+    <Compile Include="InheritMapTests.cs" />
+    <Compile Include="TypeMatchTests.cs" />
+    <Compile Include="NameMakerTests.cs" />
+    <Compile Include="PredicateCollectionAndTesterTests.cs" />
     <Compile Include="InterfaceTests.cs" />
     <Compile Include="NetStandardTests.cs" />
     <Compile Include="NetCoreTests.cs" />
