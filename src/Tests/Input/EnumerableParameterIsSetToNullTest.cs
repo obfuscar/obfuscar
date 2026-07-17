@@ -27,7 +27,9 @@ namespace EnumerableParameterIsSetToNullTest
                 &&
                 await _CollectionAsync(list)
                 &&
-                await _ArrayAsync(list.ToArray());
+                await _ArrayAsync(list.ToArray())
+                &&
+                await _NullableBoolAsync(null);
         }
 
         [Obfuscation]
@@ -72,6 +74,17 @@ namespace EnumerableParameterIsSetToNullTest
             }
 
             return false;
+        }
+
+        [Obfuscation]
+        private async Task<bool> _NullableBoolAsync(bool? isBase64)
+        {
+            if (isBase64.HasValue)
+            {
+                return isBase64.Value;
+            }
+
+            return true;
         }
     }
 
