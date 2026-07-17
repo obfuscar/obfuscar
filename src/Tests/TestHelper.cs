@@ -153,7 +153,8 @@ namespace ObfuscarTests
         public static void BuildAssembly(string name, string suffix = null, List<string> customReferences = null,
             string keyFile = null, bool delaySign = false, bool treatWarningsAsErrors = true,
             LanguageVersion languageVersion = LanguageVersion.Latest, bool useNetFramework = true,
-            string targetFrameworkVersion = "net48")
+            string targetFrameworkVersion = "net48",
+            OptimizationLevel optimizationLevel = OptimizationLevel.Debug)
         {
             string dllName = string.IsNullOrEmpty(suffix) ? name : name + suffix;
 
@@ -227,7 +228,8 @@ namespace ObfuscarTests
             }
 
             // Configure compilation options with the key file if provided
-            var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+            var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+                .WithOptimizationLevel(optimizationLevel);
 
             if (!string.IsNullOrEmpty(keyFile))
             {
@@ -337,10 +339,11 @@ namespace ObfuscarTests
         }
 
         public static Obfuscar.Obfuscator BuildAndObfuscate(string name, string suffix, string xml,
-            bool hideStrings = false, LanguageVersion languageVersion = LanguageVersion.Latest, bool useNetFramework = true)
+            bool hideStrings = false, LanguageVersion languageVersion = LanguageVersion.Latest, bool useNetFramework = true,
+            OptimizationLevel optimizationLevel = OptimizationLevel.Debug)
         {
             CleanInput();
-            BuildAssembly(name, suffix, languageVersion: languageVersion, useNetFramework: useNetFramework);
+            BuildAssembly(name, suffix, languageVersion: languageVersion, useNetFramework: useNetFramework, optimizationLevel: optimizationLevel);
             return Obfuscate(xml, hideStrings);
         }
 
