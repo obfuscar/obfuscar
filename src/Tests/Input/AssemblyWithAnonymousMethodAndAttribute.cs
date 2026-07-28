@@ -100,6 +100,57 @@ namespace TestClasses
         }
     }
 
+    // Multiple classes to generate multiple <>c types
+    public class ReprocClass1
+    {
+        public ReprocClass1()
+        {
+            var action1 = new Action<object>(
+                (object _) => { var a = 1 + 2; }
+            );
+        }
+    }
+
+    public class ReprocClass2
+    {
+        public ReprocClass2()
+        {
+            var action1 = new Action<object>(
+                (object _) => { var a = 1 + 2; }
+            );
+        }
+    }
+
+    public class ReprocClass3
+    {
+        public ReprocClass3()
+        {
+            var action1 = new Action<object>(
+                (object _) => { var a = 1 + 2; }
+            );
+        }
+    }
+
+    public class ReprocClass4
+    {
+        public ReprocClass4()
+        {
+            var action1 = new Action<object>(
+                (object _) => { var a = 1 + 2; }
+            );
+        }
+    }
+
+    public class ReprocClass5
+    {
+        public ReprocClass5()
+        {
+            var action1 = new Action<object>(
+                (object _) => { var a = 1 + 2; }
+            );
+        }
+    }
+
     public static class AnonymousMethodEntryPoint
     {
         public static string Test()
@@ -118,6 +169,11 @@ namespace TestClasses
             obj5.MethodWithMultipleLambdas(3);
             var obj6 = new AnonymousWithStaticLambda();
             obj6.MethodWithStaticLambda();
+            var obj7 = new ReprocClass1();
+            var obj8 = new ReprocClass2();
+            var obj9 = new ReprocClass3();
+            var obj10 = new ReprocClass4();
+            var obj11 = new ReprocClass5();
             return "ok";
         }
     }
