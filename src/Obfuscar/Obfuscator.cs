@@ -1153,6 +1153,38 @@ namespace Obfuscar
                         m.Update(ObfuscationStatus.Renamed, "dropped");
                         type.Properties.Remove(prop);
                     }
+
+                    RenamePropertyUsageInCustomAttributeArguments(type, typeKey);
+                }
+            }
+        }
+
+        private void RenamePropertyUsageInCustomAttributeArguments(TypeDefinition type, TypeKey typeKey)
+        {
+            if (Project.Settings.CustomAttributesToPreservePropertyNames.Length > 0)
+            {
+                foreach (PropertyDefinition prop in type.Properties)
+                {
+                    var attributesToUpdate = prop.CustomAttributeTypeFullNames.Intersect(Project.Settings.CustomAttributesToPreservePropertyNames);
+                    if (attributesToUpdate.Any())
+                    {
+                        foreach (var attributeToUpdate in attributesToUpdate)
+                        {
+                            foreach (var customAttribute in prop.CustomAttributes.Where(ca => ca.AttributeType.FullName == attributeToUpdate))
+                            {
+                                foreach (var constructorArgument in customAttribute.ConstructorArguments)
+                                {
+                                    foreach (var otherObfuscatedProp in Mapping.GetClass(typeKey).Properties.Where(x => x.Value.Status == ObfuscationStatus.Renamed))
+                                    {
+                                        if (string.Equals(otherObfuscatedProp.Key.Name, constructorArgument.Value))
+                                        {
+                                            constructorArgument.Value = otherObfuscatedProp.Value.StatusText;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

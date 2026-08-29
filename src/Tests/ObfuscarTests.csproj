@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <Compile Include="ParameterIsSetToNullTests.cs" />
+    <Compile Include="PreserveAttributeArgumentForReflectionTests.cs" />
     <Compile Include="GenericMethodImplementationNamingTests.cs" />
     <Compile Include="ImportNestedTypeUsingStaticOuterClassTest.cs" />
     <Compile Include="GlobalUsings.Legacy.cs" Condition="'$(TargetFramework)' == 'net472'" />
