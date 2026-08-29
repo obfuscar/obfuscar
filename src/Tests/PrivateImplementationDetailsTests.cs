@@ -112,6 +112,10 @@ namespace ObfuscarRepro
             Assert.True(pidTypes.Count > 0,
                 "Test failed - couldn't find any <PrivateImplementationDetails> types in the test assembly");
 
+            // Verify we have both the container type and a nested type
+            Assert.Contains(pidTypes, t => t.FullName == "<PrivateImplementationDetails>");
+            Assert.Contains(pidTypes, t => t.FullName.Contains("__StaticArrayInitTypeSize"));
+
             var output = TestHelper.OutputPath;
             string xml = string.Format(
                 @"<?xml version='1.0'?>" +
@@ -137,7 +141,7 @@ namespace ObfuscarRepro
 
                 Assert.True(obfuscatedType != null,
                     $"Type '{originalType.FullName}' was renamed despite SkipGenerated=true. " +
-                    "This is issue #616: SkipGenerated/SkipType don't protect <PrivateImplementationDetails>.");
+                    "This is issue #616/#617: SkipGenerated doesn't protect <PrivateImplementationDetails> or its nested types.");
             }
         }
 
@@ -161,6 +165,10 @@ namespace ObfuscarRepro
 
             Assert.True(pidTypes.Count > 0,
                 "Test failed - couldn't find any <PrivateImplementationDetails> types in the test assembly");
+
+            // Verify we have both the container type and a nested type
+            Assert.Contains(pidTypes, t => t.FullName == "<PrivateImplementationDetails>");
+            Assert.Contains(pidTypes, t => t.FullName.Contains("__StaticArrayInitTypeSize"));
 
             var output = TestHelper.OutputPath;
             string xml = string.Format(
@@ -186,7 +194,7 @@ namespace ObfuscarRepro
 
                 Assert.True(obfuscatedType != null,
                     $"Type '{originalType.FullName}' was renamed despite SkipType regex. " +
-                    "This is issue #616: SkipType regex doesn't protect <PrivateImplementationDetails>.");
+                    "This is issue #616/#617: SkipType regex doesn't protect <PrivateImplementationDetails> or its nested types.");
             }
         }
     }
