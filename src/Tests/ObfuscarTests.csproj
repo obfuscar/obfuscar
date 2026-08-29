@@ -106,6 +106,7 @@
     <Compile Include="EnumerableParameterIsSetToNullTests.cs" />
     <Compile Include="DiagnosticTests.cs" />
     <Compile Include="EntryPointTests.cs" />
+    <Compile Include="PrivateImplementationDetailsTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

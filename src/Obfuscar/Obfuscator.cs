@@ -773,7 +773,7 @@ namespace Obfuscar
                     if (typeDef is not MutableTypeDefinition type)
                         continue;
 
-                    if (type.FullName.IndexOf("<PrivateImplementationDetails>{", StringComparison.Ordinal) >= 0)
+                    if (type.FullName.IndexOf("<PrivateImplementationDetails>", StringComparison.Ordinal) >= 0)
                         continue;
 
                     TypeKey oldTypeKey = new TypeKey(typeDef);
