@@ -32,7 +32,7 @@ namespace ObfuscarTests
                 languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7);
 
             string outputAssemblyPath = Path.Combine(outputPath, "EnumerableParameterIsSetToNullTest.dll");
-            var logPath = "/tmp/obfuscar-diagnostic.log";
+            var logPath = Path.Combine(Path.GetTempPath(), "obfuscar-diagnostic.log");
             using (var log = new StreamWriter(logPath, false))
             {
                 var assem = AssemblyDefinition.ReadAssembly(outputAssemblyPath);
