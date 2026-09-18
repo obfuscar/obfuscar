@@ -6,9 +6,11 @@
     <!-- <IsNet80Supported Condition="'$(ParsedSdkVersion)' &gt;= '8.0'">true</IsNet80Supported>-->
     <IsNet90Supported Condition="'$(ParsedSdkVersion)' &gt;= '9.0'">true</IsNet90Supported> 
     <IsNet100Supported Condition="'$(ParsedSdkVersion)' &gt;= '10.0'">true</IsNet100Supported>
+    <IsNet110Supported Condition="'$(ParsedSdkVersion)' &gt;= '11.0'">true</IsNet110Supported>
     <!-- <TargetFrameworks Condition="'$(IsNet80Supported)' == 'true'">$(TargetFrameworks);net8.0</TargetFrameworks>-->
     <TargetFrameworks Condition="'$(IsNet90Supported)' == 'true'">$(TargetFrameworks);net9.0</TargetFrameworks> 
     <TargetFrameworks Condition="'$(IsNet100Supported)' == 'true'">$(TargetFrameworks);net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(IsNet110Supported)' == 'true'">$(TargetFrameworks);net11.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Windows'">$(TargetFrameworks);net472</TargetFrameworks>
     <AssemblyName>ObfuscarTests</AssemblyName>
     <RootNamespace>ObfuscarTests</RootNamespace>
@@ -23,7 +25,7 @@
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <UseNewTestsExperience>true</UseNewTestsExperience>
     <!-- Opt-in to new dotnet-test MTP experience for .NET 10+ -->
-    <TestingPlatformOptions Condition="'$(TargetFramework)' == 'net10.0'">--no-vstest</TestingPlatformOptions>
+    <TestingPlatformOptions Condition="'$(TargetFramework)' == 'net10.0' Or '$(TargetFramework)' == 'net11.0'">--no-vstest</TestingPlatformOptions>
   </PropertyGroup>
 
   <ItemGroup>

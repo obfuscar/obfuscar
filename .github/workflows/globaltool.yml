@@ -11,7 +11,7 @@ jobs:
         runs-on: ${{ matrix.os }}
         strategy:
             matrix:
-                dotnet-version: ["8.0.x", "9.0.x", "10.0.x"]
+                dotnet-version: ["8.0.x", "9.0.x", "10.0.x", "11.0.x"]
                 os: [ubuntu-latest, macos-latest, windows-latest]
         steps:
             - name: Checkout repository
@@ -21,6 +21,7 @@ jobs:
               uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: ${{ matrix.dotnet-version }}
+                  dotnet-quality: ${{ startsWith(matrix.dotnet-version, '11.') && 'preview' || 'ga' }}
 
             - name: Temp delete global.json
               shell: bash
