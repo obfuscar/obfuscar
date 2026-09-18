@@ -14,7 +14,7 @@ namespace ObfuscarTests
     public class GenericAnonymousMethodTests
     {
         private static void BuildAndVerify(string testLabel, string extraVars,
-            OptimizationLevel optimizationLevel)
+            OptimizationLevel optimizationLevel, bool useNetFramework = false)
         {
             string outputPath = TestHelper.OutputPath;
             string xml = string.Format(
@@ -33,8 +33,9 @@ namespace ObfuscarTests
                 "AssemblyWithGenericAnonymousMethod",
                 string.Empty,
                 xml,
+                hideStrings: true,
                 languageVersion: LanguageVersion.CSharp10,
-                useNetFramework: false,
+                useNetFramework: useNetFramework,
                 optimizationLevel: optimizationLevel);
 
             string assemblyPath = Path.Combine(outputPath, "AssemblyWithGenericAnonymousMethod.dll");
@@ -85,6 +86,78 @@ namespace ObfuscarTests
                 @"<Var name='HideStrings' value='true' />" +
                 @"<Var name='UseKoreanNames' value='true' />",
                 OptimizationLevel.Debug);
+        }
+
+        [Fact]
+        public void CheckGenericAnonymousMethods_NetFramework_Debug()
+        {
+            BuildAndVerify("net48+Debug",
+                @"<Var name='HideStrings' value='true' />",
+                OptimizationLevel.Debug,
+                useNetFramework: true);
+        }
+
+        [Fact]
+        public void CheckGenericAnonymousMethods_NetFramework_Release()
+        {
+            BuildAndVerify("net48+Release",
+                @"<Var name='HideStrings' value='true' />",
+                OptimizationLevel.Release,
+                useNetFramework: true);
+        }
+
+        [Fact]
+        public void CheckGenericAnonymousMethods_CrossAssembly()
+        {
+            TestHelper.CleanInput();
+            TestHelper.BuildAssemblies(
+                LanguageVersion.CSharp10,
+                false,
+                "AssemblyWithGenericAnonymousMethodLib",
+                "AssemblyWithGenericAnonymousMethodApp");
+
+            string outputPath = TestHelper.OutputPath;
+            string xml = string.Format(
+                @"<?xml version='1.0'?>" +
+                @"<Obfuscator>" +
+                @"<Var name='InPath' value='{0}' />" +
+                @"<Var name='OutPath' value='{1}' />" +
+                @"<Var name='KeepPublicApi' value='false' />" +
+                @"<Var name='HidePrivateApi' value='true' />" +
+                @"<Module file='$(InPath){2}AssemblyWithGenericAnonymousMethodLib.dll' />" +
+                @"<Module file='$(InPath){2}AssemblyWithGenericAnonymousMethodApp.dll' />" +
+                @"</Obfuscator>", TestHelper.InputPath, outputPath, Path.DirectorySeparatorChar);
+
+            TestHelper.Obfuscate(xml);
+
+            string appPath = Path.GetFullPath(Path.Combine(outputPath, "AssemblyWithGenericAnonymousMethodApp.dll"));
+            Assembly assembly;
+            try
+            {
+                assembly = Assembly.LoadFrom(appPath);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to load obfuscated cross-assembly app: {ex.GetType().Name}: {ex.Message}", ex);
+            }
+
+            var types = assembly.GetTypes();
+            var seen = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+            foreach (var type in types)
+            {
+                Assert.True(seen.Add(type.FullName!), $"Duplicate type full name: {type.FullName}");
+            }
+
+            foreach (var type in types)
+            {
+                var method = type.GetMethod("Test", BindingFlags.Public | BindingFlags.Static);
+                if (method != null)
+                {
+                    var result = method.Invoke(null, Array.Empty<object>());
+                    Assert.Equal("ok", result);
+                }
+            }
         }
     }
 }
