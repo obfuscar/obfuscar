@@ -35,6 +35,7 @@
     <Compile Include="GlobalUsings.Shared.cs" Condition="'$(TargetFramework)' != 'net472'" />
     <Compile Include="AssemblyHelper.cs" />
     <Compile Include="AnonymousMethodTests.cs" />
+    <Compile Include="GenericAnonymousMethodTests.cs" />
     <Compile Include="AnonymousTypePropertyTests.cs" />
     <Compile Include="AttributeTests.cs" />
     <Compile Include="AutoSkipTypeTests.cs" />
